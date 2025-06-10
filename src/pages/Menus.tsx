@@ -4,6 +4,7 @@ import ModernSidebar from '../components/ModernSidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import { 
   Eye, 
   Edit, 
@@ -15,7 +16,7 @@ const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeCategory, setActiveCategory] = useState("Tous");
   
-  const menuItems = [
+  const [menuItems, setMenuItems] = useState([
     { 
       id: 1, 
       name: "Thieboudienne", 
@@ -23,7 +24,8 @@ const Menus: React.FC = () => {
       price: "2 500 CFA", 
       status: "Disponible",
       description: "Riz au poisson traditionnel sénégalais",
-      image: "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"
+      image: "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png",
+      isActive: true
     },
     { 
       id: 2, 
@@ -32,7 +34,8 @@ const Menus: React.FC = () => {
       price: "2 000 CFA", 
       status: "Disponible",
       description: "Poulet mariné aux oignons et citron",
-      image: "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"
+      image: "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png",
+      isActive: true
     },
     { 
       id: 3, 
@@ -41,7 +44,8 @@ const Menus: React.FC = () => {
       price: "2 200 CFA", 
       status: "Indisponible",
       description: "Viande en sauce d'arachide",
-      image: "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"
+      image: "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png",
+      isActive: false
     },
     { 
       id: 4, 
@@ -50,7 +54,8 @@ const Menus: React.FC = () => {
       price: "500 CFA", 
       status: "Disponible",
       description: "Boisson à l'hibiscus",
-      image: "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"
+      image: "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png",
+      isActive: true
     },
     { 
       id: 5, 
@@ -59,15 +64,31 @@ const Menus: React.FC = () => {
       price: "300 CFA", 
       status: "Disponible",
       description: "Café épicé traditionnel",
-      image: "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"
+      image: "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png",
+      isActive: true
     }
-  ];
+  ]);
 
   const categories = ["Tous", "Plats principaux", "Boissons", "Desserts"];
 
   const filteredItems = activeCategory === "Tous" 
     ? menuItems 
     : menuItems.filter(item => item.category === activeCategory);
+
+  const handleToggleStatus = (itemId: number) => {
+    setMenuItems(prevItems => 
+      prevItems.map(item => 
+        item.id === itemId 
+          ? { 
+              ...item, 
+              isActive: !item.isActive,
+              status: !item.isActive ? "Disponible" : "Indisponible"
+            }
+          : item
+      )
+    );
+    console.log(`Statut du plat ${itemId} modifié`);
+  };
 
   const handleViewItem = (item: any) => {
     console.log("Viewing item:", item.name);
@@ -170,6 +191,17 @@ const Menus: React.FC = () => {
                   </div>
                   
                   <p className="text-gray-600 text-sm mb-4">{item.description}</p>
+                  
+                  {/* Activation/Désactivation */}
+                  <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-700">
+                      {item.isActive ? "Plat activé" : "Plat désactivé"}
+                    </span>
+                    <Switch
+                      checked={item.isActive}
+                      onCheckedChange={() => handleToggleStatus(item.id)}
+                    />
+                  </div>
                   
                   <div className="flex items-center justify-between">
                     <div className="text-xl font-bold text-green-600">
