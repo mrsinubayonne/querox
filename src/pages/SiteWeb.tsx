@@ -840,5 +840,3 @@ const SiteWeb: React.FC = () => {
 };
 
 export default SiteWeb;
-
-</edits_to_apply>
