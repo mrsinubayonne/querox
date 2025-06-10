@@ -1,7 +1,5 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 interface SalesData {
@@ -26,70 +24,87 @@ const SalesChart: React.FC<SalesChartProps> = ({ data }) => {
   };
 
   return (
-    <Card className="col-span-full">
-      <CardHeader className="pb-3">
-        <Tabs defaultValue="ventes">
-          <div className="flex items-center justify-between">
-            <CardTitle>Ventes mensuelles</CardTitle>
-            <TabsList>
-              <TabsTrigger value="ventes">Ventes</TabsTrigger>
-              <TabsTrigger value="categories">Catégories</TabsTrigger>
-              <TabsTrigger value="reservations">Réservations</TabsTrigger>
-            </TabsList>
-          </div>
-        </Tabs>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={data}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="name"
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={formatYAxis}
-              />
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-              <Tooltip
-                formatter={(value: number) => [formatTooltipValue(value), "Ventes"]}
-                labelFormatter={(label) => `${label}`}
-                contentStyle={{ 
-                  backgroundColor: "white",
-                  borderColor: "hsl(var(--border))",
-                  borderRadius: "var(--radius)",
-                  fontSize: "12px"
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke="hsl(var(--primary))"
-                fillOpacity={1}
-                fill="url(#colorValue)"
-                strokeWidth={2}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="h-[280px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart
+          data={data}
+          margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+        >
+          <defs>
+            <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+              <stop offset="50%" stopColor="#6366f1" stopOpacity={0.1} />
+              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="strokeGradient" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#3b82f6" />
+              <stop offset="50%" stopColor="#6366f1" />
+              <stop offset="100%" stopColor="#8b5cf6" />
+            </linearGradient>
+          </defs>
+          <XAxis
+            dataKey="name"
+            stroke="#64748b"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            tick={{ fill: '#64748b', fontSize: 12 }}
+          />
+          <YAxis
+            stroke="#64748b"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={formatYAxis}
+            tick={{ fill: '#64748b', fontSize: 12 }}
+          />
+          <CartesianGrid 
+            strokeDasharray="3 3" 
+            vertical={false} 
+            stroke="#e2e8f0" 
+            opacity={0.6}
+          />
+          <Tooltip
+            formatter={(value: number) => [formatTooltipValue(value), "Ventes"]}
+            labelFormatter={(label) => `${label} 2024`}
+            contentStyle={{ 
+              backgroundColor: "rgba(255, 255, 255, 0.95)",
+              borderColor: "#e2e8f0",
+              borderRadius: "12px",
+              fontSize: "12px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+              backdropFilter: "blur(8px)"
+            }}
+            cursor={{
+              stroke: "#6366f1",
+              strokeWidth: 1,
+              strokeDasharray: "4 4"
+            }}
+          />
+          <Area
+            type="monotone"
+            dataKey="value"
+            stroke="url(#strokeGradient)"
+            fillOpacity={1}
+            fill="url(#salesGradient)"
+            strokeWidth={3}
+            dot={{ 
+              fill: "#6366f1", 
+              strokeWidth: 3, 
+              stroke: "#ffffff",
+              r: 5
+            }}
+            activeDot={{ 
+              r: 6, 
+              stroke: "#6366f1",
+              strokeWidth: 3,
+              fill: "#ffffff"
+            }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
 
