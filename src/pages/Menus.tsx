@@ -4,10 +4,19 @@ import ModernSidebar from '../components/ModernSidebar';
 import MenuHeader from '../components/MenuHeader';
 import CategoryFilter from '../components/CategoryFilter';
 import MenuCard from '../components/MenuCard';
+import AddItemModal from '../components/AddItemModal';
+import ViewItemModal from '../components/ViewItemModal';
+import EditItemModal from '../components/EditItemModal';
+import { useToast } from '@/hooks/use-toast';
 
 const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeCategory, setActiveCategory] = useState("Tous");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const { toast } = useToast();
   
   const [menuItems, setMenuItems] = useState([
     { 
@@ -80,27 +89,52 @@ const Menus: React.FC = () => {
           : item
       )
     );
-    console.log(`Statut du plat ${itemId} modifié`);
+    toast({
+      title: "Statut modifié",
+      description: "Le statut du plat a été mis à jour avec succès.",
+    });
   };
 
   const handleViewItem = (item: any) => {
-    console.log("Viewing item:", item.name);
-    // Implement view functionality
+    setSelectedItem(item);
+    setIsViewModalOpen(true);
   };
 
   const handleEditItem = (item: any) => {
-    console.log("Editing item:", item.name);
-    // Implement edit functionality
+    setSelectedItem(item);
+    setIsEditModalOpen(true);
   };
 
   const handleAddItem = () => {
-    console.log("Adding new item");
-    // Implement add new item functionality
+    setIsAddModalOpen(true);
   };
 
   const handleVisitorView = () => {
-    console.log("Switching to visitor view");
-    // Implement visitor view functionality
+    toast({
+      title: "Vue visiteur",
+      description: "Basculement vers la vue visiteur du menu.",
+    });
+    // Ici vous pourriez rediriger vers une page de vue visiteur
+  };
+
+  const handleAddNewItem = (newItem: any) => {
+    setMenuItems(prevItems => [...prevItems, newItem]);
+    toast({
+      title: "Plat ajouté",
+      description: `${newItem.name} a été ajouté au menu avec succès.`,
+    });
+  };
+
+  const handleUpdateItem = (updatedItem: any) => {
+    setMenuItems(prevItems => 
+      prevItems.map(item => 
+        item.id === updatedItem.id ? updatedItem : item
+      )
+    );
+    toast({
+      title: "Plat modifié",
+      description: `${updatedItem.name} a été mis à jour avec succès.`,
+    });
   };
 
   return (
@@ -134,6 +168,26 @@ const Menus: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <AddItemModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAddItem={handleAddNewItem}
+      />
+      
+      <ViewItemModal
+        item={selectedItem}
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+      />
+      
+      <EditItemModal
+        item={selectedItem}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onEditItem={handleUpdateItem}
+      />
     </div>
   );
 };
