@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ImageUpload from './ImageUpload';
 
 interface MenuItem {
   id: number;
@@ -30,7 +31,8 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onClose, on
     name: '',
     category: '',
     price: '',
-    description: ''
+    description: '',
+    image: '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png'
   });
 
   useEffect(() => {
@@ -39,7 +41,8 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onClose, on
         name: item.name,
         category: item.category,
         price: item.price,
-        description: item.description
+        description: item.description,
+        image: item.image
       });
     }
   }, [item]);
@@ -56,15 +59,24 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onClose, on
     }
   };
 
+  const handleImageChange = (imageUrl: string) => {
+    setFormData(prev => ({ ...prev, image: imageUrl }));
+  };
+
   if (!item) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modifier le plat</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <ImageUpload 
+            currentImage={formData.image}
+            onImageChange={handleImageChange}
+          />
+          
           <div>
             <Label htmlFor="edit-name">Nom du plat</Label>
             <Input

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ImageUpload from './ImageUpload';
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -41,13 +42,22 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onAddItem 
     onClose();
   };
 
+  const handleImageChange = (imageUrl: string) => {
+    setFormData(prev => ({ ...prev, image: imageUrl }));
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ajouter un nouveau plat</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <ImageUpload 
+            currentImage={formData.image}
+            onImageChange={handleImageChange}
+          />
+          
           <div>
             <Label htmlFor="name">Nom du plat</Label>
             <Input
