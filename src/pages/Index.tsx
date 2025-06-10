@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-import Sidebar from '../components/Sidebar';
-import StatCard from '../components/StatCard';
+import ModernSidebar from '../components/ModernSidebar';
+import ModernStatCard from '../components/ModernStatCard';
 import SalesChart from '../components/SalesChart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, TrendingUp, Calendar, Users, ShoppingCart, Bell } from 'lucide-react';
+import { Search, TrendingUp, Calendar, Users, ShoppingCart, Bell, Plus } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -22,74 +22,90 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       
       <div className="flex-1 overflow-auto">
-        <header className="bg-white border-b border-border px-6 py-3 flex items-center justify-between sticky top-0 z-10">
-          <h1 className="text-xl font-bold">Tableau de bord</h1>
+        <header className="bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
+            <p className="text-sm text-gray-500 mt-1">Bienvenue dans votre espace de gestion</p>
+          </div>
           
           <div className="flex items-center gap-4">
-            <div className="relative max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="search"
                 placeholder="Rechercher..."
-                className="pl-8 w-[250px]"
+                className="pl-10 w-80 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
             
-            <Button size="icon" variant="ghost" className="relative">
-              <Bell />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+            <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg">
+              <Plus size={16} className="mr-2" />
+              Nouveau
+            </Button>
+            
+            <Button size="icon" variant="ghost" className="relative hover:bg-gray-100">
+              <Bell size={20} />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </Button>
           </div>
         </header>
         
-        <main className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <StatCard 
+        <main className="p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <ModernStatCard 
               title="Chiffre d'affaires" 
               value="9 482 000 CFA"
-              icon={<TrendingUp />}
+              icon={<TrendingUp size={24} />}
               change={{
                 value: "14,2%",
                 label: "depuis le mois dernier",
                 isPositive: true
               }}
-              tooltip="Chiffre d'affaires total ce mois-ci"
+              trend="up"
+              color="blue"
             />
             
-            <StatCard 
+            <ModernStatCard 
               title="Réservations" 
               value="48"
-              icon={<Calendar />}
+              icon={<Calendar size={24} />}
               change={{
                 value: "8,3%",
                 label: "depuis la semaine dernière",
                 isPositive: true
               }}
+              trend="up"
+              color="green"
             />
             
-            <StatCard 
+            <ModernStatCard 
               title="Clients fidèles" 
               value="234"
-              icon={<Users />}
+              icon={<Users size={24} />}
               change={{
                 value: "23,1%",
                 label: "depuis l'an dernier",
                 isPositive: true
               }}
+              trend="up"
+              color="purple"
             />
             
-            <StatCard 
+            <ModernStatCard 
               title="Produits en stock" 
               value="189"
-              icon={<ShoppingCart />}
+              icon={<ShoppingCart size={24} />}
               change={{
-                value: "8 produits en alerte stock",
+                value: "8 produits",
+                label: "en alerte stock",
                 isPositive: false
               }}
+              trend="down"
+              color="orange"
             />
           </div>
           

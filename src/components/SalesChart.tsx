@@ -14,11 +14,11 @@ interface SalesChartProps {
 }
 
 const SalesChart: React.FC<SalesChartProps> = ({ data }) => {
-  const formatYAxis = (value: number) => {
+  const formatYAxis = (value: number): string => {
     if (value >= 1000) {
       return `${(value / 1000).toFixed(0)}k`;
     }
-    return value;
+    return value.toString();
   };
 
   const formatTooltipValue = (value: number) => {
