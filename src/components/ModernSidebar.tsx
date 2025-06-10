@@ -40,13 +40,8 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }
     { icon: ShieldCheck, label: "Admin", path: "/admin", color: "text-slate-600" },
   ];
 
-  const handleToggle = () => {
-    console.log('Toggle sidebar - Current state:', collapsed);
-    setCollapsed(!collapsed);
-  };
-
   return (
-    <div className={`${collapsed ? 'w-16' : 'w-72'} transition-all duration-300 ease-in-out flex flex-col bg-white h-screen border-r border-gray-100 shadow-sm`}>
+    <div className={`${collapsed ? 'w-16' : 'w-72'} transition-all duration-300 ease-in-out flex flex-col bg-white h-screen border-r border-gray-100`}>
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center justify-between">
           {!collapsed && (
@@ -62,8 +57,8 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleToggle}
-            className="h-8 w-8 rounded-lg hover:bg-gray-100 transition-colors"
+            onClick={() => setCollapsed(!collapsed)}
+            className="h-8 w-8 rounded-lg hover:bg-gray-100"
           >
             {collapsed ? <Menu size={16} /> : <ChevronLeft size={16} />}
           </Button>
@@ -81,13 +76,12 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }
                   ? 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 shadow-sm' 
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
-              title={collapsed ? item.label : undefined}
             >
               <item.icon 
                 size={20} 
                 className={`${collapsed ? 'mx-auto' : 'mr-3'} ${
                   item.path === window.location.pathname ? item.color : 'group-hover:' + item.color
-                } transition-colors`} 
+                }`} 
               />
               {!collapsed && (
                 <span className="truncate">{item.label}</span>
