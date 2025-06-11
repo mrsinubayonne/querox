@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,6 @@ const plans = [
     name: "Starter",
     price: "20 000",
     period: "FCFA/mois",
-    dailyCost: "667",
     description: "Parfait pour les petits restaurants",
     badge: null,
     availablePlaces: 46,
@@ -125,15 +123,6 @@ const LandingPricing: React.FC = () => {
                     {plan.period}
                   </span>
                 </div>
-                
-                {/* Coût par jour pour le plan Starter */}
-                {plan.dailyCost && (
-                  <div className="mt-2">
-                    <p className="text-lg font-semibold text-green-600">
-                      soit {plan.dailyCost} FCFA par jour seulement !
-                    </p>
-                  </div>
-                )}
                 
                 <p className="mt-2 text-gray-600">
                   {plan.description}
