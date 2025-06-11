@@ -1,5 +1,0 @@
-
-project_id = "aufmphldtjrcddyayqoy"
-
-[functions.chat-groq]
-verify_jwt = false
