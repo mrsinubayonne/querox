@@ -12,6 +12,8 @@ const plans = [
     period: "FCFA/mois",
     description: "Parfait pour les petits restaurants",
     badge: null,
+    availablePlaces: 83,
+    closingSoon: false,
     features: [
       "Gestion des menus",
       "Jusqu'à 50 réservations/mois",
@@ -26,6 +28,8 @@ const plans = [
     period: "FCFA/mois",
     description: "Idéal pour les restaurants en croissance",
     badge: "Plus populaire",
+    availablePlaces: 28,
+    closingSoon: false,
     features: [
       "Toutes les fonctionnalités Starter",
       "Réservations illimitées",
@@ -37,11 +41,13 @@ const plans = [
     ]
   },
   {
-    name: "Enterprise",
+    name: "Enterprise VIP",
     price: "40 000",
     period: "FCFA/mois",
     description: "Pour les chaînes et grands restaurants",
     badge: null,
+    availablePlaces: 4,
+    closingSoon: true,
     features: [
       "Toutes les fonctionnalités Pro",
       "Comptabilité complète",
@@ -97,6 +103,23 @@ const LandingPricing: React.FC = () => {
                 <p className="mt-2 text-gray-600">
                   {plan.description}
                 </p>
+                
+                {/* Places disponibles */}
+                <div className="mt-3">
+                  <Badge 
+                    variant="outline" 
+                    className={`${plan.availablePlaces <= 10 ? 'border-red-500 text-red-600' : 'border-green-500 text-green-600'}`}
+                  >
+                    {plan.availablePlaces} places disponibles
+                  </Badge>
+                  {plan.closingSoon && (
+                    <div className="mt-2">
+                      <Badge variant="destructive" className="text-xs">
+                        Bientôt clôturé
+                      </Badge>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               
               <CardContent className="pt-0">
