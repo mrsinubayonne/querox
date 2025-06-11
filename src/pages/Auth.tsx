@@ -21,7 +21,7 @@ const Auth: React.FC = () => {
   // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate('/site-web');
     }
   }, [user, navigate]);
 
@@ -42,7 +42,7 @@ const Auth: React.FC = () => {
         title: "Connexion réussie",
         description: "Bienvenue !",
       });
-      navigate('/');
+      navigate('/site-web');
     }
     
     setLoading(false);

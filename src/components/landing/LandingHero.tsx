@@ -11,7 +11,7 @@ const LandingHero: React.FC = () => {
 
   const handleGetStarted = () => {
     if (user) {
-      navigate('/menus');
+      navigate('/site-web');
     } else {
       navigate('/auth');
     }
