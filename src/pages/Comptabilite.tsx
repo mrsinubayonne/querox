@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,40 +49,63 @@ const Comptabilite = () => {
     }
   ]);
 
-  const stats = [
-    {
-      title: "Recettes du mois",
-      value: "185 000",
-      currency: "CFA",
-      change: "+12% vs mois dernier",
-      isPositive: true,
-      icon: "💰"
-    },
-    {
-      title: "Dépenses du mois", 
-      value: "115 000", 
-      currency: "CFA",
-      change: "+5% vs mois dernier",
-      isPositive: false,
-      icon: "📊"
-    },
-    {
-      title: "Bénéfice net",
-      value: "70 000",
-      currency: "CFA",
-      change: "+18% vs mois dernier",
-      isPositive: true,
-      icon: "📈"
-    },
-    {
-      title: "Marge bénéficiaire",
-      value: "37.8%",
-      currency: "",
-      change: "+2.1% vs mois dernier",
-      isPositive: true,
-      icon: "📊"
-    }
-  ];
+  // Calculate dynamic stats based on current transactions
+  const stats = useMemo(() => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const monthlyTransactions = transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return transactionDate.getMonth() === currentMonth && 
+             transactionDate.getFullYear() === currentYear;
+    });
+
+    const recettes = monthlyTransactions
+      .filter(t => t.amount > 0)
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const depenses = Math.abs(monthlyTransactions
+      .filter(t => t.amount < 0)
+      .reduce((sum, t) => sum + t.amount, 0));
+    
+    const benefice = recettes - depenses;
+    const marge = recettes > 0 ? (benefice / recettes) * 100 : 0;
+
+    return [
+      {
+        title: "Recettes du mois",
+        value: new Intl.NumberFormat('fr-FR').format(recettes),
+        currency: "CFA",
+        change: "+12% vs mois dernier",
+        isPositive: true,
+        icon: "💰"
+      },
+      {
+        title: "Dépenses du mois", 
+        value: new Intl.NumberFormat('fr-FR').format(depenses), 
+        currency: "CFA",
+        change: "+5% vs mois dernier",
+        isPositive: false,
+        icon: "📊"
+      },
+      {
+        title: "Bénéfice net",
+        value: new Intl.NumberFormat('fr-FR').format(benefice),
+        currency: "CFA",
+        change: "+18% vs mois dernier",
+        isPositive: benefice >= 0,
+        icon: "📈"
+      },
+      {
+        title: "Marge bénéficiaire",
+        value: marge.toFixed(1) + "%",
+        currency: "",
+        change: "+2.1% vs mois dernier",
+        isPositive: true,
+        icon: "📊"
+      }
+    ];
+  }, [transactions]);
 
   const handleExport = (format: string, period: string) => {
     const formatMap = {

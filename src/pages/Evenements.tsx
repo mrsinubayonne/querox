@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import { Button } from '@/components/ui/button';
@@ -7,11 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Calendar, Clock, Users, MapPin, Plus, Search, Filter, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import EditEventModal from '@/components/events/EditEventModal';
 
 const Evenements: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("tous");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const { toast } = useToast();
   
   const [events, setEvents] = useState([
@@ -91,11 +93,18 @@ const Evenements: React.FC = () => {
     });
   };
 
-  const handleEditEvent = (id: number) => {
-    const event = events.find(e => e.id === id);
+  const handleEditEvent = (event: any) => {
+    setSelectedEvent(event);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateEvent = (updatedEvent: any) => {
+    setEvents(prev => 
+      prev.map(e => e.id === updatedEvent.id ? updatedEvent : e)
+    );
     toast({
-      title: "Modification",
-      description: `Modification de ${event?.nom}`,
+      title: "Événement modifié",
+      description: `${updatedEvent.nom} a été mis à jour`,
     });
   };
 
@@ -292,7 +301,7 @@ const Evenements: React.FC = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleEditEvent(event.id)}
+                        onClick={() => handleEditEvent(event)}
                       >
                         <Edit size={14} className="mr-1" />
                         Modifier
@@ -321,6 +330,13 @@ const Evenements: React.FC = () => {
           </Card>
         </main>
       </div>
+
+      <EditEventModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSubmit={handleUpdateEvent}
+        event={selectedEvent}
+      />
     </div>
   );
 };

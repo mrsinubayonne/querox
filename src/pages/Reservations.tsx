@@ -6,11 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Calendar, Clock, Users, Phone, Mail, Plus, Search, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import EditReservationModal from '@/components/reservations/EditReservationModal';
 
 const Reservations: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("tous");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState(null);
   const { toast } = useToast();
   
   const [reservations, setReservations] = useState([
@@ -88,10 +91,18 @@ const Reservations: React.FC = () => {
     });
   };
 
-  const handleModifyReservation = (id: number) => {
+  const handleModifyReservation = (reservation: any) => {
+    setSelectedReservation(reservation);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateReservation = (updatedReservation: any) => {
+    setReservations(prev => 
+      prev.map(r => r.id === updatedReservation.id ? updatedReservation : r)
+    );
     toast({
-      title: "Modification",
-      description: `Modification de la réservation ${id}`,
+      title: "Réservation modifiée",
+      description: `${updatedReservation.nom} a été mis à jour`,
     });
   };
 
@@ -287,7 +298,7 @@ const Reservations: React.FC = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleModifyReservation(reservation.id)}
+                        onClick={() => handleModifyReservation(reservation)}
                       >
                         Modifier
                       </Button>
@@ -306,6 +317,13 @@ const Reservations: React.FC = () => {
           </Card>
         </main>
       </div>
+
+      <EditReservationModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSubmit={handleUpdateReservation}
+        reservation={selectedReservation}
+      />
     </div>
   );
 };
