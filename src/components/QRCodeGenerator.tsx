@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import QRCode from 'qrcode';
+import * as QRCode from 'qrcode';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 
@@ -20,6 +20,7 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({ url, title, size = 20
 
   const generateQRCode = async () => {
     try {
+      console.log('Generating QR code for URL:', url);
       const canvas = canvasRef.current;
       if (canvas) {
         await QRCode.toCanvas(canvas, url, {
@@ -41,6 +42,7 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({ url, title, size = 20
           }
         });
         setQrCodeDataUrl(dataUrl);
+        console.log('QR code generated successfully');
       }
     } catch (error) {
       console.error('Erreur lors de la génération du QR code:', error);
