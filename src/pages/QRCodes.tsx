@@ -2,13 +2,16 @@
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import QRCodeGenerator from '../components/QRCodeGenerator';
+import LogoUpload from '../components/LogoUpload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, Share2, QrCode as QrCodeIcon, Menu, Eye } from 'lucide-react';
+import { Download, Share2, QrCode as QrCodeIcon, Menu, Eye, Settings } from 'lucide-react';
 
 const QRCodes: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [restaurantLogo, setRestaurantLogo] = useState<string | undefined>();
+  const [showSettings, setShowSettings] = useState(false);
   
   const qrCodeTypes = [
     {
@@ -49,6 +52,14 @@ const QRCodes: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-4">
+              <Button 
+                variant="outline"
+                onClick={() => setShowSettings(!showSettings)}
+                className="bg-white/50 hover:bg-white/80"
+              >
+                <Settings size={16} className="mr-2" />
+                Paramètres
+              </Button>
               <Button className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-blue-500/25">
                 <QrCodeIcon size={16} className="mr-2" />
                 Nouveau QR Code
@@ -58,6 +69,24 @@ const QRCodes: React.FC = () => {
         </header>
 
         <main className="p-8">
+          {/* Paramètres du logo */}
+          {showSettings && (
+            <Card className="mb-8 border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                  <Settings size={20} />
+                  Paramètres des QR Codes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LogoUpload 
+                  currentLogo={restaurantLogo}
+                  onLogoChange={setRestaurantLogo}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Introduction */}
           <Card className="mb-8 border-0 shadow-sm bg-white/60 backdrop-blur-sm">
             <CardContent className="p-6">
@@ -72,6 +101,11 @@ const QRCodes: React.FC = () => {
                   <p className="text-gray-600">
                     Créez des codes QR pour permettre à vos clients d'accéder facilement à votre menu depuis leur smartphone. 
                     Placez ces codes sur vos tables, à l'entrée ou sur vos supports marketing.
+                    {restaurantLogo && (
+                      <span className="block mt-2 text-sm text-blue-600 font-medium">
+                        ✨ Logo du restaurant activé - vos QR codes sont maintenant personnalisés !
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -107,6 +141,7 @@ const QRCodes: React.FC = () => {
                   <QRCodeGenerator 
                     url={qrType.url}
                     title={qrType.title}
+                    logo={restaurantLogo}
                   />
                   
                   <div className="mt-6 pt-4 border-t border-gray-100">
@@ -158,6 +193,7 @@ const QRCodes: React.FC = () => {
                     <li>• Assurez-vous que la taille est suffisante pour être scanné</li>
                     <li>• Ajoutez un texte explicatif ("Scannez pour voir le menu")</li>
                     <li>• Gardez le design simple et contrasté</li>
+                    <li>• {restaurantLogo ? 'Logo ajouté automatiquement' : 'Ajoutez votre logo dans les paramètres'}</li>
                   </ul>
                 </div>
               </div>
