@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,8 @@ const Evenements: React.FC = () => {
       lieu: "Salle principale",
       statut: "confirmé",
       prix: 25000,
-      organisateur: "Marie Dupont"
+      organisateur: "Marie Dupont",
+      image: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81"
     },
     {
       id: 2,
@@ -39,7 +41,8 @@ const Evenements: React.FC = () => {
       lieu: "Terrasse",
       statut: "planifié",
       prix: 15000,
-      organisateur: "Chef Antoine"
+      organisateur: "Chef Antoine",
+      image: "https://images.unsplash.com/photo-1472396961693-142e6e269027"
     },
     {
       id: 3,
@@ -51,7 +54,8 @@ const Evenements: React.FC = () => {
       lieu: "Salle privée",
       statut: "confirmé",
       prix: 45000,
-      organisateur: "Société ABC"
+      organisateur: "Société ABC",
+      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c"
     }
   ]);
 
@@ -84,7 +88,8 @@ const Evenements: React.FC = () => {
       lieu: "À définir",
       statut: "planifié",
       prix: 0,
-      organisateur: "À définir"
+      organisateur: "À définir",
+      image: "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"
     };
     setEvents(prev => [newEvent, ...prev]);
     toast({
@@ -257,64 +262,77 @@ const Evenements: React.FC = () => {
               <div className="space-y-4">
                 {filteredEvents.map((event) => (
                   <div key={event.id} className="p-6 border border-gray-100 rounded-2xl bg-white/50 hover:bg-white/80 transition-colors">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold">
-                          {event.nom.substring(0, 2).toUpperCase()}
+                    <div className="flex items-start gap-6 mb-4">
+                      <div className="flex-shrink-0">
+                        {event.image && event.image !== '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png' ? (
+                          <img 
+                            src={event.image} 
+                            alt={event.nom}
+                            className="w-20 h-20 rounded-lg object-cover border border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-lg">
+                            {event.nom.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 text-lg">{event.nom}</h3>
+                            <p className="text-sm text-gray-500">{event.description}</p>
+                          </div>
+                          {getStatutBadge(event.statut)}
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{event.nom}</h3>
-                          <p className="text-sm text-gray-500">{event.description}</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Calendar size={16} />
+                            <span>{new Date(event.date).toLocaleDateString('fr-FR')}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Clock size={16} />
+                            <span>{event.heure}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Users size={16} />
+                            <span>{event.participants} participants</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <MapPin size={16} />
+                            <span>{event.lieu}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <span className="font-medium">Prix:</span>
+                            <span>{formatCurrency(event.prix)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <span className="font-medium">Organisateur:</span>
+                            <span>{event.organisateur}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditEvent(event)}
+                          >
+                            <Edit size={14} className="mr-1" />
+                            Modifier
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 size={14} className="mr-1" />
+                            Supprimer
+                          </Button>
                         </div>
                       </div>
-                      {getStatutBadge(event.statut)}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Calendar size={16} />
-                        <span>{new Date(event.date).toLocaleDateString('fr-FR')}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Clock size={16} />
-                        <span>{event.heure}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Users size={16} />
-                        <span>{event.participants} participants</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <MapPin size={16} />
-                        <span>{event.lieu}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <span className="font-medium">Prix:</span>
-                        <span>{formatCurrency(event.prix)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <span className="font-medium">Organisateur:</span>
-                        <span>{event.organisateur}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEditEvent(event)}
-                      >
-                        <Edit size={14} className="mr-1" />
-                        Modifier
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDeleteEvent(event.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 size={14} className="mr-1" />
-                        Supprimer
-                      </Button>
                     </div>
                   </div>
                 ))}

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import ImageUpload from '@/components/ImageUpload';
 
 interface Event {
   id: number;
@@ -18,6 +19,7 @@ interface Event {
   statut: string;
   prix: number;
   organisateur: string;
+  image?: string;
 }
 
 interface EditEventModalProps {
@@ -42,7 +44,8 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
     lieu: '',
     statut: 'planifié',
     prix: 0,
-    organisateur: ''
+    organisateur: '',
+    image: '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png'
   });
 
   useEffect(() => {
@@ -56,7 +59,8 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
         lieu: event.lieu,
         statut: event.statut,
         prix: event.prix,
-        organisateur: event.organisateur
+        organisateur: event.organisateur,
+        image: event.image || '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png'
       });
     }
   }, [event]);
@@ -74,13 +78,22 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
     onClose();
   };
 
+  const handleImageChange = (imageUrl: string) => {
+    setFormData({ ...formData, image: imageUrl });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modifier l'événement</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <ImageUpload
+            currentImage={formData.image}
+            onImageChange={handleImageChange}
+          />
+
           <div className="space-y-2">
             <Label htmlFor="nom">Nom de l'événement</Label>
             <Input
