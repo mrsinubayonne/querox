@@ -8,6 +8,7 @@ import Inventaire from './pages/Inventaire';
 import Statistiques from './pages/Statistiques';
 import Clients from './pages/Clients';
 import Comptabilite from './pages/Comptabilite';
+import QRCodes from './pages/QRCodes';
 import NotFound from './pages/NotFound';
 import './App.css';
 
@@ -23,6 +24,7 @@ function App() {
         <Route path="/statistiques" element={<Statistiques />} />
         <Route path="/clients" element={<Clients />} />
         <Route path="/comptabilite" element={<Comptabilite />} />
+        <Route path="/qr-codes" element={<QRCodes />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
