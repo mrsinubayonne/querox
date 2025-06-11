@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import ModernStatCard from '../components/ModernStatCard';
@@ -7,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell
@@ -30,6 +31,15 @@ import {
 const Clients: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isAddClientOpen, setIsAddClientOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [newClient, setNewClient] = useState({
+    nom: "",
+    email: "",
+    telephone: "",
+    adresse: ""
+  });
 
   // Données des clients
   const clients = [
@@ -113,10 +123,51 @@ const Clients: React.FC = () => {
     { month: 'Juin', nouveaux: 35, total: 479 }
   ];
 
-  const filteredClients = clients.filter(client =>
-    client.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = client.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         client.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = !filterStatus || client.statut === filterStatus;
+    return matchesSearch && matchesFilter;
+  });
+
+  const handleExport = () => {
+    console.log("Exporting client data...");
+    // Create CSV content
+    const csvHeaders = "Nom,Email,Téléphone,Adresse,Statut,Commandes,Total Dépense\n";
+    const csvContent = filteredClients.map(client => 
+      `${client.nom},${client.email},${client.telephone},${client.adresse},${client.statut},${client.commandes},${client.totalDepense}`
+    ).join('\n');
+    
+    const csvData = csvHeaders + csvContent;
+    const blob = new Blob([csvData], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'clients.csv';
+    a.click();
+  };
+
+  const handleAddClient = () => {
+    console.log("Adding new client:", newClient);
+    // Reset form
+    setNewClient({
+      nom: "",
+      email: "",
+      telephone: "",
+      adresse: ""
+    });
+    setIsAddClientOpen(false);
+  };
+
+  const applyFilter = () => {
+    console.log("Applying filter:", filterStatus);
+    setIsFilterOpen(false);
+  };
+
+  const clearFilter = () => {
+    setFilterStatus("");
+    setIsFilterOpen(false);
+  };
 
   const getStatusColor = (statut: string) => {
     switch (statut) {
@@ -149,18 +200,105 @@ const Clients: React.FC = () => {
               <p className="text-gray-600">Analysez et gérez votre base de clients</p>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter size={16} />
-                Filtrer
-              </Button>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Filter size={16} />
+                    Filtrer
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Filtrer les clients</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="status-filter">Filtrer par statut</Label>
+                      <select
+                        id="status-filter"
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="w-full mt-1 p-2 border rounded-md"
+                      >
+                        <option value="">Tous les statuts</option>
+                        <option value="VIP">VIP</option>
+                        <option value="Fidèle">Fidèle</option>
+                        <option value="Régulier">Régulier</option>
+                        <option value="Nouveau">Nouveau</option>
+                      </select>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={applyFilter} className="flex-1">
+                        Appliquer
+                      </Button>
+                      <Button onClick={clearFilter} variant="outline" className="flex-1">
+                        Effacer
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Button variant="outline" className="flex items-center gap-2" onClick={handleExport}>
                 <Download size={16} />
                 Exporter
               </Button>
-              <Button className="flex items-center gap-2">
-                <UserPlus size={16} />
-                Nouveau Client
-              </Button>
+
+              <Dialog open={isAddClientOpen} onOpenChange={setIsAddClientOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2">
+                    <UserPlus size={16} />
+                    Nouveau Client
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Ajouter un nouveau client</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="nom">Nom complet</Label>
+                      <Input
+                        id="nom"
+                        value={newClient.nom}
+                        onChange={(e) => setNewClient({...newClient, nom: e.target.value})}
+                        placeholder="Nom du client"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={newClient.email}
+                        onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                        placeholder="email@exemple.com"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="telephone">Téléphone</Label>
+                      <Input
+                        id="telephone"
+                        value={newClient.telephone}
+                        onChange={(e) => setNewClient({...newClient, telephone: e.target.value})}
+                        placeholder="+221 77 123 45 67"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="adresse">Adresse</Label>
+                      <Input
+                        id="adresse"
+                        value={newClient.adresse}
+                        onChange={(e) => setNewClient({...newClient, adresse: e.target.value})}
+                        placeholder="Adresse du client"
+                      />
+                    </div>
+                    <Button onClick={handleAddClient} className="w-full">
+                      Ajouter le client
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
@@ -220,6 +358,12 @@ const Clients: React.FC = () => {
                     className="pl-10"
                   />
                 </div>
+                {filterStatus && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    Filtre: {filterStatus}
+                    <button onClick={clearFilter} className="ml-1 text-xs">×</button>
+                  </Badge>
+                )}
               </div>
 
               {/* Liste des clients */}
