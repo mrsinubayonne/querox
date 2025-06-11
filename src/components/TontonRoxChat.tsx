@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
-import { GeminiService } from '@/services/geminiService';
+import { GroqService } from '@/services/groqService';
 import { useToast } from '@/hooks/use-toast';
 
 interface Message {
@@ -12,6 +12,11 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+}
+
+interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
 }
 
 const TontonRoxChat: React.FC = () => {
@@ -28,7 +33,7 @@ const TontonRoxChat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const geminiService = new GeminiService();
+  const groqService = new GroqService();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -53,22 +58,23 @@ const TontonRoxChat: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const systemPrompt = geminiService.createSystemPrompt();
-      const conversationHistory = messages.map(msg => ({
-        role: msg.role === 'assistant' ? 'model' as const : 'user' as const,
-        parts: [{ text: msg.content }]
+      const systemPrompt = groqService.createSystemPrompt();
+      const conversationHistory: ChatMessage[] = messages.map(msg => ({
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: msg.content
       }));
 
-      const allMessages = [
+      const allMessages: ChatMessage[] = [
         systemPrompt,
         ...conversationHistory,
         {
-          role: 'user' as const,
-          parts: [{ text: inputMessage }]
+          role: 'user',
+          content: inputMessage
         }
       ];
 
-      const response = await geminiService.generateResponse(allMessages);
+      console.log('Sending messages to Groq service:', allMessages.length);
+      const response = await groqService.generateResponse(allMessages);
 
       const assistantMessage: Message = {
         id: Date.now() + 1,
@@ -79,6 +85,7 @@ const TontonRoxChat: React.FC = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
+      console.error('Chat error:', error);
       toast({
         title: "Erreur",
         description: error instanceof Error ? error.message : "Une erreur est survenue",
