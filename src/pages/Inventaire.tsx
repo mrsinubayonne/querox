@@ -1,23 +1,12 @@
-
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
-import { 
-  Plus,
-  Search,
-  Filter,
-  Download,
-  AlertTriangle,
-  Package,
-  Edit,
-  Trash2
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Package } from "lucide-react";
 import AddInventoryModal from '../components/AddInventoryModal';
+import InventoryHeader from '../components/inventory/InventoryHeader';
+import CriticalStockAlert from '../components/inventory/CriticalStockAlert';
+import InventoryStocksTab from '../components/inventory/InventoryStocksTab';
 import { useToast } from '@/hooks/use-toast';
 
 const Inventaire: React.FC = () => {
@@ -163,57 +152,19 @@ const Inventaire: React.FC = () => {
     });
   };
 
-  const getStockPercentage = (current: number, min: number) => {
-    const max = min * 3;
-    return Math.min((current / max) * 100, 100);
-  };
-
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-semibold text-gray-900">Inventaire</h1>
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex items-center gap-2" onClick={handleExport}>
-                <Download size={16} />
-                Exporter
-              </Button>
-              <Button 
-                onClick={() => setIsAddModalOpen(true)}
-                className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
-              >
-                <Plus size={16} />
-                Ajouter article
-              </Button>
-            </div>
-          </div>
+          <InventoryHeader 
+            onExport={handleExport}
+            onAddItem={() => setIsAddModalOpen(true)}
+          />
 
-          {/* Critical Stock Alert */}
-          {criticalItems.length > 0 && (
-            <Card className="mb-6 border-orange-200 bg-orange-50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertTriangle className="text-orange-600" size={20} />
-                  <span className="font-medium text-orange-800">
-                    Alertes de stock faible ({criticalItems.length} articles)
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {criticalItems.map(item => (
-                    <Badge key={item.id} variant="outline" className="bg-orange-100 text-orange-700 border-orange-300">
-                      {item.name} ({item.quantity} {item.unit})
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <CriticalStockAlert criticalItems={criticalItems} />
 
-          {/* Tabs */}
           <Tabs defaultValue="stocks" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="stocks">État des stocks</TabsTrigger>
@@ -222,107 +173,15 @@ const Inventaire: React.FC = () => {
             </TabsList>
 
             <TabsContent value="stocks" className="space-y-6">
-              {/* Search and Filter */}
-              <div className="flex gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <Input
-                    placeholder="Rechercher un article..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Button variant="outline" className="flex items-center gap-2" onClick={handleFilter}>
-                  <Filter size={16} />
-                  Filtrer ({filterCategory})
-                </Button>
-              </div>
-
-              {/* Articles Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Package size={20} />
-                  <h2 className="text-lg font-semibold">Articles en stock ({filteredItems.length})</h2>
-                </div>
-
-                <div className="space-y-3">
-                  {filteredItems.map((item) => {
-                    const stockPercentage = getStockPercentage(item.quantity, item.minQuantity);
-                    return (
-                      <Card key={item.id} className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4 flex-1">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-medium">{item.name}</h3>
-                                {item.status === "Critique" && (
-                                  <Badge className="bg-red-500 text-white text-xs">
-                                    Critique
-                                  </Badge>
-                                )}
-                                <Badge variant="outline" className="text-xs">
-                                  {item.category}
-                                </Badge>
-                              </div>
-                              <div className="grid grid-cols-4 gap-6 text-sm text-gray-600 mb-2">
-                                <div>
-                                  <span className="font-medium">Stock actuel</span>
-                                  <div className="font-semibold text-gray-900">{item.quantity} {item.unit}</div>
-                                </div>
-                                <div>
-                                  <span className="font-medium">Stock minimum</span>
-                                  <div>{item.minQuantity} {item.unit}</div>
-                                </div>
-                                <div>
-                                  <span className="font-medium">Prix unitaire</span>
-                                  <div>{item.price} CFA</div>
-                                </div>
-                                <div>
-                                  <span className="font-medium">Fournisseur</span>
-                                  <div>{item.supplier}</div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-500">Niveau de stock</span>
-                                <div className="flex-1 max-w-xs">
-                                  <Progress value={stockPercentage} className="h-2" />
-                                </div>
-                                <span className="text-xs text-gray-500">{Math.round(stockPercentage)}%</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="h-8 w-8 p-0"
-                              onClick={() => handleEditItem(item.id)}
-                            >
-                              <Edit size={14} />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="h-8 w-8 p-0"
-                              onClick={() => handleDeleteItem(item.id)}
-                            >
-                              <Trash2 size={14} />
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-
-                {filteredItems.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Aucun article trouvé</p>
-                  </div>
-                )}
-              </div>
+              <InventoryStocksTab
+                filteredItems={filteredItems}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                filterCategory={filterCategory}
+                onFilter={handleFilter}
+                onEditItem={handleEditItem}
+                onDeleteItem={handleDeleteItem}
+              />
             </TabsContent>
 
             <TabsContent value="movements">
@@ -348,7 +207,6 @@ const Inventaire: React.FC = () => {
         </div>
       </div>
 
-      {/* Add Item Modal */}
       <AddInventoryModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}

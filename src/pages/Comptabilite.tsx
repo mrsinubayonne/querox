@@ -1,20 +1,13 @@
-
 import React, { useState } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { 
-  Download, 
-  Plus,
-  TrendingUp,
-  TrendingDown,
-  Menu,
-  Search,
-  Filter
-} from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AccountingHeader from '@/components/accounting/AccountingHeader';
+import StatsCard from '@/components/accounting/StatsCard';
+import NavigationTabs from '@/components/accounting/NavigationTabs';
+import TransactionCard from '@/components/accounting/TransactionCard';
 
 const Comptabilite = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -143,6 +136,19 @@ const Comptabilite = () => {
     });
   };
 
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    const tabLabels = {
+      transactions: 'Transactions récentes',
+      rapports: 'Rapports mensuels',
+      budget: 'Budget prévisionnel'
+    };
+    toast({
+      title: "Onglet changé",
+      description: `Affichage: ${tabLabels[tabId as keyof typeof tabLabels]}`,
+    });
+  };
+
   const tabs = [
     { id: 'transactions', label: 'Transactions récentes', active: activeTab === 'transactions' },
     { id: 'rapports', label: 'Rapports mensuels', active: activeTab === 'rapports' },
@@ -165,143 +171,45 @@ const Comptabilite = () => {
       
       <div className="flex-1 p-4">
         <div className="max-w-7xl mx-auto space-y-4">
-          {/* Header */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="sm" className="p-1.5">
-                <Menu size={18} />
-              </Button>
-              <h1 className="text-xl font-bold text-gray-900">Comptabilité</h1>
-            </div>
-            <div className="flex space-x-2">
-              <div className="flex items-center space-x-2">
-                <Input
-                  placeholder="Rechercher..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-48 text-xs"
-                />
-                <Button variant="outline" size="sm" onClick={handleSearch}>
-                  <Search size={14} />
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleFilter}>
-                  <Filter size={14} />
-                </Button>
-              </div>
-              <Button variant="outline" className="flex items-center space-x-2 text-xs px-3 py-2" onClick={handleExport}>
-                <Download size={14} />
-                <span>Exporter</span>
-              </Button>
-              <Button className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-xs px-3 py-2" onClick={handleNewTransaction}>
-                <Plus size={14} />
-                <span>Nouvelle transaction</span>
-              </Button>
-            </div>
-          </div>
+          <AccountingHeader
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onSearch={handleSearch}
+            onFilter={handleFilter}
+            onExport={handleExport}
+            onNewTransaction={handleNewTransaction}
+          />
 
-          {/* Cartes statistiques */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {stats.map((stat, index) => (
-              <Card key={index} className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => toast({
-                      title: stat.title,
-                      description: `Détails: ${stat.value} ${stat.currency}`,
-                    })}>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-600 font-medium">{stat.title}</span>
-                    </div>
-                    <span className="text-lg">💰</span>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <div className="flex items-baseline space-x-1">
-                      <span className="text-xl font-bold text-gray-900">{stat.value}</span>
-                      {stat.currency && <span className="text-sm font-semibold text-gray-700">{stat.currency}</span>}
-                    </div>
-                    
-                    <div className={`text-xs ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                      <span>{stat.change}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <StatsCard
+                key={index}
+                stat={stat}
+                onClick={() => toast({
+                  title: stat.title,
+                  description: `Détails: ${stat.value} ${stat.currency}`,
+                })}
+              />
             ))}
           </div>
 
-          {/* Onglets de navigation */}
-          <div className="flex space-x-6 border-b">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  toast({
-                    title: "Onglet changé",
-                    description: `Affichage: ${tab.label}`,
-                  });
-                }}
-                className={`pb-2 px-1 text-xs font-medium border-b-2 transition-colors ${
-                  tab.active 
-                    ? 'border-black text-black' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <NavigationTabs tabs={tabs} onTabChange={handleTabChange} />
 
-          {/* Contenu des onglets */}
           {activeTab === 'transactions' && (
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-gray-900">Transactions récentes ({filteredTransactions.length})</h2>
               
               <div className="space-y-3">
                 {filteredTransactions.map((transaction) => (
-                  <Card key={transaction.id} className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-gray-50 rounded-lg">
-                            {transaction.icon}
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-semibold text-gray-900">{transaction.title}</h3>
-                            <p className="text-xs text-gray-500">{transaction.date}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-3">
-                          <span className={`text-sm font-semibold ${
-                            transaction.isPositive ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {formatCurrency(transaction.amount)}
-                          </span>
-                          <Badge 
-                            className={`text-xs ${
-                              transaction.status === 'confirmé' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}
-                          >
-                            {transaction.status}
-                          </Badge>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => toast({
-                              title: "Détails transaction",
-                              description: `${transaction.title} - ${formatCurrency(transaction.amount)}`,
-                            })}
-                          >
-                            Détails
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <TransactionCard
+                    key={transaction.id}
+                    transaction={transaction}
+                    formatCurrency={formatCurrency}
+                    onViewDetails={() => toast({
+                      title: "Détails transaction",
+                      description: `${transaction.title} - ${formatCurrency(transaction.amount)}`,
+                    })}
+                  />
                 ))}
               </div>
             </div>

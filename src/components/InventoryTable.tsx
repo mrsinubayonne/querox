@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Plus, Minus, Package } from 'lucide-react';
+import { Package } from 'lucide-react';
+import TableActions from './inventory-table/TableActions';
+import QuantityCell from './inventory-table/QuantityCell';
 
 interface InventoryItem {
   id: number;
@@ -94,23 +94,14 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ items, onUpdateQuantity
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {editingId === item.id ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={editValue}
-                        onChange={(e) => setEditValue(Number(e.target.value))}
-                        className="w-20"
-                        min="0"
-                      />
-                      <span className="text-sm text-muted-foreground">{item.unit}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{item.quantity}</span>
-                      <span className="text-sm text-muted-foreground">{item.unit}</span>
-                    </div>
-                  )}
+                  <QuantityCell
+                    itemId={item.id}
+                    quantity={item.quantity}
+                    unit={item.unit}
+                    editingId={editingId}
+                    editValue={editValue}
+                    onEditValueChange={setEditValue}
+                  />
                 </TableCell>
                 <TableCell>{item.minQuantity} {item.unit}</TableCell>
                 <TableCell>{item.price.toLocaleString()} CFA</TableCell>
@@ -118,53 +109,17 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ items, onUpdateQuantity
                 <TableCell>{getStatusBadge(item.status)}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{item.lastUpdated}</TableCell>
                 <TableCell>
-                  {editingId === item.id ? (
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        onClick={() => handleEditSave(item.id)}
-                        className="h-8 px-2 bg-green-600 hover:bg-green-700"
-                      >
-                        ✓
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleEditCancel}
-                        className="h-8 px-2"
-                      >
-                        ✕
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleQuickUpdate(item.id, item.quantity, -1)}
-                        className="h-8 w-8 p-0"
-                        disabled={item.quantity === 0}
-                      >
-                        <Minus size={12} />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEditStart(item)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit size={12} />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleQuickUpdate(item.id, item.quantity, 1)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Plus size={12} />
-                      </Button>
-                    </div>
-                  )}
+                  <TableActions
+                    itemId={item.id}
+                    quantity={item.quantity}
+                    editingId={editingId}
+                    editValue={editValue}
+                    onEditStart={() => handleEditStart(item)}
+                    onEditSave={() => handleEditSave(item.id)}
+                    onEditCancel={handleEditCancel}
+                    onEditValueChange={setEditValue}
+                    onQuickUpdate={(change) => handleQuickUpdate(item.id, item.quantity, change)}
+                  />
                 </TableCell>
               </TableRow>
             ))}
