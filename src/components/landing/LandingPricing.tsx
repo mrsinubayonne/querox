@@ -12,7 +12,7 @@ const plans = [
     period: "FCFA/mois",
     description: "Parfait pour les petits restaurants",
     badge: null,
-    availablePlaces: 83,
+    availablePlaces: 46,
     closingSoon: false,
     features: [
       "Gestion des menus",
@@ -28,7 +28,7 @@ const plans = [
     period: "FCFA/mois",
     description: "Idéal pour les restaurants en croissance",
     badge: "Plus populaire",
-    availablePlaces: 28,
+    availablePlaces: 22,
     closingSoon: false,
     features: [
       "Toutes les fonctionnalités Starter",
