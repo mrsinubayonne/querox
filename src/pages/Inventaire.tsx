@@ -24,6 +24,7 @@ const Inventaire: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("tous");
   const { toast } = useToast();
   
   const [inventoryItems, setInventoryItems] = useState([
@@ -89,10 +90,62 @@ const Inventaire: React.FC = () => {
     }
   ]);
 
-  const filteredItems = inventoryItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleExport = () => {
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      "Nom,Catégorie,Quantité,Unité,Prix,Fournisseur,Statut\n" +
+      inventoryItems.map(item => 
+        `${item.name},${item.category},${item.quantity},${item.unit},${item.price},${item.supplier},${item.status}`
+      ).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "inventaire.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Export réussi",
+      description: "L'inventaire a été exporté en CSV",
+    });
+  };
+
+  const handleFilter = () => {
+    const categories = ["tous", "Céréales", "Viandes", "Légumes", "Condiments"];
+    const currentIndex = categories.indexOf(filterCategory);
+    const nextCategory = categories[(currentIndex + 1) % categories.length];
+    setFilterCategory(nextCategory);
+    
+    toast({
+      title: "Filtre appliqué",
+      description: `Affichage: ${nextCategory}`,
+    });
+  };
+
+  const handleEditItem = (itemId: number) => {
+    const item = inventoryItems.find(i => i.id === itemId);
+    toast({
+      title: "Modification",
+      description: `Modification de ${item?.name}`,
+    });
+  };
+
+  const handleDeleteItem = (itemId: number) => {
+    const item = inventoryItems.find(i => i.id === itemId);
+    setInventoryItems(prev => prev.filter(i => i.id !== itemId));
+    toast({
+      title: "Article supprimé",
+      description: `${item?.name} a été supprimé de l'inventaire`,
+    });
+  };
+
+  const filteredItems = inventoryItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = filterCategory === "tous" || item.category === filterCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const criticalItems = inventoryItems.filter(item => item.status === "Critique");
 
@@ -111,14 +164,8 @@ const Inventaire: React.FC = () => {
   };
 
   const getStockPercentage = (current: number, min: number) => {
-    const max = min * 3; // Assume max is 3 times the minimum
+    const max = min * 3;
     return Math.min((current / max) * 100, 100);
-  };
-
-  const getProgressColor = (percentage: number) => {
-    if (percentage < 30) return "bg-red-500";
-    if (percentage < 60) return "bg-orange-500";
-    return "bg-green-500";
   };
 
   return (
@@ -131,7 +178,7 @@ const Inventaire: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">Inventaire</h1>
             <div className="flex gap-3">
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="flex items-center gap-2" onClick={handleExport}>
                 <Download size={16} />
                 Exporter
               </Button>
@@ -186,9 +233,9 @@ const Inventaire: React.FC = () => {
                     className="pl-10"
                   />
                 </div>
-                <Button variant="outline" className="flex items-center gap-2">
+                <Button variant="outline" className="flex items-center gap-2" onClick={handleFilter}>
                   <Filter size={16} />
-                  Filtrer
+                  Filtrer ({filterCategory})
                 </Button>
               </div>
 
@@ -246,10 +293,20 @@ const Inventaire: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleEditItem(item.id)}
+                            >
                               <Edit size={14} />
                             </Button>
-                            <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleDeleteItem(item.id)}
+                            >
                               <Trash2 size={14} />
                             </Button>
                           </div>

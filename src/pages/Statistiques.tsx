@@ -22,10 +22,13 @@ import {
   Coffee,
   TrendingDown
 } from "lucide-react";
+import { useToast } from '@/hooks/use-toast';
 
 const Statistiques: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("7days");
+  const [activeFilter, setActiveFilter] = useState("tous");
+  const { toast } = useToast();
 
   // Données de ventes par jour
   const salesData = [
@@ -92,6 +95,43 @@ const Statistiques: React.FC = () => {
     { name: 'Jus de Corossol', quantite: 17, revenus: 25500 }
   ];
 
+  const handleFilter = () => {
+    const filters = ["tous", "plats", "boissons", "desserts"];
+    const currentIndex = filters.indexOf(activeFilter);
+    const nextFilter = filters[(currentIndex + 1) % filters.length];
+    setActiveFilter(nextFilter);
+    
+    toast({
+      title: "Filtre appliqué",
+      description: `Affichage: ${nextFilter}`,
+    });
+  };
+
+  const handleExport = () => {
+    const data = {
+      periode: selectedPeriod,
+      ventes: salesData,
+      platsPopulaires: popularDishes,
+      revenus: monthlyData
+    };
+    
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `statistiques-${selectedPeriod}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Export réussi",
+      description: "Les statistiques ont été exportées",
+    });
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('fr-FR').format(value) + ' CFA';
   };
@@ -109,11 +149,11 @@ const Statistiques: React.FC = () => {
               <p className="text-gray-600">Analyse des performances de votre restaurant</p>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="flex items-center gap-2" onClick={handleFilter}>
                 <Filter size={16} />
-                Filtrer
+                Filtrer ({activeFilter})
               </Button>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="flex items-center gap-2" onClick={handleExport}>
                 <Download size={16} />
                 Exporter
               </Button>
@@ -132,7 +172,13 @@ const Statistiques: React.FC = () => {
                 key={period.key}
                 variant={selectedPeriod === period.key ? "default" : "outline"}
                 size="sm"
-                onClick={() => setSelectedPeriod(period.key)}
+                onClick={() => {
+                  setSelectedPeriod(period.key);
+                  toast({
+                    title: "Période mise à jour",
+                    description: `Affichage: ${period.label}`,
+                  });
+                }}
               >
                 {period.label}
               </Button>
@@ -396,6 +442,15 @@ const Statistiques: React.FC = () => {
                   <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Analyse de la clientèle</p>
                   <p className="text-sm">Données sur les clients, fidélité et segmentation</p>
+                  <Button 
+                    className="mt-4"
+                    onClick={() => toast({
+                      title: "Fonctionnalité en développement",
+                      description: "L'analyse clients sera bientôt disponible",
+                    })}
+                  >
+                    Voir plus de détails
+                  </Button>
                 </div>
               </Card>
             </TabsContent>
@@ -406,6 +461,15 @@ const Statistiques: React.FC = () => {
                   <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Performance des produits</p>
                   <p className="text-sm">Analyse des ventes par produit et catégorie</p>
+                  <Button 
+                    className="mt-4"
+                    onClick={() => toast({
+                      title: "Fonctionnalité en développement",
+                      description: "L'analyse produits sera bientôt disponible",
+                    })}
+                  >
+                    Voir plus de détails
+                  </Button>
                 </div>
               </Card>
             </TabsContent>

@@ -1,15 +1,19 @@
-
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Calendar, Clock, Users, Phone, Mail, Plus, Search, Filter } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Reservations: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("tous");
+  const { toast } = useToast();
   
-  const reservations = [
+  const [reservations, setReservations] = useState([
     {
       id: 1,
       nom: "Martin Dubois",
@@ -46,7 +50,58 @@ const Reservations: React.FC = () => {
       table: "Table 20",
       notes: "Repas de famille avec enfants"
     }
-  ];
+  ]);
+
+  const handleSearch = () => {
+    toast({
+      title: "Recherche lancée",
+      description: `Recherche pour: ${searchQuery}`,
+    });
+  };
+
+  const handleFilter = () => {
+    const newFilter = filterStatus === "tous" ? "confirmée" : filterStatus === "confirmée" ? "en_attente" : "tous";
+    setFilterStatus(newFilter);
+    toast({
+      title: "Filtre appliqué",
+      description: `Affichage: ${newFilter}`,
+    });
+  };
+
+  const handleNewReservation = () => {
+    const newReservation = {
+      id: Date.now(),
+      nom: "Nouvelle Réservation",
+      email: "nouveau@email.com",
+      telephone: "06 00 00 00 00",
+      date: new Date().toISOString().split('T')[0],
+      heure: "19:00",
+      personnes: 2,
+      statut: "en_attente",
+      table: "Table disponible",
+      notes: ""
+    };
+    setReservations(prev => [newReservation, ...prev]);
+    toast({
+      title: "Nouvelle réservation",
+      description: "Réservation ajoutée avec succès",
+    });
+  };
+
+  const handleModifyReservation = (id: number) => {
+    toast({
+      title: "Modification",
+      description: `Modification de la réservation ${id}`,
+    });
+  };
+
+  const handleContactClient = (reservation: any) => {
+    window.open(`mailto:${reservation.email}?subject=Concernant votre réservation&body=Bonjour ${reservation.nom},`);
+    toast({
+      title: "Contact client",
+      description: `Email ouvert pour ${reservation.nom}`,
+    });
+  };
 
   const getStatutBadge = (statut: string) => {
     switch (statut) {
@@ -60,6 +115,13 @@ const Reservations: React.FC = () => {
         return <Badge className="bg-gray-50 text-gray-700 border-gray-200">Inconnue</Badge>;
     }
   };
+
+  const filteredReservations = reservations.filter(reservation => {
+    const matchesSearch = reservation.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         reservation.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterStatus === "tous" || reservation.statut === filterStatus;
+    return matchesSearch && matchesFilter;
+  });
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
@@ -79,15 +141,26 @@ const Reservations: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-4">
-              <Button variant="outline" className="shadow-sm">
-                <Search size={16} className="mr-2" />
-                Rechercher
-              </Button>
-              <Button variant="outline" className="shadow-sm">
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Rechercher..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-48"
+                />
+                <Button variant="outline" className="shadow-sm" onClick={handleSearch}>
+                  <Search size={16} className="mr-2" />
+                  Rechercher
+                </Button>
+              </div>
+              <Button variant="outline" className="shadow-sm" onClick={handleFilter}>
                 <Filter size={16} className="mr-2" />
-                Filtres
+                Filtres ({filterStatus})
               </Button>
-              <Button className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 shadow-lg shadow-purple-500/25">
+              <Button 
+                className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 shadow-lg shadow-purple-500/25"
+                onClick={handleNewReservation}
+              >
                 <Plus size={16} className="mr-2" />
                 Nouvelle réservation
               </Button>
@@ -106,7 +179,7 @@ const Reservations: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Aujourd'hui</p>
-                    <p className="text-2xl font-bold text-gray-900">12</p>
+                    <p className="text-2xl font-bold text-gray-900">{filteredReservations.filter(r => r.date === new Date().toISOString().split('T')[0]).length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -120,7 +193,7 @@ const Reservations: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Cette semaine</p>
-                    <p className="text-2xl font-bold text-gray-900">47</p>
+                    <p className="text-2xl font-bold text-gray-900">{filteredReservations.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -134,7 +207,7 @@ const Reservations: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Couverts ce mois</p>
-                    <p className="text-2xl font-bold text-gray-900">284</p>
+                    <p className="text-2xl font-bold text-gray-900">{filteredReservations.reduce((sum, r) => sum + r.personnes, 0)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -159,12 +232,12 @@ const Reservations: React.FC = () => {
           <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-xl font-bold text-gray-900">
-                Réservations récentes
+                Réservations ({filteredReservations.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {reservations.map((reservation) => (
+                {filteredReservations.map((reservation) => (
                   <div key={reservation.id} className="p-6 border border-gray-100 rounded-2xl bg-white/50 hover:bg-white/80 transition-colors">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-4">
@@ -211,10 +284,18 @@ const Reservations: React.FC = () => {
                     )}
                     
                     <div className="flex gap-2 mt-4">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleModifyReservation(reservation.id)}
+                      >
                         Modifier
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleContactClient(reservation)}
+                      >
                         Contacter
                       </Button>
                     </div>
