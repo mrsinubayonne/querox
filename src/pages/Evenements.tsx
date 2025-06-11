@@ -1,13 +1,11 @@
-
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Calendar, Clock, Users, MapPin, Plus, Search, Filter, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Users, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import EditEventModal from '@/components/events/EditEventModal';
+import EventsHeader from '@/components/events/EventsHeader';
+import EventCard from '@/components/events/EventCard';
 
 const Evenements: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -122,19 +120,6 @@ const Evenements: React.FC = () => {
     });
   };
 
-  const getStatutBadge = (statut: string) => {
-    switch (statut) {
-      case 'confirmé':
-        return <Badge className="bg-green-50 text-green-700 border-green-200">Confirmé</Badge>;
-      case 'planifié':
-        return <Badge className="bg-blue-50 text-blue-700 border-blue-200">Planifié</Badge>;
-      case 'annulé':
-        return <Badge className="bg-red-50 text-red-700 border-red-200">Annulé</Badge>;
-      default:
-        return <Badge className="bg-gray-50 text-gray-700 border-gray-200">Inconnu</Badge>;
-    }
-  };
-
   const filteredEvents = events.filter(event => {
     const matchesSearch = event.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -151,45 +136,14 @@ const Evenements: React.FC = () => {
       <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       
       <div className="flex-1 overflow-auto">
-        {/* Header */}
-        <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100/50 px-8 py-6 sticky top-0 z-10">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-purple-800 to-pink-800 bg-clip-text text-transparent">
-                Événements
-              </h1>
-              <p className="text-sm text-gray-500 mt-1 font-medium">
-                Gérez les événements spéciaux de votre restaurant
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Rechercher..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-48"
-                />
-                <Button variant="outline" className="shadow-sm" onClick={handleSearch}>
-                  <Search size={16} className="mr-2" />
-                  Rechercher
-                </Button>
-              </div>
-              <Button variant="outline" className="shadow-sm" onClick={handleFilter}>
-                <Filter size={16} className="mr-2" />
-                Filtres ({filterStatus})
-              </Button>
-              <Button 
-                className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 hover:from-purple-700 hover:via-pink-700 hover:to-red-700 shadow-lg shadow-purple-500/25"
-                onClick={handleNewEvent}
-              >
-                <Plus size={16} className="mr-2" />
-                Nouvel événement
-              </Button>
-            </div>
-          </div>
-        </header>
+        <EventsHeader
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          filterStatus={filterStatus}
+          onSearch={handleSearch}
+          onFilter={handleFilter}
+          onNewEvent={handleNewEvent}
+        />
 
         <main className="p-8">
           {/* Stats */}
@@ -261,80 +215,13 @@ const Evenements: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 {filteredEvents.map((event) => (
-                  <div key={event.id} className="p-6 border border-gray-100 rounded-2xl bg-white/50 hover:bg-white/80 transition-colors">
-                    <div className="flex items-start gap-6 mb-4">
-                      <div className="flex-shrink-0">
-                        {event.image && event.image !== '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png' ? (
-                          <img 
-                            src={event.image} 
-                            alt={event.nom}
-                            className="w-20 h-20 rounded-lg object-cover border border-gray-200"
-                          />
-                        ) : (
-                          <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-lg">
-                            {event.nom.substring(0, 2).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <h3 className="font-semibold text-gray-900 text-lg">{event.nom}</h3>
-                            <p className="text-sm text-gray-500">{event.description}</p>
-                          </div>
-                          {getStatutBadge(event.statut)}
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Calendar size={16} />
-                            <span>{new Date(event.date).toLocaleDateString('fr-FR')}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Clock size={16} />
-                            <span>{event.heure}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Users size={16} />
-                            <span>{event.participants} participants</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <MapPin size={16} />
-                            <span>{event.lieu}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <span className="font-medium">Prix:</span>
-                            <span>{formatCurrency(event.prix)}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <span className="font-medium">Organisateur:</span>
-                            <span>{event.organisateur}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleEditEvent(event)}
-                          >
-                            <Edit size={14} className="mr-1" />
-                            Modifier
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleDeleteEvent(event.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 size={14} className="mr-1" />
-                            Supprimer
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    onEdit={handleEditEvent}
+                    onDelete={handleDeleteEvent}
+                    formatCurrency={formatCurrency}
+                  />
                 ))}
               </div>
 

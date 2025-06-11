@@ -11,6 +11,8 @@ import Comptabilite from './pages/Comptabilite';
 import QRCodes from './pages/QRCodes';
 import Reservations from './pages/Reservations';
 import Evenements from './pages/Evenements';
+import Marketing from './pages/Marketing';
+import Social from './pages/Social';
 import NotFound from './pages/NotFound';
 import './App.css';
 
@@ -22,6 +24,8 @@ function App() {
         <Route path="/menus" element={<Menus />} />
         <Route path="/reservations" element={<Reservations />} />
         <Route path="/evenements" element={<Evenements />} />
+        <Route path="/marketing" element={<Marketing />} />
+        <Route path="/social" element={<Social />} />
         <Route path="/site-web" element={<SiteWeb />} />
         <Route path="/parametres" element={<Parametres />} />
         <Route path="/inventaire" element={<Inventaire />} />
