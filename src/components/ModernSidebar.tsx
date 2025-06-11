@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -14,7 +13,8 @@ import {
   Package,
   Settings,
   ShieldCheck,
-  ChevronLeft
+  ChevronLeft,
+  Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -33,6 +33,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }
     { icon: Globe, label: "Site Web", path: "/site-web", color: "text-cyan-600" },
     { icon: QrCode, label: "QR Codes", path: "/qr-codes", color: "text-indigo-600" },
     { icon: MessageSquare, label: "Marketing & Social", path: "/marketing", color: "text-emerald-600" },
+    { icon: Bot, label: "Tonton Rox", path: "/tonton-rox", color: "text-red-600" },
     { icon: BarChart2, label: "Statistiques", path: "/statistiques", color: "text-violet-600" },
     { icon: DollarSign, label: "Comptabilité", path: "/comptabilite", color: "text-yellow-600" },
     { icon: Package, label: "Inventaire", path: "/inventaire", color: "text-red-600" },
