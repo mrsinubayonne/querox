@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import ModernStatCard from '../components/ModernStatCard';
@@ -18,7 +17,10 @@ import {
   Download,
   Filter,
   Eye,
-  BarChart2
+  BarChart2,
+  ChefHat,
+  Coffee,
+  TrendingDown
 } from "lucide-react";
 
 const Statistiques: React.FC = () => {
@@ -52,6 +54,42 @@ const Statistiques: React.FC = () => {
     { month: 'Avr', revenus: 1050000, clients: 312 },
     { month: 'Mai', revenus: 1290000, clients: 398 },
     { month: 'Juin', revenus: 1450000, clients: 445 }
+  ];
+
+  // Données des plats les plus vendus
+  const topSellingDishes = [
+    { name: 'Riz Jollof', quantite: 145, revenus: 435000 },
+    { name: 'Poulet Yassa', quantite: 128, revenus: 512000 },
+    { name: 'Thiéboudienne', quantite: 96, revenus: 384000 },
+    { name: 'Mafé', quantite: 87, revenus: 348000 },
+    { name: 'Ceebu Jen', quantite: 72, revenus: 288000 }
+  ];
+
+  // Données des plats les moins vendus
+  const leastSellingDishes = [
+    { name: 'Soupe Kandia', quantite: 8, revenus: 24000 },
+    { name: 'Ndolé', quantite: 12, revenus: 48000 },
+    { name: 'Attieké Poisson', quantite: 15, revenus: 75000 },
+    { name: 'Curry Végétarien', quantite: 18, revenus: 54000 },
+    { name: 'Salade Africaine', quantite: 22, revenus: 66000 }
+  ];
+
+  // Données des boissons les plus vendues
+  const topSellingDrinks = [
+    { name: 'Bissap', quantite: 89, revenus: 133500 },
+    { name: 'Gingembre', quantite: 76, revenus: 114000 },
+    { name: 'Bouye', quantite: 64, revenus: 128000 },
+    { name: 'Jus de Tamarin', quantite: 52, revenus: 78000 },
+    { name: 'Café Touba', quantite: 45, revenus: 67500 }
+  ];
+
+  // Données des boissons les moins vendues
+  const leastSellingDrinks = [
+    { name: 'Thé Attaya', quantite: 6, revenus: 12000 },
+    { name: 'Jus de Ditakh', quantite: 9, revenus: 18000 },
+    { name: 'Kinkeliba', quantite: 11, revenus: 16500 },
+    { name: 'Sodabi', quantite: 14, revenus: 42000 },
+    { name: 'Jus de Corossol', quantite: 17, revenus: 25500 }
   ];
 
   const formatCurrency = (value: number) => {
@@ -235,13 +273,121 @@ const Statistiques: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="sales">
-              <Card className="p-6">
-                <div className="text-center text-gray-500">
-                  <BarChart2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Analyse détaillée des ventes</p>
-                  <p className="text-sm">Graphiques détaillés des ventes par période, produit et canal</p>
+              <div className="space-y-6">
+                {/* Plats les plus et moins vendus */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <ChefHat size={20} className="text-green-600" />
+                        Plats les plus vendus
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {topSellingDishes.map((dish, index) => (
+                          <div key={dish.name} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                {index + 1}
+                              </div>
+                              <span className="font-medium">{dish.name}</span>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-green-600">{dish.quantite} vendus</div>
+                              <div className="text-sm text-gray-600">{formatCurrency(dish.revenus)}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingDown size={20} className="text-red-600" />
+                        Plats les moins vendus
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {leastSellingDishes.map((dish, index) => (
+                          <div key={dish.name} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                {index + 1}
+                              </div>
+                              <span className="font-medium">{dish.name}</span>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-red-600">{dish.quantite} vendus</div>
+                              <div className="text-sm text-gray-600">{formatCurrency(dish.revenus)}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </Card>
+
+                {/* Boissons les plus et moins vendues */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Coffee size={20} className="text-blue-600" />
+                        Boissons les plus vendues
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {topSellingDrinks.map((drink, index) => (
+                          <div key={drink.name} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                {index + 1}
+                              </div>
+                              <span className="font-medium">{drink.name}</span>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-blue-600">{drink.quantite} vendus</div>
+                              <div className="text-sm text-gray-600">{formatCurrency(drink.revenus)}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingDown size={20} className="text-orange-600" />
+                        Boissons les moins vendues
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {leastSellingDrinks.map((drink, index) => (
+                          <div key={drink.name} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                {index + 1}
+                              </div>
+                              <span className="font-medium">{drink.name}</span>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-orange-600">{drink.quantite} vendus</div>
+                              <div className="text-sm text-gray-600">{formatCurrency(drink.revenus)}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="customers">
