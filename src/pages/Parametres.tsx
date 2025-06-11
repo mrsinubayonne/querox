@@ -24,14 +24,6 @@ const Parametres = () => {
   const [notifications, setNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(false);
 
-  // Profile data
-  const [firstName, setFirstName] = useState('Mohamed');
-  const [lastName, setLastName] = useState('Sinulion');
-  const [email, setEmail] = useState('mrsinulion@gmail.com');
-  const [phone, setPhone] = useState('+221 77 123 45 67');
-  const [position, setPosition] = useState('Administrateur');
-  const [bio, setBio] = useState('Propriétaire et gérant principal du restaurant');
-
   // Restaurant data
   const [restaurantName, setRestaurantName] = useState('Mon Restaurant');
   const [currency, setCurrency] = useState('CFA');
@@ -89,20 +81,7 @@ const Parametres = () => {
           </TabsList>
           
           <TabsContent value="profile" className="space-y-6">
-            <ProfileTab
-              firstName={firstName}
-              setFirstName={setFirstName}
-              lastName={lastName}
-              setLastName={setLastName}
-              email={email}
-              setEmail={setEmail}
-              phone={phone}
-              setPhone={setPhone}
-              position={position}
-              setPosition={setPosition}
-              bio={bio}
-              setBio={setBio}
-            />
+            <ProfileTab />
           </TabsContent>
           
           <TabsContent value="general" className="space-y-6">
