@@ -3,14 +3,11 @@ import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Save, Layout } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Eye, Save, Palette, Type, Layout } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import TemplateSelector from '../components/configuration/TemplateSelector';
-import GeneralConfigTab from '../components/configuration/GeneralConfigTab';
-import DesignConfigTab from '../components/configuration/DesignConfigTab';
-import SectionsConfigTab from '../components/configuration/SectionsConfigTab';
-import TemplateRenderer from '../components/templates/TemplateRenderer';
 
 const SiteWeb: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -18,61 +15,15 @@ const SiteWeb: React.FC = () => {
   
   const [siteConfig, setSiteConfig] = useState({
     restaurantName: 'Mon Restaurant',
-    description: 'Une expérience culinaire unique',
-    subtitle: 'Découvrez une cuisine authentique dans un cadre chaleureux',
+    description: 'Découvrez notre cuisine authentique',
     phone: '+221 33 123 45 67',
-    email: 'contact@monrestaurant.sn',
+    email: 'contact@restaurant.sn',
     address: 'Dakar, Sénégal',
-    hours: 'Lun-Dim: 12h-23h',
-    logo: '',
-    heroImage: '/lovable-uploads/a3efddc0-fd23-4923-9d99-aca95a7a152a.png',
-    colors: {
-      primary: '#8B5A2B',
-      secondary: '#D4AF37',
-      background: '#FFF8DC',
-      text: '#2C1810'
-    },
-    template: 'elegant-classique',
-    showReservations: true,
-    showMenu: true,
-    showContact: true,
-    showSpecialties: true
+    primaryColor: '#2563eb',
+    secondaryColor: '#f59e0b'
   });
 
   const [previewMode, setPreviewMode] = useState(false);
-
-  const templates = [
-    { 
-      id: 'elegant-classique', 
-      name: 'Élégant Classique', 
-      description: 'Design sophistiqué avec typographie raffinée',
-      colors: { primary: '#8B5A2B', secondary: '#D4AF37', background: '#FFF8DC', text: '#2C1810' }
-    },
-    { 
-      id: 'moderne-minimaliste', 
-      name: 'Moderne Minimaliste', 
-      description: 'Lignes épurées et espaces blancs',
-      colors: { primary: '#1A1A1A', secondary: '#FF6B35', background: '#FFFFFF', text: '#333333' }
-    },
-    { 
-      id: 'chaleureux-rustique', 
-      name: 'Chaleureux Rustique', 
-      description: 'Ambiance chaleureuse avec textures naturelles',
-      colors: { primary: '#8B4513', secondary: '#CD853F', background: '#F5F5DC', text: '#4A4A4A' }
-    },
-    { 
-      id: 'vibrant-moderne', 
-      name: 'Vibrant Moderne', 
-      description: 'Couleurs vives et design dynamique',
-      colors: { primary: '#E91E63', secondary: '#FF9800', background: '#FAFAFA', text: '#212121' }
-    },
-    { 
-      id: 'mediterraneen-bleu', 
-      name: 'Méditerranéen Bleu', 
-      description: 'Inspiré des côtes méditerranéennes',
-      colors: { primary: '#1976D2', secondary: '#FFD54F', background: '#F3F8FF', text: '#1A237E' }
-    }
-  ];
 
   const handleSave = () => {
     toast({
@@ -85,48 +36,97 @@ const SiteWeb: React.FC = () => {
     setPreviewMode(!previewMode);
   };
 
-  const handleTemplateChange = (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
-    if (template) {
-      setSiteConfig(prev => ({
-        ...prev,
-        template: templateId,
-        colors: template.colors
-      }));
-    }
+  const handleInputChange = (field: string, value: string) => {
+    setSiteConfig(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleConfigChange = (updates: any) => {
-    setSiteConfig(prev => ({ ...prev, ...updates }));
-  };
+  // Template simple et moderne
+  const renderPreview = () => (
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm border-b">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold" style={{ color: siteConfig.primaryColor }}>
+              {siteConfig.restaurantName}
+            </h1>
+            <div className="hidden md:flex space-x-8">
+              <a href="#" className="text-gray-700 hover:text-gray-900">Accueil</a>
+              <a href="#" className="text-gray-700 hover:text-gray-900">Menu</a>
+              <a href="#" className="text-gray-700 hover:text-gray-900">Contact</a>
+            </div>
+            <Button 
+              className="text-white"
+              style={{ backgroundColor: siteConfig.primaryColor }}
+            >
+              Réserver
+            </Button>
+          </div>
+        </div>
+      </nav>
 
-  const handleColorsChange = (colorUpdates: any) => {
-    setSiteConfig(prev => ({
-      ...prev,
-      colors: { ...prev.colors, ...colorUpdates }
-    }));
-  };
+      {/* Hero Section */}
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-6xl font-bold mb-6 text-gray-900">
+            {siteConfig.restaurantName}
+          </h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            {siteConfig.description}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              className="text-white"
+              style={{ backgroundColor: siteConfig.primaryColor }}
+            >
+              Voir le menu
+            </Button>
+            <Button size="lg" variant="outline">
+              Nous contacter
+            </Button>
+          </div>
+        </div>
+      </section>
 
-  const handleSectionChange = (sectionUpdates: any) => {
-    setSiteConfig(prev => ({ ...prev, ...sectionUpdates }));
-  };
+      {/* Contact rapide */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-3xl font-bold mb-8" style={{ color: siteConfig.primaryColor }}>
+            Nous contacter
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div>
+              <h3 className="font-semibold mb-2">Téléphone</h3>
+              <p className="text-gray-600">{siteConfig.phone}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Email</h3>
+              <p className="text-gray-600">{siteConfig.email}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Adresse</h3>
+              <p className="text-gray-600">{siteConfig.address}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 
   if (previewMode) {
     return (
       <div className="min-h-screen">
         <header className="bg-white shadow-sm border-b fixed w-full top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button onClick={handlePreview} variant="outline">
-                Retour à l'édition
-              </Button>
-              <h1 className="text-xl font-bold">{siteConfig.restaurantName}</h1>
-            </div>
+            <Button onClick={handlePreview} variant="outline">
+              Retour à l'éditeur
+            </Button>
+            <h1 className="text-xl font-bold">{siteConfig.restaurantName}</h1>
           </div>
         </header>
-
         <div className="pt-20">
-          <TemplateRenderer template={siteConfig.template} siteConfig={siteConfig} />
+          {renderPreview()}
         </div>
       </div>
     );
@@ -141,7 +141,7 @@ const SiteWeb: React.FC = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Créateur de Site Web</h1>
-              <p className="text-gray-600">Choisissez parmi nos nouveaux templates et personnalisez votre site</p>
+              <p className="text-gray-600">Créez facilement votre site de restaurant</p>
             </div>
             
             <div className="flex items-center gap-4">
@@ -156,70 +156,112 @@ const SiteWeb: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Configuration */}
+            <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Configuration du Site</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Type size={20} />
+                    Informations générales
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <Tabs defaultValue="templates" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="templates">Templates</TabsTrigger>
-                      <TabsTrigger value="general">Général</TabsTrigger>
-                      <TabsTrigger value="design">Design</TabsTrigger>
-                      <TabsTrigger value="sections">Sections</TabsTrigger>
-                    </TabsList>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="restaurantName">Nom du restaurant</Label>
+                    <Input
+                      id="restaurantName"
+                      value={siteConfig.restaurantName}
+                      onChange={(e) => handleInputChange('restaurantName', e.target.value)}
+                      placeholder="Mon Restaurant"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={siteConfig.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      placeholder="Découvrez notre cuisine authentique"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="phone">Téléphone</Label>
+                    <Input
+                      id="phone"
+                      value={siteConfig.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      placeholder="+221 33 123 45 67"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      value={siteConfig.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      placeholder="contact@restaurant.sn"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="address">Adresse</Label>
+                    <Input
+                      id="address"
+                      value={siteConfig.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                      placeholder="Dakar, Sénégal"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-                    <TabsContent value="templates" className="space-y-4">
-                      <TemplateSelector 
-                        templates={templates}
-                        selectedTemplate={siteConfig.template}
-                        onTemplateChange={handleTemplateChange}
-                      />
-                    </TabsContent>
-                    
-                    <TabsContent value="general" className="space-y-4">
-                      <GeneralConfigTab 
-                        siteConfig={siteConfig}
-                        onConfigChange={handleConfigChange}
-                      />
-                    </TabsContent>
-                    
-                    <TabsContent value="design" className="space-y-4">
-                      <DesignConfigTab 
-                        colors={siteConfig.colors}
-                        onColorsChange={handleColorsChange}
-                      />
-                    </TabsContent>
-                    
-                    <TabsContent value="sections" className="space-y-4">
-                      <SectionsConfigTab 
-                        sectionConfig={{
-                          showMenu: siteConfig.showMenu,
-                          showSpecialties: siteConfig.showSpecialties,
-                          showReservations: siteConfig.showReservations,
-                          showContact: siteConfig.showContact
-                        }}
-                        onSectionChange={handleSectionChange}
-                      />
-                    </TabsContent>
-                  </Tabs>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Palette size={20} />
+                    Couleurs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="primaryColor">Couleur principale</Label>
+                    <Input
+                      id="primaryColor"
+                      type="color"
+                      value={siteConfig.primaryColor}
+                      onChange={(e) => handleInputChange('primaryColor', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="secondaryColor">Couleur secondaire</Label>
+                    <Input
+                      id="secondaryColor"
+                      type="color"
+                      value={siteConfig.secondaryColor}
+                      onChange={(e) => handleInputChange('secondaryColor', e.target.value)}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="lg:col-span-2">
+            {/* Aperçu */}
+            <div>
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Layout size={20} />
-                    Aperçu du Template - {templates.find(t => t.id === siteConfig.template)?.name}
+                    Aperçu de votre site
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-gray-100 p-4 border-b">
+                    <div className="bg-gray-100 p-3 border-b">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <div className="w-3 h-3 bg-red-400 rounded-full"></div>
                         <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
@@ -229,13 +271,13 @@ const SiteWeb: React.FC = () => {
                     </div>
                     
                     <div className="h-96 overflow-y-auto">
-                      <TemplateRenderer template={siteConfig.template} siteConfig={siteConfig} />
+                      {renderPreview()}
                     </div>
                   </div>
                   
                   <div className="mt-4 p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-700">
-                      💡 Cliquez sur "Aperçu" pour voir votre site en plein écran avec le template sélectionné
+                      💡 Cliquez sur "Aperçu" pour voir votre site en plein écran
                     </p>
                   </div>
                 </CardContent>
