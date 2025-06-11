@@ -14,11 +14,7 @@ interface Message {
   timestamp: Date;
 }
 
-interface TontonRoxChatProps {
-  apiKey: string;
-}
-
-const TontonRoxChat: React.FC<TontonRoxChatProps> = ({ apiKey }) => {
+const TontonRoxChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -32,7 +28,7 @@ const TontonRoxChat: React.FC<TontonRoxChatProps> = ({ apiKey }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const geminiService = new GeminiService(apiKey);
+  const geminiService = new GeminiService();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

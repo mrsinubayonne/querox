@@ -13,12 +13,8 @@ interface GeminiResponse {
 }
 
 export class GeminiService {
-  private apiKey: string;
+  private apiKey = 'AIzaSyDbzNS6iXwaLvXia4Qb8ROnVnUmvwLaYag';
   private baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
-
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
-  }
 
   async generateResponse(messages: GeminiMessage[]): Promise<string> {
     try {
