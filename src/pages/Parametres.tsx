@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Settings, ArrowLeft, User, Globe, Bell, Shield, Palette, Database, Camera } from "lucide-react";
+import { 
+  Settings, 
+  ArrowLeft, 
+  User, 
+  Globe, 
+  Bell, 
+  Shield, 
+  Palette, 
+  Database, 
+  Camera,
+  Info 
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Parametres = () => {
   const [siteTitle, setSiteTitle] = useState('Mon Site Web');
@@ -23,6 +41,12 @@ const Parametres = () => {
   const [phone, setPhone] = useState('+221 77 123 45 67');
   const [position, setPosition] = useState('Administrateur');
   const [bio, setBio] = useState('Propriétaire et gérant principal du restaurant');
+
+  // Restaurant data
+  const [restaurantName, setRestaurantName] = useState('Mon Restaurant');
+  const [currency, setCurrency] = useState('CFA');
+  const [language, setLanguage] = useState('fr');
+  const [timezone, setTimezone] = useState('Africa/Dakar');
 
   return (
     <div className="min-h-screen bg-background">
@@ -175,32 +199,78 @@ const Parametres = () => {
           </TabsContent>
           
           <TabsContent value="general" className="space-y-6">
-            <div className="space-y-4 p-6 bg-card rounded-lg border border-border">
-              <h2 className="text-lg font-medium">Informations du site</h2>
-              <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Info className="h-5 w-5 text-emerald-500" />
+                  <div>
+                    <CardTitle>Informations générales</CardTitle>
+                    <CardDescription>Configurez les informations de base de votre restaurant</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label htmlFor="site-title" className="text-sm font-medium">
-                    Titre du site
+                  <label htmlFor="restaurant-name" className="text-sm font-medium">
+                    Nom du restaurant
                   </label>
                   <Input
-                    id="site-title"
-                    value={siteTitle}
-                    onChange={(e) => setSiteTitle(e.target.value)}
+                    id="restaurant-name"
+                    value={restaurantName}
+                    onChange={(e) => setRestaurantName(e.target.value)}
                   />
                 </div>
+                
                 <div className="space-y-2">
-                  <label htmlFor="site-description" className="text-sm font-medium">
-                    Description
+                  <label htmlFor="currency" className="text-sm font-medium">
+                    Devise
                   </label>
-                  <Textarea
-                    id="site-description"
-                    value={siteDescription}
-                    onChange={(e) => setSiteDescription(e.target.value)}
-                    rows={3}
-                  />
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger id="currency">
+                      <SelectValue placeholder="Sélectionner une devise" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CFA">Franc CFA (CFA)</SelectItem>
+                      <SelectItem value="EUR">Euro (€)</SelectItem>
+                      <SelectItem value="USD">Dollar américain ($)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-            </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="language" className="text-sm font-medium">
+                    Langue
+                  </label>
+                  <Select value={language} onValueChange={setLanguage}>
+                    <SelectTrigger id="language">
+                      <SelectValue placeholder="Sélectionner une langue" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fr">Français</SelectItem>
+                      <SelectItem value="en">Anglais</SelectItem>
+                      <SelectItem value="es">Espagnol</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="timezone" className="text-sm font-medium">
+                    Fuseau horaire
+                  </label>
+                  <Select value={timezone} onValueChange={setTimezone}>
+                    <SelectTrigger id="timezone">
+                      <SelectValue placeholder="Sélectionner un fuseau horaire" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Africa/Dakar">Dakar (GMT+0)</SelectItem>
+                      <SelectItem value="Africa/Casablanca">Casablanca (GMT+1)</SelectItem>
+                      <SelectItem value="Europe/Paris">Paris (GMT+2)</SelectItem>
+                      <SelectItem value="America/New_York">New York (GMT-4)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
           
           <TabsContent value="appearance" className="space-y-6">
