@@ -1,13 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AccountingHeader from '@/components/accounting/AccountingHeader';
-import StatsCard from '@/components/accounting/StatsCard';
-import NavigationTabs from '@/components/accounting/NavigationTabs';
-import TransactionCard from '@/components/accounting/TransactionCard';
+import AccountingStats from '@/components/accounting/AccountingStats';
+import AccountingTabsContainer from '@/components/accounting/AccountingTabsContainer';
 import NewTransactionModal from '@/components/accounting/NewTransactionModal';
 import ExportModal from '@/components/accounting/ExportModal';
 
@@ -49,7 +46,6 @@ const Comptabilite = () => {
     }
   ]);
 
-  // Calculate dynamic stats based on current transactions
   const stats = useMemo(() => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
@@ -122,9 +118,7 @@ const Comptabilite = () => {
       tout: 'toutes les données'
     };
 
-    // Simuler l'exportation selon le format
     if (format === 'excel') {
-      // Créer un fichier Excel simulé
       const data = `Titre,Date,Montant,Statut\n${filteredTransactions.map(t => 
         `"${t.title}","${t.date}","${formatCurrency(t.amount)}","${t.status}"`
       ).join('\n')}`;
@@ -137,10 +131,8 @@ const Comptabilite = () => {
       link.click();
       document.body.removeChild(link);
     } else if (format === 'sheets') {
-      // Simuler l'ouverture de Google Sheets
       window.open('https://sheets.google.com/create', '_blank');
     } else if (format === 'pdf') {
-      // Simuler la génération PDF
       window.print();
     }
     
@@ -148,10 +140,6 @@ const Comptabilite = () => {
       title: "Exportation réussie",
       description: `Données exportées en ${formatMap[format as keyof typeof formatMap]} pour ${periodMap[period as keyof typeof periodMap]}`,
     });
-  };
-
-  const handleNewTransaction = () => {
-    setShowNewTransactionModal(true);
   };
 
   const handleCreateTransaction = (transaction: any) => {
@@ -189,6 +177,34 @@ const Comptabilite = () => {
     });
   };
 
+  const handleTransactionDetails = (transaction: any) => {
+    toast({
+      title: "Détails transaction",
+      description: `${transaction.title} - ${formatCurrency(transaction.amount)}`,
+    });
+  };
+
+  const handleGenerateReport = () => {
+    toast({
+      title: "Rapport généré",
+      description: "Rapport mensuel en cours de génération...",
+    });
+  };
+
+  const handleConfigureBudget = () => {
+    toast({
+      title: "Budget",
+      description: "Configuration du budget prévisionnel...",
+    });
+  };
+
+  const handleStatClick = (stat: any) => {
+    toast({
+      title: stat.title,
+      description: `Détails: ${stat.value} ${stat.currency}`,
+    });
+  };
+
   const tabs = [
     { id: 'transactions', label: 'Transactions récentes', active: activeTab === 'transactions' },
     { id: 'rapports', label: 'Rapports mensuels', active: activeTab === 'rapports' },
@@ -217,83 +233,24 @@ const Comptabilite = () => {
             onSearch={handleSearch}
             onFilter={handleFilter}
             onExport={() => setShowExportModal(true)}
-            onNewTransaction={handleNewTransaction}
+            onNewTransaction={() => setShowNewTransactionModal(true)}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            {stats.map((stat, index) => (
-              <StatsCard
-                key={index}
-                stat={stat}
-                onClick={() => toast({
-                  title: stat.title,
-                  description: `Détails: ${stat.value} ${stat.currency}`,
-                })}
-              />
-            ))}
-          </div>
+          <AccountingStats
+            stats={stats}
+            onStatClick={handleStatClick}
+          />
 
-          <NavigationTabs tabs={tabs} onTabChange={handleTabChange} />
-
-          {activeTab === 'transactions' && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900">Transactions récentes ({filteredTransactions.length})</h2>
-              
-              <div className="space-y-3">
-                {filteredTransactions.map((transaction) => (
-                  <TransactionCard
-                    key={transaction.id}
-                    transaction={transaction}
-                    formatCurrency={formatCurrency}
-                    onViewDetails={() => toast({
-                      title: "Détails transaction",
-                      description: `${transaction.title} - ${formatCurrency(transaction.amount)}`,
-                    })}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'rapports' && (
-            <Card className="p-6">
-              <div className="text-center text-gray-500">
-                <h3 className="text-lg font-semibold mb-2">Rapports mensuels</h3>
-                <p className="text-sm mb-4">Générez et consultez vos rapports comptables mensuels</p>
-                <Button 
-                  onClick={() => toast({
-                    title: "Rapport généré",
-                    description: "Rapport mensuel en cours de génération...",
-                  })}
-                >
-                  Générer rapport mensuel
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {activeTab === 'budget' && (
-            <Card className="p-6">
-              <div className="text-center text-gray-500">
-                <h3 className="text-lg font-semibold mb-2">Budget prévisionnel</h3>
-                <p className="text-sm mb-4">Planifiez et suivez votre budget prévisionnel</p>
-                <Button 
-                  onClick={() => toast({
-                    title: "Budget",
-                    description: "Configuration du budget prévisionnel...",
-                  })}
-                >
-                  Configurer le budget
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {filteredTransactions.length === 0 && activeTab === 'transactions' && (
-            <div className="text-center py-8 text-gray-500">
-              <p>Aucune transaction trouvée</p>
-            </div>
-          )}
+          <AccountingTabsContainer
+            activeTab={activeTab}
+            tabs={tabs}
+            transactions={filteredTransactions}
+            formatCurrency={formatCurrency}
+            onTabChange={handleTabChange}
+            onTransactionDetails={handleTransactionDetails}
+            onGenerateReport={handleGenerateReport}
+            onConfigureBudget={handleConfigureBudget}
+          />
         </div>
       </div>
 

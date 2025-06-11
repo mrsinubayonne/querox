@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package } from "lucide-react";
 import AddInventoryModal from '../components/AddInventoryModal';
 import InventoryHeader from '../components/inventory/InventoryHeader';
 import CriticalStockAlert from '../components/inventory/CriticalStockAlert';
-import InventoryStocksTab from '../components/inventory/InventoryStocksTab';
+import InventoryStats from '../components/inventory/InventoryStats';
+import InventoryTabs from '../components/inventory/InventoryTabs';
 import { useToast } from '@/hooks/use-toast';
 
 const Inventaire: React.FC = () => {
@@ -78,6 +76,19 @@ const Inventaire: React.FC = () => {
       status: "En stock"
     }
   ]);
+
+  const stats = useMemo(() => {
+    const criticalItems = inventoryItems.filter(item => item.status === "Critique").length;
+    const totalValue = inventoryItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+    const lowStockItems = inventoryItems.filter(item => item.quantity <= item.minQuantity).length;
+    
+    return {
+      totalItems: inventoryItems.length,
+      criticalItems,
+      totalValue,
+      lowStockItems
+    };
+  }, [inventoryItems]);
 
   const handleExport = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
@@ -165,45 +176,22 @@ const Inventaire: React.FC = () => {
 
           <CriticalStockAlert criticalItems={criticalItems} />
 
-          <Tabs defaultValue="stocks" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="stocks">État des stocks</TabsTrigger>
-              <TabsTrigger value="movements">Mouvements</TabsTrigger>
-              <TabsTrigger value="suppliers">Fournisseurs</TabsTrigger>
-            </TabsList>
+          <InventoryStats
+            totalItems={stats.totalItems}
+            criticalItems={stats.criticalItems}
+            totalValue={stats.totalValue}
+            lowStockItems={stats.lowStockItems}
+          />
 
-            <TabsContent value="stocks" className="space-y-6">
-              <InventoryStocksTab
-                filteredItems={filteredItems}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                filterCategory={filterCategory}
-                onFilter={handleFilter}
-                onEditItem={handleEditItem}
-                onDeleteItem={handleDeleteItem}
-              />
-            </TabsContent>
-
-            <TabsContent value="movements">
-              <Card className="p-6">
-                <div className="text-center text-gray-500">
-                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Historique des mouvements de stock</p>
-                  <p className="text-sm">Cette section sera disponible prochainement</p>
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="suppliers">
-              <Card className="p-6">
-                <div className="text-center text-gray-500">
-                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Gestion des fournisseurs</p>
-                  <p className="text-sm">Cette section sera disponible prochainement</p>
-                </div>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          <InventoryTabs
+            filteredItems={filteredItems}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            filterCategory={filterCategory}
+            onFilter={handleFilter}
+            onEditItem={handleEditItem}
+            onDeleteItem={handleDeleteItem}
+          />
         </div>
       </div>
 
