@@ -33,9 +33,8 @@ const Inventaire: React.FC = () => {
       category: "Céréales",
       quantity: 150,
       unit: "kg",
-      minStock: 50,
-      maxStock: 200,
-      cost: 850,
+      minQuantity: 50,
+      price: 850,
       supplier: "Fournisseur A",
       lastUpdated: "2024-01-15",
       status: "En stock"
@@ -46,9 +45,8 @@ const Inventaire: React.FC = () => {
       category: "Protéines",
       quantity: 25,
       unit: "kg",
-      minStock: 30,
-      maxStock: 100,
-      cost: 2500,
+      minQuantity: 30,
+      price: 2500,
       supplier: "Marché Central",
       lastUpdated: "2024-01-14",
       status: "Stock faible"
@@ -59,9 +57,8 @@ const Inventaire: React.FC = () => {
       category: "Condiments",
       quantity: 80,
       unit: "L",
-      minStock: 20,
-      maxStock: 100,
-      cost: 1200,
+      minQuantity: 20,
+      price: 1200,
       supplier: "Fournisseur B",
       lastUpdated: "2024-01-13",
       status: "En stock"
@@ -72,12 +69,11 @@ const Inventaire: React.FC = () => {
       category: "Légumes",
       quantity: 5,
       unit: "kg",
-      minStock: 15,
-      maxStock: 50,
-      cost: 400,
+      minQuantity: 15,
+      price: 400,
       supplier: "Marché Local",
       lastUpdated: "2024-01-12",
-      status: "Rupture de stock"
+      status: "Rupture"
     }
   ]);
 
@@ -91,8 +87,8 @@ const Inventaire: React.FC = () => {
       ...newItem,
       id: Date.now(),
       lastUpdated: new Date().toISOString().split('T')[0],
-      status: newItem.quantity <= newItem.minStock 
-        ? newItem.quantity === 0 ? "Rupture de stock" : "Stock faible"
+      status: newItem.quantity <= newItem.minQuantity 
+        ? newItem.quantity === 0 ? "Rupture" : "Stock faible"
         : "En stock"
     };
     setInventoryItems(prev => [...prev, item]);
@@ -102,13 +98,35 @@ const Inventaire: React.FC = () => {
     });
   };
 
+  const handleUpdateQuantity = (itemId: number, newQuantity: number) => {
+    setInventoryItems(prev => prev.map(item => {
+      if (item.id === itemId) {
+        const status = newQuantity <= item.minQuantity 
+          ? newQuantity === 0 ? "Rupture" : "Stock faible"
+          : "En stock";
+        return {
+          ...item,
+          quantity: newQuantity,
+          status,
+          lastUpdated: new Date().toISOString().split('T')[0]
+        };
+      }
+      return item;
+    }));
+    
+    toast({
+      title: "Quantité mise à jour",
+      description: "La quantité en stock a été modifiée.",
+    });
+  };
+
   // Calculate statistics
   const totalItems = inventoryItems.length;
   const lowStockItems = inventoryItems.filter(item => 
-    item.quantity <= item.minStock && item.quantity > 0
+    item.quantity <= item.minQuantity && item.quantity > 0
   ).length;
   const outOfStockItems = inventoryItems.filter(item => item.quantity === 0).length;
-  const totalValue = inventoryItems.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
+  const totalValue = inventoryItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -214,7 +232,7 @@ const Inventaire: React.FC = () => {
           </div>
 
           {/* Inventory Table */}
-          <InventoryTable items={filteredItems} />
+          <InventoryTable items={filteredItems} onUpdateQuantity={handleUpdateQuantity} />
         </div>
       </div>
 
