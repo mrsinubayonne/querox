@@ -9,6 +9,8 @@ import Statistiques from './pages/Statistiques';
 import Clients from './pages/Clients';
 import Comptabilite from './pages/Comptabilite';
 import QRCodes from './pages/QRCodes';
+import Reservations from './pages/Reservations';
+import Evenements from './pages/Evenements';
 import NotFound from './pages/NotFound';
 import './App.css';
 
@@ -18,6 +20,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/menus" element={<Menus />} />
+        <Route path="/reservations" element={<Reservations />} />
+        <Route path="/evenements" element={<Evenements />} />
         <Route path="/site-web" element={<SiteWeb />} />
         <Route path="/parametres" element={<Parametres />} />
         <Route path="/inventaire" element={<Inventaire />} />
