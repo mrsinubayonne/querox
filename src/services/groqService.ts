@@ -9,7 +9,7 @@ interface ChatMessage {
 export class GroqService {
   async generateResponse(messages: ChatMessage[]): Promise<string> {
     try {
-      console.log('Calling Groq API through Edge Function...');
+      console.log('Calling Groq API through Edge Function with', messages.length, 'messages...');
       
       const { data, error } = await supabase.functions.invoke('chat-groq', {
         body: { messages }
@@ -17,17 +17,40 @@ export class GroqService {
 
       if (error) {
         console.error('Edge function error:', error);
+        
+        // More specific error handling based on error type
+        if (error.message?.includes('Clé API Groq non configurée')) {
+          throw new Error('La clé API Groq n\'est pas configurée. Veuillez vérifier vos paramètres.');
+        } else if (error.message?.includes('invalide')) {
+          throw new Error('Clé API Groq invalide. Veuillez vérifier votre clé API.');
+        } else if (error.message?.includes('Limite de requêtes')) {
+          throw new Error('Limite de requêtes atteinte. Veuillez attendre un moment avant de réessayer.');
+        }
+        
         throw new Error(error.message || 'Erreur lors de l\'appel à la fonction');
       }
 
       if (data?.error) {
+        console.error('API error returned:', data.error);
         throw new Error(data.error);
       }
 
-      return data?.content || 'Désolé, je n\'ai pas pu générer de réponse.';
+      const response = data?.content || 'Désolé, je n\'ai pas pu générer de réponse.';
+      console.log('Successfully received response from Groq API');
+      
+      return response;
     } catch (error) {
       console.error('Erreur lors de l\'appel au service Groq:', error);
-      throw new Error(error instanceof Error ? error.message : 'Impossible de contacter Tonton Rox. Veuillez réessayer.');
+      
+      // Provide user-friendly error messages
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch') || error.message.includes('network')) {
+          throw new Error('Problème de connexion. Veuillez vérifier votre connexion internet et réessayer.');
+        }
+        throw new Error(error.message);
+      }
+      
+      throw new Error('Impossible de contacter Tonton Rox. Veuillez réessayer.');
     }
   }
 

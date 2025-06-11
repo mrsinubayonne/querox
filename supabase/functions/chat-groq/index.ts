@@ -21,9 +21,11 @@ serve(async (req) => {
   try {
     const { messages } = await req.json();
     
-    const groqApiKey = Deno.env.get('QUEROX_API_GROQ');
+    // Fixed: Use the correct environment variable name that matches the Supabase secret
+    const groqApiKey = Deno.env.get('querox_api_groq');
     
     if (!groqApiKey) {
+      console.error('Groq API key not found. Available env vars:', Object.keys(Deno.env.toObject()));
       throw new Error('Clé API Groq non configurée');
     }
 
@@ -36,7 +38,8 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        // Fixed: Use a supported Groq model
+        model: 'llama-3.1-70b-versatile',
         messages: messages,
         temperature: 0.7,
         max_tokens: 1024,
@@ -47,7 +50,17 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Groq API error:', response.status, errorText);
-      throw new Error(`Erreur API Groq: ${response.status}`);
+      
+      // Improved error handling with more specific messages
+      if (response.status === 401) {
+        throw new Error('Clé API Groq invalide ou expirée');
+      } else if (response.status === 429) {
+        throw new Error('Limite de requêtes atteinte. Veuillez réessayer plus tard.');
+      } else if (response.status === 500) {
+        throw new Error('Erreur serveur Groq. Veuillez réessayer.');
+      } else {
+        throw new Error(`Erreur API Groq: ${response.status} - ${errorText}`);
+      }
     }
 
     const data = await response.json();
