@@ -26,7 +26,7 @@ const Comptabilite = () => {
       icon: "💰"
     },
     {
-      title: "Dépenses du mois",
+      title: "Dépenses du mois", 
       value: "115 000", 
       currency: "CFA",
       change: "+5% vs mois dernier",
@@ -60,7 +60,7 @@ const Comptabilite = () => {
       amount: "+45 000 CFA",
       isPositive: true,
       status: "confirmé",
-      icon: <TrendingUp className="h-5 w-5 text-green-600" />
+      icon: <TrendingUp className="h-4 w-4 text-green-600" />
     },
     {
       id: 2,
@@ -69,7 +69,7 @@ const Comptabilite = () => {
       amount: "-12 000 CFA",
       isPositive: false,
       status: "confirmé",
-      icon: <TrendingDown className="h-5 w-5 text-red-600" />
+      icon: <TrendingDown className="h-4 w-4 text-red-600" />
     },
     {
       id: 3,
@@ -78,7 +78,7 @@ const Comptabilite = () => {
       amount: "+8 500 CFA",
       isPositive: true,
       status: "en attente",
-      icon: <TrendingUp className="h-5 w-5 text-green-600" />
+      icon: <TrendingUp className="h-4 w-4 text-green-600" />
     }
   ];
 
@@ -92,47 +92,47 @@ const Comptabilite = () => {
     <div className="min-h-screen flex w-full bg-gray-50">
       <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       
-      <div className="flex-1 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex-1 p-4">
+        <div className="max-w-7xl mx-auto space-y-4">
           {/* Header */}
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="p-2">
-                <Menu size={20} />
+            <div className="flex items-center space-x-3">
+              <Button variant="ghost" size="sm" className="p-1.5">
+                <Menu size={18} />
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">Comptabilité</h1>
+              <h1 className="text-xl font-bold text-gray-900">Comptabilité</h1>
             </div>
-            <div className="flex space-x-3">
-              <Button variant="outline" className="flex items-center space-x-2">
-                <Download size={16} />
+            <div className="flex space-x-2">
+              <Button variant="outline" className="flex items-center space-x-2 text-xs px-3 py-2">
+                <Download size={14} />
                 <span>Exporter</span>
               </Button>
-              <Button className="flex items-center space-x-2 bg-green-600 hover:bg-green-700">
-                <Plus size={16} />
+              <Button className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-xs px-3 py-2">
+                <Plus size={14} />
                 <span>Nouvelle transaction</span>
               </Button>
             </div>
           </div>
 
           {/* Cartes statistiques */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {stats.map((stat, index) => (
               <Card key={index} className="bg-white border-0 shadow-sm">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600 font-medium">{stat.title}</span>
-                      {index === 1 && <span className="text-gray-400">📊</span>}
-                      {index === 2 && <span className="text-gray-400">📈</span>}
-                      {index === 3 && <span className="text-gray-400">📊</span>}
+                      <span className="text-xs text-gray-600 font-medium">{stat.title}</span>
+                      {index === 1 && <span className="text-gray-400 text-sm">📊</span>}
+                      {index === 2 && <span className="text-gray-400 text-sm">📈</span>}
+                      {index === 3 && <span className="text-gray-400 text-sm">📊</span>}
                     </div>
-                    <span className="text-xl">💰</span>
+                    <span className="text-lg">💰</span>
                   </div>
                   
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <div className="flex items-baseline space-x-1">
-                      <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
-                      {stat.currency && <span className="text-lg font-semibold text-gray-700">{stat.currency}</span>}
+                      <span className="text-xl font-bold text-gray-900">{stat.value}</span>
+                      {stat.currency && <span className="text-sm font-semibold text-gray-700">{stat.currency}</span>}
                     </div>
                     
                     <div className={`text-xs ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`}>
@@ -145,11 +145,11 @@ const Comptabilite = () => {
           </div>
 
           {/* Onglets de navigation */}
-          <div className="flex space-x-8 border-b">
+          <div className="flex space-x-6 border-b">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
+                className={`pb-2 px-1 text-xs font-medium border-b-2 transition-colors ${
                   tab.active 
                     ? 'border-black text-black' 
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -161,32 +161,32 @@ const Comptabilite = () => {
           </div>
 
           {/* Section Transactions récentes */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-900">Transactions récentes</h2>
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold text-gray-900">Transactions récentes</h2>
             
-            <div className="space-y-4">
+            <div className="space-y-3">
               {transactions.map((transaction) => (
                 <Card key={transaction.id} className="bg-white border-0 shadow-sm">
-                  <CardContent className="p-4">
+                  <CardContent className="p-3">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-3">
                         <div className="p-2 bg-gray-50 rounded-lg">
                           {transaction.icon}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">{transaction.title}</h3>
-                          <p className="text-sm text-gray-500">{transaction.date}</p>
+                          <h3 className="text-sm font-semibold text-gray-900">{transaction.title}</h3>
+                          <p className="text-xs text-gray-500">{transaction.date}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-4">
-                        <span className={`font-semibold ${
+                      <div className="flex items-center space-x-3">
+                        <span className={`text-sm font-semibold ${
                           transaction.isPositive ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {transaction.amount}
                         </span>
                         <Badge 
-                          className={`${
+                          className={`text-xs ${
                             transaction.status === 'confirmé' 
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-yellow-100 text-yellow-800'
