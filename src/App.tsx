@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Index from './pages/Index';
 import Menus from './pages/Menus';
 import SiteWeb from './pages/SiteWeb';
+import Parametres from './pages/Parametres';
 import NotFound from './pages/NotFound';
 import './App.css';
 
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/menus" element={<Menus />} />
         <Route path="/site-web" element={<SiteWeb />} />
+        <Route path="/parametres" element={<Parametres />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
