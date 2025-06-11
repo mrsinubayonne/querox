@@ -1,6 +1,9 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { Toaster } from "./components/ui/toaster";
 import Index from './pages/Index';
+import Auth from './pages/Auth';
 import Menus from './pages/Menus';
 import SiteWeb from './pages/SiteWeb';
 import Parametres from './pages/Parametres';
@@ -18,24 +21,28 @@ import './App.css';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/menus" element={<Menus />} />
-        <Route path="/reservations" element={<Reservations />} />
-        <Route path="/evenements" element={<Evenements />} />
-        <Route path="/marketing" element={<Marketing />} />
-        <Route path="/social" element={<Social />} />
-        <Route path="/site-web" element={<SiteWeb />} />
-        <Route path="/parametres" element={<Parametres />} />
-        <Route path="/inventaire" element={<Inventaire />} />
-        <Route path="/statistiques" element={<Statistiques />} />
-        <Route path="/clients" element={<Clients />} />
-        <Route path="/comptabilite" element={<Comptabilite />} />
-        <Route path="/qr-codes" element={<QRCodes />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/menus" element={<Menus />} />
+          <Route path="/reservations" element={<Reservations />} />
+          <Route path="/evenements" element={<Evenements />} />
+          <Route path="/marketing" element={<Marketing />} />
+          <Route path="/social" element={<Social />} />
+          <Route path="/site-web" element={<SiteWeb />} />
+          <Route path="/parametres" element={<Parametres />} />
+          <Route path="/inventaire" element={<Inventaire />} />
+          <Route path="/statistiques" element={<Statistiques />} />
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/comptabilite" element={<Comptabilite />} />
+          <Route path="/qr-codes" element={<QRCodes />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Toaster />
+      </Router>
+    </AuthProvider>
   );
 }
 

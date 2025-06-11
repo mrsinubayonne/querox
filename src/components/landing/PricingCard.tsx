@@ -1,16 +1,29 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import { Plan } from './pricingData';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PricingCardProps {
   plan: Plan;
 }
 
 const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleGetStarted = () => {
+    if (user) {
+      navigate('/menus');
+    } else {
+      navigate('/auth');
+    }
+  };
+
   const getPlacesBadgeColor = (places: number) => {
     if (places <= 10) return "bg-gradient-to-r from-red-500 to-pink-500 text-white border-0";
     if (places <= 30) return "bg-gradient-to-r from-orange-500 to-yellow-500 text-white border-0";
@@ -77,8 +90,9 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
           className={`w-full ${plan.badge ? 'bg-primary hover:bg-primary/90' : ''}`}
           variant={plan.badge ? 'default' : 'outline'}
           size="lg"
+          onClick={handleGetStarted}
         >
-          Commencer maintenant
+          {user ? 'Accéder au dashboard' : 'Commencer maintenant'}
         </Button>
       </CardContent>
     </Card>

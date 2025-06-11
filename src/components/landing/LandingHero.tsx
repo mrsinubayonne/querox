@@ -1,9 +1,27 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Star } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
 
 const LandingHero: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleGetStarted = () => {
+    if (user) {
+      navigate('/menus');
+    } else {
+      navigate('/auth');
+    }
+  };
+
+  const handleViewDemo = () => {
+    // For now, scroll to features section
+    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <section className="bg-gradient-to-br from-primary/10 via-white to-secondary/10 py-20 lg:py-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,11 +48,11 @@ const LandingHero: React.FC = () => {
             
             <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="text-base px-8 py-3">
-                  Commencer gratuitement
+                <Button size="lg" className="text-base px-8 py-3" onClick={handleGetStarted}>
+                  {user ? 'Accéder au dashboard' : 'Commencer gratuitement'}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <Button variant="outline" size="lg" className="text-base px-8 py-3">
+                <Button variant="outline" size="lg" className="text-base px-8 py-3" onClick={handleViewDemo}>
                   Voir la démo
                 </Button>
               </div>

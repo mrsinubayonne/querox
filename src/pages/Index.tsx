@@ -8,7 +8,7 @@ import LandingFooter from '../components/landing/LandingFooter';
 
 const Index: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen w-full bg-white">
       <LandingNavigation />
       <LandingHero />
       <LandingFeatures />
