@@ -1,236 +1,229 @@
 
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Package, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import InventoryTable from '@/components/InventoryTable';
-import AddInventoryModal from '@/components/AddInventoryModal';
-import ModernSidebar from '@/components/ModernSidebar';
+import ModernSidebar from '../components/ModernSidebar';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Plus,
+  Search,
+  Filter,
+  Download,
+  Upload,
+  AlertTriangle,
+  TrendingUp,
+  Package,
+  DollarSign
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import InventoryTable from '../components/InventoryTable';
+import AddInventoryModal from '../components/AddInventoryModal';
+import { useToast } from '@/hooks/use-toast';
 
-const Inventaire = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+const Inventaire: React.FC = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
+  const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
+  
   const [inventoryItems, setInventoryItems] = useState([
     {
       id: 1,
-      name: 'Riz Jasmin 25kg',
-      category: 'Céréales',
-      quantity: 45,
-      minQuantity: 20,
-      unit: 'sacs',
-      price: 15000,
-      supplier: 'Fournisseur A',
-      lastUpdated: '2024-06-10',
-      status: 'En stock'
+      name: "Riz Brisé Premium",
+      category: "Céréales",
+      quantity: 150,
+      unit: "kg",
+      minStock: 50,
+      maxStock: 200,
+      cost: 850,
+      supplier: "Fournisseur A",
+      lastUpdated: "2024-01-15",
+      status: "En stock"
     },
     {
       id: 2,
-      name: 'Huile de palme 20L',
-      category: 'Huiles',
-      quantity: 12,
-      minQuantity: 15,
-      unit: 'bidons',
-      price: 8500,
-      supplier: 'Fournisseur B',
-      lastUpdated: '2024-06-09',
-      status: 'Stock faible'
+      name: "Poisson Frais",
+      category: "Protéines",
+      quantity: 25,
+      unit: "kg",
+      minStock: 30,
+      maxStock: 100,
+      cost: 2500,
+      supplier: "Marché Central",
+      lastUpdated: "2024-01-14",
+      status: "Stock faible"
     },
     {
       id: 3,
-      name: 'Tomates fraîches',
-      category: 'Légumes',
-      quantity: 0,
-      minQuantity: 10,
-      unit: 'kg',
-      price: 500,
-      supplier: 'Marché Local',
-      lastUpdated: '2024-06-08',
-      status: 'Rupture'
+      name: "Huile de Palme",
+      category: "Condiments",
+      quantity: 80,
+      unit: "L",
+      minStock: 20,
+      maxStock: 100,
+      cost: 1200,
+      supplier: "Fournisseur B",
+      lastUpdated: "2024-01-13",
+      status: "En stock"
     },
     {
       id: 4,
-      name: 'Poisson fumé',
-      category: 'Protéines',
-      quantity: 28,
-      minQuantity: 15,
-      unit: 'kg',
-      price: 3500,
-      supplier: 'Pêcheur Local',
-      lastUpdated: '2024-06-10',
-      status: 'En stock'
+      name: "Oignons",
+      category: "Légumes",
+      quantity: 5,
+      unit: "kg",
+      minStock: 15,
+      maxStock: 50,
+      cost: 400,
+      supplier: "Marché Local",
+      lastUpdated: "2024-01-12",
+      status: "Rupture de stock"
     }
   ]);
 
-  const totalItems = inventoryItems.length;
-  const lowStockItems = inventoryItems.filter(item => item.quantity <= item.minQuantity && item.quantity > 0).length;
-  const outOfStockItems = inventoryItems.filter(item => item.quantity === 0).length;
-  const totalValue = inventoryItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-
-  const filteredItems = inventoryItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.supplier.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  const filteredItems = inventoryItems.filter(item =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleAddItem = (newItem: any) => {
     const item = {
       ...newItem,
       id: Date.now(),
       lastUpdated: new Date().toISOString().split('T')[0],
-      status: newItem.quantity === 0 ? 'Rupture' : 
-              newItem.quantity <= newItem.minQuantity ? 'Stock faible' : 'En stock'
+      status: newItem.quantity <= newItem.minStock 
+        ? newItem.quantity === 0 ? "Rupture de stock" : "Stock faible"
+        : "En stock"
     };
     setInventoryItems(prev => [...prev, item]);
+    toast({
+      title: "Article ajouté",
+      description: `${newItem.name} a été ajouté à l'inventaire.`,
+    });
   };
 
-  const handleUpdateQuantity = (itemId: number, newQuantity: number) => {
-    setInventoryItems(prev => prev.map(item => {
-      if (item.id === itemId) {
-        const status = newQuantity === 0 ? 'Rupture' : 
-                      newQuantity <= item.minQuantity ? 'Stock faible' : 'En stock';
-        return {
-          ...item,
-          quantity: newQuantity,
-          status,
-          lastUpdated: new Date().toISOString().split('T')[0]
-        };
-      }
-      return item;
-    }));
-  };
+  // Calculate statistics
+  const totalItems = inventoryItems.length;
+  const lowStockItems = inventoryItems.filter(item => 
+    item.quantity <= item.minStock && item.quantity > 0
+  ).length;
+  const outOfStockItems = inventoryItems.filter(item => item.quantity === 0).length;
+  const totalValue = inventoryItems.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
 
   return (
-    <div className="min-h-screen bg-background">
-      <ModernSidebar />
-      <div className="ml-64 p-8">
-        <div className="max-w-7xl mx-auto space-y-8">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+      
+      <div className="flex-1 overflow-auto">
+        <div className="p-8">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Gestion de l'Inventaire</h1>
-              <p className="text-muted-foreground mt-2">Suivez et gérez vos stocks en temps réel</p>
+              <h1 className="text-3xl font-bold text-gray-900">Inventaire</h1>
+              <p className="text-gray-600 mt-1">Gérez vos stocks et approvisionnements</p>
             </div>
-            <Button 
-              onClick={() => setIsAddModalOpen(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
-            >
-              <Plus size={16} />
-              Ajouter un article
-            </Button>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Download size={16} />
+                Exporter
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Upload size={16} />
+                Importer
+              </Button>
+              <Button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+              >
+                <Plus size={16} />
+                Ajouter un article
+              </Button>
+            </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Articles</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Articles</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalItems}</div>
+                <p className="text-xs text-muted-foreground">
+                  +2 depuis le mois dernier
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Stock Faible</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-orange-500" />
+                <CardTitle className="text-sm font-medium">Stock Faible</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-yellow-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-orange-600">{lowStockItems}</div>
+                <div className="text-2xl font-bold text-yellow-600">{lowStockItems}</div>
+                <p className="text-xs text-muted-foreground">
+                  Articles à réapprovisionner
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Ruptures</CardTitle>
-                <TrendingDown className="h-4 w-4 text-red-500" />
+                <CardTitle className="text-sm font-medium">Rupture de Stock</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-red-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">{outOfStockItems}</div>
+                <p className="text-xs text-muted-foreground">
+                  Articles indisponibles
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Valeur Totale</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-500" />
+                <CardTitle className="text-sm font-medium">Valeur Totale</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  {totalValue.toLocaleString()} CFA
-                </div>
+                <div className="text-2xl font-bold">{totalValue.toLocaleString()} CFA</div>
+                <p className="text-xs text-muted-foreground">
+                  +12% depuis le mois dernier
+                </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Filters */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      placeholder="Rechercher un article ou fournisseur..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="Catégorie" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Toutes catégories</SelectItem>
-                    <SelectItem value="Céréales">Céréales</SelectItem>
-                    <SelectItem value="Huiles">Huiles</SelectItem>
-                    <SelectItem value="Légumes">Légumes</SelectItem>
-                    <SelectItem value="Protéines">Protéines</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="Statut" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous statuts</SelectItem>
-                    <SelectItem value="En stock">En stock</SelectItem>
-                    <SelectItem value="Stock faible">Stock faible</SelectItem>
-                    <SelectItem value="Rupture">Rupture</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Search and Filter */}
+          <div className="flex gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <Input
+                placeholder="Rechercher un article..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Filter size={16} />
+              Filtrer
+            </Button>
+          </div>
 
           {/* Inventory Table */}
-          <InventoryTable 
-            items={filteredItems}
-            onUpdateQuantity={handleUpdateQuantity}
-          />
-
-          {/* Add Item Modal */}
-          <AddInventoryModal
-            isOpen={isAddModalOpen}
-            onClose={() => setIsAddModalOpen(false)}
-            onAddItem={handleAddItem}
-          />
+          <InventoryTable items={filteredItems} />
         </div>
       </div>
+
+      {/* Add Item Modal */}
+      <AddInventoryModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAddItem={handleAddItem}
+      />
     </div>
   );
 };
