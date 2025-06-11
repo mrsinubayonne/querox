@@ -14,7 +14,7 @@ const Auth: React.FC = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, signInWithGoogle, user } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -64,22 +64,6 @@ const Auth: React.FC = () => {
       toast({
         title: "Inscription réussie",
         description: "Vérifiez votre email pour confirmer votre compte.",
-      });
-    }
-    
-    setLoading(false);
-  };
-
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    
-    const { error } = await signInWithGoogle();
-    
-    if (error) {
-      toast({
-        title: "Erreur de connexion Google",
-        description: error.message,
-        variant: "destructive",
       });
     }
     
@@ -139,25 +123,6 @@ const Auth: React.FC = () => {
                     {loading ? 'Connexion...' : 'Se connecter'}
                   </Button>
                 </form>
-                
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Ou</span>
-                  </div>
-                </div>
-                
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                >
-                  Continuer avec Google
-                </Button>
               </TabsContent>
               
               <TabsContent value="signup" className="space-y-4">
@@ -194,25 +159,6 @@ const Auth: React.FC = () => {
                     {loading ? 'Inscription...' : "S'inscrire"}
                   </Button>
                 </form>
-                
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Ou</span>
-                  </div>
-                </div>
-                
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                >
-                  Continuer avec Google
-                </Button>
               </TabsContent>
             </Tabs>
           </CardContent>
