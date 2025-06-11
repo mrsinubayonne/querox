@@ -17,7 +17,8 @@ import {
   Calendar,
   Download,
   Filter,
-  Eye
+  Eye,
+  BarChart2
 } from "lucide-react";
 
 const Statistiques: React.FC = () => {
@@ -151,7 +152,7 @@ const Statistiques: React.FC = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <BarChart size={20} />
+                      <BarChart2 size={20} />
                       Ventes cette semaine
                     </CardTitle>
                   </CardHeader>
@@ -236,7 +237,7 @@ const Statistiques: React.FC = () => {
             <TabsContent value="sales">
               <Card className="p-6">
                 <div className="text-center text-gray-500">
-                  <BarChart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <BarChart2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Analyse détaillée des ventes</p>
                   <p className="text-sm">Graphiques détaillés des ventes par période, produit et canal</p>
                 </div>
