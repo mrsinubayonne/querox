@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import { Button } from '@/components/ui/button';
@@ -137,7 +136,6 @@ const SiteWeb: React.FC = () => {
       case 'elegant-classique':
         return (
           <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
-            {/* Navigation Élégante */}
             <nav className="bg-white/90 backdrop-blur-sm shadow-lg py-6">
               <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
                 <div className="text-3xl font-serif font-bold" style={{ color: colors.primary }}>
@@ -155,7 +153,6 @@ const SiteWeb: React.FC = () => {
               </div>
             </nav>
 
-            {/* Hero Section Élégant */}
             <section className="relative h-screen flex items-center justify-center">
               <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-100"></div>
               <div className="relative text-center max-w-4xl px-4">
@@ -189,7 +186,6 @@ const SiteWeb: React.FC = () => {
       case 'moderne-minimaliste':
         return (
           <div className="min-h-screen bg-white">
-            {/* Navigation Minimaliste */}
             <nav className="border-b border-gray-100 py-4">
               <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
                 <div className="text-2xl font-bold tracking-tight" style={{ color: colors.primary }}>
@@ -206,7 +202,6 @@ const SiteWeb: React.FC = () => {
               </div>
             </nav>
 
-            {/* Hero Minimaliste */}
             <section className="h-screen flex items-center justify-center bg-gray-50">
               <div className="text-center max-w-3xl px-4">
                 <h1 className="text-8xl font-thin mb-8 tracking-tight" style={{ color: colors.primary }}>
@@ -227,7 +222,6 @@ const SiteWeb: React.FC = () => {
       case 'chaleureux-rustique':
         return (
           <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
-            {/* Navigation Rustique */}
             <nav className="bg-white/95 shadow-md py-4">
               <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -248,9 +242,8 @@ const SiteWeb: React.FC = () => {
               </div>
             </nav>
 
-            {/* Hero Rustique */}
             <section className="relative h-screen flex items-center justify-center bg-gradient-to-br from-amber-100 to-orange-200">
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23D4AF37" fill-opacity="0.1"%3E%3Cpath d="m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23D4AF37\" fill-opacity=\"0.1\"%3E%3Cpath d=\"m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
               <div className="relative text-center max-w-4xl px-4">
                 <h1 className="text-6xl font-bold mb-6 text-amber-900">
                   Bienvenue chez {siteConfig.restaurantName}
@@ -279,7 +272,6 @@ const SiteWeb: React.FC = () => {
       case 'vibrant-moderne':
         return (
           <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-            {/* Navigation Vibrante */}
             <nav className="bg-white/80 backdrop-blur-lg border-b border-pink-100 py-4">
               <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
                 <div className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-orange-500 bg-clip-text text-transparent">
@@ -297,7 +289,6 @@ const SiteWeb: React.FC = () => {
               </div>
             </nav>
 
-            {/* Hero Vibrant */}
             <section className="h-screen flex items-center justify-center relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-pink-400/20 to-orange-400/20"></div>
               <div className="absolute top-20 right-20 w-32 h-32 bg-gradient-to-br from-pink-400 to-orange-400 rounded-full opacity-20 animate-pulse"></div>
@@ -328,7 +319,6 @@ const SiteWeb: React.FC = () => {
       case 'mediterraneen-bleu':
         return (
           <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
-            {/* Navigation Méditerranéenne */}
             <nav className="bg-white shadow-sm py-5">
               <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -351,9 +341,8 @@ const SiteWeb: React.FC = () => {
               </div>
             </nav>
 
-            {/* Hero Méditerranéen */}
             <section className="relative h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%231976D2" fill-opacity="0.03"%3E%3Ccircle cx="3" cy="3" r="3"/%3E%3Ccircle cx="13" cy="13" r="3"/%3E%3C/g%3E%3C/svg%3E')]"></div>
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"20\" height=\"20\" viewBox=\"0 0 20 20\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"%231976D2\" fill-opacity=\"0.03\"%3E%3Ccircle cx=\"3\" cy=\"3\" r=\"3\"/%3E%3Ccircle cx=\"13\" cy=\"13\" r=\"3\"/%3E%3C/g%3E%3C/svg%3E')]"></div>
               <div className="relative text-center max-w-4xl px-4">
                 <h1 className="text-6xl font-bold mb-6 text-blue-900">
                   {siteConfig.restaurantName}
@@ -380,16 +369,17 @@ const SiteWeb: React.FC = () => {
         );
 
       default:
-        return <div className="h-96 bg-gray-100 flex items-center justify-center">
-          <p className="text-gray-500">Aperçu du template non disponible</p>
-        </div>;
+        return (
+          <div className="h-96 bg-gray-100 flex items-center justify-center">
+            <p className="text-gray-500">Aperçu du template non disponible</p>
+          </div>
+        );
     }
   };
 
   if (previewMode) {
     return (
       <div className="min-h-screen">
-        {/* Header */}
         <header className="bg-white shadow-sm border-b fixed w-full top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -401,7 +391,6 @@ const SiteWeb: React.FC = () => {
           </div>
         </header>
 
-        {/* Preview Content */}
         <div className="pt-20">
           {renderTemplatePreview()}
         </div>
@@ -415,7 +404,6 @@ const SiteWeb: React.FC = () => {
       
       <div className="flex-1 overflow-auto">
         <div className="p-8">
-          {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Créateur de Site Web</h1>
@@ -435,7 +423,6 @@ const SiteWeb: React.FC = () => {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* Configuration Panel */}
             <div className="lg:col-span-1">
               <Card>
                 <CardHeader>
@@ -631,7 +618,6 @@ const SiteWeb: React.FC = () => {
               </Card>
             </div>
 
-            {/* Preview Panel */}
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
@@ -642,7 +628,6 @@ const SiteWeb: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="border rounded-lg overflow-hidden">
-                    {/* Mini Preview */}
                     <div className="bg-gray-100 p-4 border-b">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <div className="w-3 h-3 bg-red-400 rounded-full"></div>
