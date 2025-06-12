@@ -4,82 +4,64 @@ import ModernSidebar from '@/components/ModernSidebar';
 import MenuHeader from '@/components/MenuHeader';
 import MenuCard from '@/components/MenuCard';
 import EmptyState from '@/components/EmptyState';
+import ViewItemModal from '@/components/ViewItemModal';
+import AddMenuItemModal from '@/components/AddMenuItemModal';
+import EditMenuItemModal from '@/components/EditMenuItemModal';
 import { useMenus } from '@/hooks/useMenus';
+import { useMenuItems } from '@/hooks/useMenuItems';
 import { useToast } from '@/hooks/use-toast';
-import { Menu, Plus } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { items, loading } = useMenus();
+  const [viewItem, setViewItem] = useState<any>(null);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  
+  const { items, loading, refetch } = useMenus();
+  const { toggleAvailability, deleteMenuItem } = useMenuItems();
   const { toast } = useToast();
-
-  // Données de démonstration pour interface vide
-  const mockMenuItems = [
-    {
-      id: "mock-1",
-      name: "Burger Classic",
-      category: "Plats principaux",
-      price: "12,90 €",
-      status: "Disponible",
-      description: "Burger avec steak haché, salade, tomate et sauce maison",
-      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500",
-      isActive: true
-    },
-    {
-      id: "mock-2",
-      name: "Salade César",
-      category: "Entrées",
-      price: "8,50 €",
-      status: "Disponible",
-      description: "Salade verte, croûtons, parmesan et sauce césar",
-      image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500",
-      isActive: true
-    },
-    {
-      id: "mock-3",
-      name: "Tiramisu",
-      category: "Desserts",
-      price: "6,90 €",
-      status: "Non disponible",
-      description: "Tiramisu traditionnel avec café et mascarpone",
-      image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=500",
-      isActive: false
-    }
-  ];
 
   const handleVisitorView = () => {
     toast({
       title: "Vue visiteur",
-      description: "Fonctionnalité bientôt disponible",
+      description: "Ouverture de la vue publique du menu",
     });
   };
 
   const handleAddItem = () => {
-    toast({
-      title: "Ajouter un plat",
-      description: "Fonctionnalité bientôt disponible",
-    });
+    setShowAddModal(true);
   };
 
-  const handleToggleStatus = (itemId: string | number) => {
-    toast({
-      title: "Statut modifié",
-      description: "Fonctionnalité bientôt disponible",
-    });
+  const handleToggleStatus = async (itemId: string | number) => {
+    const item = transformedItems.find(i => i.id === itemId);
+    if (item) {
+      const success = await toggleAvailability(String(itemId), !item.isActive);
+      if (success) {
+        refetch();
+      }
+    }
   };
 
   const handleViewItem = (item: any) => {
-    toast({
-      title: "Voir le plat",
-      description: "Fonctionnalité bientôt disponible",
-    });
+    setViewItem(item);
   };
 
   const handleEditItem = (item: any) => {
-    toast({
-      title: "Modifier le plat",
-      description: "Fonctionnalité bientôt disponible",
-    });
+    setEditItem(item);
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) {
+      const success = await deleteMenuItem(itemId);
+      if (success) {
+        refetch();
+      }
+    }
+  };
+
+  const handleModalSuccess = () => {
+    refetch();
   };
 
   // Transform real data to match expected format
@@ -91,11 +73,9 @@ const Menus: React.FC = () => {
     status: item.isActive ? "Disponible" : "Non disponible",
     description: item.description || '',
     image: item.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500",
-    isActive: item.isActive
+    isActive: item.isActive,
+    allergens: item.allergens
   }));
-
-  const displayItems = transformedItems.length > 0 ? transformedItems : mockMenuItems;
-  const isEmptyState = transformedItems.length === 0;
 
   if (loading) {
     return (
@@ -119,25 +99,9 @@ const Menus: React.FC = () => {
         <div className="p-8">
           <MenuHeader onVisitorView={handleVisitorView} onAddItem={handleAddItem} />
           
-          {isEmptyState && (
-            <div className="mb-8">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm font-medium text-blue-800">
-                    Interface de démonstration - Aucune donnée trouvée
-                  </span>
-                </div>
-                <p className="text-sm text-blue-600 mt-1">
-                  Voici à quoi ressemblera votre interface une fois que vous aurez ajouté des plats.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {displayItems.length > 0 ? (
+          {transformedItems.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {displayItems.map((item) => (
+              {transformedItems.map((item) => (
                 <MenuCard
                   key={item.id}
                   item={item}
@@ -158,6 +122,25 @@ const Menus: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ViewItemModal
+        item={viewItem}
+        isOpen={!!viewItem}
+        onClose={() => setViewItem(null)}
+      />
+
+      <AddMenuItemModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={handleModalSuccess}
+      />
+
+      <EditMenuItemModal
+        item={editItem}
+        isOpen={!!editItem}
+        onClose={() => setEditItem(null)}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   );
 };

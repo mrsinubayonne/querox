@@ -1,0 +1,230 @@
+
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { useMenuItems } from '@/hooks/useMenuItems';
+import { useMenuCategories } from '@/hooks/useMenuCategories';
+
+interface MenuItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  category: string;
+  image?: string;
+  isActive: boolean;
+  allergens?: string[];
+}
+
+interface EditMenuItemModalProps {
+  item: MenuItem | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({ 
+  item, 
+  isOpen, 
+  onClose, 
+  onSuccess 
+}) => {
+  const { updateMenuItem, loading } = useMenuItems();
+  const { categories } = useMenuCategories();
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: 0,
+    category_id: '',
+    image_url: '',
+    is_available: true,
+    allergens: [] as string[]
+  });
+
+  const [allergenInput, setAllergenInput] = useState('');
+
+  useEffect(() => {
+    if (item) {
+      const categoryId = categories.find(cat => cat.name === item.category)?.id || '';
+      setFormData({
+        name: item.name,
+        description: item.description || '',
+        price: item.price,
+        category_id: categoryId,
+        image_url: item.image || '',
+        is_available: item.isActive,
+        allergens: item.allergens || []
+      });
+    }
+  }, [item, categories]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!item || !formData.name || !formData.category_id || formData.price <= 0) {
+      return;
+    }
+
+    const success = await updateMenuItem(item.id, {
+      ...formData,
+      allergens: formData.allergens.length > 0 ? formData.allergens : undefined
+    });
+
+    if (success) {
+      onSuccess();
+      onClose();
+    }
+  };
+
+  const addAllergen = () => {
+    if (allergenInput.trim() && !formData.allergens.includes(allergenInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        allergens: [...prev.allergens, allergenInput.trim()]
+      }));
+      setAllergenInput('');
+    }
+  };
+
+  const removeAllergen = (allergen: string) => {
+    setFormData(prev => ({
+      ...prev,
+      allergens: prev.allergens.filter(a => a !== allergen)
+    }));
+  };
+
+  if (!item) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Modifier le plat</DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Nom du plat *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="price">Prix (€) *</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.price}
+                onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="category">Catégorie *</Label>
+            <Select value={formData.category_id} onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une catégorie" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="image_url">URL de l'image</Label>
+            <Input
+              id="image_url"
+              value={formData.image_url}
+              onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+              placeholder="https://..."
+            />
+          </div>
+
+          <div>
+            <Label>Allergènes</Label>
+            <div className="flex gap-2 mb-2">
+              <Input
+                value={allergenInput}
+                onChange={(e) => setAllergenInput(e.target.value)}
+                placeholder="Ajouter un allergène"
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAllergen())}
+              />
+              <Button type="button" onClick={addAllergen} variant="outline">
+                Ajouter
+              </Button>
+            </div>
+            {formData.allergens.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {formData.allergens.map((allergen) => (
+                  <span
+                    key={allergen}
+                    className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm flex items-center gap-1"
+                  >
+                    {allergen}
+                    <button
+                      type="button"
+                      onClick={() => removeAllergen(allergen)}
+                      className="ml-1 text-blue-600 hover:text-blue-800"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="available"
+              checked={formData.is_available}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_available: checked }))}
+            />
+            <Label htmlFor="available">Plat disponible</Label>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Modification...' : 'Modifier le plat'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default EditMenuItemModal;
