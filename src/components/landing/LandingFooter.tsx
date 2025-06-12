@@ -40,15 +40,7 @@ const LandingFooter: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center">
                 <Mail className="h-5 w-5 text-gray-400 mr-3" />
-                <span className="text-gray-300">contact@querox.com</span>
-              </div>
-              <div className="flex items-center">
-                <Phone className="h-5 w-5 text-gray-400 mr-3" />
-                <span className="text-gray-300">+221 XX XXX XX XX</span>
-              </div>
-              <div className="flex items-center">
-                <MapPin className="h-5 w-5 text-gray-400 mr-3" />
-                <span className="text-gray-300">Dakar, Sénégal</span>
+                <span className="text-gray-300">contact@querox.me</span>
               </div>
             </div>
           </div>
