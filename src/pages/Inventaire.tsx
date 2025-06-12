@@ -1,205 +1,101 @@
-import React, { useState, useMemo } from 'react';
-import ModernSidebar from '../components/ModernSidebar';
-import AddInventoryModal from '../components/AddInventoryModal';
-import InventoryHeader from '../components/inventory/InventoryHeader';
-import CriticalStockAlert from '../components/inventory/CriticalStockAlert';
-import InventoryStats from '../components/inventory/InventoryStats';
-import InventoryTabs from '../components/inventory/InventoryTabs';
-import { useToast } from '@/hooks/use-toast';
+
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Package, Plus, Upload, BarChart3 } from "lucide-react";
 
 const Inventaire: React.FC = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("tous");
-  const { toast } = useToast();
-  
-  const [inventoryItems, setInventoryItems] = useState([
-    {
-      id: 1,
-      name: "Riz blanc",
-      category: "Céréales",
-      quantity: 25,
-      unit: "kg",
-      minQuantity: 30,
-      price: 450,
-      supplier: "Fournisseur A",
-      lastUpdated: "2024-01-15",
-      status: "Critique"
-    },
-    {
-      id: 2,
-      name: "Poulet frais",
-      category: "Viandes",
-      quantity: 12,
-      unit: "kg",
-      minQuantity: 15,
-      price: 2500,
-      supplier: "Ferme Diallo",
-      lastUpdated: "2024-01-14",
-      status: "Critique"
-    },
-    {
-      id: 3,
-      name: "Tomates",
-      category: "Légumes",
-      quantity: 8,
-      unit: "kg",
-      minQuantity: 10,
-      price: 400,
-      supplier: "Marché Central",
-      lastUpdated: "2024-01-13",
-      status: "Critique"
-    },
-    {
-      id: 4,
-      name: "Huile de Palme",
-      category: "Condiments",
-      quantity: 80,
-      unit: "L",
-      minQuantity: 20,
-      price: 1200,
-      supplier: "Fournisseur B",
-      lastUpdated: "2024-01-13",
-      status: "En stock"
-    },
-    {
-      id: 5,
-      name: "Oignons",
-      category: "Légumes",
-      quantity: 45,
-      unit: "kg",
-      minQuantity: 15,
-      price: 300,
-      supplier: "Marché Local",
-      lastUpdated: "2024-01-12",
-      status: "En stock"
-    }
-  ]);
-
-  const stats = useMemo(() => {
-    const criticalItems = inventoryItems.filter(item => item.status === "Critique").length;
-    const totalValue = inventoryItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-    const lowStockItems = inventoryItems.filter(item => item.quantity <= item.minQuantity).length;
-    
-    return {
-      totalItems: inventoryItems.length,
-      criticalItems,
-      totalValue,
-      lowStockItems
-    };
-  }, [inventoryItems]);
-
-  const handleExport = () => {
-    const csvContent = "data:text/csv;charset=utf-8," + 
-      "Nom,Catégorie,Quantité,Unité,Prix,Fournisseur,Statut\n" +
-      inventoryItems.map(item => 
-        `${item.name},${item.category},${item.quantity},${item.unit},${item.price},${item.supplier},${item.status}`
-      ).join("\n");
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "inventaire.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast({
-      title: "Export réussi",
-      description: "L'inventaire a été exporté en CSV",
-    });
-  };
-
-  const handleFilter = () => {
-    const categories = ["tous", "Céréales", "Viandes", "Légumes", "Condiments"];
-    const currentIndex = categories.indexOf(filterCategory);
-    const nextCategory = categories[(currentIndex + 1) % categories.length];
-    setFilterCategory(nextCategory);
-    
-    toast({
-      title: "Filtre appliqué",
-      description: `Affichage: ${nextCategory}`,
-    });
-  };
-
-  const handleEditItem = (itemId: number) => {
-    const item = inventoryItems.find(i => i.id === itemId);
-    toast({
-      title: "Modification",
-      description: `Modification de ${item?.name}`,
-    });
-  };
-
-  const handleDeleteItem = (itemId: number) => {
-    const item = inventoryItems.find(i => i.id === itemId);
-    setInventoryItems(prev => prev.filter(i => i.id !== itemId));
-    toast({
-      title: "Article supprimé",
-      description: `${item?.name} a été supprimé de l'inventaire`,
-    });
-  };
-
-  const filteredItems = inventoryItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === "tous" || item.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const criticalItems = inventoryItems.filter(item => item.status === "Critique");
-
-  const handleAddItem = (newItem: any) => {
-    const item = {
-      ...newItem,
-      id: Date.now(),
-      lastUpdated: new Date().toISOString().split('T')[0],
-      status: newItem.quantity <= newItem.minQuantity ? "Critique" : "En stock"
-    };
-    setInventoryItems(prev => [...prev, item]);
-    toast({
-      title: "Article ajouté",
-      description: `${newItem.name} a été ajouté à l'inventaire.`,
-    });
-  };
-
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
-      
-      <div className="flex-1 overflow-auto">
-        <div className="p-6">
-          <InventoryHeader 
-            onExport={handleExport}
-            onAddItem={() => setIsAddModalOpen(true)}
-          />
-
-          <CriticalStockAlert criticalItems={criticalItems} />
-
-          <InventoryStats
-            totalItems={stats.totalItems}
-            criticalItems={stats.criticalItems}
-            totalValue={stats.totalValue}
-            lowStockItems={stats.lowStockItems}
-          />
-
-          <InventoryTabs
-            filteredItems={filteredItems}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            filterCategory={filterCategory}
-            onFilter={handleFilter}
-            onEditItem={handleEditItem}
-            onDeleteItem={handleDeleteItem}
-          />
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Inventaire</h1>
+          <p className="text-gray-600">Gérez les stocks de votre restaurant</p>
         </div>
-      </div>
 
-      <AddInventoryModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAddItem={handleAddItem}
-      />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <Card>
+            <CardHeader className="text-center pb-2">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Package className="w-8 h-8 text-primary" />
+              </div>
+              <CardTitle>Inventaire vide</CardTitle>
+              <CardDescription>
+                Commencez par ajouter vos premiers produits
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <Button className="w-full mb-3">
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter un produit
+              </Button>
+              <Button variant="outline" className="w-full">
+                <Upload className="w-4 h-4 mr-2" />
+                Importer depuis Excel
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="text-center pb-2">
+              <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="w-8 h-8 text-secondary" />
+              </div>
+              <CardTitle>Suivi des stocks</CardTitle>
+              <CardDescription>
+                Surveillez vos niveaux de stock en temps réel
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <div className="space-y-2 text-sm text-gray-600 mb-4">
+                <p>• Alertes de stock faible</p>
+                <p>• Historique des mouvements</p>
+                <p>• Rapports de consommation</p>
+              </div>
+              <Button variant="outline" className="w-full" disabled>
+                Voir les rapports (aucun produit)
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Types de produits à gérer</CardTitle>
+            <CardDescription>
+              Organisez votre inventaire par catégories
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <h3 className="font-semibold mb-2">Ingrédients</h3>
+                <p className="text-sm text-gray-600">Viandes, légumes, épices, etc.</p>
+              </div>
+              <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <h3 className="font-semibold mb-2">Boissons</h3>
+                <p className="text-sm text-gray-600">Vins, bières, sodas, etc.</p>
+              </div>
+              <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <h3 className="font-semibold mb-2">Matériel</h3>
+                <p className="text-sm text-gray-600">Vaisselle, ustensiles, etc.</p>
+              </div>
+              <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <h3 className="font-semibold mb-2">Produits d'entretien</h3>
+                <p className="text-sm text-gray-600">Nettoyants, désinfectants, etc.</p>
+              </div>
+              <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <h3 className="font-semibold mb-2">Emballages</h3>
+                <p className="text-sm text-gray-600">Contenants, sacs, etc.</p>
+              </div>
+              <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <h3 className="font-semibold mb-2">Autres</h3>
+                <p className="text-sm text-gray-600">Produits divers</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
