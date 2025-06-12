@@ -3,8 +3,25 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Globe, Settings, Eye, Palette } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const SiteWeb: React.FC = () => {
+  const { toast } = useToast();
+
+  const handleCreateWebsite = () => {
+    toast({
+      title: "Création du site web",
+      description: "La fonctionnalité de création de site web sera bientôt disponible.",
+    });
+  };
+
+  const handleViewTemplates = () => {
+    toast({
+      title: "Modèles de site",
+      description: "Les modèles de site web seront bientôt disponibles.",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
@@ -25,11 +42,11 @@ const SiteWeb: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <Button className="w-full mb-3">
+              <Button className="w-full mb-3" onClick={handleCreateWebsite}>
                 <Settings className="w-4 h-4 mr-2" />
                 Créer mon site web
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={handleViewTemplates}>
                 <Eye className="w-4 h-4 mr-2" />
                 Voir les modèles
               </Button>
