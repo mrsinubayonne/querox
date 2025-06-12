@@ -29,8 +29,6 @@ const LandingFooter: React.FC = () => {
               <li><a href="#features" className="text-gray-300 hover:text-white transition-colors">Fonctionnalités</a></li>
               <li><a href="#pricing" className="text-gray-300 hover:text-white transition-colors">Tarifs</a></li>
               <li><a href="#" className="text-gray-300 hover:text-white transition-colors">À propos</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Blog</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Support</a></li>
             </ul>
           </div>
           
@@ -66,7 +64,7 @@ const LandingFooter: React.FC = () => {
         
         <div className="border-t border-gray-800 mt-12 pt-8 text-center">
           <p className="text-gray-400">
-            © 2024 QUEROX. Tous droits réservés.
+            © 2025 QUEROX. Tous droits réservés.
           </p>
         </div>
       </div>
