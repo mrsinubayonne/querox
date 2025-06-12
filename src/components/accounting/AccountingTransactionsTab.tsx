@@ -3,7 +3,7 @@ import React from 'react';
 import TransactionCard from './TransactionCard';
 
 interface Transaction {
-  id: number;
+  id: string;
   title: string;
   date: string;
   amount: number;

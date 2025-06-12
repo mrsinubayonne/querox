@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 interface Transaction {
-  id: number;
+  id: string;
   title: string;
   date: string;
   amount: number;

@@ -6,7 +6,7 @@ import AccountingReportsTab from './AccountingReportsTab';
 import AccountingBudgetTab from './AccountingBudgetTab';
 
 interface Transaction {
-  id: number;
+  id: string;
   title: string;
   date: string;
   amount: number;

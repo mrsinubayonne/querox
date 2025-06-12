@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,13 +10,24 @@ import AddInventoryModal from '@/components/AddInventoryModal';
 const Inventaire: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const { items, loading, getLowStockItems } = useInventory();
+  const { items, loading, getLowStockItems, createItem } = useInventory();
   const { toast } = useToast();
 
   const lowStockItems = getLowStockItems();
 
   const handleAddProduct = () => {
     setShowAddModal(true);
+  };
+
+  const handleAddItem = async (itemData: any) => {
+    const success = await createItem(itemData);
+    if (success) {
+      setShowAddModal(false);
+      toast({
+        title: "Produit ajouté",
+        description: "Le produit a été ajouté à l'inventaire avec succès",
+      });
+    }
   };
 
   const handleImportExcel = () => {
@@ -181,13 +191,7 @@ const Inventaire: React.FC = () => {
       <AddInventoryModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onSuccess={() => {
-          setShowAddModal(false);
-          toast({
-            title: "Produit ajouté",
-            description: "Le produit a été ajouté à l'inventaire avec succès",
-          });
-        }}
+        onAddItem={handleAddItem}
       />
     </div>
   );
