@@ -5,6 +5,7 @@ import { Toaster } from "./components/ui/toaster";
 import ProtectedRoute from './components/ProtectedRoute';
 import Index from './pages/Index';
 import Auth from './pages/Auth';
+import Dashboard from './pages/Dashboard';
 import Menus from './pages/Menus';
 import SiteWeb from './pages/SiteWeb';
 import Parametres from './pages/Parametres';
@@ -27,6 +28,11 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
           <Route path="/menus" element={
             <ProtectedRoute>
               <Menus />

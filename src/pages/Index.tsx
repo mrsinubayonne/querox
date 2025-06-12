@@ -15,7 +15,7 @@ const Index: React.FC = () => {
   useEffect(() => {
     // If user is authenticated and we're not loading, redirect to dashboard
     if (!loading && user) {
-      navigate('/site-web');
+      navigate('/dashboard');
     }
   }, [user, loading, navigate]);
 

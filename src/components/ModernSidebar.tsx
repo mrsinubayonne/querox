@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -25,7 +24,7 @@ interface ModernSidebarProps {
 
 const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }) => {
   const menuItems = [
-    { icon: LayoutDashboard, label: "Tableau de bord", path: "/", color: "text-blue-600" },
+    { icon: LayoutDashboard, label: "Tableau de bord", path: "/dashboard", color: "text-blue-600" },
     { icon: Menu, label: "Menus", path: "/menus", color: "text-green-600" },
     { icon: CalendarDays, label: "Réservations", path: "/reservations", color: "text-purple-600" },
     { icon: CalendarDays, label: "Événements", path: "/evenements", color: "text-orange-600" },

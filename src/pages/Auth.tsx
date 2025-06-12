@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,7 +20,7 @@ const Auth: React.FC = () => {
   // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
-      navigate('/site-web');
+      navigate('/dashboard');
     }
   }, [user, navigate]);
 
@@ -42,7 +41,7 @@ const Auth: React.FC = () => {
         title: "Connexion réussie",
         description: "Bienvenue !",
       });
-      navigate('/site-web');
+      navigate('/dashboard');
     }
     
     setLoading(false);
