@@ -4,98 +4,100 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-interface Customer {
+interface Event {
   id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  total_visits: number;
-  total_spent: number;
-  last_visit?: string;
-  status: string;
+  title: string;
+  description?: string;
+  date: string;
+  time: string;
+  location: string;
+  capacity: number;
+  registered: number;
+  status: 'Ouvert' | 'En cours' | 'Confirmé' | 'Complet' | 'Annulé';
   created_at: string;
   updated_at: string;
   user_id: string;
 }
 
-export const useCustomers = () => {
+export const useEvents = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchCustomers = async () => {
+  const fetchEvents = async () => {
     if (!user) {
-      setCustomers([]);
+      setEvents([]);
       setLoading(false);
       return;
     }
 
     try {
       const { data, error } = await supabase
-        .from('customers')
+        .from('events')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('date', { ascending: true });
 
       if (error) {
-        console.error('Error fetching customers:', error);
+        console.error('Error fetching events:', error);
         toast({
           title: "Erreur",
-          description: "Impossible de charger les clients",
+          description: "Impossible de charger les événements",
           variant: "destructive",
         });
       } else {
-        setCustomers(data || []);
+        setEvents(data || []);
       }
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      console.error('Error fetching events:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const addCustomer = async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+  const addEvent = async (eventData: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'registered'>) => {
     if (!user) return false;
 
     try {
       const { data, error } = await supabase
-        .from('customers')
+        .from('events')
         .insert([{
-          ...customerData,
-          user_id: user.id
+          ...eventData,
+          user_id: user.id,
+          registered: 0
         }])
         .select()
         .single();
 
       if (error) {
-        console.error('Error adding customer:', error);
+        console.error('Error adding event:', error);
         toast({
           title: "Erreur",
-          description: "Impossible d'ajouter le client",
+          description: "Impossible d'ajouter l'événement",
           variant: "destructive",
         });
         return false;
       } else {
-        setCustomers(prev => [data, ...prev]);
+        setEvents(prev => [...prev, data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
         toast({
           title: "Succès",
-          description: "Client ajouté avec succès",
+          description: "Événement ajouté avec succès",
         });
         return true;
       }
     } catch (error) {
-      console.error('Error adding customer:', error);
+      console.error('Error adding event:', error);
       return false;
     }
   };
 
-  const updateCustomer = async (id: string, updates: Partial<Customer>) => {
+  const updateEvent = async (id: string, updates: Partial<Event>) => {
     if (!user) return false;
 
     try {
       const { data, error } = await supabase
-        .from('customers')
+        .from('events')
         .update({
           ...updates,
           updated_at: new Date().toISOString()
@@ -106,71 +108,71 @@ export const useCustomers = () => {
         .single();
 
       if (error) {
-        console.error('Error updating customer:', error);
+        console.error('Error updating event:', error);
         toast({
           title: "Erreur",
-          description: "Impossible de modifier le client",
+          description: "Impossible de modifier l'événement",
           variant: "destructive",
         });
         return false;
       } else {
-        setCustomers(prev => prev.map(customer => 
-          customer.id === id ? data : customer
-        ));
+        setEvents(prev => prev.map(event => 
+          event.id === id ? data : event
+        ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
         toast({
           title: "Succès",
-          description: "Client modifié avec succès",
+          description: "Événement modifié avec succès",
         });
         return true;
       }
     } catch (error) {
-      console.error('Error updating customer:', error);
+      console.error('Error updating event:', error);
       return false;
     }
   };
 
-  const deleteCustomer = async (id: string) => {
+  const deleteEvent = async (id: string) => {
     if (!user) return false;
 
     try {
       const { error } = await supabase
-        .from('customers')
+        .from('events')
         .delete()
         .eq('id', id)
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error deleting customer:', error);
+        console.error('Error deleting event:', error);
         toast({
           title: "Erreur",
-          description: "Impossible de supprimer le client",
+          description: "Impossible de supprimer l'événement",
           variant: "destructive",
         });
         return false;
       } else {
-        setCustomers(prev => prev.filter(customer => customer.id !== id));
+        setEvents(prev => prev.filter(event => event.id !== id));
         toast({
           title: "Succès",
-          description: "Client supprimé avec succès",
+          description: "Événement supprimé avec succès",
         });
         return true;
       }
     } catch (error) {
-      console.error('Error deleting customer:', error);
+      console.error('Error deleting event:', error);
       return false;
     }
   };
 
   useEffect(() => {
-    fetchCustomers();
+    fetchEvents();
   }, [user]);
 
   return {
-    customers,
+    events,
     loading,
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
-    refetch: fetchCustomers,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    refetch: fetchEvents,
   };
 };

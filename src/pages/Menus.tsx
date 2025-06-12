@@ -16,7 +16,7 @@ const Menus: React.FC = () => {
   // Données de démonstration pour interface vide
   const mockMenuItems = [
     {
-      id: 1,
+      id: "mock-1",
       name: "Burger Classic",
       category: "Plats principaux",
       price: "12,90 €",
@@ -26,7 +26,7 @@ const Menus: React.FC = () => {
       isActive: true
     },
     {
-      id: 2,
+      id: "mock-2",
       name: "Salade César",
       category: "Entrées",
       price: "8,50 €",
@@ -36,7 +36,7 @@ const Menus: React.FC = () => {
       isActive: true
     },
     {
-      id: 3,
+      id: "mock-3",
       name: "Tiramisu",
       category: "Desserts",
       price: "6,90 €",
@@ -61,7 +61,7 @@ const Menus: React.FC = () => {
     });
   };
 
-  const handleToggleStatus = (itemId: number) => {
+  const handleToggleStatus = (itemId: string | number) => {
     toast({
       title: "Statut modifié",
       description: "Fonctionnalité bientôt disponible",
@@ -82,8 +82,34 @@ const Menus: React.FC = () => {
     });
   };
 
-  const displayItems = items && items.length > 0 ? items : mockMenuItems;
-  const isEmptyState = !items || items.length === 0;
+  // Transform real data to match expected format
+  const transformedItems = items.map(item => ({
+    id: item.id,
+    name: item.name,
+    category: item.category,
+    price: `${item.price.toFixed(2)} €`,
+    status: item.isActive ? "Disponible" : "Non disponible",
+    description: item.description || '',
+    image: item.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500",
+    isActive: item.isActive
+  }));
+
+  const displayItems = transformedItems.length > 0 ? transformedItems : mockMenuItems;
+  const isEmptyState = transformedItems.length === 0;
+
+  if (loading) {
+    return (
+      <div className="flex h-screen overflow-hidden bg-gray-50">
+        <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-sm text-gray-600">Chargement des plats...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">

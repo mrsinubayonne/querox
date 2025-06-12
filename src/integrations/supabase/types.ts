@@ -17,6 +17,7 @@ export type Database = {
           last_visit: string | null
           name: string
           phone: string | null
+          status: string | null
           total_spent: number | null
           total_visits: number | null
           updated_at: string
@@ -29,6 +30,7 @@ export type Database = {
           last_visit?: string | null
           name: string
           phone?: string | null
+          status?: string | null
           total_spent?: number | null
           total_visits?: number | null
           updated_at?: string
@@ -41,6 +43,7 @@ export type Database = {
           last_visit?: string | null
           name?: string
           phone?: string | null
+          status?: string | null
           total_spent?: number | null
           total_visits?: number | null
           updated_at?: string

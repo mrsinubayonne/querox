@@ -7,41 +7,43 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, Clock, Users, Phone, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useReservations } from '@/hooks/useReservations';
 
 const Reservations: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { toast } = useToast();
+  const { reservations, loading } = useReservations();
 
-  // Données de démonstration
+  // Données de démonstration pour interface vide
   const mockReservations = [
     {
-      id: 1,
-      customerName: "Marie Dupont",
+      id: "mock-1",
+      customer_name: "Marie Dupont",
       date: "2024-06-15",
       time: "19:30",
-      guests: 4,
-      phone: "06 12 34 56 78",
-      status: "Confirmée",
+      party_size: 4,
+      customer_phone: "06 12 34 56 78",
+      status: "confirmed" as const,
       notes: "Table près de la fenêtre si possible"
     },
     {
-      id: 2,
-      customerName: "Pierre Martin",
+      id: "mock-2",
+      customer_name: "Pierre Martin",
       date: "2024-06-15",
       time: "20:00",
-      guests: 2,
-      phone: "06 98 76 54 32",
-      status: "En attente",
+      party_size: 2,
+      customer_phone: "06 98 76 54 32",
+      status: "pending" as const,
       notes: ""
     },
     {
-      id: 3,
-      customerName: "Sophie Leblanc",
+      id: "mock-3",
+      customer_name: "Sophie Leblanc",
       date: "2024-06-16",
       time: "12:30",
-      guests: 6,
-      phone: "06 11 22 33 44",
-      status: "Confirmée",
+      party_size: 6,
+      customer_phone: "06 11 22 33 44",
+      status: "confirmed" as const,
       notes: "Anniversaire - gâteau prévu"
     }
   ];
@@ -55,16 +57,50 @@ const Reservations: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Confirmée":
+      case "confirmed":
         return "bg-green-100 text-green-800";
-      case "En attente":
+      case "pending":
         return "bg-yellow-100 text-yellow-800";
-      case "Annulée":
+      case "cancelled":
         return "bg-red-100 text-red-800";
+      case "completed":
+        return "bg-blue-100 text-blue-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return "Confirmée";
+      case "pending":
+        return "En attente";
+      case "cancelled":
+        return "Annulée";
+      case "completed":
+        return "Terminée";
+      default:
+        return status;
+    }
+  };
+
+  const displayReservations = reservations && reservations.length > 0 ? reservations : mockReservations;
+  const isEmptyState = !reservations || reservations.length === 0;
+
+  if (loading) {
+    return (
+      <div className="flex h-screen overflow-hidden bg-gray-50">
+        <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-sm text-gray-600">Chargement des réservations...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -83,65 +119,79 @@ const Reservations: React.FC = () => {
             </Button>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm font-medium text-blue-800">
-                Interface de démonstration - Données d'exemple
-              </span>
+          {isEmptyState && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm font-medium text-blue-800">
+                  Interface de démonstration - Aucune réservation trouvée
+                </span>
+              </div>
+              <p className="text-sm text-blue-600 mt-1">
+                Voici à quoi ressemblera votre système de réservations avec de vraies données.
+              </p>
             </div>
-            <p className="text-sm text-blue-600 mt-1">
-              Voici à quoi ressemblera votre système de réservations avec de vraies données.
-            </p>
-          </div>
+          )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {mockReservations.map((reservation) => (
-              <Card key={reservation.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{reservation.customerName}</CardTitle>
-                    <Badge className={getStatusColor(reservation.status)}>
-                      {reservation.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <CalendarDays size={16} className="mr-2" />
-                      {new Date(reservation.date).toLocaleDateString('fr-FR')}
+          {displayReservations.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {displayReservations.map((reservation) => (
+                <Card key={reservation.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{reservation.customer_name}</CardTitle>
+                      <Badge className={getStatusColor(reservation.status)}>
+                        {getStatusLabel(reservation.status)}
+                      </Badge>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Clock size={16} className="mr-2" />
-                      {reservation.time}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Users size={16} className="mr-2" />
-                      {reservation.guests} personnes
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Phone size={16} className="mr-2" />
-                      {reservation.phone}
-                    </div>
-                    {reservation.notes && (
-                      <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                        <strong>Notes:</strong> {reservation.notes}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <CalendarDays size={16} className="mr-2" />
+                        {new Date(reservation.date).toLocaleDateString('fr-FR')}
                       </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      Modifier
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      Contacter
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Clock size={16} className="mr-2" />
+                        {reservation.time}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Users size={16} className="mr-2" />
+                        {reservation.party_size} personnes
+                      </div>
+                      {reservation.customer_phone && (
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Phone size={16} className="mr-2" />
+                          {reservation.customer_phone}
+                        </div>
+                      )}
+                      {reservation.notes && (
+                        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                          <strong>Notes:</strong> {reservation.notes}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button variant="outline" size="sm" className="flex-1">
+                        Modifier
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        Contacter
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={CalendarDays}
+              title="Aucune réservation"
+              description="Commencez par ajouter votre première réservation"
+              actionLabel="Nouvelle réservation"
+              onAction={handleAddReservation}
+            />
+          )}
         </div>
       </div>
     </div>
