@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, MenuBook, Upload, Eye } from "lucide-react";
+import { Plus, Menu, Upload, Eye } from "lucide-react";
 
 const Menus: React.FC = () => {
   return (
@@ -17,7 +17,7 @@ const Menus: React.FC = () => {
           <Card>
             <CardHeader className="text-center pb-2">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MenuBook className="w-8 h-8 text-primary" />
+                <Menu className="w-8 h-8 text-primary" />
               </div>
               <CardTitle>Aucun menu créé</CardTitle>
               <CardDescription>
