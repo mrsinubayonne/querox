@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 interface MenuItem {
-  id: number;
+  id: string | number;
   name: string;
   category: string;
   price: string;
@@ -23,7 +23,7 @@ interface MenuItem {
 
 interface MenuCardProps {
   item: MenuItem;
-  onToggleStatus: (itemId: number) => void;
+  onToggleStatus: (itemId: string | number) => void;
   onViewItem: (item: MenuItem) => void;
   onEditItem: (item: MenuItem) => void;
 }

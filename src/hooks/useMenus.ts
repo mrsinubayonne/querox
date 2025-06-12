@@ -61,7 +61,7 @@ export const useMenus = () => {
           name: item.name,
           description: item.description || '',
           price: Number(item.price),
-          category: item.menu_categories.name,
+          category: Array.isArray(item.menu_categories) ? item.menu_categories[0]?.name : item.menu_categories?.name,
           image: item.image_url || '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png',
           isActive: item.is_available || false,
           allergens: item.allergens || []
