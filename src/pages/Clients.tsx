@@ -1,190 +1,83 @@
+
 import React, { useState } from 'react';
-import ModernSidebar from '../components/ModernSidebar';
-import ModernStatCard from '../components/ModernStatCard';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell
-} from 'recharts';
-import { 
-  Users,
-  UserPlus,
-  Search,
-  Filter,
-  Download,
-  Star,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
-  TrendingUp,
-  Heart,
-  ShoppingBag
-} from "lucide-react";
+import ModernSidebar from '@/components/ModernSidebar';
+import EmptyState from '@/components/EmptyState';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Users, Mail, Phone, Calendar, Plus, Star } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Clients: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isAddClientOpen, setIsAddClientOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState("");
-  const [newClient, setNewClient] = useState({
-    nom: "",
-    email: "",
-    telephone: "",
-    adresse: ""
-  });
+  const { toast } = useToast();
 
-  // Données des clients
-  const clients = [
+  // Données de démonstration
+  const mockCustomers = [
     {
       id: 1,
-      nom: "Aminata Diallo",
-      email: "aminata.diallo@email.com",
-      telephone: "+221 77 123 45 67",
-      adresse: "Dakar, Plateau",
-      dateInscription: "2024-01-15",
-      commandes: 24,
-      totalDepense: 720000,
-      statut: "VIP",
-      dernierAchat: "2024-06-08"
+      name: "Marie Dupont",
+      email: "marie.dupont@email.com",
+      phone: "06 12 34 56 78",
+      visits: 12,
+      lastVisit: "2024-06-10",
+      totalSpent: "€ 380,50",
+      status: "VIP",
+      favorite: true
     },
     {
       id: 2,
-      nom: "Moussa Ba",
-      email: "moussa.ba@email.com",
-      telephone: "+221 70 987 65 43",
-      adresse: "Thiès, Centre-ville",
-      dateInscription: "2024-02-20",
-      commandes: 18,
-      totalDepense: 540000,
-      statut: "Fidèle",
-      dernierAchat: "2024-06-10"
+      name: "Pierre Martin",
+      email: "pierre.martin@email.com",
+      phone: "06 98 76 54 32",
+      visits: 5,
+      lastVisit: "2024-06-08",
+      totalSpent: "€ 125,30",
+      status: "Régulier",
+      favorite: false
     },
     {
       id: 3,
-      nom: "Fatou Sow",
-      email: "fatou.sow@email.com",
-      telephone: "+221 76 456 78 90",
-      adresse: "Saint-Louis, Sor",
-      dateInscription: "2024-03-10",
-      commandes: 12,
-      totalDepense: 360000,
-      statut: "Régulier",
-      dernierAchat: "2024-06-09"
+      name: "Sophie Leblanc",
+      email: "sophie.leblanc@email.com",
+      phone: "06 11 22 33 44",
+      visits: 3,
+      lastVisit: "2024-06-05",
+      totalSpent: "€ 89,90",
+      status: "Nouveau",
+      favorite: false
     },
     {
       id: 4,
-      nom: "Ousmane Ndiaye",
-      email: "ousmane.ndiaye@email.com",
-      telephone: "+221 78 234 56 78",
-      adresse: "Kaolack, Médina",
-      dateInscription: "2024-04-05",
-      commandes: 8,
-      totalDepense: 240000,
-      statut: "Nouveau",
-      dernierAchat: "2024-06-07"
-    },
-    {
-      id: 5,
-      nom: "Aïssatou Thiam",
-      email: "aissatou.thiam@email.com",
-      telephone: "+221 77 345 67 89",
-      adresse: "Ziguinchor, Centre",
-      dateInscription: "2024-05-12",
-      commandes: 15,
-      totalDepense: 450000,
-      statut: "Fidèle",
-      dernierAchat: "2024-06-11"
+      name: "Jean Durand",
+      email: "jean.durand@email.com",
+      phone: "06 55 44 33 22",
+      visits: 18,
+      lastVisit: "2024-06-12",
+      totalSpent: "€ 650,20",
+      status: "VIP",
+      favorite: true
     }
   ];
 
-  // Données de segmentation des clients
-  const clientSegmentation = [
-    { name: 'VIP', value: 15, color: '#8b5cf6' },
-    { name: 'Fidèles', value: 35, color: '#10b981' },
-    { name: 'Réguliers', value: 30, color: '#f59e0b' },
-    { name: 'Nouveaux', value: 20, color: '#3b82f6' }
-  ];
-
-  // Données d'évolution des clients
-  const clientEvolution = [
-    { month: 'Jan', nouveaux: 45, total: 245 },
-    { month: 'Fév', nouveaux: 52, total: 297 },
-    { month: 'Mar', nouveaux: 38, total: 335 },
-    { month: 'Avr', nouveaux: 61, total: 396 },
-    { month: 'Mai', nouveaux: 48, total: 444 },
-    { month: 'Juin', nouveaux: 35, total: 479 }
-  ];
-
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = !filterStatus || client.statut === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
-
-  const handleExport = () => {
-    console.log("Exporting client data...");
-    // Create CSV content
-    const csvHeaders = "Nom,Email,Téléphone,Adresse,Statut,Commandes,Total Dépense\n";
-    const csvContent = filteredClients.map(client => 
-      `${client.nom},${client.email},${client.telephone},${client.adresse},${client.statut},${client.commandes},${client.totalDepense}`
-    ).join('\n');
-    
-    const csvData = csvHeaders + csvContent;
-    const blob = new Blob([csvData], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'clients.csv';
-    a.click();
-  };
-
-  const handleAddClient = () => {
-    console.log("Adding new client:", newClient);
-    // Reset form
-    setNewClient({
-      nom: "",
-      email: "",
-      telephone: "",
-      adresse: ""
+  const handleAddCustomer = () => {
+    toast({
+      title: "Nouveau client",
+      description: "Fonctionnalité bientôt disponible",
     });
-    setIsAddClientOpen(false);
   };
 
-  const applyFilter = () => {
-    console.log("Applying filter:", filterStatus);
-    setIsFilterOpen(false);
-  };
-
-  const clearFilter = () => {
-    setFilterStatus("");
-    setIsFilterOpen(false);
-  };
-
-  const getStatusColor = (statut: string) => {
-    switch (statut) {
-      case 'VIP': return 'bg-purple-100 text-purple-800';
-      case 'Fidèle': return 'bg-green-100 text-green-800';
-      case 'Régulier': return 'bg-yellow-100 text-yellow-800';
-      case 'Nouveau': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "VIP":
+        return "bg-purple-100 text-purple-800";
+      case "Régulier":
+        return "bg-blue-100 text-blue-800";
+      case "Nouveau":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-FR').format(value) + ' CFA';
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR');
   };
 
   return (
@@ -192,301 +85,85 @@ const Clients: React.FC = () => {
       <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       
       <div className="flex-1 overflow-auto">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6">
+        <div className="p-8">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Gestion des Clients</h1>
-              <p className="text-gray-600">Analysez et gérez votre base de clients</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Clients</h1>
+              <p className="text-gray-600">Gérez votre base de données clients</p>
             </div>
-            <div className="flex gap-3">
-              <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Filter size={16} />
-                    Filtrer
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Filtrer les clients</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="status-filter">Filtrer par statut</Label>
-                      <select
-                        id="status-filter"
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="w-full mt-1 p-2 border rounded-md"
-                      >
-                        <option value="">Tous les statuts</option>
-                        <option value="VIP">VIP</option>
-                        <option value="Fidèle">Fidèle</option>
-                        <option value="Régulier">Régulier</option>
-                        <option value="Nouveau">Nouveau</option>
-                      </select>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button onClick={applyFilter} className="flex-1">
-                        Appliquer
-                      </Button>
-                      <Button onClick={clearFilter} variant="outline" className="flex-1">
-                        Effacer
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              <Button variant="outline" className="flex items-center gap-2" onClick={handleExport}>
-                <Download size={16} />
-                Exporter
-              </Button>
-
-              <Dialog open={isAddClientOpen} onOpenChange={setIsAddClientOpen}>
-                <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2">
-                    <UserPlus size={16} />
-                    Nouveau Client
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Ajouter un nouveau client</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="nom">Nom complet</Label>
-                      <Input
-                        id="nom"
-                        value={newClient.nom}
-                        onChange={(e) => setNewClient({...newClient, nom: e.target.value})}
-                        placeholder="Nom du client"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={newClient.email}
-                        onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                        placeholder="email@exemple.com"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="telephone">Téléphone</Label>
-                      <Input
-                        id="telephone"
-                        value={newClient.telephone}
-                        onChange={(e) => setNewClient({...newClient, telephone: e.target.value})}
-                        placeholder="+221 77 123 45 67"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="adresse">Adresse</Label>
-                      <Input
-                        id="adresse"
-                        value={newClient.adresse}
-                        onChange={(e) => setNewClient({...newClient, adresse: e.target.value})}
-                        placeholder="Adresse du client"
-                      />
-                    </div>
-                    <Button onClick={handleAddClient} className="w-full">
-                      Ajouter le client
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
+            <Button onClick={handleAddCustomer} className="flex items-center gap-2">
+              <Plus size={16} />
+              Nouveau client
+            </Button>
           </div>
 
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <ModernStatCard
-              title="Total clients"
-              value="479"
-              icon={<Users size={24} />}
-              change={{ value: "8%", label: "vs mois dernier", isPositive: true }}
-              trend="up"
-              color="blue"
-            />
-            <ModernStatCard
-              title="Nouveaux ce mois"
-              value="35"
-              icon={<UserPlus size={24} />}
-              change={{ value: "12%", label: "vs mois dernier", isPositive: true }}
-              trend="up"
-              color="green"
-            />
-            <ModernStatCard
-              title="Clients VIP"
-              value="72"
-              icon={<Star size={24} />}
-              change={{ value: "5%", label: "vs mois dernier", isPositive: true }}
-              trend="up"
-              color="purple"
-            />
-            <ModernStatCard
-              title="Panier moyen"
-              value="30,000 CFA"
-              icon={<ShoppingBag size={24} />}
-              change={{ value: "3%", label: "vs mois dernier", isPositive: false }}
-              trend="down"
-              color="orange"
-            />
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-sm font-medium text-blue-800">
+                Interface de démonstration - Données d'exemple
+              </span>
+            </div>
+            <p className="text-sm text-blue-600 mt-1">
+              Voici à quoi ressemblera votre gestion clients avec de vraies données.
+            </p>
           </div>
 
-          {/* Tabs */}
-          <Tabs defaultValue="liste" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="liste">Liste des Clients</TabsTrigger>
-              <TabsTrigger value="analyse">Analyse</TabsTrigger>
-              <TabsTrigger value="fidelite">Fidélité</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="liste" className="space-y-6">
-              {/* Barre de recherche */}
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                  <Input
-                    placeholder="Rechercher un client..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                {filterStatus && (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    Filtre: {filterStatus}
-                    <button onClick={clearFilter} className="ml-1 text-xs">×</button>
-                  </Badge>
-                )}
-              </div>
-
-              {/* Liste des clients */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Clients ({filteredClients.length})</CardTitle>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {mockCustomers.map((customer) => (
+              <Card key={customer.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <CardTitle className="text-lg">{customer.name}</CardTitle>
+                      {customer.favorite && (
+                        <Star size={16} className="text-yellow-500 fill-current" />
+                      )}
+                    </div>
+                    <Badge className={getStatusColor(customer.status)}>
+                      {customer.status}
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {filteredClients.map((client) => (
-                      <div key={client.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-semibold text-lg">
-                              {client.nom.split(' ').map(n => n[0]).join('')}
-                            </span>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900">{client.nom}</h3>
-                            <div className="flex items-center gap-4 text-sm text-gray-600">
-                              <span className="flex items-center gap-1">
-                                <Mail size={14} />
-                                {client.email}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Phone size={14} />
-                                {client.telephone}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                              <span className="flex items-center gap-1">
-                                <MapPin size={14} />
-                                {client.adresse}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Calendar size={14} />
-                                Inscrit le {formatDate(client.dateInscription)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge className={getStatusColor(client.statut)}>
-                            {client.statut}
-                          </Badge>
-                          <div className="mt-2 text-sm">
-                            <div className="font-semibold">{client.commandes} commandes</div>
-                            <div className="text-gray-600">{formatCurrency(client.totalDepense)}</div>
-                            <div className="text-xs text-gray-500">Dernier achat: {formatDate(client.dernierAchat)}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Mail size={16} className="mr-2" />
+                      {customer.email}
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Phone size={16} className="mr-2" />
+                      {customer.phone}
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Calendar size={16} className="mr-2" />
+                      Dernière visite: {new Date(customer.lastVisit).toLocaleDateString('fr-FR')}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-lg font-bold text-gray-900">{customer.visits}</div>
+                      <div className="text-xs text-gray-600">Visites</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-lg font-bold text-green-600">{customer.totalSpent}</div>
+                      <div className="text-xs text-gray-600">Total dépensé</div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1">
+                      Modifier
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1">
+                      Historique
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="analyse" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Segmentation des clients */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users size={20} />
-                      Segmentation des Clients
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={clientSegmentation}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          dataKey="value"
-                          label={({ name, value }) => `${name}: ${value}%`}
-                        >
-                          {clientSegmentation.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Évolution des clients */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp size={20} />
-                      Évolution des Clients
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={clientEvolution}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                        <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
-                        <YAxis stroke="#64748b" fontSize={12} />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={3} name="Total clients" />
-                        <Line type="monotone" dataKey="nouveaux" stroke="#10b981" strokeWidth={2} name="Nouveaux clients" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="fidelite">
-              <Card className="p-6">
-                <div className="text-center text-gray-500">
-                  <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Programme de Fidélité</p>
-                  <p className="text-sm">Gérez les points de fidélité et les récompenses clients</p>
-                </div>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            ))}
+          </div>
         </div>
       </div>
     </div>

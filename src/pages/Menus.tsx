@@ -1,246 +1,136 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Menu, Upload, Eye, Edit, Trash2 } from "lucide-react";
-import { useMenus } from "@/hooks/useMenus";
+import ModernSidebar from '@/components/ModernSidebar';
+import MenuHeader from '@/components/MenuHeader';
+import MenuCard from '@/components/MenuCard';
+import EmptyState from '@/components/EmptyState';
+import { useMenus } from '@/hooks/useMenus';
+import { useToast } from '@/hooks/use-toast';
+import { Menu, Plus } from 'lucide-react';
 
 const Menus: React.FC = () => {
-  const { menus, loading, createMenu } = useMenus();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newMenuName, setNewMenuName] = useState('');
-  const [newMenuDescription, setNewMenuDescription] = useState('');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { items, loading } = useMenus();
+  const { toast } = useToast();
 
-  const handleCreateMenu = async () => {
-    if (!newMenuName.trim()) return;
+  // Données de démonstration pour interface vide
+  const mockMenuItems = [
+    {
+      id: 1,
+      name: "Burger Classic",
+      category: "Plats principaux",
+      price: "12,90 €",
+      status: "Disponible",
+      description: "Burger avec steak haché, salade, tomate et sauce maison",
+      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500",
+      isActive: true
+    },
+    {
+      id: 2,
+      name: "Salade César",
+      category: "Entrées",
+      price: "8,50 €",
+      status: "Disponible",
+      description: "Salade verte, croûtons, parmesan et sauce césar",
+      image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500",
+      isActive: true
+    },
+    {
+      id: 3,
+      name: "Tiramisu",
+      category: "Desserts",
+      price: "6,90 €",
+      status: "Non disponible",
+      description: "Tiramisu traditionnel avec café et mascarpone",
+      image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=500",
+      isActive: false
+    }
+  ];
 
-    await createMenu({
-      name: newMenuName,
-      description: newMenuDescription,
-      is_active: true
+  const handleVisitorView = () => {
+    toast({
+      title: "Vue visiteur",
+      description: "Fonctionnalité bientôt disponible",
     });
-
-    setNewMenuName('');
-    setNewMenuDescription('');
-    setIsCreateDialogOpen(false);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleAddItem = () => {
+    toast({
+      title: "Ajouter un plat",
+      description: "Fonctionnalité bientôt disponible",
+    });
+  };
+
+  const handleToggleStatus = (itemId: number) => {
+    toast({
+      title: "Statut modifié",
+      description: "Fonctionnalité bientôt disponible",
+    });
+  };
+
+  const handleViewItem = (item: any) => {
+    toast({
+      title: "Voir le plat",
+      description: "Fonctionnalité bientôt disponible",
+    });
+  };
+
+  const handleEditItem = (item: any) => {
+    toast({
+      title: "Modifier le plat",
+      description: "Fonctionnalité bientôt disponible",
+    });
+  };
+
+  const displayItems = items && items.length > 0 ? items : mockMenuItems;
+  const isEmptyState = !items || items.length === 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Menus</h1>
-          <p className="text-gray-600">Gérez les menus de votre restaurant</p>
-        </div>
-
-        {menus.length === 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <Card>
-              <CardHeader className="text-center pb-2">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Menu className="w-8 h-8 text-primary" />
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+      
+      <div className="flex-1 overflow-auto">
+        <div className="p-8">
+          <MenuHeader onVisitorView={handleVisitorView} onAddItem={handleAddItem} />
+          
+          {isEmptyState && (
+            <div className="mb-8">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm font-medium text-blue-800">
+                    Interface de démonstration - Aucune donnée trouvée
+                  </span>
                 </div>
-                <CardTitle>Aucun menu créé</CardTitle>
-                <CardDescription>
-                  Commencez par créer votre premier menu
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="w-full mb-3">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Créer un menu
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Créer un nouveau menu</DialogTitle>
-                      <DialogDescription>
-                        Ajoutez un nom et une description pour votre menu
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium">Nom du menu</label>
-                        <Input
-                          value={newMenuName}
-                          onChange={(e) => setNewMenuName(e.target.value)}
-                          placeholder="Ex: Menu du jour"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">Description</label>
-                        <Textarea
-                          value={newMenuDescription}
-                          onChange={(e) => setNewMenuDescription(e.target.value)}
-                          placeholder="Description optionnelle du menu"
-                        />
-                      </div>
-                      <Button onClick={handleCreateMenu} className="w-full">
-                        Créer le menu
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                <Button variant="outline" className="w-full">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Importer un menu
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="text-center pb-2">
-                <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Eye className="w-8 h-8 text-secondary" />
-                </div>
-                <CardTitle>Aperçu</CardTitle>
-                <CardDescription>
-                  Visualisez vos menus comme vos clients les verront
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <div className="space-y-2 text-sm text-gray-600 mb-4">
-                  <p>• Format QR Code</p>
-                  <p>• Version web</p>
-                  <p>• Version imprimable</p>
-                </div>
-                <Button variant="outline" className="w-full" disabled>
-                  Aperçu (aucun menu)
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {menus.map((menu) => (
-              <Card key={menu.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{menu.name}</CardTitle>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-red-600">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  {menu.description && (
-                    <CardDescription>{menu.description}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2">
-                    <Button size="sm" className="flex-1">
-                      <Eye className="w-4 h-4 mr-2" />
-                      Voir
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Modifier
-                    </Button>
-                  </div>
-                  <div className="mt-3 text-xs text-gray-500">
-                    Créé le {new Date(menu.created_at).toLocaleDateString()}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center h-full py-8">
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Créer un nouveau menu
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Créer un nouveau menu</DialogTitle>
-                      <DialogDescription>
-                        Ajoutez un nom et une description pour votre menu
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium">Nom du menu</label>
-                        <Input
-                          value={newMenuName}
-                          onChange={(e) => setNewMenuName(e.target.value)}
-                          placeholder="Ex: Menu du jour"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">Description</label>
-                        <Textarea
-                          value={newMenuDescription}
-                          onChange={(e) => setNewMenuDescription(e.target.value)}
-                          placeholder="Description optionnelle du menu"
-                        />
-                      </div>
-                      <Button onClick={handleCreateMenu} className="w-full">
-                        Créer le menu
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Guide de démarrage</CardTitle>
-            <CardDescription>
-              Suivez ces étapes pour créer votre premier menu
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">1</div>
-                <div>
-                  <h3 className="font-semibold">Créer une catégorie</h3>
-                  <p className="text-sm text-gray-600">Organisez vos plats par catégories (Entrées, Plats, Desserts...)</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">2</div>
-                <div>
-                  <h3 className="font-semibold">Ajouter des plats</h3>
-                  <p className="text-sm text-gray-600">Ajoutez vos plats avec descriptions, prix et photos</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">3</div>
-                <div>
-                  <h3 className="font-semibold">Générer le QR Code</h3>
-                  <p className="text-sm text-gray-600">Créez des QR codes pour vos tables</p>
-                </div>
+                <p className="text-sm text-blue-600 mt-1">
+                  Voici à quoi ressemblera votre interface une fois que vous aurez ajouté des plats.
+                </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          )}
+
+          {displayItems.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayItems.map((item) => (
+                <MenuCard
+                  key={item.id}
+                  item={item}
+                  onToggleStatus={handleToggleStatus}
+                  onViewItem={handleViewItem}
+                  onEditItem={handleEditItem}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Menu}
+              title="Aucun plat configuré"
+              description="Commencez par ajouter vos premiers plats à votre menu"
+              actionLabel="Ajouter un plat"
+              onAction={handleAddItem}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
