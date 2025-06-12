@@ -19,7 +19,7 @@ interface MenuCategoryData {
   name: string;
   menus: {
     user_id: string;
-  };
+  }[];
 }
 
 interface MenuItemData {
@@ -30,7 +30,7 @@ interface MenuItemData {
   image_url?: string;
   is_available?: boolean;
   allergens?: string[];
-  menu_categories: MenuCategoryData | MenuCategoryData[];
+  menu_categories: MenuCategoryData[];
 }
 
 export const useMenus = () => {
@@ -74,13 +74,11 @@ export const useMenus = () => {
           variant: "destructive",
         });
       } else {
-        const formattedItems = (data as MenuItemData[])?.map(item => {
+        const formattedItems = data?.map(item => {
           // Safely extract category name
           let categoryName = '';
-          if (Array.isArray(item.menu_categories)) {
+          if (item.menu_categories && item.menu_categories.length > 0) {
             categoryName = item.menu_categories[0]?.name || '';
-          } else if (item.menu_categories && typeof item.menu_categories === 'object') {
-            categoryName = item.menu_categories.name || '';
           }
 
           return {
