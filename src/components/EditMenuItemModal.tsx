@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useMenuCategories } from '@/hooks/useMenuCategories';
+import ImageUpload from '@/components/ImageUpload';
 
 interface MenuItem {
   id: string;
@@ -42,7 +43,7 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
     description: '',
     price: 0,
     category_id: '',
-    image_url: '',
+    image_url: '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png',
     is_available: true,
     allergens: [] as string[]
   });
@@ -57,7 +58,7 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
         description: item.description || '',
         price: item.price,
         category_id: categoryId,
-        image_url: item.image || '',
+        image_url: item.image || '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png',
         is_available: item.isActive,
         allergens: item.allergens || []
       });
@@ -121,11 +122,11 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
             </div>
             
             <div>
-              <Label htmlFor="price">Prix (€) *</Label>
+              <Label htmlFor="price">Prix (FCFA) *</Label>
               <Input
                 id="price"
                 type="number"
-                step="0.01"
+                step="1"
                 min="0"
                 value={formData.price}
                 onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
@@ -150,6 +151,11 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
             </Select>
           </div>
 
+          <ImageUpload
+            currentImage={formData.image_url}
+            onImageChange={(imageUrl) => setFormData(prev => ({ ...prev, image_url: imageUrl }))}
+          />
+
           <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
@@ -157,16 +163,6 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="image_url">URL de l'image</Label>
-            <Input
-              id="image_url"
-              value={formData.image_url}
-              onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-              placeholder="https://..."
             />
           </div>
 

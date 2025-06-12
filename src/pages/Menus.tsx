@@ -69,10 +69,10 @@ const Menus: React.FC = () => {
     id: item.id,
     name: item.name,
     category: item.category,
-    price: `${item.price.toFixed(2)} €`,
+    price: `${item.price.toLocaleString('fr-FR')} FCFA`,
     status: item.isActive ? "Disponible" : "Non disponible",
     description: item.description || '',
-    image: item.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500",
+    image: item.image || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png",
     isActive: item.isActive,
     allergens: item.allergens
   }));

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
-import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTransactions } from '@/hooks/useTransactions';
 import AccountingHeader from '@/components/accounting/AccountingHeader';
 import AccountingStats from '@/components/accounting/AccountingStats';
 import AccountingTabsContainer from '@/components/accounting/AccountingTabsContainer';
@@ -15,71 +15,44 @@ const Comptabilite = () => {
   const [showNewTransactionModal, setShowNewTransactionModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const { toast } = useToast();
-
-  const [transactions, setTransactions] = useState([
-    {
-      id: 1,
-      title: "Ventes du jour",
-      date: "2024-06-09",
-      amount: 45000,
-      isPositive: true,
-      status: "confirmé",
-      icon: <TrendingUp className="h-4 w-4 text-green-600" />
-    },
-    {
-      id: 2,
-      title: "Achat ingrédients", 
-      date: "2024-06-08",
-      amount: -12000,
-      isPositive: false,
-      status: "confirmé",
-      icon: <TrendingDown className="h-4 w-4 text-red-600" />
-    },
-    {
-      id: 3,
-      title: "Commandes en ligne",
-      date: "2024-06-08", 
-      amount: 8500,
-      isPositive: true,
-      status: "en attente",
-      icon: <TrendingUp className="h-4 w-4 text-green-600" />
-    }
-  ]);
+  
+  const { transactions, loading, createTransaction } = useTransactions();
 
   const stats = useMemo(() => {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    
-    const monthlyTransactions = transactions.filter(t => {
-      const transactionDate = new Date(t.date);
-      return transactionDate.getMonth() === currentMonth && 
-             transactionDate.getFullYear() === currentYear;
-    });
+    const monthlyStats = transactions.reduce((acc, transaction) => {
+      const transactionDate = new Date(transaction.date);
+      const currentDate = new Date();
+      
+      if (transactionDate.getMonth() === currentDate.getMonth() && 
+          transactionDate.getFullYear() === currentDate.getFullYear() &&
+          transaction.status === 'completed') {
+        
+        if (transaction.type === 'income') {
+          acc.recettes += transaction.amount;
+        } else {
+          acc.depenses += transaction.amount;
+        }
+      }
+      
+      return acc;
+    }, { recettes: 0, depenses: 0 });
 
-    const recettes = monthlyTransactions
-      .filter(t => t.amount > 0)
-      .reduce((sum, t) => sum + t.amount, 0);
-    
-    const depenses = Math.abs(monthlyTransactions
-      .filter(t => t.amount < 0)
-      .reduce((sum, t) => sum + t.amount, 0));
-    
-    const benefice = recettes - depenses;
-    const marge = recettes > 0 ? (benefice / recettes) * 100 : 0;
+    const benefice = monthlyStats.recettes - monthlyStats.depenses;
+    const marge = monthlyStats.recettes > 0 ? (benefice / monthlyStats.recettes) * 100 : 0;
 
     return [
       {
         title: "Recettes du mois",
-        value: new Intl.NumberFormat('fr-FR').format(recettes),
-        currency: "CFA",
+        value: new Intl.NumberFormat('fr-FR').format(monthlyStats.recettes),
+        currency: "FCFA",
         change: "+12% vs mois dernier",
         isPositive: true,
         icon: "💰"
       },
       {
         title: "Dépenses du mois", 
-        value: new Intl.NumberFormat('fr-FR').format(depenses), 
-        currency: "CFA",
+        value: new Intl.NumberFormat('fr-FR').format(monthlyStats.depenses), 
+        currency: "FCFA",
         change: "+5% vs mois dernier",
         isPositive: false,
         icon: "📊"
@@ -87,7 +60,7 @@ const Comptabilite = () => {
       {
         title: "Bénéfice net",
         value: new Intl.NumberFormat('fr-FR').format(benefice),
-        currency: "CFA",
+        currency: "FCFA",
         change: "+18% vs mois dernier",
         isPositive: benefice >= 0,
         icon: "📈"
@@ -142,12 +115,14 @@ const Comptabilite = () => {
     });
   };
 
-  const handleCreateTransaction = (transaction: any) => {
-    setTransactions(prev => [transaction, ...prev]);
-    toast({
-      title: "Transaction créée",
-      description: `${transaction.title} a été ajoutée avec succès`,
-    });
+  const handleCreateTransaction = async (transactionData: any) => {
+    const success = await createTransaction(transactionData);
+    if (success) {
+      toast({
+        title: "Transaction créée",
+        description: `${transactionData.title} a été ajoutée avec succès`,
+      });
+    }
   };
 
   const handleSearch = () => {
@@ -218,8 +193,22 @@ const Comptabilite = () => {
 
   const formatCurrency = (amount: number) => {
     const formatted = new Intl.NumberFormat('fr-FR').format(Math.abs(amount));
-    return `${amount >= 0 ? '+' : '-'}${formatted} CFA`;
+    return `${amount >= 0 ? '+' : '-'}${formatted} FCFA`;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-sm text-gray-600">Chargement des données...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex w-full bg-gray-50">
@@ -230,26 +219,54 @@ const Comptabilite = () => {
           <AccountingHeader
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
-            onSearch={handleSearch}
-            onFilter={handleFilter}
+            onSearch={() => {}}
+            onFilter={() => {}}
             onExport={() => setShowExportModal(true)}
             onNewTransaction={() => setShowNewTransactionModal(true)}
           />
 
           <AccountingStats
             stats={stats}
-            onStatClick={handleStatClick}
+            onStatClick={(stat) => {
+              toast({
+                title: stat.title,
+                description: `Détails: ${stat.value} ${stat.currency}`,
+              });
+            }}
           />
 
           <AccountingTabsContainer
             activeTab={activeTab}
             tabs={tabs}
-            transactions={filteredTransactions}
+            transactions={filteredTransactions.map(t => ({
+              id: t.id,
+              title: t.title,
+              date: t.date,
+              amount: t.type === 'income' ? t.amount : -t.amount,
+              isPositive: t.type === 'income',
+              status: t.status === 'completed' ? 'confirmé' : t.status === 'pending' ? 'en attente' : 'annulé',
+              icon: null
+            }))}
             formatCurrency={formatCurrency}
-            onTabChange={handleTabChange}
-            onTransactionDetails={handleTransactionDetails}
-            onGenerateReport={handleGenerateReport}
-            onConfigureBudget={handleConfigureBudget}
+            onTabChange={setActiveTab}
+            onTransactionDetails={(transaction) => {
+              toast({
+                title: "Détails transaction",
+                description: `${transaction.title} - ${formatCurrency(transaction.amount)}`,
+              });
+            }}
+            onGenerateReport={() => {
+              toast({
+                title: "Rapport généré",
+                description: "Rapport mensuel en cours de génération...",
+              });
+            }}
+            onConfigureBudget={() => {
+              toast({
+                title: "Budget",
+                description: "Configuration du budget prévisionnel...",
+              });
+            }}
           />
         </div>
       </div>
