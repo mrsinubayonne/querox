@@ -48,15 +48,18 @@ export const useWebsites = () => {
   const fetchWebsites = async () => {
     if (!user) {
       setWebsites([]);
+      setCurrentWebsite(null);
       setLoading(false);
       return;
     }
 
     try {
+      console.log('Fetching websites for user:', user.id);
       setLoading(true);
       const { data, error } = await supabase
         .from('websites')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -64,6 +67,7 @@ export const useWebsites = () => {
         throw error;
       }
 
+      console.log('Websites fetched:', data);
       setWebsites(data || []);
       
       // Set the first website as current if none is set
@@ -94,6 +98,8 @@ export const useWebsites = () => {
     }
 
     try {
+      console.log('Creating website with data:', websiteData);
+      
       const { data, error } = await supabase
         .from('websites')
         .insert([{ 
@@ -111,15 +117,18 @@ export const useWebsites = () => {
         throw error;
       }
 
+      console.log('Website created successfully:', data);
+
       // Create default pages for the website
       await createDefaultPages(data.id);
 
+      // Update the websites list and current website
       setWebsites(prev => [data, ...prev]);
       setCurrentWebsite(data);
       
       toast({
         title: "Succès",
-        description: "Site web créé avec succès"
+        description: `Site web "${data.name}" créé avec succès !`,
       });
 
       return data;
@@ -135,52 +144,62 @@ export const useWebsites = () => {
   };
 
   const createDefaultPages = async (websiteId: string) => {
-    const defaultPages = [
-      {
-        website_id: websiteId,
-        page_type: 'home',
-        title: 'Accueil',
-        content: {
-          hero_title: 'Bienvenue dans notre restaurant',
-          hero_subtitle: 'Une expérience culinaire exceptionnelle vous attend'
+    try {
+      console.log('Creating default pages for website:', websiteId);
+      
+      const defaultPages = [
+        {
+          website_id: websiteId,
+          page_type: 'home',
+          title: 'Accueil',
+          content: {
+            hero_title: 'Bienvenue dans notre restaurant',
+            hero_subtitle: 'Une expérience culinaire exceptionnelle vous attend'
+          },
+          order_index: 1
         },
-        order_index: 1
-      },
-      {
-        website_id: websiteId,
-        page_type: 'menu',
-        title: 'Notre Menu',
-        content: {
-          description: 'Découvrez nos spécialités culinaires'
+        {
+          website_id: websiteId,
+          page_type: 'menu',
+          title: 'Notre Menu',
+          content: {
+            description: 'Découvrez nos spécialités culinaires'
+          },
+          order_index: 2
         },
-        order_index: 2
-      },
-      {
-        website_id: websiteId,
-        page_type: 'about',
-        title: 'À Propos',
-        content: {
-          description: 'L\'histoire de notre restaurant'
+        {
+          website_id: websiteId,
+          page_type: 'about',
+          title: 'À Propos',
+          content: {
+            description: 'L\'histoire de notre restaurant'
+          },
+          order_index: 3
         },
-        order_index: 3
-      },
-      {
-        website_id: websiteId,
-        page_type: 'contact',
-        title: 'Contact',
-        content: {
-          description: 'Contactez-nous pour vos réservations'
-        },
-        order_index: 4
+        {
+          website_id: websiteId,
+          page_type: 'contact',
+          title: 'Contact',
+          content: {
+            description: 'Contactez-nous pour vos réservations'
+          },
+          order_index: 4
+        }
+      ];
+
+      const { error } = await supabase
+        .from('website_pages')
+        .insert(defaultPages);
+
+      if (error) {
+        console.error('Error creating default pages:', error);
+        throw error;
       }
-    ];
 
-    const { error } = await supabase
-      .from('website_pages')
-      .insert(defaultPages);
-
-    if (error) {
-      console.error('Error creating default pages:', error);
+      console.log('Default pages created successfully');
+    } catch (error) {
+      console.error('Error in createDefaultPages:', error);
+      // Don't throw here to avoid breaking the website creation process
     }
   };
 
@@ -188,6 +207,8 @@ export const useWebsites = () => {
     if (!user) return false;
 
     try {
+      console.log('Updating website:', id, 'with:', updates);
+      
       const { data, error } = await supabase
         .from('websites')
         .update(updates)
@@ -196,6 +217,8 @@ export const useWebsites = () => {
         .single();
 
       if (error) throw error;
+
+      console.log('Website updated successfully:', data);
 
       setWebsites(prev => prev.map(website => website.id === id ? data : website));
       if (currentWebsite && currentWebsite.id === id) {
@@ -220,15 +243,32 @@ export const useWebsites = () => {
   };
 
   const publishWebsite = async (id: string) => {
-    return updateWebsite(id, { is_published: true });
+    const result = await updateWebsite(id, { is_published: true });
+    if (result) {
+      toast({
+        title: "Site publié",
+        description: "Votre site web est maintenant en ligne !",
+      });
+    }
+    return result;
   };
 
   const unpublishWebsite = async (id: string) => {
-    return updateWebsite(id, { is_published: false });
+    const result = await updateWebsite(id, { is_published: false });
+    if (result) {
+      toast({
+        title: "Site dépublié",
+        description: "Votre site web n'est plus en ligne",
+        variant: "destructive"
+      });
+    }
+    return result;
   };
 
   useEffect(() => {
-    fetchWebsites();
+    if (user) {
+      fetchWebsites();
+    }
   }, [user]);
 
   return {

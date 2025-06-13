@@ -1,24 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Globe, Settings, Eye, Palette, Plus, ExternalLink, Edit } from "lucide-react";
+import { Globe, Settings, Eye, Palette, Plus, ExternalLink, Edit, RefreshCw } from "lucide-react";
 import { useWebsites } from "@/hooks/useWebsites";
 import CreateWebsiteModal from "@/components/CreateWebsiteModal";
-import { useToast } from "@/hooks/use-toast";
 
 const SiteWeb: React.FC = () => {
-  const { websites, currentWebsite, loading, publishWebsite, unpublishWebsite } = useWebsites();
-  const { toast } = useToast();
+  const { websites, currentWebsite, loading, publishWebsite, unpublishWebsite, fetchWebsites } = useWebsites();
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  console.log('SiteWeb component - websites:', websites, 'loading:', loading);
+
   const handlePublishToggle = async (websiteId: string, isPublished: boolean) => {
+    console.log('Toggling publish status for website:', websiteId, 'current status:', isPublished);
+    
     if (isPublished) {
       await unpublishWebsite(websiteId);
     } else {
       await publishWebsite(websiteId);
     }
   };
+
+  const handleRefresh = () => {
+    console.log('Refreshing websites list');
+    fetchWebsites();
+  };
+
+  // Auto-refresh when modal closes and a website was created
+  useEffect(() => {
+    if (!showCreateModal && websites.length > 0) {
+      console.log('Modal closed, refreshing data');
+      fetchWebsites();
+    }
+  }, [showCreateModal]);
 
   if (loading) {
     return (
@@ -42,10 +57,16 @@ const SiteWeb: React.FC = () => {
             <p className="text-gray-600">Créez et gérez le site web de votre restaurant</p>
           </div>
           
-          <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Nouveau site
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Actualiser
+            </Button>
+            <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Nouveau site
+            </Button>
+          </div>
         </div>
 
         {websites.length === 0 ? (
@@ -96,10 +117,19 @@ const SiteWeb: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-6">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <h3 className="text-green-800 font-medium mb-2">
+                🎉 Félicitations ! Vous avez {websites.length} site{websites.length > 1 ? 's' : ''} web créé{websites.length > 1 ? 's' : ''}
+              </h3>
+              <p className="text-green-600 text-sm">
+                Vous pouvez maintenant personnaliser votre site, ajouter du contenu et le publier.
+              </p>
+            </div>
+
             {/* Existing Websites */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {websites.map((website) => (
-                <Card key={website.id} className="relative">
+                <Card key={website.id} className="relative hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
@@ -113,10 +143,12 @@ const SiteWeb: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 space-y-1">
                         <p><strong>Modèle:</strong> {website.template_id}</p>
                         {website.address && <p><strong>Adresse:</strong> {website.address}</p>}
                         {website.phone && <p><strong>Téléphone:</strong> {website.phone}</p>}
+                        {website.email && <p><strong>Email:</strong> {website.email}</p>}
+                        <p><strong>Créé le:</strong> {new Date(website.created_at).toLocaleDateString('fr-FR')}</p>
                       </div>
                       
                       <div className="flex gap-2">
