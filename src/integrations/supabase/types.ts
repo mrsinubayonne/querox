@@ -354,6 +354,160 @@ export type Database = {
         }
         Relationships: []
       }
+      website_gallery: {
+        Row: {
+          alt_text: string | null
+          caption: string | null
+          created_at: string
+          id: string
+          image_url: string
+          is_featured: boolean | null
+          order_index: number | null
+          website_id: string
+        }
+        Insert: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          is_featured?: boolean | null
+          order_index?: number | null
+          website_id: string
+        }
+        Update: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_featured?: boolean | null
+          order_index?: number | null
+          website_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "website_gallery_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      website_pages: {
+        Row: {
+          content: Json | null
+          created_at: string
+          id: string
+          is_enabled: boolean | null
+          order_index: number | null
+          page_type: string
+          title: string
+          updated_at: string
+          website_id: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          order_index?: number | null
+          page_type: string
+          title: string
+          updated_at?: string
+          website_id: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          order_index?: number | null
+          page_type?: string
+          title?: string
+          updated_at?: string
+          website_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "website_pages_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      websites: {
+        Row: {
+          address: string | null
+          created_at: string
+          custom_css: string | null
+          description: string | null
+          domain: string | null
+          email: string | null
+          id: string
+          is_published: boolean | null
+          logo_url: string | null
+          name: string
+          opening_hours: Json | null
+          phone: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          seo_description: string | null
+          seo_title: string | null
+          social_links: Json | null
+          template_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          custom_css?: string | null
+          description?: string | null
+          domain?: string | null
+          email?: string | null
+          id?: string
+          is_published?: boolean | null
+          logo_url?: string | null
+          name?: string
+          opening_hours?: Json | null
+          phone?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          social_links?: Json | null
+          template_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          custom_css?: string | null
+          description?: string | null
+          domain?: string | null
+          email?: string | null
+          id?: string
+          is_published?: boolean | null
+          logo_url?: string | null
+          name?: string
+          opening_hours?: Json | null
+          phone?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          social_links?: Json | null
+          template_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
