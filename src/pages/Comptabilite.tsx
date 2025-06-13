@@ -118,6 +118,7 @@ const Comptabilite = () => {
   const handleCreateTransaction = async (transactionData: any) => {
     const success = await createTransaction(transactionData);
     if (success) {
+      setShowNewTransactionModal(false);
       toast({
         title: "Transaction créée",
         description: `${transactionData.title} a été ajoutée avec succès`,
@@ -203,7 +204,7 @@ const Comptabilite = () => {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-sm text-gray-600">Chargement des données...</p>
+            <p className="text-sm text-gray-600">Chargement des données comptables...</p>
           </div>
         </div>
       </div>

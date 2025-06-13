@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface Customer {
@@ -12,17 +12,16 @@ interface Customer {
   total_visits: number;
   total_spent: number;
   last_visit?: string;
-  status: string;
+  status?: string;
   created_at: string;
   updated_at: string;
-  user_id: string;
 }
 
 export const useCustomers = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const fetchCustomers = async () => {
     if (!user) {
@@ -32,60 +31,67 @@ export const useCustomers = () => {
     }
 
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('customers')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('name');
 
       if (error) {
         console.error('Error fetching customers:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les clients",
-          variant: "destructive",
-        });
-      } else {
-        setCustomers(data || []);
+        throw error;
       }
-    } catch (error) {
-      console.error('Error fetching customers:', error);
+
+      setCustomers(data || []);
+    } catch (error: any) {
+      console.error('Customers fetch error:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les clients",
+        variant: "destructive"
+      });
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const addCustomer = async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
-    if (!user) return false;
+  const createCustomer = async (customerData: Partial<Customer>) => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour créer un client",
+        variant: "destructive"
+      });
+      return false;
+    }
 
     try {
       const { data, error } = await supabase
         .from('customers')
-        .insert([{
-          ...customerData,
-          user_id: user.id
-        }])
+        .insert([{ ...customerData, user_id: user.id }])
         .select()
         .single();
 
       if (error) {
-        console.error('Error adding customer:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible d'ajouter le client",
-          variant: "destructive",
-        });
-        return false;
-      } else {
-        setCustomers(prev => [data, ...prev]);
-        toast({
-          title: "Succès",
-          description: "Client ajouté avec succès",
-        });
-        return true;
+        console.error('Error creating customer:', error);
+        throw error;
       }
-    } catch (error) {
-      console.error('Error adding customer:', error);
+
+      setCustomers(prev => [...prev, data]);
+      toast({
+        title: "Succès",
+        description: "Client créé avec succès"
+      });
+
+      return data;
+    } catch (error: any) {
+      console.error('Customer creation error:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer le client",
+        variant: "destructive"
+      });
       return false;
     }
   };
@@ -96,35 +102,22 @@ export const useCustomers = () => {
     try {
       const { data, error } = await supabase
         .from('customers')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
+        .update(updates)
         .eq('id', id)
-        .eq('user_id', user.id)
         .select()
         .single();
 
-      if (error) {
-        console.error('Error updating customer:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de modifier le client",
-          variant: "destructive",
-        });
-        return false;
-      } else {
-        setCustomers(prev => prev.map(customer => 
-          customer.id === id ? data : customer
-        ));
-        toast({
-          title: "Succès",
-          description: "Client modifié avec succès",
-        });
-        return true;
-      }
-    } catch (error) {
-      console.error('Error updating customer:', error);
+      if (error) throw error;
+
+      setCustomers(prev => prev.map(customer => customer.id === id ? data : customer));
+      return data;
+    } catch (error: any) {
+      console.error('Update error:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour le client",
+        variant: "destructive"
+      });
       return false;
     }
   };
@@ -136,27 +129,23 @@ export const useCustomers = () => {
       const { error } = await supabase
         .from('customers')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
 
-      if (error) {
-        console.error('Error deleting customer:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de supprimer le client",
-          variant: "destructive",
-        });
-        return false;
-      } else {
-        setCustomers(prev => prev.filter(customer => customer.id !== id));
-        toast({
-          title: "Succès",
-          description: "Client supprimé avec succès",
-        });
-        return true;
-      }
-    } catch (error) {
-      console.error('Error deleting customer:', error);
+      if (error) throw error;
+
+      setCustomers(prev => prev.filter(customer => customer.id !== id));
+      toast({
+        title: "Succès",
+        description: "Client supprimé avec succès"
+      });
+      return true;
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le client",
+        variant: "destructive"
+      });
       return false;
     }
   };
@@ -168,9 +157,9 @@ export const useCustomers = () => {
   return {
     customers,
     loading,
-    addCustomer,
+    fetchCustomers,
+    createCustomer,
     updateCustomer,
-    deleteCustomer,
-    refetch: fetchCustomers,
+    deleteCustomer
   };
 };

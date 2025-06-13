@@ -23,27 +23,47 @@ export const useTransactions = () => {
   const { toast } = useToast();
 
   const fetchTransactions = async () => {
-    if (!user) return;
+    if (!user) {
+      setTransactions([]);
+      setLoading(false);
+      return;
+    }
     
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .order('date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        throw error;
+      }
+      
       setTransactions(data || []);
     } catch (error: any) {
+      console.error('Transaction fetch error:', error);
       toast({
         title: "Erreur",
         description: "Impossible de charger les transactions",
         variant: "destructive"
       });
+      setTransactions([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const createTransaction = async (transactionData: Partial<Transaction>) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour créer une transaction",
+        variant: "destructive"
+      });
+      return false;
+    }
 
     try {
       const { data, error } = await supabase
@@ -52,7 +72,10 @@ export const useTransactions = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating transaction:', error);
+        throw error;
+      }
       
       setTransactions(prev => [data, ...prev]);
       toast({
@@ -62,11 +85,13 @@ export const useTransactions = () => {
       
       return data;
     } catch (error: any) {
+      console.error('Transaction creation error:', error);
       toast({
         title: "Erreur",
         description: "Impossible de créer la transaction",
         variant: "destructive"
       });
+      return false;
     }
   };
 
@@ -113,10 +138,7 @@ export const useTransactions = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      setLoading(true);
-      fetchTransactions().finally(() => setLoading(false));
-    }
+    fetchTransactions();
   }, [user]);
 
   return {

@@ -17,67 +17,54 @@ interface InventoryItem {
   updated_at: string;
 }
 
-interface StockMovement {
-  id: string;
-  item_id: string;
-  movement_type: 'in' | 'out' | 'adjustment';
-  quantity: number;
-  reason?: string;
-  created_at: string;
-}
-
 export const useInventory = () => {
   const [items, setItems] = useState<InventoryItem[]>([]);
-  const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
 
   const fetchItems = async () => {
-    if (!user) return;
-    
+    if (!user) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('inventory_items')
         .select('*')
-        .order('name', { ascending: true });
+        .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching inventory:', error);
+        throw error;
+      }
+
       setItems(data || []);
     } catch (error: any) {
+      console.error('Inventory fetch error:', error);
       toast({
         title: "Erreur",
         description: "Impossible de charger l'inventaire",
         variant: "destructive"
       });
-    }
-  };
-
-  const fetchMovements = async (itemId?: string) => {
-    if (!user) return;
-    
-    try {
-      let query = supabase.from('stock_movements').select('*');
-      
-      if (itemId) {
-        query = query.eq('item_id', itemId);
-      }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setMovements(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les mouvements",
-        variant: "destructive"
-      });
+      setItems([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const createItem = async (itemData: Partial<InventoryItem>) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour créer un produit",
+        variant: "destructive"
+      });
+      return false;
+    }
 
     try {
       const { data, error } = await supabase
@@ -86,73 +73,80 @@ export const useInventory = () => {
         .select()
         .single();
 
-      if (error) throw error;
-      
+      if (error) {
+        console.error('Error creating inventory item:', error);
+        throw error;
+      }
+
       setItems(prev => [...prev, data]);
       toast({
         title: "Succès",
         description: "Produit créé avec succès"
       });
-      
+
       return data;
     } catch (error: any) {
+      console.error('Inventory creation error:', error);
       toast({
         title: "Erreur",
         description: "Impossible de créer le produit",
         variant: "destructive"
       });
+      return false;
     }
   };
 
-  const updateStock = async (itemId: string, newStock: number, reason?: string) => {
-    if (!user) return;
+  const updateItem = async (id: string, updates: Partial<InventoryItem>) => {
+    if (!user) return false;
 
     try {
-      // Récupérer le stock actuel
-      const { data: currentItem, error: fetchError } = await supabase
+      const { data, error } = await supabase
         .from('inventory_items')
-        .select('current_stock')
-        .eq('id', itemId)
+        .update(updates)
+        .eq('id', id)
+        .select()
         .single();
 
-      if (fetchError) throw fetchError;
+      if (error) throw error;
 
-      const difference = newStock - currentItem.current_stock;
-      const movementType = difference > 0 ? 'in' : difference < 0 ? 'out' : 'adjustment';
-
-      // Mettre à jour le stock
-      const { error: updateError } = await supabase
-        .from('inventory_items')
-        .update({ current_stock: newStock })
-        .eq('id', itemId);
-
-      if (updateError) throw updateError;
-
-      // Créer le mouvement
-      const { error: movementError } = await supabase
-        .from('stock_movements')
-        .insert([{
-          item_id: itemId,
-          movement_type: movementType,
-          quantity: Math.abs(difference),
-          reason: reason || `Ajustement de stock`
-        }]);
-
-      if (movementError) throw movementError;
-
-      await fetchItems();
-      await fetchMovements();
-      
-      toast({
-        title: "Succès",
-        description: "Stock mis à jour avec succès"
-      });
+      setItems(prev => prev.map(item => item.id === id ? data : item));
+      return data;
     } catch (error: any) {
+      console.error('Update error:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de mettre à jour le stock",
+        description: "Impossible de mettre à jour le produit",
         variant: "destructive"
       });
+      return false;
+    }
+  };
+
+  const deleteItem = async (id: string) => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('inventory_items')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setItems(prev => prev.filter(item => item.id !== id));
+      toast({
+        title: "Succès",
+        description: "Produit supprimé avec succès"
+      });
+      return true;
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le produit",
+        variant: "destructive"
+      });
+      return false;
     }
   };
 
@@ -161,21 +155,16 @@ export const useInventory = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      setLoading(true);
-      Promise.all([fetchItems(), fetchMovements()])
-        .finally(() => setLoading(false));
-    }
+    fetchItems();
   }, [user]);
 
   return {
     items,
-    movements,
     loading,
     fetchItems,
-    fetchMovements,
     createItem,
-    updateStock,
+    updateItem,
+    deleteItem,
     getLowStockItems
   };
 };
