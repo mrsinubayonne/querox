@@ -5,10 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Globe, Settings, Eye, Palette, Plus, ExternalLink, Edit, RefreshCw } from "lucide-react";
 import { useWebsites } from "@/hooks/useWebsites";
 import CreateWebsiteModal from "@/components/CreateWebsiteModal";
+import EditWebsiteModal from "@/components/EditWebsiteModal";
+import WebsitePreviewModal from "@/components/WebsitePreviewModal";
 
 const SiteWeb: React.FC = () => {
   const { websites, currentWebsite, loading, publishWebsite, unpublishWebsite, fetchWebsites } = useWebsites();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [selectedWebsite, setSelectedWebsite] = useState<any>(null);
 
   console.log('SiteWeb component - websites:', websites, 'loading:', loading);
 
@@ -25,6 +30,18 @@ const SiteWeb: React.FC = () => {
   const handleRefresh = () => {
     console.log('Refreshing websites list');
     fetchWebsites();
+  };
+
+  const handleEditWebsite = (website: any) => {
+    console.log('Editing website:', website);
+    setSelectedWebsite(website);
+    setShowEditModal(true);
+  };
+
+  const handleViewWebsite = (website: any) => {
+    console.log('Viewing website:', website);
+    setSelectedWebsite(website);
+    setShowPreviewModal(true);
   };
 
   // Auto-refresh when modal closes and a website was created
@@ -132,8 +149,17 @@ const SiteWeb: React.FC = () => {
                 <Card key={website.id} className="relative hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">{website.name}</CardTitle>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          {website.logo_url && (
+                            <img 
+                              src={website.logo_url} 
+                              alt={`Logo ${website.name}`}
+                              className="w-8 h-8 object-cover rounded"
+                            />
+                          )}
+                          <CardTitle className="text-lg">{website.name}</CardTitle>
+                        </div>
                         <CardDescription>{website.description || 'Aucune description'}</CardDescription>
                       </div>
                       <Badge variant={website.is_published ? "default" : "secondary"}>
@@ -152,17 +178,24 @@ const SiteWeb: React.FC = () => {
                       </div>
                       
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="flex-1">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={() => handleEditWebsite(website)}
+                        >
                           <Edit className="w-4 h-4 mr-1" />
                           Modifier
                         </Button>
                         
-                        {website.is_published && (
-                          <Button size="sm" variant="outline">
-                            <ExternalLink className="w-4 h-4 mr-1" />
-                            Voir
-                          </Button>
-                        )}
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewWebsite(website)}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Voir
+                        </Button>
                       </div>
                       
                       <Button 
@@ -221,6 +254,18 @@ const SiteWeb: React.FC = () => {
         <CreateWebsiteModal 
           open={showCreateModal} 
           onOpenChange={setShowCreateModal} 
+        />
+
+        <EditWebsiteModal
+          open={showEditModal}
+          onOpenChange={setShowEditModal}
+          website={selectedWebsite}
+        />
+
+        <WebsitePreviewModal
+          open={showPreviewModal}
+          onOpenChange={setShowPreviewModal}
+          website={selectedWebsite}
         />
       </div>
     </div>
