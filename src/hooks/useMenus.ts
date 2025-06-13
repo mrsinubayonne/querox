@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useDefaultMenu } from './useDefaultMenu';
 
 interface MenuItem {
   id: string;
@@ -20,6 +21,7 @@ export const useMenus = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { createDefaultMenu } = useDefaultMenu();
 
   const fetchMenuItems = async () => {
     if (!user) {
@@ -30,6 +32,29 @@ export const useMenus = () => {
 
     try {
       setLoading(true);
+      
+      // First check if user has any menus
+      const { data: userMenus, error: menuError } = await supabase
+        .from('menus')
+        .select('id')
+        .limit(1);
+
+      if (menuError) {
+        console.error('Error checking user menus:', menuError);
+        throw menuError;
+      }
+
+      // If no menus exist, create a default one
+      if (!userMenus || userMenus.length === 0) {
+        console.log('No menus found, creating default menu...');
+        await createDefaultMenu();
+        // After creating default menu, the items will still be empty but that's expected
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch menu items
       const { data, error } = await supabase
         .from('menu_items')
         .select(`
