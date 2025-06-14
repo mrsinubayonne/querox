@@ -22,14 +22,32 @@ import SiteWebRequestForm, {
 const WHATSAPP_NUMBER = "33612345678"; // Remplace par ton numéro réel
 
 const generateWhatsAppMessage = (data: SiteWebRequestFields) => {
+  let objectifs = data.objectifs.join(", ");
+  if (data.objectifs.includes("Autre") && data.objectifAutre) {
+    objectifs = objectifs.replace("Autre", `Autre : ${data.objectifAutre}`);
+  }
+  const fonctionnalites =
+    data.fonctionnalites && data.fonctionnalites.length > 0
+      ? data.fonctionnalites.join(", ")
+      : "Aucune";
+
   return encodeURIComponent(
-    `Bonjour, je souhaite demander la création de mon site web restaurant depuis l’app Lovable.\n\n` +
-      `🙋‍♂️ Prénom et nom: ${data.ownerName}\n` +
-      `🏷️ Restaurant : ${data.restaurantName}\n` +
-      `📱 Téléphone : ${data.phone}\n` +
-      `✉️ Email : ${data.email}\n` +
-      `🎨 Style : ${data.style}\n` +
-      (data.notes ? `🔎 Infos complémentaires : ${data.notes}\n` : "")
+    `📝 Nouvelle demande de site restaurant depuis l’app Lovable\n\n` +
+    `Nom du restaurant : ${data.restaurantName}\n` +
+    `Adresse : ${data.address}\n` +
+    `Objectif(s) : ${objectifs}\n` +
+    `Fonctionnalités souhaitées : ${fonctionnalites}\n` +
+    `Éléments disponibles :\n` +
+      `• Logo : ${data.elementsDisponibles.logo}\n` +
+      `• Menu : ${data.elementsDisponibles.menu}\n` +
+      `• Photos : ${data.elementsDisponibles.photos}\n` +
+    `Exemples/sites aimés ou style : ${data.exemples || "-"}\n` +
+    `Gestion du site après mise en ligne : ${
+      data.gestionSite === "auto"
+        ? "Je veux pouvoir modifier moi-même"
+        : "Je préfère qu’une équipe s’en charge"
+    }\n` +
+    (data.notes ? `Infos complémentaires : ${data.notes}\n` : "")
   );
 };
 
@@ -40,7 +58,7 @@ const SiteWebContainer: React.FC = () => {
   const handleFormSubmit = (data: SiteWebRequestFields) => {
     setSubmitting(true);
 
-    // Génére le message WhatsApp avec les réponses
+    // Génère le message WhatsApp avec les réponses
     const message = generateWhatsAppMessage(data);
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
     setTimeout(() => {
