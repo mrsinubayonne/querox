@@ -27,6 +27,8 @@ const WebsiteConfigPanel: React.FC<WebsiteConfigPanelProps> = ({
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const [dishImageUrl, setDishImageUrl] = useState<string | undefined>(undefined);
   const [headerImageUrl, setHeaderImageUrl] = useState<string | undefined>(undefined);
+  const [primaryColor, setPrimaryColor] = useState("#3B82F6");
+  const [secondaryColor, setSecondaryColor] = useState("#EF4444");
 
   const debouncedUpdate = useCallback(debounce((id, updates) => onUpdate(id, updates), 500), [onUpdate]);
 
@@ -35,6 +37,8 @@ const WebsiteConfigPanel: React.FC<WebsiteConfigPanelProps> = ({
       setName(website.name || "");
       setDescription(website.description || "");
       setLogoUrl(website.logo_url);
+      setPrimaryColor(website.primary_color || "#3B82F6");
+      setSecondaryColor(website.secondary_color || "#EF4444");
       // Note: dish and header images are not in the database schema yet.
       // This is for UI demonstration.
     }
@@ -96,11 +100,26 @@ const WebsiteConfigPanel: React.FC<WebsiteConfigPanelProps> = ({
           <div className="space-y-4">
             <div>
               <label className="block mb-1 font-medium">Couleur principale</label>
-              <Input type="color" defaultValue="#3B82F6" className="w-20 h-10 p-1" />
+              <Input
+                type="color"
+                value={primaryColor}
+                onChange={(e) => {
+                  setPrimaryColor(e.target.value);
+                  handleUpdate({ primary_color: e.target.value });
+                }}
+                className="w-20 h-10 p-1"
+              />
             </div>
             <div>
               <label className="block mb-1 font-medium">Couleur secondaire</label>
-              <Input type="color" defaultValue="#EF4444" className="w-20 h-10 p-1" />
+              <Input
+                type="color"
+                value={secondaryColor}
+                onChange={(e) => {
+                  setSecondaryColor(e.target.value);
+                  handleUpdate({ secondary_color: e.target.value });
+                }}
+                className="w-20 h-10 p-1" />
             </div>
           </div>
         </TabsContent>
