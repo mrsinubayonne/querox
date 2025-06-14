@@ -1,30 +1,58 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Globe, Rocket, Smartphone, BadgeCheck } from "lucide-react";
+import { Globe } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import SiteWebBenefits from "./SiteWebBenefits";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import SiteWebRequestForm, {
+  SiteWebRequestFields,
+} from "./SiteWebRequestForm";
 
 // Numéro WhatsApp à configurer (format international, sans le +)
 const WHATSAPP_NUMBER = "33612345678"; // Remplace par ton numéro réel
 
-const SiteWebContainer: React.FC = () => {
-  // Message WhatsApp pré-rempli
-  const message = encodeURIComponent(
-    "Bonjour, je souhaite demander la création de mon site web restaurant depuis l’app Lovable."
+const generateWhatsAppMessage = (data: SiteWebRequestFields) => {
+  return encodeURIComponent(
+    `Bonjour, je souhaite demander la création de mon site web restaurant depuis l’app Lovable.\n\n` +
+      `🙋‍♂️ Prénom et nom: ${data.ownerName}\n` +
+      `🏷️ Restaurant : ${data.restaurantName}\n` +
+      `📱 Téléphone : ${data.phone}\n` +
+      `✉️ Email : ${data.email}\n` +
+      `🎨 Style : ${data.style}\n` +
+      (data.notes ? `🔎 Infos complémentaires : ${data.notes}\n` : "")
   );
+};
 
-  const handleWhatsAppRequest = () => {
-    // Ouvre WhatsApp Web ou mobile avec le message pré-rempli
+const SiteWebContainer: React.FC = () => {
+  const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleFormSubmit = (data: SiteWebRequestFields) => {
+    setSubmitting(true);
+
+    // Génére le message WhatsApp avec les réponses
+    const message = generateWhatsAppMessage(data);
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
-    window.open(url, "_blank");
-
-    toast({
-      title: "Demande envoyée",
-      description:
-        "WhatsApp a été ouvert. Envoyez-nous le message pour lancer votre demande !",
-    });
+    setTimeout(() => {
+      window.open(url, "_blank");
+      toast({
+        title: "Demande envoyée 👌",
+        description:
+          "Vos infos ont bien été transmises. Envoyez le message WhatsApp à notre équipe Lovable pour recevoir votre offre personnalisée 😊.",
+      });
+      setSubmitting(false);
+      setOpen(false);
+    }, 750);
   };
 
   return (
@@ -46,16 +74,28 @@ const SiteWebContainer: React.FC = () => {
         </CardHeader>
         <CardContent className="flex flex-col gap-4 p-8 pt-4">
           <p className="text-gray-700 text-center text-base leading-relaxed mb-1">
-            Commandez facilement votre site vitrine moderne.<br/>
-            Cliquez sur le bouton ci-dessous&nbsp;: échange direct sur WhatsApp et livraison rapide 100% clé en main.
+            Commandez votre site restaurant moderne en quelques clics.<br/>
+            Remplissez le formulaire ci-dessous, notre équipe vous contacte rapidement avec une offre sur-mesure.
           </p>
-          <Button
-            onClick={handleWhatsAppRequest}
-            className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg rounded-xl shadow-lg hover-scale transition-all"
-            size="lg"
-          >
-            Demander mon site web
-          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg rounded-xl shadow-lg hover-scale transition-all"
+                size="lg"
+              >
+                Demander mon site web
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Demande de création de site web</DialogTitle>
+                <DialogDescription>
+                  Quelques infos indispensables pour créer un site qui vous ressemble.
+                </DialogDescription>
+              </DialogHeader>
+              <SiteWebRequestForm onSubmit={handleFormSubmit} loading={submitting} />
+            </DialogContent>
+          </Dialog>
           <div className="text-gray-500 text-sm text-center mt-2">
             <span className="font-semibold text-green-700">Livré sous 1 à 3 jours</span>
           </div>
