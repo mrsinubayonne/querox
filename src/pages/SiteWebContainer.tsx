@@ -25,7 +25,7 @@ const SiteWebContainer: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center bg-white gap-6">
+    <div className="flex flex-col items-center bg-white gap-6 pt-10 pb-12">
       <h1 className="text-3xl font-bold text-gray-900 text-center">
         Demande de création de site web
       </h1>
