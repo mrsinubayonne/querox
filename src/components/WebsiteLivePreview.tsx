@@ -1,46 +1,31 @@
 
 import React from "react";
-import { Website } from "@/hooks/useWebsites";
-import { useMenuForWebsite } from "@/hooks/useMenuForWebsite";
-import { generateWebsitePreviewHtml } from "@/utils/generateWebsitePreviewHtml";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Request } from "lucide-react";
 
-interface WebsiteLivePreviewProps {
-  website: Website | null;
-}
+const WebsiteLivePreview: React.FC = () => {
+  const { toast } = useToast();
 
-const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
-  const { menuItems } = useMenuForWebsite();
-
-  if (!website) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-lg min-h-[480px]">
-        <div className="text-gray-400 text-center">Sélectionnez ou créez un site pour voir l'aperçu</div>
-      </div>
-    );
-  }
-
-  // Show preview domain with querox.me using slug, or fallback
-  const src =
-    website.domain
-      ? `https://${website.domain}`
-      : website.slug
-      ? `https://${website.slug}.querox.me`
-      : undefined;
-
-  const srcDoc =
-    !website.domain && !website.slug
-      ? generateWebsitePreviewHtml(website, menuItems)
-      : undefined;
+  const handleRequest = () => {
+    toast({
+      title: "Demande envoyée",
+      description: "Nous avons bien reçu votre demande ! Un membre de l'équipe vous contactera très vite.",
+    });
+  };
 
   return (
-    <div className="relative w-full h-full">
-      <iframe
-        title={`Aperçu de ${website.name}`}
-        src={src}
-        srcDoc={srcDoc}
-        className="w-full h-[70vh] border-0 bg-white rounded-lg"
-        style={{ minHeight: 480 }}
-      />
+    <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-lg min-h-[480px]">
+      <div className="flex flex-col items-center gap-5 max-w-md px-6 py-12">
+        <Request className="w-12 h-12 text-primary mb-2" />
+        <h2 className="text-xl font-bold text-gray-800 mb-1">Créer votre site restaurant</h2>
+        <p className="text-gray-500 text-center mb-3">
+          Vous souhaitez un site internet professionnel à l’image de votre restaurant ? Cliquez ci-dessous pour faire une demande, notre équipe s’occupe du reste !
+        </p>
+        <Button size="lg" className="w-full" onClick={handleRequest}>
+          Faire une demande
+        </Button>
+      </div>
     </div>
   );
 };
