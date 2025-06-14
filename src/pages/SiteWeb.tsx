@@ -1,290 +1,116 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+import React from "react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Globe, Settings, Eye, Palette, Plus, ExternalLink, Edit, RefreshCw } from "lucide-react";
-import { useWebsites } from "@/hooks/useWebsites";
-import CreateWebsiteModal from "@/components/CreateWebsiteModal";
-import EditWebsiteModal from "@/components/EditWebsiteModal";
-import WebsitePreviewModal from "@/components/WebsitePreviewModal";
-import WebsiteContentModal from "@/components/WebsiteContentModal";
+import { Globe, Camera, LayoutDashboard, Users, Star } from "lucide-react";
+
+const demoHero =
+  "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=900&q=80";
+
+const stats = [
+  { label: "Sites créés", value: 27, icon: <Globe className="w-5 h-5" /> },
+  { label: "Pages publiées", value: 93, icon: <LayoutDashboard className="w-5 h-5" /> },
+  { label: "Images en ligne", value: 164, icon: <Camera className="w-5 h-5" /> },
+  { label: "Clients satisfaits", value: 402, icon: <Users className="w-5 h-5" /> },
+];
+
+const specialities = [
+  { title: "Réservation en ligne", desc: "Recevez et gérez les réservations en temps réel.", icon: <Star className="w-5 h-5 text-primary" /> },
+  { title: "Menus interactifs", desc: "Affichez vos plats et menus de façon élégante sur mobile et desktop.", icon: <LayoutDashboard className="w-5 h-5 text-primary" /> },
+  { title: "Galerie photos", desc: "Faites saliver vos visiteurs grâce à une galerie moderne.", icon: <Camera className="w-5 h-5 text-primary" /> },
+  { title: "Personnalisation facile", desc: "Changez couleurs, logo, infos depuis votre tableau de bord.", icon: <Globe className="w-5 h-5 text-primary" /> },
+];
 
 const SiteWeb: React.FC = () => {
-  const { websites, currentWebsite, loading, publishWebsite, unpublishWebsite, fetchWebsites } = useWebsites();
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [selectedWebsite, setSelectedWebsite] = useState<any>(null);
-  const [showContentModal, setShowContentModal] = useState(false);
-  const [contentWebsiteId, setContentWebsiteId] = useState<string | null>(null);
-
-  console.log('SiteWeb component - websites:', websites, 'loading:', loading);
-
-  const handlePublishToggle = async (websiteId: string, isPublished: boolean) => {
-    console.log('Toggling publish status for website:', websiteId, 'current status:', isPublished);
-    
-    if (isPublished) {
-      await unpublishWebsite(websiteId);
-    } else {
-      await publishWebsite(websiteId);
-    }
-  };
-
-  const handleRefresh = () => {
-    console.log('Refreshing websites list');
-    fetchWebsites();
-  };
-
-  const handleEditWebsite = (website: any) => {
-    console.log('Editing website:', website);
-    setSelectedWebsite(website);
-    setShowEditModal(true);
-  };
-
-  const handleViewWebsite = (website: any) => {
-    console.log('Viewing website:', website);
-    setSelectedWebsite(website);
-    setShowPreviewModal(true);
-  };
-
-  // Auto-refresh when modal closes and a website was created
-  useEffect(() => {
-    if (!showCreateModal && websites.length > 0) {
-      console.log('Modal closed, refreshing data');
-      fetchWebsites();
-    }
-  }, [showCreateModal]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Site Web</h1>
-            <p className="text-gray-600">Chargement...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Site Web</h1>
-            <p className="text-gray-600">Créez et gérez le site web de votre restaurant</p>
+    <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 dark:from-background dark:to-background px-0 md:px-8 pb-8">
+      {/* HERO */}
+      <section className="w-full bg-white shadow md:rounded-b-3xl pb-10 mb-8">
+        <div className="max-w-6xl mx-auto flex flex-col-reverse md:flex-row items-center gap-10 px-4 pt-8">
+          <div className="flex-1">
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-5 text-gray-900 dark:text-white leading-tight animate-fade-in">
+              Créez un site web qui ouvre l’appétit 🥐
+            </h1>
+            <p className="text-lg text-gray-700 dark:text-gray-300 mb-6 max-w-lg animate-fade-in">
+              Présentez votre restaurant, vos menus et vos spécialités en quelques clics.
+              Adoptez une présence en ligne moderne et élégante qui attire de nouveaux clients.
+            </p>
+            <div className="flex gap-3 items-center mt-5">
+              <Button size="lg" className="animate-pulse">Démarrer la démo</Button>
+              <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 transition">Voir un exemple</Button>
+            </div>
           </div>
-          
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4" />
-              Actualiser
-            </Button>
-            <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Nouveau site
-            </Button>
+          <div className="flex-1 flex justify-center">
+            <img
+              src={demoHero}
+              alt="Démo site restaurant"
+              className="rounded-2xl shadow-lg max-w-full w-[370px] h-[320px] object-cover ring-2 ring-primary"
+              style={{ animation: "fade-in 0.5s" }}
+            />
           </div>
         </div>
+      </section>
 
-        {websites.length === 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <Card>
-              <CardHeader className="text-center pb-2">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Globe className="w-8 h-8 text-primary" />
-                </div>
-                <CardTitle>Aucun site web configuré</CardTitle>
-                <CardDescription>
-                  Créez un site web professionnel pour votre restaurant en quelques minutes
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <Button className="w-full mb-3" onClick={() => setShowCreateModal(true)}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Créer mon site web
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <Eye className="w-4 h-4 mr-2" />
-                  Voir les modèles
-                </Button>
-              </CardContent>
+      {/* STATISTIQUES */}
+      <section className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 mb-16 animate-fade-in">
+        {stats.map((stat) => (
+          <Card key={stat.label} className="p-5 text-center flex flex-col items-center shadow hover-scale">
+            <span className="mb-3">{stat.icon}</span>
+            <span className="text-2xl font-bold text-primary">{stat.value}</span>
+            <span className="text-gray-600 dark:text-gray-400 text-xs">{stat.label}</span>
+          </Card>
+        ))}
+      </section>
+
+      {/* SPÉCIALITÉS */}
+      <section className="max-w-6xl mx-auto px-4 mb-12">
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-5">
+          Spécialités du site
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {specialities.map((item) => (
+            <Card key={item.title} className="flex items-start gap-4 p-5 hover-scale shadow">
+              {item.icon}
+              <div>
+                <div className="font-medium text-base mb-1">{item.title}</div>
+                <div className="text-gray-600 text-sm">{item.desc}</div>
+              </div>
             </Card>
+          ))}
+        </div>
+      </section>
 
-            <Card>
-              <CardHeader className="text-center pb-2">
-                <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Palette className="w-8 h-8 text-secondary" />
-                </div>
-                <CardTitle>Personnalisation</CardTitle>
-                <CardDescription>
-                  Personnalisez l'apparence et le contenu de votre site
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <div className="space-y-2 text-sm text-gray-600 mb-4">
-                  <p>• Ajoutez votre logo et vos couleurs</p>
-                  <p>• Configurez vos informations</p>
-                  <p>• Ajoutez vos menus et photos</p>
-                </div>
-                <Button variant="outline" className="w-full" disabled>
-                  Personnaliser (créez d'abord un site)
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-              <h3 className="text-green-800 font-medium mb-2">
-                🎉 Félicitations ! Vous avez {websites.length} site{websites.length > 1 ? 's' : ''} web créé{websites.length > 1 ? 's' : ''}
-              </h3>
-              <p className="text-green-600 text-sm">
-                Vous pouvez maintenant personnaliser votre site, ajouter du contenu et le publier.
-              </p>
-            </div>
+      {/* MODÈLES DE SITES */}
+      <section className="max-w-5xl mx-auto px-4">
+        <h3 className="text-xl font-semibold mb-3">Exemples de sites restaurant</h3>
+        <div className="flex flex-wrap md:flex-nowrap gap-6">
+          <Card className="p-4 flex-1 flex flex-col items-center justify-center">
+            <img
+              className="w-full h-48 object-cover mb-3 rounded-md border"
+              src="https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=600&q=80"
+              alt="Exemple menu"
+            />
+            <div className="font-semibold text-gray-700 mb-1">Moderne</div>
+            <div className="text-xs text-gray-500 mb-2">Menu et visuels immersifs</div>
+            <Badge variant="secondary">Populaire</Badge>
+          </Card>
+          <Card className="p-4 flex-1 flex flex-col items-center justify-center">
+            <img
+              className="w-full h-48 object-cover mb-3 rounded-md border"
+              src="https://images.unsplash.com/photo-1500673922987-e212871fec22?auto=format&fit=crop&w=600&q=80"
+              alt="Exemple élégant"
+            />
+            <div className="font-semibold text-gray-700 mb-1">Élégant</div>
+            <div className="text-xs text-gray-500 mb-2">Présentation raffinée</div>
+            <Badge variant="default">Nouveau</Badge>
+          </Card>
+        </div>
+      </section>
 
-            {/* Existing Websites */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {websites.map((website) => (
-                <Card key={website.id} className="relative hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          {website.logo_url && (
-                            <img 
-                              src={website.logo_url} 
-                              alt={`Logo ${website.name}`}
-                              className="w-8 h-8 object-cover rounded"
-                            />
-                          )}
-                          <CardTitle className="text-lg">{website.name}</CardTitle>
-                        </div>
-                        <CardDescription>{website.description || 'Aucune description'}</CardDescription>
-                      </div>
-                      <Badge variant={website.is_published ? "default" : "secondary"}>
-                        {website.is_published ? 'Publié' : 'Brouillon'}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <p><strong>Modèle:</strong> {website.template_id}</p>
-                        {website.address && <p><strong>Adresse:</strong> {website.address}</p>}
-                        {website.phone && <p><strong>Téléphone:</strong> {website.phone}</p>}
-                        {website.email && <p><strong>Email:</strong> {website.email}</p>}
-                        <p><strong>Créé le:</strong> {new Date(website.created_at).toLocaleDateString('fr-FR')}</p>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="flex-1"
-                          onClick={() => handleEditWebsite(website)}
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Modifier
-                        </Button>
-                        
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleViewWebsite(website)}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Voir
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => { setContentWebsiteId(website.id); setShowContentModal(true); }}
-                        >
-                          <Settings className="w-4 h-4 mr-1" />
-                          Gérer le contenu
-                        </Button>
-                      </div>
-                      
-                      <Button 
-                        size="sm" 
-                        className="w-full"
-                        variant={website.is_published ? "destructive" : "default"}
-                        onClick={() => handlePublishToggle(website.id, website.is_published)}
-                      >
-                        {website.is_published ? 'Dépublier' : 'Publier le site'}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Fonctionnalités disponibles</CardTitle>
-            <CardDescription>
-              Votre site web inclura toutes ces fonctionnalités
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Affichage des menus</span>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Réservations en ligne</span>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Galerie photos</span>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Informations de contact</span>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Responsive mobile</span>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">SEO optimisé</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <CreateWebsiteModal 
-          open={showCreateModal} 
-          onOpenChange={setShowCreateModal} 
-        />
-
-        <EditWebsiteModal
-          open={showEditModal}
-          onOpenChange={setShowEditModal}
-          website={selectedWebsite}
-        />
-
-        <WebsitePreviewModal
-          open={showPreviewModal}
-          onOpenChange={setShowPreviewModal}
-          website={selectedWebsite}
-        />
-
-        <WebsiteContentModal
-          open={showContentModal}
-          onOpenChange={(open) => { setShowContentModal(open); if (!open) setContentWebsiteId(null); }}
-          websiteId={contentWebsiteId || ""}
-        />
-      </div>
+      <footer className="w-full pt-20 pb-4 text-center text-muted mt-12 text-xs opacity-70">
+        Cette démo est une maquette. La gestion complète sera disponible après activation.
+      </footer>
     </div>
   );
 };
