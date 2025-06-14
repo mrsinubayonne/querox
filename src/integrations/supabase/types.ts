@@ -457,6 +457,7 @@ export type Database = {
           secondary_color: string | null
           seo_description: string | null
           seo_title: string | null
+          slug: string
           social_links: Json | null
           template_id: string | null
           updated_at: string
@@ -479,6 +480,7 @@ export type Database = {
           secondary_color?: string | null
           seo_description?: string | null
           seo_title?: string | null
+          slug: string
           social_links?: Json | null
           template_id?: string | null
           updated_at?: string
@@ -501,6 +503,7 @@ export type Database = {
           secondary_color?: string | null
           seo_description?: string | null
           seo_title?: string | null
+          slug?: string
           social_links?: Json | null
           template_id?: string | null
           updated_at?: string

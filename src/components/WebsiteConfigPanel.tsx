@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -15,6 +14,13 @@ interface WebsiteConfigPanelProps {
   website: Website | null;
   onUpdate: (id: string, updates: Partial<Website>) => Promise<any>;
 }
+
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/--+/g, '-')
+    .replace(/^-*|-*$/g, '');
 
 const WebsiteConfigPanel: React.FC<WebsiteConfigPanelProps> = ({
   tab,
@@ -68,6 +74,11 @@ const WebsiteConfigPanel: React.FC<WebsiteConfigPanelProps> = ({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
 
+  // Slug
+  const [slug, setSlug] = useState("");
+  const [slugMsg, setSlugMsg] = useState<null | string>(null);
+  const [slugChecking, setSlugChecking] = useState(false);
+
   const debouncedUpdate = useCallback(debounce((id, updates) => onUpdate(id, updates), 500), [onUpdate]);
 
   useEffect(() => {
@@ -112,8 +123,39 @@ const WebsiteConfigPanel: React.FC<WebsiteConfigPanelProps> = ({
       setAddress(website.address || "");
       setPhone(website.phone || "");
       setEmail(website.email || "");
+      setSlug(website.slug || ""); // <-- sync slug field
     }
   }, [website]);
+
+  // Check slug uniqueness as user types
+  useEffect(() => {
+    async function checkSlugUniqueness() {
+      if (!slug) {
+        setSlugMsg("Le slug ne peut pas être vide");
+        return;
+      }
+      const base = slugify(slug);
+      if (base.length < 3) {
+        setSlugMsg("Minimum 3 caractères");
+        return;
+      }
+      setSlugChecking(true);
+      // Quick local check, then query supabase
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data, error } = await supabase
+        .from("websites")
+        .select("id")
+        .eq("slug", base)
+        .limit(1);
+      if (error) setSlugMsg("Erreur lors de la vérification");
+      else if (data && data.length > 0 && website && data[0].id !== website.id)
+        setSlugMsg("Cette adresse est déjà prise");
+      else setSlugMsg(null);
+      setSlugChecking(false);
+    }
+    if (website) checkSlugUniqueness();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, website?.id]);
 
   const handleUpdate = (updates: Partial<Website>) => {
     if (website) {
@@ -150,6 +192,43 @@ const WebsiteConfigPanel: React.FC<WebsiteConfigPanelProps> = ({
                   handleUpdate({ name: e.target.value });
                 }}
               />
+            </div>
+            {/* Slug field */}
+            <div>
+              <label className="block mb-2 font-medium text-sm">URL du site</label>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">https://</span>
+                <Input
+                  value={slug}
+                  onChange={(e) => {
+                    const val = slugify(e.target.value);
+                    setSlug(val);
+                    handleUpdate({ slug: val });
+                  }}
+                  className="w-48"
+                  maxLength={32}
+                  minLength={3}
+                  pattern="[a-z0-9-]+"
+                  required
+                  disabled={!website}
+                />
+                <span className="text-gray-400">.querox.me</span>
+                {slugChecking && (
+                  <span className="text-xs text-gray-400 animate-pulse ml-2">Vérif...</span>
+                )}
+              </div>
+              <div className="text-xs mt-1" style={{ minHeight: "18px" }}>
+                {!slugMsg
+                  ? (
+                    <span className="text-green-600">
+                      Lien de prévisualisation : <span className="font-mono">https://{slug || "slug"}.querox.me</span>
+                    </span>
+                  )
+                  : (
+                    <span className="text-red-600">{slugMsg}</span>
+                  )
+                }
+              </div>
             </div>
             <div>
               <label className="block mb-2 font-medium text-sm">Description</label>

@@ -24,7 +24,8 @@ export interface Website {
   seo_description?: string;
   created_at: string;
   updated_at: string;
-  
+  slug: string; // <-- Add slug
+
   // New customizable fields
   hero_title?: string;
   hero_subtitle?: string;
@@ -237,7 +238,16 @@ export const useWebsites = () => {
 
     try {
       console.log('Updating website:', id, 'with:', updates);
-      
+
+      // Slug must be lowercase and use only valid chars if present
+      if ('slug' in updates && updates.slug) {
+        updates.slug = updates.slug
+          .toLowerCase()
+          .replace(/[^a-z0-9-]/g, '-')
+          .replace(/--+/g, '-')
+          .replace(/^-*|-*$/g, '');
+      }
+
       const { data, error } = await supabase
         .from('websites')
         .update(updates)
@@ -258,7 +268,7 @@ export const useWebsites = () => {
         title: "Succès",
         description: "Site web mis à jour avec succès"
       });
-      
+
       return data;
     } catch (error: any) {
       console.error('Update error:', error);

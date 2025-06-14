@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Website } from "@/hooks/useWebsites";
 import { useMenuForWebsite } from "@/hooks/useMenuForWebsite";
@@ -18,8 +19,18 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
     );
   }
 
-  const src = website.domain ? `https://${website.domain}` : undefined;
-  const srcDoc = !website.domain ? generateWebsitePreviewHtml(website, menuItems) : undefined;
+  // Show preview domain with querox.me using slug, or fallback
+  const src =
+    website.domain
+      ? `https://${website.domain}`
+      : website.slug
+      ? `https://${website.slug}.querox.me`
+      : undefined;
+
+  const srcDoc =
+    !website.domain && !website.slug
+      ? generateWebsitePreviewHtml(website, menuItems)
+      : undefined;
 
   return (
     <div className="relative w-full h-full">
@@ -35,5 +46,3 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
 };
 
 export default WebsiteLivePreview;
-
-// ⚠️ Ce fichier devient très long. Pensez à demander un refactoring plus approfondi pour améliorer sa maintenabilité.
