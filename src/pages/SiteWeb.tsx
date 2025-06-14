@@ -7,6 +7,7 @@ import { useWebsites } from "@/hooks/useWebsites";
 import CreateWebsiteModal from "@/components/CreateWebsiteModal";
 import EditWebsiteModal from "@/components/EditWebsiteModal";
 import WebsitePreviewModal from "@/components/WebsitePreviewModal";
+import WebsiteContentModal from "@/components/WebsiteContentModal";
 
 const SiteWeb: React.FC = () => {
   const { websites, currentWebsite, loading, publishWebsite, unpublishWebsite, fetchWebsites } = useWebsites();
@@ -14,6 +15,8 @@ const SiteWeb: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedWebsite, setSelectedWebsite] = useState<any>(null);
+  const [showContentModal, setShowContentModal] = useState(false);
+  const [contentWebsiteId, setContentWebsiteId] = useState<string | null>(null);
 
   console.log('SiteWeb component - websites:', websites, 'loading:', loading);
 
@@ -196,6 +199,14 @@ const SiteWeb: React.FC = () => {
                           <Eye className="w-4 h-4 mr-1" />
                           Voir
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => { setContentWebsiteId(website.id); setShowContentModal(true); }}
+                        >
+                          <Settings className="w-4 h-4 mr-1" />
+                          Gérer le contenu
+                        </Button>
                       </div>
                       
                       <Button 
@@ -266,6 +277,12 @@ const SiteWeb: React.FC = () => {
           open={showPreviewModal}
           onOpenChange={setShowPreviewModal}
           website={selectedWebsite}
+        />
+
+        <WebsiteContentModal
+          open={showContentModal}
+          onOpenChange={(open) => { setShowContentModal(open); if (!open) setContentWebsiteId(null); }}
+          websiteId={contentWebsiteId || ""}
         />
       </div>
     </div>
