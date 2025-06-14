@@ -21,22 +21,10 @@ import SiteWebRequestForm, {
 const WHATSAPP_NUMBER = "33612345678"; // Remplace par ton numéro réel
 
 const generateWhatsAppMessage = (data: SiteWebRequestFields) => {
-  let objectifs = data.objectifs.join(", ");
-  if (data.objectifs.includes("Autre") && data.objectifAutre) {
-    objectifs = objectifs.replace("Autre", `Autre : ${data.objectifAutre}`);
-  }
-  const fonctionnalites =
-    data.fonctionnalites && data.fonctionnalites.length > 0
-      ? data.fonctionnalites.join(", ")
-      : "Aucune";
-
-  // On retire la section sur les éléments disponibles et les exemples.
   return encodeURIComponent(
     `📝 Nouvelle demande de site restaurant depuis l’app Lovable\n\n` +
     `Nom du restaurant : ${data.restaurantName}\n` +
     `Adresse : ${data.address}\n` +
-    `Objectif(s) : ${objectifs}\n` +
-    `Fonctionnalités souhaitées : ${fonctionnalites}\n` +
     `Gestion du site après mise en ligne : ${
       data.gestionSite === "auto"
         ? "Je veux pouvoir modifier moi-même"
