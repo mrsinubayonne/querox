@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useWebsites } from "@/hooks/useWebsites";
 import WebsiteConfigPanel from "@/components/WebsiteConfigPanel";
@@ -80,7 +79,7 @@ const SiteWebContainer: React.FC = () => {
             <p className="text-gray-500">Voir comment votre site web apparaîtra aux visiteurs</p>
           </div>
           <div className="w-full h-full rounded-lg border overflow-hidden bg-gray-50">
-            <WebsiteLivePreview website={currentWebsite} />
+            <WebsiteLivePreview />
           </div>
         </div>
       </div>
