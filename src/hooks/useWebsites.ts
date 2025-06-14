@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface Website {
+export interface Website {
   id: string;
   user_id: string;
   name: string;
@@ -27,7 +26,7 @@ interface Website {
   updated_at: string;
 }
 
-interface WebsiteFormData {
+export interface WebsiteFormData {
   name: string;
   description?: string;
   address?: string;
