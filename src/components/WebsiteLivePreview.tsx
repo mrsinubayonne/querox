@@ -47,6 +47,12 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
       }
     ];
 
+    // Fonction d'affichage du prix en FCFA
+    function formatPriceFCFA(price: number) {
+      // Pas de décimales, espace comme séparateur de milliers
+      return `${Math.round(price).toLocaleString("fr-FR")} FCFA`;
+    }
+
     return `
       <!DOCTYPE html>
       <html lang="fr">
@@ -459,7 +465,7 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
                 <div class="speciality-image" ${item.image_url ? `style="background-image: url('${item.image_url}');"` : ''}>${!item.image_url ? item.name : ''}</div>
                 <div class="speciality-content">
                   <div class="speciality-title">${item.name}</div>
-                  <div class="speciality-price">${item.price.toFixed(2)} €</div>
+                  <div class="speciality-price">${formatPriceFCFA(item.price)}</div>
                   <div class="speciality-rating">
                     <span>★★★★★</span>
                     <span>${website[`dish${index + 1}_rating`] || '4.8'}</span>
