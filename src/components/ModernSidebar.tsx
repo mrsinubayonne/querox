@@ -25,7 +25,7 @@ interface ModernSidebarProps {
 
 const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }) => {
   const menuItems = [
-    { icon: LayoutDashboard, label: "Tableau de bord", path: "/", color: "text-blue-600" },
+    { icon: LayoutDashboard, label: "Tableau de bord", path: "/dashboard", color: "text-blue-600" },
     { icon: Menu, label: "Menus", path: "/menus", color: "text-green-600" },
     { icon: CalendarDays, label: "Réservations", path: "/reservations", color: "text-purple-600" },
     { icon: CalendarDays, label: "Événements", path: "/evenements", color: "text-orange-600" },
@@ -89,20 +89,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }
             </Link>
           ))}
         </nav>
-      </div>
-
-      <div className="p-4 border-t border-gray-100">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-            MR
-          </div>
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 truncate">mrsinulion@gmail.com</div>
-              <div className="text-xs text-gray-500">Administrateur</div>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

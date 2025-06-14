@@ -1,0 +1,129 @@
+
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  ArrowLeft, 
+  User, 
+  Globe, 
+  Bell, 
+  Shield, 
+  Palette, 
+  Database
+} from "lucide-react";
+import { ProfileTab } from "@/components/ProfileTab";
+import { GeneralTab } from "@/components/GeneralTab";
+import { NotificationsTab } from "@/components/NotificationsTab";
+import { SecurityTab } from "@/components/SecurityTab";
+import { AppearanceTab } from "@/components/AppearanceTab";
+import { DataTab } from "@/components/DataTab";
+
+const Parametres = () => {
+  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState(true);
+  const [emailUpdates, setEmailUpdates] = useState(false);
+
+  // Restaurant data
+  const [restaurantName, setRestaurantName] = useState('Mon Restaurant');
+  const [currency, setCurrency] = useState('CFA');
+  const [language, setLanguage] = useState('fr');
+  const [timezone, setTimezone] = useState('Africa/Dakar');
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border">
+        <div className="container py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link to="/site-web">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-xl font-semibold">Paramètres</h1>
+              <p className="text-sm text-muted-foreground">Configurez votre application selon vos préférences</p>
+            </div>
+          </div>
+          <Button className="bg-emerald-600 hover:bg-emerald-700">
+            Sauvegarder
+          </Button>
+        </div>
+      </header>
+      
+      <main className="container py-8">
+        <Tabs defaultValue="profile" className="max-w-4xl mx-auto">
+          <TabsList className="mb-8 grid grid-cols-6 w-full">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Mon profil
+            </TabsTrigger>
+            <TabsTrigger value="general" className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              Général
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Notifications
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Sécurité
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Apparence
+            </TabsTrigger>
+            <TabsTrigger value="data" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Données
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="profile" className="space-y-6">
+            <ProfileTab />
+          </TabsContent>
+          
+          <TabsContent value="general" className="space-y-6">
+            <GeneralTab
+              restaurantName={restaurantName}
+              setRestaurantName={setRestaurantName}
+              currency={currency}
+              setCurrency={setCurrency}
+              language={language}
+              setLanguage={setLanguage}
+              timezone={timezone}
+              setTimezone={setTimezone}
+            />
+          </TabsContent>
+          
+          <TabsContent value="appearance" className="space-y-6">
+            <AppearanceTab
+              darkMode={darkMode}
+              setDarkMode={setDarkMode}
+            />
+          </TabsContent>
+          
+          <TabsContent value="notifications" className="space-y-6">
+            <NotificationsTab
+              notifications={notifications}
+              setNotifications={setNotifications}
+              emailUpdates={emailUpdates}
+              setEmailUpdates={setEmailUpdates}
+            />
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6">
+            <SecurityTab />
+          </TabsContent>
+
+          <TabsContent value="data" className="space-y-6">
+            <DataTab />
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
+  );
+};
+
+export default Parametres;
