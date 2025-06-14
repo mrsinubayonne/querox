@@ -18,6 +18,8 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
   const getPreviewSrcDoc = () => {
     if (!website) return "";
     
+    const heroImageUrl = website.hero_image_url || 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80';
+    
     return `
       <!DOCTYPE html>
       <html lang="fr">
@@ -108,7 +110,7 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
           
           .hero {
             height: 100vh;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80');
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('${heroImageUrl}');
             background-size: cover;
             background-position: center;
             display: flex;
@@ -260,6 +262,8 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
             color: white;
             font-size: 1.5rem;
             font-weight: bold;
+            background-size: cover;
+            background-position: center;
           }
           
           .speciality-content {
@@ -383,11 +387,11 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
 
         <section class="hero" id="accueil">
           <div class="hero-content">
-            <h1>${website.name}</h1>
-            <p>${website.description || 'Une expérience culinaire unique vous attend'}</p>
+            <h1>${website.hero_title || website.name}</h1>
+            <p>${website.hero_subtitle || website.description || 'Une expérience culinaire unique vous attend'}</p>
             <div class="hero-buttons">
-              <button class="btn-primary">Voir le Menu</button>
-              <button class="btn-secondary">Découvrir l'histoire</button>
+              <button class="btn-primary">${website.hero_button_primary || 'Voir le Menu'}</button>
+              <button class="btn-secondary">${website.hero_button_secondary || 'Découvrir l\'histoire'}</button>
             </div>
           </div>
         </section>
@@ -395,23 +399,23 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
         <section class="stats">
           <div class="stats-container">
             <div class="stat-item">
-              <div class="stat-icon">15+</div>
-              <div class="stat-number">15+</div>
+              <div class="stat-icon">${(website.stats_experience || '15+').substring(0, 3)}</div>
+              <div class="stat-number">${website.stats_experience || '15+'}</div>
               <div class="stat-label">Années d'expérience</div>
             </div>
             <div class="stat-item">
-              <div class="stat-icon">10k</div>
-              <div class="stat-number">10k+</div>
+              <div class="stat-icon">${(website.stats_clients || '10k').substring(0, 3)}</div>
+              <div class="stat-number">${website.stats_clients || '10k+'}</div>
               <div class="stat-label">Clients satisfaits</div>
             </div>
             <div class="stat-item">
-              <div class="stat-icon">50+</div>
-              <div class="stat-number">50+</div>
+              <div class="stat-icon">${(website.stats_dishes || '50+').substring(0, 3)}</div>
+              <div class="stat-number">${website.stats_dishes || '50+'}</div>
               <div class="stat-label">Plats au menu</div>
             </div>
             <div class="stat-item">
-              <div class="stat-icon">4.8</div>
-              <div class="stat-number">4.8★</div>
+              <div class="stat-icon">${(website.stats_rating || '4.8').substring(0, 3)}</div>
+              <div class="stat-number">${website.stats_rating || '4.8★'}</div>
               <div class="stat-label">Note moyenne</div>
             </div>
           </div>
@@ -419,40 +423,40 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
 
         <section class="specialities" id="menu">
           <div class="section-title">
-            <h2>Découvrez nos spécialités</h2>
-            <p>Chaque plat est préparé avec des ingrédients frais et de qualité</p>
+            <h2>${website.specialities_title || 'Découvrez nos spécialités'}</h2>
+            <p>${website.specialities_subtitle || 'Chaque plat est préparé avec des ingrédients frais et de qualité'}</p>
           </div>
           <div class="specialities-grid">
             <div class="speciality-card">
-              <div class="speciality-image">Hamburger Royal</div>
+              <div class="speciality-image" ${website.dish1_image_url ? `style="background-image: url('${website.dish1_image_url}');"` : ''}>${!website.dish1_image_url ? (website.dish1_name || 'Hamburger Royal') : ''}</div>
               <div class="speciality-content">
-                <div class="speciality-title">Hamburger Royal</div>
-                <div class="speciality-price">14.50 €</div>
+                <div class="speciality-title">${website.dish1_name || 'Hamburger Royal'}</div>
+                <div class="speciality-price">${website.dish1_price || '14.50 €'}</div>
                 <div class="speciality-rating">
                   <span>★★★★★</span>
-                  <span>4.8</span>
+                  <span>${website.dish1_rating || '4.8'}</span>
                 </div>
               </div>
             </div>
             <div class="speciality-card">
-              <div class="speciality-image">Salade Fraîche</div>
+              <div class="speciality-image" ${website.dish2_image_url ? `style="background-image: url('${website.dish2_image_url}');"` : ''}>${!website.dish2_image_url ? (website.dish2_name || 'Salade Fraîche') : ''}</div>
               <div class="speciality-content">
-                <div class="speciality-title">Salade Fraîche</div>
-                <div class="speciality-price">12.90 €</div>
+                <div class="speciality-title">${website.dish2_name || 'Salade Fraîche'}</div>
+                <div class="speciality-price">${website.dish2_price || '12.90 €'}</div>
                 <div class="speciality-rating">
                   <span>★★★★★</span>
-                  <span>4.7</span>
+                  <span>${website.dish2_rating || '4.7'}</span>
                 </div>
               </div>
             </div>
             <div class="speciality-card">
-              <div class="speciality-image">Pasta al Pomodoro</div>
+              <div class="speciality-image" ${website.dish3_image_url ? `style="background-image: url('${website.dish3_image_url}');"` : ''}>${!website.dish3_image_url ? (website.dish3_name || 'Pasta al Pomodoro') : ''}</div>
               <div class="speciality-content">
-                <div class="speciality-title">Pasta al Pomodoro</div>
-                <div class="speciality-price">16.20 €</div>
+                <div class="speciality-title">${website.dish3_name || 'Pasta al Pomodoro'}</div>
+                <div class="speciality-price">${website.dish3_price || '16.20 €'}</div>
                 <div class="speciality-rating">
                   <span>★★★★★</span>
-                  <span>4.9</span>
+                  <span>${website.dish3_rating || '4.9'}</span>
                 </div>
               </div>
             </div>
@@ -462,8 +466,8 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
         <section class="contact" id="contact">
           <div class="contact-container">
             <div>
-              <h2 class="contact-title">Venez nous rendre visite</h2>
-              <p class="contact-subtitle">Nous sommes ouverts du lundi au dimanche</p>
+              <h2 class="contact-title">${website.contact_title || 'Venez nous rendre visite'}</h2>
+              <p class="contact-subtitle">${website.contact_subtitle || 'Nous sommes ouverts du lundi au dimanche'}</p>
               <div class="contact-info">
                 <div class="contact-item">
                   <div class="contact-icon">📍</div>

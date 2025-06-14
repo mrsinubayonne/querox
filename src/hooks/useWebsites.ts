@@ -24,6 +24,36 @@ export interface Website {
   seo_description?: string;
   created_at: string;
   updated_at: string;
+  
+  // New customizable fields
+  hero_title?: string;
+  hero_subtitle?: string;
+  hero_image_url?: string;
+  hero_button_primary?: string;
+  hero_button_secondary?: string;
+  
+  stats_experience?: string;
+  stats_clients?: string;
+  stats_dishes?: string;
+  stats_rating?: string;
+  
+  specialities_title?: string;
+  specialities_subtitle?: string;
+  dish1_name?: string;
+  dish1_price?: string;
+  dish1_rating?: string;
+  dish1_image_url?: string;
+  dish2_name?: string;
+  dish2_price?: string;
+  dish2_rating?: string;
+  dish2_image_url?: string;
+  dish3_name?: string;
+  dish3_price?: string;
+  dish3_rating?: string;
+  dish3_image_url?: string;
+  
+  contact_title?: string;
+  contact_subtitle?: string;
 }
 
 export interface WebsiteFormData {
