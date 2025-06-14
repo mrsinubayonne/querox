@@ -122,8 +122,7 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                JE VEUX A LA PLACE CELA 
-                REMPLACER CONTRE Souhaitez-vous gérer le site vous-même après sa mise en ligne ou nous confier la gestion ?
+                Souhaitez-vous gérer le site vous-même après sa mise en ligne ou nous confier la gestion ?
               </FormLabel>
               <FormControl>
                 <RadioGroup
