@@ -37,11 +37,11 @@ const SiteWebContainer: React.FC = () => {
         className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg shadow"
         size="lg"
       >
-        Demander mon site web via WhatsApp
+        Demander mon site web
       </Button>
+      <span className="text-gray-500 text-sm mt-2">Nous répondrons en 1 à 3 jours</span>
     </div>
   );
 };
 
 export default SiteWebContainer;
-
