@@ -36,13 +36,7 @@ const FONCTIONNALITES = [
   "Carte Google Maps",
 ];
 
-// Éléments disponibles (oui/non)
-const ELEMENTS_DISPONIBLES = [
-  { name: "logo", label: "Logo" },
-  { name: "menu", label: "Menu (PDF, Word ou photo)" },
-  { name: "photos", label: "Photos de qualité du restaurant ou des plats" },
-];
-
+// On retire la question sur les éléments disponibles et sur les exemples
 const formSchema = z.object({
   restaurantName: z.string().min(2, "Nom requis"),
   address: z.string().min(5, "Adresse requise"),
@@ -51,19 +45,15 @@ const formSchema = z.object({
     .min(1, "Sélectionnez au moins un objectif"),
   objectifAutre: z.string().optional(),
   fonctionnalites: z.array(z.string()).optional(),
-  elementsDisponibles: z.object({
-    logo: z.enum(["Oui", "Non"]),
-    menu: z.enum(["Oui", "Non"]),
-    photos: z.enum(["Oui", "Non"]),
-  }),
-  exemples: z.string().optional(),
-  gestionSite: z.enum([
-    "auto",
-    "equipe",
-  ], {
-    required_error:
-      "Choisissez une option sur la gestion du site après mise en ligne.",
-  }),
+  // elementsDisponibles: z.object({ logo: z.enum(["Oui", "Non"]), menu: z.enum(["Oui", "Non"]), photos: z.enum(["Oui", "Non"]), }), // supprimé
+  // exemples: z.string().optional(), // supprimé
+  gestionSite: z.enum(
+    ["auto", "equipe"],
+    {
+      required_error:
+        "Choisissez une option sur la gestion du site après mise en ligne.",
+    }
+  ),
   notes: z.string().optional(),
 });
 
@@ -86,8 +76,8 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
       objectifs: [],
       objectifAutre: "",
       fonctionnalites: [],
-      elementsDisponibles: { logo: "Non", menu: "Non", photos: "Non" },
-      exemples: "",
+      // elementsDisponibles: { logo: "Non", menu: "Non", photos: "Non" }, // supprimé
+      // exemples: "", // supprimé
       gestionSite: undefined,
       notes: "",
     },
@@ -96,7 +86,7 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
   const objectifs = OBJECTIFS;
   const fonctionnalites = FONCTIONNALITES;
 
-  const elementsDisponibles = ELEMENTS_DISPONIBLES;
+  // const elementsDisponibles = ELEMENTS_DISPONIBLES; // supprimé
 
   return (
     <Form {...form}>
@@ -246,6 +236,8 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
           )}
         />
 
+        {/* QUESTIONS SUPPRIMEES */}
+        {/* 
         <div>
           <FormLabel>
             Avez-vous déjà ces éléments ?
@@ -292,7 +284,9 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
             ))}
           </div>
         </div>
+        */}
 
+        {/* 
         <FormField
           control={form.control}
           name="exemples"
@@ -311,6 +305,7 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
             </FormItem>
           )}
         />
+        */}
 
         <FormField
           control={form.control}
@@ -362,3 +357,4 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
 };
 
 export default SiteWebRequestForm;
+

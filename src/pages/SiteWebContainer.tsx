@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -31,17 +30,13 @@ const generateWhatsAppMessage = (data: SiteWebRequestFields) => {
       ? data.fonctionnalites.join(", ")
       : "Aucune";
 
+  // On retire la section sur les éléments disponibles et les exemples.
   return encodeURIComponent(
     `📝 Nouvelle demande de site restaurant depuis l’app Lovable\n\n` +
     `Nom du restaurant : ${data.restaurantName}\n` +
     `Adresse : ${data.address}\n` +
     `Objectif(s) : ${objectifs}\n` +
     `Fonctionnalités souhaitées : ${fonctionnalites}\n` +
-    `Éléments disponibles :\n` +
-      `• Logo : ${data.elementsDisponibles.logo}\n` +
-      `• Menu : ${data.elementsDisponibles.menu}\n` +
-      `• Photos : ${data.elementsDisponibles.photos}\n` +
-    `Exemples/sites aimés ou style : ${data.exemples || "-"}\n` +
     `Gestion du site après mise en ligne : ${
       data.gestionSite === "auto"
         ? "Je veux pouvoir modifier moi-même"
