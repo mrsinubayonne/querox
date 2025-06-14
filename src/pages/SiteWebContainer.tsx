@@ -39,7 +39,7 @@ const SiteWebContainer: React.FC = () => {
       >
         Demander mon site web
       </Button>
-      <span className="text-gray-500 text-sm mt-2">Nous répondrons en 1 à 3 jours</span>
+      <span className="text-gray-500 text-sm mt-2">Votre site sera reçu sous 1 à 3 jours</span>
     </div>
   );
 };
