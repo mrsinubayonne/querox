@@ -1,12 +1,14 @@
-
 import React from "react";
 import { Website } from "@/hooks/useWebsites";
+import { useMenuForWebsite } from "@/hooks/useMenuForWebsite";
 
 interface WebsiteLivePreviewProps {
   website: Website | null;
 }
 
 const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
+  const { menuItems, loading: menuLoading } = useMenuForWebsite();
+
   if (!website) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-lg min-h-[480px]">
@@ -20,6 +22,31 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
     
     const heroImageUrl = website.hero_image_url || 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80';
     
+    // Utiliser les vrais plats du menu ou des plats par défaut
+    const displayItems = menuItems.length > 0 ? menuItems : [
+      {
+        id: '1',
+        name: website.dish1_name || 'Hamburger Royal',
+        price: parseFloat((website.dish1_price || '14.50 €').replace(/[^\d.,]/g, '').replace(',', '.')) || 14.5,
+        image_url: website.dish1_image_url,
+        description: 'Délicieux hamburger préparé avec des ingrédients frais'
+      },
+      {
+        id: '2',
+        name: website.dish2_name || 'Salade Fraîche',
+        price: parseFloat((website.dish2_price || '12.90 €').replace(/[^\d.,]/g, '').replace(',', '.')) || 12.9,
+        image_url: website.dish2_image_url,
+        description: 'Salade fraîche avec des légumes de saison'
+      },
+      {
+        id: '3',
+        name: website.dish3_name || 'Pasta al Pomodoro',
+        price: parseFloat((website.dish3_price || '16.20 €').replace(/[^\d.,]/g, '').replace(',', '.')) || 16.2,
+        image_url: website.dish3_image_url,
+        description: 'Pâtes fraîches avec sauce tomate maison'
+      }
+    ];
+
     return `
       <!DOCTYPE html>
       <html lang="fr">
@@ -427,39 +454,20 @@ const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({ website }) => {
             <p>${website.specialities_subtitle || 'Chaque plat est préparé avec des ingrédients frais et de qualité'}</p>
           </div>
           <div class="specialities-grid">
-            <div class="speciality-card">
-              <div class="speciality-image" ${website.dish1_image_url ? `style="background-image: url('${website.dish1_image_url}');"` : ''}>${!website.dish1_image_url ? (website.dish1_name || 'Hamburger Royal') : ''}</div>
-              <div class="speciality-content">
-                <div class="speciality-title">${website.dish1_name || 'Hamburger Royal'}</div>
-                <div class="speciality-price">${website.dish1_price || '14.50 €'}</div>
-                <div class="speciality-rating">
-                  <span>★★★★★</span>
-                  <span>${website.dish1_rating || '4.8'}</span>
+            ${displayItems.map((item, index) => `
+              <div class="speciality-card">
+                <div class="speciality-image" ${item.image_url ? `style="background-image: url('${item.image_url}');"` : ''}>${!item.image_url ? item.name : ''}</div>
+                <div class="speciality-content">
+                  <div class="speciality-title">${item.name}</div>
+                  <div class="speciality-price">${item.price.toFixed(2)} €</div>
+                  <div class="speciality-rating">
+                    <span>★★★★★</span>
+                    <span>${website[`dish${index + 1}_rating`] || '4.8'}</span>
+                  </div>
+                  ${item.description ? `<p style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;">${item.description}</p>` : ''}
                 </div>
               </div>
-            </div>
-            <div class="speciality-card">
-              <div class="speciality-image" ${website.dish2_image_url ? `style="background-image: url('${website.dish2_image_url}');"` : ''}>${!website.dish2_image_url ? (website.dish2_name || 'Salade Fraîche') : ''}</div>
-              <div class="speciality-content">
-                <div class="speciality-title">${website.dish2_name || 'Salade Fraîche'}</div>
-                <div class="speciality-price">${website.dish2_price || '12.90 €'}</div>
-                <div class="speciality-rating">
-                  <span>★★★★★</span>
-                  <span>${website.dish2_rating || '4.7'}</span>
-                </div>
-              </div>
-            </div>
-            <div class="speciality-card">
-              <div class="speciality-image" ${website.dish3_image_url ? `style="background-image: url('${website.dish3_image_url}');"` : ''}>${!website.dish3_image_url ? (website.dish3_name || 'Pasta al Pomodoro') : ''}</div>
-              <div class="speciality-content">
-                <div class="speciality-title">${website.dish3_name || 'Pasta al Pomodoro'}</div>
-                <div class="speciality-price">${website.dish3_price || '16.20 €'}</div>
-                <div class="speciality-rating">
-                  <span>★★★★★</span>
-                  <span>${website.dish3_rating || '4.9'}</span>
-                </div>
-              </div>
-            </div>
+            `).join('')}
           </div>
         </section>
 
