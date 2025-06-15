@@ -44,56 +44,38 @@ const PublicMenu: React.FC = () => {
     try {
       setLoading(true);
 
+      // Nouvelle requête brute, sans jointure ni filtre
       const { data: menuItemsData, error: itemsError } = await supabase
         .from('menu_items')
-        .select(`
-          id,
-          name,
-          description,
-          price,
-          image_url,
-          is_available,
-          menu_categories(
-            name
-          )
-        `)
-        .eq('is_available', true)
+        .select('*')
         .order('name');
+
+      console.log("‼️ Résultat brut table menu_items :", menuItemsData, itemsError);
 
       if (itemsError) {
         console.error('Error fetching menu items:', itemsError);
         throw itemsError;
       }
 
-      // Ajoute un log détaillé pour comprendre la donnée 
-      console.log("‼️ Structure brute menu_items reçus:", menuItemsData);
+      // Afficher les données telles qu'on les reçoit
+      if (!menuItemsData || menuItemsData.length === 0) {
+        console.warn("‼️ Aucun plat trouvé dans la table menu_items");
+      }
 
-      // Correction : traite menu_categories comme objet OU array, selon le retour de Supabase.
       const transformedItems: MenuItem[] = (menuItemsData || []).map(item => {
-        let category_name = 'Autres';
-        // Si c’est array et il y a au moins un élément
-        if (Array.isArray(item.menu_categories) && item.menu_categories.length > 0 && item.menu_categories[0]?.name) {
-          category_name = item.menu_categories[0].name;
-        }
-        // Si c’est un objet unique
-        else if (item.menu_categories && typeof item.menu_categories === 'object' && item.menu_categories.name) {
-          category_name = item.menu_categories.name;
-        }
-        // Sinon, 'Autres' par défaut
-
         return {
           id: item.id,
           name: item.name,
           description: item.description || '',
           price: Number(item.price),
           image_url: item.image_url || undefined,
-          category_name,
+          // Si on a une catégorie, on l'affiche, sinon 'Autres'
+          category_name: item.category_name || 'Autres',
           is_available: item.is_available
         }
       });
 
-      console.log("‼️ Plats transformés pour affichage:", transformedItems);
-
+      console.log("‼️ Table menu_items transformée :", transformedItems);
       setMenuItems(transformedItems);
     } catch (error) {
       console.error('Error fetching menu:', error);
