@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +10,6 @@ import ShoppingCartSidebar from '@/components/public-menu/ShoppingCartSidebar';
 import PublicMenuLoader from '@/components/public-menu/PublicMenuLoader';
 import PromotionalBanner from '@/components/public-menu/PromotionalBanner';
 import CategoryFilter from '@/components/CategoryFilter';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const PublicMenu: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -174,7 +174,7 @@ const PublicMenu: React.FC = () => {
 
   // 🔥 NOUVEAU: fond dégradé tout doux et container superposée sur desktop
   return (
-    <div className="min-h-screen w-full bg-slate-50 flex flex-col">
+    <div className="min-h-screen w-full bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex flex-col">
       <PublicMenuHeader totalItems={getTotalItems()} onCartToggle={() => setShowCart(!showCart)} />
       
       <div className="relative flex-1">
@@ -183,6 +183,7 @@ const PublicMenu: React.FC = () => {
             {/* Légère surcouche blanc en transparence pour laisser passer le gradient */}
           </div>
 
+          {/* Cart visible en mode side-panel desktop */}
           <div className="xl:px-20">
             {/* Banner centrée */}
             <PromotionalBanner />
@@ -196,7 +197,7 @@ const PublicMenu: React.FC = () => {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-10 items-start">
-              <div className="flex-1 w-full min-w-0">
+              <div className="flex-1 w-full">
                 <MenuItemList
                   groupedItems={groupedItems}
                   onAddToCart={addToCart}
@@ -205,8 +206,8 @@ const PublicMenu: React.FC = () => {
                 />
               </div>
 
-              {/* Desktop cart sidebar */}
-              <div className="hidden lg:block w-full lg:w-96 xl:w-[420px] shrink-0">
+              {showCart && (
+                <div className="w-full lg:w-[380px] animate-slide-in-right z-40">
                   <ShoppingCartSidebar
                     cart={cart}
                     onAddToCart={addToCart}
@@ -214,29 +215,15 @@ const PublicMenu: React.FC = () => {
                     onClearCart={clearCart}
                     totalPrice={getTotalPrice()}
                   />
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* Mobile cart sheet */}
-      <div className="lg:hidden">
-        <Sheet open={showCart} onOpenChange={setShowCart}>
-          <SheetContent>
-            <ShoppingCartSidebar
-              cart={cart}
-              onAddToCart={addToCart}
-              onRemoveFromCart={removeFromCart}
-              onClearCart={clearCart}
-              totalPrice={getTotalPrice()}
-              className="p-0 shadow-none border-0 bg-transparent h-full sticky top-0"
-            />
-          </SheetContent>
-        </Sheet>
       </div>
     </div>
   );
 };
 
 export default PublicMenu;
+
