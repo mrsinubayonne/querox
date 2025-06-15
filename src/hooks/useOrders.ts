@@ -3,7 +3,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Order } from '@/components/orders/OrderCard';
+import type { Order as BaseOrder } from '@/components/orders/OrderCard';
+
+export type Order = BaseOrder & {
+  table_number?: string | null;
+  order_type?: string | null;
+};
 
 export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -43,6 +48,8 @@ export const useOrders = () => {
         delivery_address: order.delivery_address,
         delivery_time: order.delivery_time,
         created_at: order.created_at,
+        table_number: order.table_number,
+        order_type: order.order_type,
       }));
 
       setOrders(transformedOrders);
