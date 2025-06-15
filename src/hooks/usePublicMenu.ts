@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,7 @@ export const usePublicMenu = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('Tous');
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const location = useLocation();
 
@@ -107,13 +107,22 @@ export const usePublicMenu = () => {
   const filterItems = useCallback(() => {
     let filtered = menuItems;
 
-    // Filter by category only
+    // Filter by category
     if (activeCategory !== 'Tous') {
       filtered = filtered.filter(item => item.category_name === activeCategory);
     }
 
+    // Filter by search term
+    if (searchTerm.trim() !== '') {
+      const lowercasedTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter(item => 
+        item.name.toLowerCase().includes(lowercasedTerm) ||
+        (item.description && item.description.toLowerCase().includes(lowercasedTerm))
+      );
+    }
+
     setFilteredItems(filtered);
-  }, [menuItems, activeCategory]);
+  }, [menuItems, activeCategory, searchTerm]);
   
   useEffect(() => {
     filterItems();
@@ -190,6 +199,7 @@ export const usePublicMenu = () => {
     clearCart,
     getTotalPrice,
     getTotalItems,
+    searchTerm,
+    setSearchTerm,
   };
 };
-

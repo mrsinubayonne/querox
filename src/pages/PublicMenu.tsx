@@ -8,6 +8,7 @@ import ShoppingCartSidebar from '@/components/public-menu/ShoppingCartSidebar';
 import PublicMenuLoader from '@/components/public-menu/PublicMenuLoader';
 import PromotionalBanner from '@/components/public-menu/PromotionalBanner';
 import CategoryFilter from '@/components/CategoryFilter';
+import MenuSearch from '@/components/public-menu/MenuSearch';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const PublicMenu: React.FC = () => {
@@ -26,6 +27,8 @@ const PublicMenu: React.FC = () => {
     clearCart,
     getTotalPrice,
     getTotalItems,
+    searchTerm,
+    setSearchTerm,
   } = usePublicMenu();
 
   if (loading) {
@@ -46,6 +49,8 @@ const PublicMenu: React.FC = () => {
           <div className="xl:px-20">
             {/* Banner centrée */}
             <PromotionalBanner />
+
+            <MenuSearch searchTerm={searchTerm} onSearchTermChange={setSearchTerm} />
 
             <div className="mb-10">
               <CategoryFilter
@@ -100,4 +105,3 @@ const PublicMenu: React.FC = () => {
 };
 
 export default PublicMenu;
-
