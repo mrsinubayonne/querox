@@ -26,11 +26,13 @@ const generateWhatsAppMessage = (data: SiteWebRequestFields) => {
     `📝 Nouvelle demande de site restaurant depuis QUEROX\n\n` +
     `Nom du restaurant : ${data.restaurantName}\n` +
     `Adresse : ${data.address}\n` +
-    `Gestion du site après mise en ligne : ${
-      data.gestionSite === "auto"
-        ? "Je veux pouvoir modifier moi-même"
-        : "Je préfère qu’une équipe s’en charge"
-    }\n` +
+    (typeof data.maintenanceManagement === "string"
+      ? `Maintenance + gestion : ${
+          data.maintenanceManagement === "yes"
+            ? "Oui"
+            : "Non"
+        }\n`
+      : "") +
     (data.notes ? `Infos complémentaires : ${data.notes}\n` : "")
   );
 };

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -38,13 +39,6 @@ const FONCTIONNALITES = [
 const formSchema = z.object({
   restaurantName: z.string().min(2, "Nom requis"),
   address: z.string().min(5, "Adresse requise"),
-  gestionSite: z.enum(
-    ["auto", "equipe"],
-    {
-      required_error:
-        "Choisissez une option sur la gestion du site après mise en ligne.",
-    }
-  ),
   maintenanceManagement: z.enum(["yes", "no"], {
     required_error: "Merci de choisir si vous souhaitez la maintenance.",
   }),
@@ -67,7 +61,6 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
     defaultValues: {
       restaurantName: "",
       address: "",
-      gestionSite: undefined,
       maintenanceManagement: undefined,
       notes: "",
     },
@@ -120,32 +113,6 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
             )}
           />
         </div>
-
-        {/* Gestion du site */}
-        <FormField
-          control={form.control}
-          name="gestionSite"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Souhaitez-vous gérer le site vous-même après sa mise en ligne ou nous confier la gestion ?
-              </FormLabel>
-              <FormControl>
-                <RadioGroup
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  className="flex flex-col gap-2 mt-2"
-                >
-                  <RadioGroupItem value="auto" id="auto" />
-                  <label htmlFor="auto" className="ml-2 mb-2 text-sm">Je veux pouvoir modifier moi-même</label>
-                  <RadioGroupItem value="equipe" id="equipe" />
-                  <label htmlFor="equipe" className="ml-2 text-sm">Je préfère qu’une équipe s’en charge</label>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         {/* Maintenance + Gestion */}
         <FormField
@@ -207,3 +174,4 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
 };
 
 export default SiteWebRequestForm;
+
