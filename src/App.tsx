@@ -15,7 +15,6 @@ import Clients from './pages/Clients';
 import Comptabilite from './pages/Comptabilite';
 import QRCodes from './pages/QRCodes';
 import Reservations from './pages/Reservations';
-import Evenements from './pages/Evenements';
 import Marketing from './pages/Marketing';
 import Social from './pages/Social';
 import NotFound from './pages/NotFound';
@@ -49,11 +48,6 @@ function App() {
           <Route path="/reservations" element={
             <ProtectedRoute>
               <Reservations />
-            </ProtectedRoute>
-          } />
-          <Route path="/evenements" element={
-            <ProtectedRoute>
-              <Evenements />
             </ProtectedRoute>
           } />
           <Route path="/marketing" element={
