@@ -31,6 +31,8 @@ const ORDER_TYPE_OPTIONS = [
   { value: "livrer", label: "À livrer" },
 ];
 
+const TABLE_NUMBERS = Array.from({ length: 25 }, (_, i) => (i + 1).toString());
+
 const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
   open,
   onOpenChange,
@@ -39,12 +41,12 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
   onClearCart,
 }) => {
   const [customerName, setCustomerName] = useState("");
-  // const [customerEmail, setCustomerEmail] = useState(""); // supprimé
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryTime, setDeliveryTime] = useState("");
   const [notes, setNotes] = useState("");
-  const [orderType, setOrderType] = useState("sur_place");
+  const [orderType, setOrderType] = useState(""); // Avant: "sur_place"
+  const [tableNumber, setTableNumber] = useState(""); // Nouveau pour le n° de table
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -58,13 +60,39 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
       });
       return;
     }
+    if (!orderType) {
+      toast({
+        title: "Type de commande requis",
+        description: "Veuillez choisir un type de commande.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (
+      (orderType === "sur_place" || orderType === "emporter") &&
+      !tableNumber
+    ) {
+      toast({
+        title: "Numéro de table requis",
+        description: "Veuillez choisir un numéro de table.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (orderType === "livrer" && !deliveryAddress) {
+      toast({
+        title: "Adresse de livraison requise",
+        description: "Veuillez saisir votre adresse de livraison.",
+        variant: "destructive",
+      });
+      return;
+    }
     setLoading(true);
     try {
       const payload: any = {
         customer_name: customerName,
-        // customer_email: customerEmail, // supprimé
         customer_phone: customerPhone,
-        delivery_address: deliveryAddress,
+        delivery_address: orderType === "livrer" ? deliveryAddress : null,
         delivery_time: deliveryTime ? new Date(deliveryTime).toISOString() : null,
         notes,
         status: "pending",
@@ -76,6 +104,10 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
         })),
         total_amount: totalPrice,
         order_type: orderType,
+        table_number:
+          (orderType === "sur_place" || orderType === "emporter")
+            ? tableNumber
+            : null,
       };
       const { error } = await supabase.from("orders").insert([payload]);
 
@@ -87,12 +119,12 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
           "Votre commande a bien été transmise. Nous vous contacterons rapidement.",
       });
       setCustomerName("");
-      // setCustomerEmail(""); // supprimé
       setCustomerPhone("");
       setDeliveryAddress("");
       setDeliveryTime("");
       setNotes("");
-      setOrderType("sur_place");
+      setOrderType("");
+      setTableNumber("");
       onOpenChange(false);
       onClearCart();
     } catch (err: any) {
@@ -128,7 +160,6 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
                 placeholder="Votre nom complet"
               />
             </div>
-            {/* Email supprimé */}
             <div>
               <label className="block font-medium mb-1">Téléphone *</label>
               <Input
@@ -141,12 +172,20 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
             </div>
             <div>
               <label className="block font-medium mb-1">Type de commande *</label>
-              <Select value={orderType} onValueChange={setOrderType}>
+              <Select
+                value={orderType}
+                onValueChange={(val) => {
+                  setOrderType(val);
+                  // Reset les champs conditionnels à chaque changement de mode
+                  setDeliveryAddress("");
+                  setTableNumber("");
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Choisir..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {ORDER_TYPE_OPTIONS.map(option => (
+                  {ORDER_TYPE_OPTIONS.map((option) => (
                     <SelectItem value={option.value} key={option.value}>
                       {option.label}
                     </SelectItem>
@@ -154,54 +193,100 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
                 </SelectContent>
               </Select>
             </div>
+            {(orderType === "sur_place" || orderType === "emporter") && (
+              <div>
+                <label className="block font-medium mb-1">
+                  Numéro de table *
+                </label>
+                <Select
+                  value={tableNumber}
+                  onValueChange={setTableNumber}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="N° de table" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TABLE_NUMBERS.map((num) => (
+                      <SelectItem value={num} key={num}>
+                        {num}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {orderType === "livrer" && (
+              <div>
+                <label className="block font-medium mb-1">
+                  Adresse de livraison *
+                </label>
+                <Textarea
+                  required
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  placeholder="Rue, quartier, spécificités…"
+                />
+              </div>
+            )}
+            {/* Champ heure de livraison et notes toujours visibles mais facultatifs */}
             <div>
-              <label className="block font-medium mb-1">Adresse de livraison *</label>
-              <Textarea
-                required
-                value={deliveryAddress}
-                onChange={(e) => setDeliveryAddress(e.target.value)}
-                placeholder="Rue, quartier, spécificités…"
-              />
-            </div>
-            <div>
-              <label className="block font-medium mb-1">Heure de livraison souhaitée</label>
+              <label className="block font-medium mb-1">
+                Heure de livraison souhaitée
+              </label>
               <Input
                 type="datetime-local"
                 value={deliveryTime}
                 onChange={(e) => setDeliveryTime(e.target.value)}
                 placeholder="Sélectionner une date/heure"
                 min={new Date().toISOString().slice(0, 16)}
+                disabled={orderType === ""}
               />
             </div>
             <div>
-              <label className="block font-medium mb-1">Notes (optionnel)</label>
+              <label className="block font-medium mb-1">
+                Notes (optionnel)
+              </label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Instructions, allergies, code porte…"
+                disabled={orderType === ""}
               />
             </div>
           </div>
-          <div className="border-t pt-2 space-y-3">
-            <div className="font-semibold text-gray-800">Récapitulatif :</div>
-            <ul className="space-y-1 text-sm">
-              {cart.map((item) => (
-                <li key={item.id} className="flex justify-between">
-                  <span>
-                    {item.name} × {item.quantity}
-                  </span>
-                  <span>{(item.price * item.quantity).toLocaleString("fr-FR")} FCFA</span>
-                </li>
-              ))}
-            </ul>
-            <div className="flex justify-between font-bold text-lg mt-2">
-              <span>Total à payer :</span>
-              <span className="text-emerald-600">{totalPrice.toLocaleString("fr-FR")} FCFA</span>
+          {/* Affichage du récapitulatif seulement si orderType est choisi */}
+          {orderType && (
+            <div className="border-t pt-2 space-y-3">
+              <div className="font-semibold text-gray-800">Récapitulatif :</div>
+              <ul className="space-y-1 text-sm">
+                {cart.map((item) => (
+                  <li key={item.id} className="flex justify-between">
+                    <span>
+                      {item.name} × {item.quantity}
+                    </span>
+                    <span>
+                      {(item.price * item.quantity).toLocaleString("fr-FR")} FCFA
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex justify-between font-bold text-lg mt-2">
+                <span>Total à payer :</span>
+                <span className="text-emerald-600">
+                  {totalPrice.toLocaleString("fr-FR")} FCFA
+                </span>
+              </div>
             </div>
-          </div>
+          )}
           <DialogFooter>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Transmission en cours..." : "Confirmer la commande"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || !orderType}
+            >
+              {loading
+                ? "Transmission en cours..."
+                : "Confirmer la commande"}
             </Button>
             <DialogClose asChild>
               <Button type="button" variant="secondary" disabled={loading}>
@@ -217,3 +302,5 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
 
 export default CheckoutOrderModal;
 
+// ⚠️ Ce fichier dépasse les 200 lignes.
+// Pense à demander un refactoring après ces changements pour garder le projet propre !
