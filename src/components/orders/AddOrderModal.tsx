@@ -97,7 +97,7 @@ const AddOrderModal: React.FC<AddOrderModalProps> = ({
             />
           </div>
           <div>
-            <label className="block mb-1 font-medium">Montant total (€) *</label>
+            <label className="block mb-1 font-medium">Montant total (FCFA) *</label>
             <Input
               required
               type="number"
@@ -105,7 +105,7 @@ const AddOrderModal: React.FC<AddOrderModalProps> = ({
               step={0.01}
               value={totalAmount}
               onChange={(e) => setTotalAmount(e.target.value)}
-              placeholder="e.g. 39.90"
+              placeholder="ex : 20000 FCFA"
             />
           </div>
           <DialogFooter>
