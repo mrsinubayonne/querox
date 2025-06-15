@@ -9,6 +9,7 @@ import { ExternalLink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
 import CategoryManager from '@/components/menu-management/CategoryManager';
+import GeneralSettingsTab from '@/components/menu-management/GeneralSettingsTab';
 
 const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -53,7 +54,7 @@ const Menus: React.FC = () => {
             <TabsList>
               <TabsTrigger value="items">Plats</TabsTrigger>
               <TabsTrigger value="categories">Catégories</TabsTrigger>
-              <TabsTrigger value="general" disabled>Général</TabsTrigger>
+              <TabsTrigger value="general">Général</TabsTrigger>
             </TabsList>
             <TabsContent value="items">
               <MenuItemManager />
@@ -62,7 +63,7 @@ const Menus: React.FC = () => {
               <CategoryManager />
             </TabsContent>
             <TabsContent value="general">
-              {/* General settings component will go here */}
+              <GeneralSettingsTab />
             </TabsContent>
           </Tabs>
 
