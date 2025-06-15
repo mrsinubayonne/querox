@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +15,6 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [deliveryTime, setDeliveryTime] = useState("");
   const [notes, setNotes] = useState("");
   const [orderType, setOrderType] = useState("");
   const [tableNumber, setTableNumber] = useState("");
@@ -66,7 +64,6 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
         customer_name: customerName,
         customer_phone: customerPhone,
         delivery_address: orderType === "livrer" ? deliveryAddress : null,
-        delivery_time: deliveryTime ? new Date(deliveryTime).toISOString() : null,
         notes,
         status: "pending",
         items: cart.map((item) => ({
@@ -94,7 +91,6 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       setCustomerName("");
       setCustomerPhone("");
       setDeliveryAddress("");
-      setDeliveryTime("");
       setNotes("");
       setOrderType("");
       setTableNumber("");
@@ -124,7 +120,6 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     customerName, setCustomerName,
     customerPhone, setCustomerPhone,
     deliveryAddress, setDeliveryAddress,
-    deliveryTime, setDeliveryTime,
     notes, setNotes,
     orderType, setOrderType: handleOrderTypeChange,
     tableNumber, setTableNumber,

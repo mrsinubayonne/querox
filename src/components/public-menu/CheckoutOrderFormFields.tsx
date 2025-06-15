@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,8 +28,6 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
   setCustomerPhone,
   deliveryAddress,
   setDeliveryAddress,
-  deliveryTime,
-  setDeliveryTime,
   notes,
   setNotes,
   orderType,
@@ -109,20 +106,6 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
             value={deliveryAddress}
             onChange={(e) => setDeliveryAddress(e.target.value)}
             placeholder="Rue, quartier, spécificités…"
-          />
-        </div>
-      )}
-      {(orderType === "livrer" || orderType === "emporter") && (
-        <div>
-          <label className="block font-medium mb-1">
-            Heure de livraison souhaitée
-          </label>
-          <Input
-            type="datetime-local"
-            value={deliveryTime}
-            onChange={(e) => setDeliveryTime(e.target.value)}
-            placeholder="Sélectionner une date/heure"
-            min={new Date().toISOString().slice(0, 16)}
           />
         </div>
       )}
