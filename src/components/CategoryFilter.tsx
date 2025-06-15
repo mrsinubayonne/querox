@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Utensils, Soup, Cake, GlassOfWine, MenuSquare } from 'lucide-react';
+import { Utensils, Soup, Cake, Wine, MenuSquare } from 'lucide-react';
 
 interface CategoryFilterProps {
   categories: string[];
@@ -13,7 +13,7 @@ const getCategoryIcon = (category: string) => {
   if (normalizedCategory.includes('entrée')) return <Soup className="w-8 h-8 mb-2" />;
   if (normalizedCategory.includes('plat')) return <Utensils className="w-8 h-8 mb-2" />;
   if (normalizedCategory.includes('dessert')) return <Cake className="w-8 h-8 mb-2" />;
-  if (normalizedCategory.includes('boisson')) return <GlassOfWine className="w-8 h-8 mb-2" />;
+  if (normalizedCategory.includes('boisson')) return <Wine className="w-8 h-8 mb-2" />;
   if (normalizedCategory.includes('tous')) return <MenuSquare className="w-8 h-8 mb-2" />;
   return <Utensils className="w-8 h-8 mb-2" />;
 };
