@@ -19,7 +19,7 @@ const benefits: Benefit[] = [
   {
     icon: Smartphone,
     title: "Adapté mobile/tablette",
-    desc: "Un design parfait sur tous les écrans pour une expérience client optimale.",
+    desc: "Un design parfait sur tous les écrans pour une expérience optimale.",
     color: "text-blue-600",
   },
   {
@@ -31,17 +31,17 @@ const benefits: Benefit[] = [
 ];
 
 const SiteWebBenefits: React.FC = () => (
-  <div className="mt-8 space-y-5">
+  <div className="mt-20 grid gap-10 md:grid-cols-3 md:gap-8">
     {benefits.map((benefit, idx) => {
       const Icon = benefit.icon;
       return (
-        <div key={idx} className="flex items-start gap-4">
-          <span className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-gray-100">
-            <Icon size={22} className={benefit.color} />
-          </span>
+        <div key={idx} className="flex flex-col items-center text-center gap-3">
+          <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md">
+            <Icon size={24} className={benefit.color} />
+          </div>
           <div>
-            <h4 className="font-semibold text-gray-800">{benefit.title}</h4>
-            <p className="text-sm text-gray-600">{benefit.desc}</p>
+            <h4 className="text-lg font-semibold text-gray-800">{benefit.title}</h4>
+            <p className="mt-1 text-gray-600">{benefit.desc}</p>
           </div>
         </div>
       );
