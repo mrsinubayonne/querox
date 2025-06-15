@@ -15,6 +15,7 @@ export const useMenuData = (menuId: string | null) => {
     setLoading(true);
     setError(null);
     setRestaurantUserId(null);
+    
     try {
       console.log(`🔥 Début récupération menu public pour menu_id: ${id}`);
 
@@ -24,35 +25,31 @@ export const useMenuData = (menuId: string | null) => {
         throw new Error("L'identifiant du menu n'est pas valide.");
       }
 
-      // D'abord vérifier si le menu existe (sans restriction d'utilisateur pour debug)
+      // D'abord vérifier si le menu existe
       console.log("🔥 Vérification de l'existence du menu dans la base de données...");
-      const { data: allMenusCheck, error: checkError } = await supabase
+      const { data: menuData, error: menuError } = await supabase
         .from('menus')
         .select('id, name, user_id, is_active')
-        .eq('id', id);
+        .eq('id', id)
+        .single();
 
-      if (checkError) {
-        console.error("🔥 Erreur lors de la vérification du menu:", checkError);
-        throw new Error(`Erreur de base de données: ${checkError.message}`);
+      if (menuError) {
+        console.error("🔥 Erreur lors de la vérification du menu:", menuError);
+        if (menuError.code === 'PGRST116') {
+          throw new Error("Ce menu n'existe pas. Veuillez vérifier l'ID du menu.");
+        }
+        throw new Error(`Erreur de base de données: ${menuError.message}`);
       }
 
-      console.log("🔥 Résultat de la vérification:", allMenusCheck);
+      console.log("🔥 Menu trouvé:", menuData);
 
-      if (!allMenusCheck || allMenusCheck.length === 0) {
-        console.error("🔥 Menu absolument introuvable dans la base:", id);
-        throw new Error("Ce menu n'existe pas dans la base de données. Veuillez vérifier l'ID du menu.");
-      }
-
-      const menuInfo = allMenusCheck[0];
-      console.log("🔥 Menu trouvé:", menuInfo);
-
-      if (!menuInfo.is_active) {
+      if (!menuData.is_active) {
         console.error("🔥 Menu inactif");
         throw new Error("Ce menu n'est pas disponible actuellement.");
       }
 
-      setRestaurantUserId(menuInfo.user_id);
-      console.log("🔥 User_id récupéré:", menuInfo.user_id);
+      setRestaurantUserId(menuData.user_id);
+      console.log("🔥 User_id récupéré:", menuData.user_id);
 
       // Ensuite récupérer les catégories
       const { data: categoriesData, error: categoriesError } = await supabase
@@ -87,7 +84,9 @@ export const useMenuData = (menuId: string | null) => {
 
       if (!menuItemsData || menuItemsData.length === 0) {
         console.warn("🔥 Aucun plat disponible trouvé pour ce menu");
-        throw new Error("Ce menu ne contient aucun plat disponible actuellement.");
+        // Ne pas générer d'erreur si pas de plats, mais log un warning
+        setMenuItems([]);
+        return;
       }
 
       const transformedItems: MenuItem[] = menuItemsData.map((item: any) => ({

@@ -1,127 +1,109 @@
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import type { CartItem } from "@/types/menu";
-import { useRestaurant } from "@/contexts/RestaurantContext";
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import type { CartItem } from '@/types/menu';
 
-export const ORDER_TYPE_OPTIONS = [
-  { value: "sur_place", label: "À manger sur place" },
-  { value: "emporter", label: "À emporter" },
-  { value: "livrer", label: "À livrer" },
-];
-
-export const TABLE_NUMBERS = Array.from({ length: 20 }, (_, i) => (i + 1).toString());
-
-export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOpenChange: (open: boolean) => void, onClearCart: () => void) {
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [deliveryTime, setDeliveryTime] = useState("");
-  const [notes, setNotes] = useState("");
-  const [orderType, setOrderType] = useState("");
-  const [tableNumber, setTableNumber] = useState("");
+export const useCheckoutOrderModal = (
+  cart: CartItem[],
+  totalPrice: number,
+  onOpenChange: (open: boolean) => void,
+  onClearCart: () => void,
+  restaurantUserId: string | null
+) => {
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryTime, setDeliveryTime] = useState('');
+  const [notes, setNotes] = useState('');
+  const [orderType, setOrderType] = useState('');
+  const [tableNumber, setTableNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { restaurantUserId } = useRestaurant();
 
-  console.log("🔥 RestaurantUserId in useCheckoutOrderModal:", restaurantUserId);
+  console.log("🔥 useCheckoutOrderModal - restaurantUserId reçu:", restaurantUserId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    console.log("🔥 Début de handleSubmit avec restaurantUserId:", restaurantUserId);
-
-    if (!customerName.trim() || !customerPhone.trim()) {
+    
+    if (!restaurantUserId) {
       toast({
-        title: "Champs obligatoires",
-        description: "Veuillez renseigner votre nom et votre numéro de téléphone.",
+        title: "Erreur",
+        description: "Impossible d'identifier le restaurant. Veuillez réessayer.",
         variant: "destructive",
       });
       return;
     }
 
     if (!orderType) {
-      toast({ title: "Type de commande requis", description: "Veuillez sélectionner un type de commande.", variant: "destructive" });
-      return;
-    }
-
-    if (!restaurantUserId) {
-      console.error("🔥 Erreur: restaurantUserId est null ou undefined");
-      toast({ 
-        title: "Erreur de configuration", 
-        description: "Impossible d'identifier le restaurant. Veuillez recharger la page et réessayer.", 
-        variant: "destructive" 
+      toast({
+        title: "Type de commande requis",
+        description: "Veuillez sélectionner un type de commande.",
+        variant: "destructive",
       });
-      return;
-    }
-
-    if (cart.length === 0) {
-      toast({ title: "Panier vide", description: "Ajoutez un plat avant de passer commande.", variant: "destructive" });
-      return;
-    }
-
-    if (orderType === "sur_place" && !tableNumber) {
-      toast({ title: "Numéro de table requis", description: "Veuillez choisir un numéro de table.", variant: "destructive" });
-      return;
-    }
-
-    if (orderType === "livrer" && !deliveryAddress) {
-      toast({ title: "Adresse de livraison requise", description: "Veuillez saisir votre adresse de livraison.", variant: "destructive" });
       return;
     }
 
     setLoading(true);
-
+    
     try {
-      const payload: any = {
-        user_id: restaurantUserId,
+      console.log("🔥 Envoi de la commande avec restaurantUserId:", restaurantUserId);
+      
+      const orderData = {
         customer_name: customerName,
-        customer_phone: customerPhone,
+        customer_phone: customerPhone || null,
+        customer_email: null,
+        delivery_address: orderType === 'delivery' ? deliveryAddress : null,
+        delivery_time: deliveryTime || null,
         notes: notes || null,
-        items: cart.map((item) => ({
+        order_type: orderType,
+        table_number: orderType === 'dine_in' ? tableNumber : null,
+        items: cart.map(item => ({
           id: item.id,
           name: item.name,
-          quantity: item.quantity,
           price: item.price,
+          quantity: item.quantity
         })),
         total_amount: totalPrice,
-        status: "pending",
-        order_type: orderType,
-        table_number: orderType === "sur_place" ? tableNumber : null,
-        delivery_address: orderType === "livrer" ? deliveryAddress : null,
-        delivery_time: deliveryTime || null,
+        user_id: restaurantUserId,
+        status: 'pending'
       };
 
-      console.log("🔥 Payload à envoyer:", payload);
+      console.log("🔥 Données de commande à envoyer:", orderData);
 
-      const { error } = await supabase.from("orders").insert([payload]);
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([orderData])
+        .select();
 
       if (error) {
-        console.error("🔥 Erreur lors de l'insertion:", error);
+        console.error("🔥 Erreur lors de l'insertion de la commande:", error);
         throw error;
       }
 
+      console.log("🔥 Commande créée avec succès:", data);
+
       toast({
         title: "Commande envoyée !",
-        description: "Votre commande a été transmise au restaurant.",
+        description: "Votre commande a été transmise au restaurant avec succès.",
       });
 
-      // Reset form
-      setCustomerName("");
-      setCustomerPhone("");
-      setDeliveryAddress("");
-      setDeliveryTime("");
-      setNotes("");
-      setOrderType("");
-      setTableNumber("");
-      onOpenChange(false);
+      // Réinitialiser le formulaire et fermer le modal
+      setCustomerName('');
+      setCustomerPhone('');
+      setDeliveryAddress('');
+      setDeliveryTime('');
+      setNotes('');
+      setOrderType('');
+      setTableNumber('');
       onClearCart();
-    } catch (err: any) {
-      console.error("🔥 Erreur complète lors de la soumission:", err);
+      onOpenChange(false);
+
+    } catch (error: any) {
+      console.error('🔥 Erreur lors de la soumission de la commande:', error);
       toast({
-        title: "Erreur de soumission",
-        description: err.message || "Une erreur est survenue lors de l'envoi de votre commande.",
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de l'envoi de la commande.",
         variant: "destructive",
       });
     } finally {
@@ -129,24 +111,22 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     }
   };
 
-  // Reset conditional fields when changing order type
-  const handleOrderTypeChange = (val: string) => {
-    setOrderType(val);
-    setDeliveryAddress("");
-    setDeliveryTime("");
-    setTableNumber("");
-  };
-
   return {
-    customerName, setCustomerName,
-    customerPhone, setCustomerPhone,
-    deliveryAddress, setDeliveryAddress,
-    deliveryTime, setDeliveryTime,
-    notes, setNotes,
-    orderType, setOrderType: handleOrderTypeChange,
-    tableNumber, setTableNumber,
+    customerName,
+    setCustomerName,
+    customerPhone,
+    setCustomerPhone,
+    deliveryAddress,
+    setDeliveryAddress,
+    deliveryTime,
+    setDeliveryTime,
+    notes,
+    setNotes,
+    orderType,
+    setOrderType,
+    tableNumber,
+    setTableNumber,
     loading,
     handleSubmit,
-    restaurantUserId,
   };
-}
+};
