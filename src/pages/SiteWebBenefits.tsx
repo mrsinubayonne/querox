@@ -13,7 +13,7 @@ const benefits: Benefit[] = [
   {
     icon: Rocket,
     title: "Mise en ligne Express",
-    desc: "Votre site livré sous 72h, prêt à l'emploi.",
+    desc: "Votre site livré en 1 à 3 jours, prêt à l'emploi.",
     color: "text-purple-600",
   },
   {
