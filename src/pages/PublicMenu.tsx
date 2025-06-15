@@ -43,54 +43,58 @@ const PublicMenu: React.FC = () => {
   const fetchPublicMenu = async () => {
     try {
       setLoading(true);
+      console.log("🔥 Début récupération menu public (nouvelle méthode)");
 
-      console.log("🔥 Début récupération menu public");
+      // Étape 1: Récupérer toutes les catégories de menu
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('menu_categories')
+        .select('id, name');
 
-      // Requête simplifiée : récupérer tous les plats disponibles avec leur catégorie
+      if (categoriesError) {
+        console.error('Erreur récupération catégories:', categoriesError);
+        throw categoriesError;
+      }
+      console.log("🔥 Catégories reçues:", categoriesData);
+
+      if (!categoriesData) {
+        console.warn("🔥 Aucune catégorie trouvée.");
+        setMenuItems([]);
+        setLoading(false);
+        return;
+      }
+      
+      const categoryMap = new Map(categoriesData.map((c: any) => [c.id, c.name]));
+      
+      // Étape 2: Récupérer tous les plats disponibles
       const { data: menuItemsData, error: itemsError } = await supabase
         .from('menu_items')
-        .select(`
-          id,
-          name,
-          description,
-          price,
-          image_url,
-          is_available,
-          menu_categories!inner (
-            name
-          )
-        `)
+        .select('*')
         .eq('is_available', true)
         .order('name');
 
-      console.log("🔥 Données reçues :", menuItemsData);
-      console.log("🔥 Erreur :", itemsError);
-
       if (itemsError) {
-        console.error('Error fetching menu items:', itemsError);
+        console.error('Erreur récupération plats:', itemsError);
         throw itemsError;
       }
+      console.log("🔥 Plats reçus:", menuItemsData);
 
       if (!menuItemsData || menuItemsData.length === 0) {
         console.warn("🔥 Aucun plat disponible trouvé");
         setMenuItems([]);
+        setLoading(false);
         return;
       }
 
-      // Transformation simple des données
-      const transformedItems: MenuItem[] = menuItemsData.map((item: any) => {
-        console.log("🔥 Transformation plat :", item);
-        
-        return {
-          id: item.id,
-          name: item.name,
-          description: item.description || '',
-          price: Number(item.price),
-          image_url: item.image_url || undefined,
-          category_name: item.menu_categories?.name || 'Autres',
-          is_available: item.is_available
-        };
-      });
+      // Étape 3: Combiner les données en JavaScript
+      const transformedItems: MenuItem[] = menuItemsData.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || '',
+        price: Number(item.price),
+        image_url: item.image_url || undefined,
+        category_name: categoryMap.get(item.category_id) || 'Autres',
+        is_available: item.is_available,
+      }));
 
       console.log("🔥 Plats transformés :", transformedItems);
       setMenuItems(transformedItems);
