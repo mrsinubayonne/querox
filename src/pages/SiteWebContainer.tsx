@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,9 @@ const generateWhatsAppMessage = (data: SiteWebRequestFields) => {
     `📝 Nouvelle demande de site restaurant depuis QUEROX\n\n` +
     `Nom du restaurant : ${data.restaurantName}\n` +
     `Adresse : ${data.address}\n` +
+    (typeof data.color === "string" && data.color
+      ? `Couleur souhaitée : ${data.color}\n`
+      : "") +
     (typeof data.maintenanceManagement === "string"
       ? `Maintenance + gestion : ${
           data.maintenanceManagement === "yes"

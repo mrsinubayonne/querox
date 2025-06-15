@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Palette } from "lucide-react";
 
 // Objectifs proposés
 const OBJECTIFS = [
@@ -35,13 +36,14 @@ const FONCTIONNALITES = [
   "Carte Google Maps",
 ];
 
-// On retire la question sur les éléments disponibles et sur les exemples
+// Nouveau schéma : ajout champ "color"
 const formSchema = z.object({
   restaurantName: z.string().min(2, "Nom requis"),
   address: z.string().min(5, "Adresse requise"),
   maintenanceManagement: z.enum(["yes", "no"], {
     required_error: "Merci de choisir si vous souhaitez la maintenance.",
   }),
+  color: z.string().min(2, "Merci d’indiquer une couleur souhaitée"), // nouveau champ couleur
   notes: z.string().optional(),
 });
 
@@ -62,6 +64,7 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
       restaurantName: "",
       address: "",
       maintenanceManagement: undefined,
+      color: "",
       notes: "",
     },
   });
@@ -113,6 +116,29 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
             )}
           />
         </div>
+
+        {/* Couleur */}
+        <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                <span className="flex items-center gap-2">
+                  <Palette size={18} className="text-purple-700" />
+                  Quelle couleur souhaitez-vous pour votre site ?
+                </span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Ex: Violet, rouge, couleurs du logo..."
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {/* Maintenance + Gestion */}
         <FormField
@@ -174,4 +200,3 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
 };
 
 export default SiteWebRequestForm;
-
