@@ -2,26 +2,16 @@
 import React, { useState } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
 import MenuHeader from '@/components/MenuHeader';
-import MenuCard from '@/components/MenuCard';
-import EmptyState from '@/components/EmptyState';
-import ViewItemModal from '@/components/ViewItemModal';
-import AddMenuItemModal from '@/components/AddMenuItemModal';
-import EditMenuItemModal from '@/components/EditMenuItemModal';
-import { useMenus } from '@/hooks/useMenus';
-import { useMenuItems } from '@/hooks/useMenuItems';
 import { useToast } from '@/hooks/use-toast';
-import { Menu, ExternalLink } from 'lucide-react';
 import { Link } from "react-router-dom";
 import { Button } from '@/components/ui/button';
+import { ExternalLink } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MenuItemManager from '@/components/menu-management/MenuItemManager';
+import CategoryManager from '@/components/menu-management/CategoryManager';
 
 const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [viewItem, setViewItem] = useState<any>(null);
-  const [editItem, setEditItem] = useState<any>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  
-  const { items, loading, refetch } = useMenus();
-  const { toggleAvailability, deleteMenuItem } = useMenuItems();
   const { toast } = useToast();
 
   const handleVisitorView = () => {
@@ -32,72 +22,16 @@ const Menus: React.FC = () => {
   };
 
   const handleAddItem = () => {
-    setShowAddModal(true);
+    // This logic is now in MenuItemManager, but we can open the modal from here
+    // For now, let's rely on the button within the manager
+    console.log("Add item clicked");
   };
-
-  const handleToggleStatus = async (itemId: string | number) => {
-    const item = transformedItems.find(i => i.id === itemId);
-    if (item) {
-      const success = await toggleAvailability(String(itemId), !item.isActive);
-      if (success) {
-        refetch();
-      }
-    }
-  };
-
-  const handleViewItem = (item: any) => {
-    setViewItem(item);
-  };
-
-  const handleEditItem = (item: any) => {
-    setEditItem(item);
-  };
-
-  const handleDeleteItem = async (itemId: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) {
-      const success = await deleteMenuItem(itemId);
-      if (success) {
-        refetch();
-      }
-    }
-  };
-
-  const handleModalSuccess = () => {
-    refetch();
-  };
-
-  // Transform real data to match expected format
-  const transformedItems = items.map(item => ({
-    id: item.id,
-    name: item.name,
-    category: item.category,
-    price: `${item.price.toLocaleString('fr-FR')} FCFA`,
-    status: item.isActive ? "Disponible" : "Non disponible",
-    description: item.description || '',
-    image: item.image || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png",
-    isActive: item.isActive,
-    allergens: item.allergens
-  }));
-
-  if (loading) {
-    return (
-      <div className="flex h-screen overflow-hidden bg-gray-50">
-        <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-sm text-gray-600">Chargement des plats...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto">
         <div className="p-8">
           <MenuHeader onVisitorView={handleVisitorView} onAddItem={handleAddItem} />
           <div className="flex justify-between items-center mb-6">
@@ -105,7 +39,7 @@ const Menus: React.FC = () => {
               to="/tous-les-menus"
               className="text-blue-600 hover:text-blue-800 underline text-sm font-medium transition"
             >
-              Voir tous les menus & catégories
+              Voir tous les menus
             </Link>
             <Link to="/menu-public" target="_blank">
               <Button variant="outline" className="flex items-center gap-2">
@@ -114,48 +48,26 @@ const Menus: React.FC = () => {
               </Button>
             </Link>
           </div>
-          {transformedItems.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {transformedItems.map((item) => (
-                <MenuCard
-                  key={item.id}
-                  item={item}
-                  onToggleStatus={handleToggleStatus}
-                  onViewItem={handleViewItem}
-                  onEditItem={handleEditItem}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              icon={Menu}
-              title="Aucun plat configuré"
-              description="Commencez par ajouter vos premiers plats à votre menu"
-              actionLabel="Ajouter un plat"
-              onAction={handleAddItem}
-            />
-          )}
+          
+          <Tabs defaultValue="items" className="w-full">
+            <TabsList>
+              <TabsTrigger value="items">Plats</TabsTrigger>
+              <TabsTrigger value="categories">Catégories</TabsTrigger>
+              <TabsTrigger value="general" disabled>Général</TabsTrigger>
+            </TabsList>
+            <TabsContent value="items">
+              <MenuItemManager />
+            </TabsContent>
+            <TabsContent value="categories">
+              <CategoryManager />
+            </TabsContent>
+            <TabsContent value="general">
+              {/* General settings component will go here */}
+            </TabsContent>
+          </Tabs>
+
         </div>
       </div>
-
-      <ViewItemModal
-        item={viewItem}
-        isOpen={!!viewItem}
-        onClose={() => setViewItem(null)}
-      />
-
-      <AddMenuItemModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSuccess={handleModalSuccess}
-      />
-
-      <EditMenuItemModal
-        item={editItem}
-        isOpen={!!editItem}
-        onClose={() => setEditItem(null)}
-        onSuccess={handleModalSuccess}
-      />
     </div>
   );
 };
