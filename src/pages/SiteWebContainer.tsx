@@ -89,9 +89,6 @@ const SiteWebContainer: React.FC = () => {
               <SiteWebRequestForm onSubmit={handleFormSubmit} loading={submitting} />
             </DialogContent>
           </Dialog>
-          <div className="text-gray-500 text-sm">
-            <span className="font-semibold text-purple-700">Aucun engagement</span>, 100% sans abonnement.
-          </div>
         </div>
         
         <SiteWebBenefits />

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Rocket, Smartphone, BadgeCheck } from "lucide-react";
+import { Rocket, Smartphone } from "lucide-react";
 
 interface Benefit {
   icon: React.ElementType;
@@ -22,16 +22,10 @@ const benefits: Benefit[] = [
     desc: "Un design parfait sur tous les écrans pour une expérience optimale.",
     color: "text-blue-600",
   },
-  {
-    icon: BadgeCheck,
-    title: "Aucun engagement",
-    desc: "Service 100% sans abonnement. Vous êtes propriétaire de votre site.",
-    color: "text-green-600",
-  },
 ];
 
 const SiteWebBenefits: React.FC = () => (
-  <div className="mt-20 grid gap-10 md:grid-cols-3 md:gap-8">
+  <div className="mt-20 grid gap-10 md:grid-cols-2 md:gap-8">
     {benefits.map((benefit, idx) => {
       const Icon = benefit.icon;
       return (
