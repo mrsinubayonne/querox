@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MenuCard from '@/components/MenuCard';
 import EmptyState from '@/components/EmptyState';
@@ -31,9 +30,9 @@ const MenuItemManager: React.FC = () => {
     }
   };
 
-  const handleDeleteItem = async (itemId: string) => {
+  const handleDeleteItem = async (itemId: string | number) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) {
-      const success = await deleteMenuItem(itemId);
+      const success = await deleteMenuItem(String(itemId));
       if (success) {
         refetch();
       }

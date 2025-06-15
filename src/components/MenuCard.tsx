@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { 
   Eye, 
   Edit, 
-  MessageCircle
+  Trash
 } from 'lucide-react';
 
 interface MenuItem {
@@ -26,13 +25,15 @@ interface MenuCardProps {
   onToggleStatus: (itemId: string | number) => void;
   onViewItem: (item: MenuItem) => void;
   onEditItem: (item: MenuItem) => void;
+  onDeleteItem: (itemId: string | number) => void;
 }
 
 const MenuCard: React.FC<MenuCardProps> = ({ 
   item, 
   onToggleStatus, 
   onViewItem, 
-  onEditItem 
+  onEditItem,
+  onDeleteItem
 }) => {
   return (
     <Card className="overflow-hidden shadow-sm border border-gray-200">
@@ -94,8 +95,12 @@ const MenuCard: React.FC<MenuCardProps> = ({
             >
               <Edit size={14} />
             </Button>
-            <Button variant="outline" size="sm">
-              <MessageCircle size={14} />
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onDeleteItem(item.id)}
+            >
+              <Trash size={14} className="text-red-500" />
             </Button>
           </div>
         </div>
