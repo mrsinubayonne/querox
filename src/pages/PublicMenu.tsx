@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MenuItem, CartItem } from '@/types/menu';
 
 import PublicMenuHeader from '@/components/public-menu/PublicMenuHeader';
-import MenuSearch from '@/components/public-menu/MenuSearch';
 import MenuItemList from '@/components/public-menu/MenuItemList';
 import ShoppingCartSidebar from '@/components/public-menu/ShoppingCartSidebar';
 import PublicMenuLoader from '@/components/public-menu/PublicMenuLoader';
@@ -18,7 +16,6 @@ const PublicMenu: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCart, setShowCart] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tous');
   const { toast } = useToast();
 
@@ -28,7 +25,7 @@ const PublicMenu: React.FC = () => {
 
   useEffect(() => {
     filterItems();
-  }, [menuItems, searchTerm, activeCategory]);
+  }, [menuItems, activeCategory]);
 
   const fetchPublicMenu = async () => {
     try {
@@ -103,15 +100,7 @@ const PublicMenu: React.FC = () => {
   const filterItems = () => {
     let filtered = menuItems;
 
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-
-    // Filter by category
+    // Filter by category only
     if (activeCategory !== 'Tous') {
       filtered = filtered.filter(item => item.category_name === activeCategory);
     }
@@ -190,11 +179,6 @@ const PublicMenu: React.FC = () => {
       
       <div className="max-w-7xl mx-auto px-4 py-8">
         <PromotionalBanner />
-        
-        <MenuSearch
-          searchTerm={searchTerm}
-          onSearchTermChange={setSearchTerm}
-        />
 
         <div className="mb-8">
           <CategoryFilter
