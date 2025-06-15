@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +29,8 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
   setCustomerPhone,
   deliveryAddress,
   setDeliveryAddress,
+  deliveryTime,
+  setDeliveryTime,
   notes,
   setNotes,
   orderType,
@@ -74,7 +77,8 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
           </SelectContent>
         </Select>
       </div>
-      {(orderType === "sur_place" || orderType === "emporter") && (
+
+      {orderType === "sur_place" && (
         <div>
           <label className="block font-medium mb-1">
             Numéro de table *
@@ -82,6 +86,7 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
           <Select
             value={tableNumber}
             onValueChange={setTableNumber}
+            required
           >
             <SelectTrigger>
               <SelectValue placeholder="N° de table" />
@@ -96,19 +101,46 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
           </Select>
         </div>
       )}
-      {orderType === "livrer" && (
+
+      {orderType === "emporter" && (
         <div>
           <label className="block font-medium mb-1">
-            Adresse de livraison *
+            Heure de retrait souhaitée (optionnel)
           </label>
-          <Textarea
-            required
-            value={deliveryAddress}
-            onChange={(e) => setDeliveryAddress(e.target.value)}
-            placeholder="Rue, quartier, spécificités…"
+          <Input
+            type="time"
+            value={deliveryTime}
+            onChange={(e) => setDeliveryTime(e.target.value)}
           />
         </div>
       )}
+
+      {orderType === "livrer" && (
+        <div className="space-y-2">
+          <div>
+            <label className="block font-medium mb-1">
+              Adresse de livraison *
+            </label>
+            <Textarea
+              required
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
+              placeholder="Rue, quartier, spécificités…"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-1">
+              Heure de livraison souhaitée (optionnel)
+            </label>
+            <Input
+              type="time"
+              value={deliveryTime}
+              onChange={(e) => setDeliveryTime(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
       <div>
         <label className="block font-medium mb-1">
           Notes (optionnel)
