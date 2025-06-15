@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Star } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { MenuItem } from '@/types/menu';
 
 interface MenuItemCardProps {
@@ -41,8 +41,9 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, onAddToCart }) => {
           </div>
           <Button
             onClick={() => onAddToCart(item)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-md hover:shadow-lg transition-all"
             size="sm"
+            variant="outline"
+            className="border-emerald-300 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-full group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 transition-all duration-300 ease-in-out"
           >
             <Plus className="w-4 h-4 mr-1" />
             Ajouter

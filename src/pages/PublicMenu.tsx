@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -207,7 +206,7 @@ const PublicMenu: React.FC = () => {
               </div>
 
               {showCart && (
-                <div className="w-full lg:w-[380px] animate-slide-in-right z-40">
+                <div className="w-full lg:w-96 animate-slide-in-right z-40">
                   <ShoppingCartSidebar
                     cart={cart}
                     onAddToCart={addToCart}
@@ -226,4 +225,3 @@ const PublicMenu: React.FC = () => {
 };
 
 export default PublicMenu;
-

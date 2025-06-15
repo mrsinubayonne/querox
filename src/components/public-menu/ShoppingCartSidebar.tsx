@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Minus, ShoppingCart } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, ArrowRight } from 'lucide-react';
 import { CartItem, MenuItem } from '@/types/menu';
 
 interface ShoppingCartProps {
@@ -20,7 +20,7 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
   totalPrice 
 }) => {
   return (
-    <div className="w-96 bg-white rounded-2xl shadow-xl p-6 h-fit sticky top-28 border-0">
+    <div className="w-full bg-white rounded-2xl shadow-xl p-6 h-fit sticky top-28 border-0">
       <div className="flex items-center justify-between mb-6 pb-4 border-b">
         <h3 className="text-xl font-bold text-gray-800 font-playfair">Votre Panier</h3>
         {cart.length > 0 && (
@@ -89,6 +89,7 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
               size="lg"
             >
               Commander Maintenant
+              <ArrowRight />
             </Button>
             <p className="text-xs text-gray-500 text-center mt-3">
               Livraison gratuite pour les commandes de plus de 15 000 FCFA
