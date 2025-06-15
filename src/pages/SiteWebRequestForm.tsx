@@ -13,7 +13,6 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // Objectifs proposés
@@ -46,6 +45,9 @@ const formSchema = z.object({
         "Choisissez une option sur la gestion du site après mise en ligne.",
     }
   ),
+  maintenanceManagement: z.enum(["yes", "no"], {
+    required_error: "Merci de choisir si vous souhaitez la maintenance.",
+  }),
   notes: z.string().optional(),
 });
 
@@ -66,6 +68,7 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
       restaurantName: "",
       address: "",
       gestionSite: undefined,
+      maintenanceManagement: undefined,
       notes: "",
     },
   });
@@ -78,6 +81,7 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
         autoComplete="off"
       >
         <div>
+          {/* Nom du restaurant */}
           <FormField
             control={form.control}
             name="restaurantName"
@@ -96,6 +100,7 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
               </FormItem>
             )}
           />
+          {/* Adresse */}
           <FormField
             control={form.control}
             name="address"
@@ -116,6 +121,7 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
           />
         </div>
 
+        {/* Gestion du site */}
         <FormField
           control={form.control}
           name="gestionSite"
@@ -141,6 +147,41 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
           )}
         />
 
+        {/* Maintenance + Gestion */}
+        <FormField
+          control={form.control}
+          name="maintenanceManagement"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Souhaitez-vous inclure la maintenance de votre site + gestion ?
+              </FormLabel>
+              <FormControl>
+                <RadioGroup
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  className="flex flex-col gap-2 mt-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="yes" id="maintenance-yes" />
+                    <label htmlFor="maintenance-yes" className="text-sm">
+                      Oui <span className="text-green-600 font-semibold">(seulement 2000f supplémentaire)</span>
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="no" id="maintenance-no" />
+                    <label htmlFor="maintenance-no" className="text-sm">
+                      Non merci
+                    </label>
+                  </div>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Notes complémentaires */}
         <FormField
           control={form.control}
           name="notes"
