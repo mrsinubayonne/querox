@@ -21,17 +21,12 @@ export const useMenusList = () => {
   useEffect(() => {
     const fetchMenus = async () => {
       try {
-        console.log("🔥 useMenusList: Début de la récupération des menus");
-        
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
-          console.error("🔥 useMenusList: Aucun utilisateur connecté");
           setError("Utilisateur non connecté");
           return;
         }
-
-        console.log("🔥 useMenusList: Utilisateur connecté:", user.id);
 
         const { data, error } = await supabase
           .from('menus')
@@ -40,18 +35,13 @@ export const useMenusList = () => {
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error("🔥 useMenusList: Erreur lors de la récupération:", error);
           throw error;
         }
-
-        console.log("🔥 useMenusList: Menus récupérés:", data);
-        console.log("🔥 useMenusList: Nombre de menus:", data?.length || 0);
 
         setMenus(data || []);
         setError(null);
 
         if (!data || data.length === 0) {
-          console.warn("🔥 useMenusList: Aucun menu trouvé pour cet utilisateur");
           toast({
             title: "Aucun menu",
             description: "Vous n'avez pas encore créé de menu. Créez-en un pour commencer.",
@@ -60,7 +50,7 @@ export const useMenusList = () => {
         }
 
       } catch (err: any) {
-        console.error('🔥 useMenusList: Erreur complète:', err);
+        console.error('Error loading menus:', err);
         const errorMessage = err.message || 'Erreur lors du chargement des menus';
         setError(errorMessage);
         toast({

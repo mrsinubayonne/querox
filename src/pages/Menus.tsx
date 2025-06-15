@@ -16,17 +16,10 @@ const Menus: React.FC = () => {
 
   const { menus, loading } = useMenusList();
   
-  // Debug des menus récupérés
-  console.log("🔥 Menus récupérés dans Menus.tsx:", menus);
-  console.log("🔥 Loading état:", loading);
-  console.log("🔥 Nombre de menus:", menus?.length || 0);
-  
   // On prend le premier menu ACTIF comme menu par défaut
   const activeMenu = menus && menus.length > 0 
     ? menus.find(menu => menu.is_active) || menus[0] 
     : null;
-
-  console.log("🔥 Menu actif sélectionné:", activeMenu);
 
   const handleAddItem = () => {
     console.log("Add item clicked");
@@ -39,17 +32,6 @@ const Menus: React.FC = () => {
       <div className="flex-1 overflow-y-auto">
         <div className="p-6">
           <MenuHeader onAddItem={handleAddItem} />
-          
-          {/* Debug panel pour comprendre l'état */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="text-sm font-semibold text-blue-800 mb-2">🔧 Debug Info</h3>
-              <p className="text-xs text-blue-700">Loading: {loading ? 'Oui' : 'Non'}</p>
-              <p className="text-xs text-blue-700">Nombre de menus: {menus?.length || 0}</p>
-              <p className="text-xs text-blue-700">Menu actif ID: {activeMenu?.id || 'Aucun'}</p>
-              <p className="text-xs text-blue-700">Menu actif nom: {activeMenu?.name || 'Aucun'}</p>
-            </div>
-          )}
           
           <div className="flex justify-end items-center mb-6">
             {loading ? (

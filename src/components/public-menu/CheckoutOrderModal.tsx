@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Dialog,
@@ -50,8 +49,6 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
     loading,
     handleSubmit,
   } = useCheckoutOrderModal(cart, totalPrice, onOpenChange, onClearCart, restaurantUserId);
-
-  console.log("🔥 CheckoutOrderModal - restaurantUserId reçu:", restaurantUserId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

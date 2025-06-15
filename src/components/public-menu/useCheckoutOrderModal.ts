@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -32,8 +31,6 @@ export const useCheckoutOrderModal = (
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  console.log("🔥 useCheckoutOrderModal - restaurantUserId reçu:", restaurantUserId);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -58,8 +55,6 @@ export const useCheckoutOrderModal = (
     setLoading(true);
     
     try {
-      console.log("🔥 Envoi de la commande avec restaurantUserId:", restaurantUserId);
-      
       const orderData = {
         customer_name: customerName,
         customer_phone: customerPhone || null,
@@ -80,19 +75,15 @@ export const useCheckoutOrderModal = (
         status: 'pending'
       };
 
-      console.log("🔥 Données de commande à envoyer:", orderData);
-
       const { data, error } = await supabase
         .from('orders')
         .insert([orderData])
         .select();
 
       if (error) {
-        console.error("🔥 Erreur lors de l'insertion de la commande:", error);
+        console.error("Error inserting order:", error);
         throw error;
       }
-
-      console.log("🔥 Commande créée avec succès:", data);
 
       toast({
         title: "Commande envoyée !",
@@ -111,7 +102,7 @@ export const useCheckoutOrderModal = (
       onOpenChange(false);
 
     } catch (error: any) {
-      console.error('🔥 Erreur lors de la soumission de la commande:', error);
+      console.error('Error submitting order:', error);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur est survenue lors de l'envoi de la commande.",
