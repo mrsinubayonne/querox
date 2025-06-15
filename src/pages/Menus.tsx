@@ -24,7 +24,7 @@ const Menus: React.FC = () => {
       <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       
       <div className="flex-1 overflow-y-auto">
-        <div className="p-8">
+        <div className="p-6">
           <MenuHeader onAddItem={handleAddItem} />
           <div className="flex justify-end items-center mb-6">
             <Link to="/menu-public" target="_blank">
