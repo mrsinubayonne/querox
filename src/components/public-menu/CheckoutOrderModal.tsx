@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -34,6 +35,7 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryTime, setDeliveryTime] = useState(""); // ADD THIS LINE
   const [notes, setNotes] = useState("");
   const [orderType, setOrderType] = useState(""); // "sur_place" | "emporter" | "livrer"
   const [tableNumber, setTableNumber] = useState("");
@@ -136,9 +138,10 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
         })),
         total_amount: totalPrice,
         status: "pending",
-        order_type: orderType, // now it matches the form: "sur_place" | "emporter" | "livrer"
+        order_type: orderType, // "sur_place" | "emporter" | "livrer"
         table_number: orderType === "sur_place" ? tableNumber : null,
         delivery_address: orderType === "livrer" ? deliveryAddress : null,
+        delivery_time: deliveryTime || null, // For compatibility if needed elsewhere
       };
       const { error } = await supabase.from("orders").insert([orderData]);
 
@@ -154,6 +157,7 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
       setCustomerName("");
       setCustomerPhone("");
       setDeliveryAddress("");
+      setDeliveryTime(""); // RESET HERE TOO
       setNotes("");
       setOrderType("");
       setTableNumber("");
@@ -187,6 +191,8 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
             setCustomerPhone={setCustomerPhone}
             deliveryAddress={deliveryAddress}
             setDeliveryAddress={setDeliveryAddress}
+            deliveryTime={deliveryTime} // ADD THIS
+            setDeliveryTime={setDeliveryTime} // ADD THIS
             notes={notes}
             setNotes={setNotes}
             orderType={orderType}
@@ -222,3 +228,5 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
 };
 
 export default CheckoutOrderModal;
+
+// ... end of file
