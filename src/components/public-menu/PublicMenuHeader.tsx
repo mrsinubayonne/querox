@@ -46,10 +46,21 @@ const PublicMenuHeader: React.FC<PublicMenuHeaderProps> = ({ totalItems, onCartT
                 </div>
               </div>
             </div>
-            {/* Afficher la description sous le header, entière largeur */}
+            {/* Description sous le header */}
             {website?.description && (
               <div className="mt-4 text-base text-gray-600 max-w-2xl mx-auto lg:mx-0">
                 {website.description}
+              </div>
+            )}
+            {/* Image d'en-tête affichée sous la description */}
+            {website?.header_image_url && (
+              <div className="mt-6 flex justify-center lg:justify-start">
+                <img
+                  src={website.header_image_url}
+                  alt="Image d'en-tête"
+                  className="w-full max-w-3xl h-52 md:h-64 object-cover rounded-2xl border shadow-sm"
+                  loading="lazy"
+                />
               </div>
             )}
           </div>
