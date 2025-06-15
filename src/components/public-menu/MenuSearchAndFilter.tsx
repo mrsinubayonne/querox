@@ -20,21 +20,21 @@ const MenuSearchAndFilter: React.FC<MenuSearchAndFilterProps> = ({
   onCategoryChange,
 }) => {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border p-6 mb-8">
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="flex-1">
+    <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border p-4 mb-8 sticky top-4 z-10">
+      <div className="flex flex-col lg:flex-row gap-4 items-center">
+        <div className="flex-1 w-full lg:w-auto">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
               type="text"
               placeholder="Rechercher un plat..."
               value={searchTerm}
               onChange={(e) => onSearchTermChange(e.target.value)}
-              className="pl-10 h-12 text-lg border-gray-200 focus:border-orange-300 focus:ring-orange-200"
+              className="pl-12 h-12 text-base border-gray-200 focus:border-emerald-400 focus:ring-emerald-400 rounded-lg"
             />
           </div>
         </div>
-        <div className="lg:w-auto">
+        <div className="lg:flex-1 w-full lg:w-auto">
           <CategoryFilter
             categories={categories}
             activeCategory={activeCategory}

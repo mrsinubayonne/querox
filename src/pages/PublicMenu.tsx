@@ -183,7 +183,7 @@ const PublicMenu: React.FC = () => {
   console.log("🔥 Rendu final - menuItems:", menuItems.length, "filteredItems:", filteredItems.length, "groupedItems:", Object.keys(groupedItems).length);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
+    <div className="min-h-screen bg-gray-50">
       <PublicMenuHeader totalItems={getTotalItems()} onCartToggle={() => setShowCart(!showCart)} />
       
       <div className="max-w-7xl mx-auto px-4 py-8">

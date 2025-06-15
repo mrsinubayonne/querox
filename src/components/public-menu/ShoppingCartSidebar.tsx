@@ -20,11 +20,11 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
   totalPrice 
 }) => {
   return (
-    <div className="w-96 bg-white rounded-2xl shadow-xl p-6 h-fit sticky top-8 border-0">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-900">Votre Panier</h3>
+    <div className="w-96 bg-white rounded-2xl shadow-xl p-6 h-fit sticky top-28 border-0">
+      <div className="flex items-center justify-between mb-6 pb-4 border-b">
+        <h3 className="text-xl font-bold text-gray-800 font-playfair">Votre Panier</h3>
         {cart.length > 0 && (
-          <Button variant="ghost" onClick={onClearCart} className="text-red-500 hover:text-red-700">
+          <Button variant="ghost" onClick={onClearCart} className="text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md">
             Vider
           </Button>
         )}
@@ -32,45 +32,45 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
       
       {cart.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <ShoppingCart className="w-8 h-8 text-gray-400" />
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ShoppingCart className="w-10 h-10 text-gray-400" />
           </div>
-          <p className="text-gray-500 mb-4">Votre panier est vide</p>
-          <p className="text-sm text-gray-400">Ajoutez des plats pour commencer</p>
+          <p className="text-gray-500 font-semibold">Votre panier est vide</p>
+          <p className="text-sm text-gray-400 mt-1">Ajoutez des plats pour commencer</p>
         </div>
       ) : (
         <>
-          <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
+          <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2 -mr-2">
             {cart.map((item) => (
-              <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+              <div key={item.id} className="flex items-center gap-4">
                 <img
                   src={item.image_url || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"}
                   alt={item.name}
-                  className="w-12 h-12 object-cover rounded-lg"
+                  className="w-16 h-16 object-cover rounded-lg"
                 />
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-gray-900 truncate">{item.name}</h4>
-                  <p className="text-sm text-gray-600">
+                  <h4 className="font-semibold text-gray-800 truncate">{item.name}</h4>
+                  <p className="text-sm text-gray-500">
                     {item.price.toLocaleString('fr-FR')} FCFA
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <Button
-                    size="sm"
-                    variant="outline"
+                    size="icon"
+                    variant="ghost"
                     onClick={() => onRemoveFromCart(item.id)}
-                    className="h-8 w-8 p-0 border-gray-300"
+                    className="h-8 w-8 text-gray-500 hover:bg-gray-200 rounded-full"
                   >
-                    <Minus className="w-3 h-3" />
+                    <Minus className="w-4 h-4" />
                   </Button>
-                  <span className="w-8 text-center font-medium">{item.quantity}</span>
+                  <span className="w-8 text-center font-semibold text-gray-800">{item.quantity}</span>
                   <Button
-                    size="sm"
-                    variant="outline"
+                    size="icon"
+                    variant="ghost"
                     onClick={() => onAddToCart(item)}
-                    className="h-8 w-8 p-0 border-gray-300"
+                    className="h-8 w-8 text-gray-500 hover:bg-gray-200 rounded-full"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
@@ -78,14 +78,14 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
           </div>
           
           <div className="border-t pt-6">
-            <div className="flex justify-between items-center text-lg font-bold mb-6">
-              <span>Total:</span>
-              <span className="text-2xl bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            <div className="flex justify-between items-center text-lg font-bold mb-4">
+              <span className="text-gray-800">Total:</span>
+              <span className="text-2xl text-emerald-600">
                 {totalPrice.toLocaleString('fr-FR')} FCFA
               </span>
             </div>
             <Button 
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300" 
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg" 
               size="lg"
             >
               Commander Maintenant
