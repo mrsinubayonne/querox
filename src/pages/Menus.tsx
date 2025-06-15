@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
 import MenuHeader from '@/components/MenuHeader';
@@ -11,6 +10,7 @@ import { useMenus } from '@/hooks/useMenus';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useToast } from '@/hooks/use-toast';
 import { Menu } from 'lucide-react';
+import { Link } from "react-router-dom";
 
 const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -98,7 +98,14 @@ const Menus: React.FC = () => {
       <div className="flex-1 overflow-auto">
         <div className="p-8">
           <MenuHeader onVisitorView={handleVisitorView} onAddItem={handleAddItem} />
-          
+          <div className="flex justify-end mb-6">
+            <Link
+              to="/tous-les-menus"
+              className="text-blue-600 hover:text-blue-800 underline text-sm font-medium transition"
+            >
+              Voir tous les menus & catégories
+            </Link>
+          </div>
           {transformedItems.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {transformedItems.map((item) => (

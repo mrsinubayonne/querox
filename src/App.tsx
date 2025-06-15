@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from "./components/ui/toaster";
@@ -19,6 +18,7 @@ import Evenements from './pages/Evenements';
 import Marketing from './pages/Marketing';
 import Social from './pages/Social';
 import NotFound from './pages/NotFound';
+import AllMenus from './pages/AllMenus';
 import './App.css';
 
 function App() {
@@ -36,6 +36,11 @@ function App() {
           <Route path="/menus" element={
             <ProtectedRoute>
               <Menus />
+            </ProtectedRoute>
+          } />
+          <Route path="/tous-les-menus" element={
+            <ProtectedRoute>
+              <AllMenus />
             </ProtectedRoute>
           } />
           <Route path="/reservations" element={
