@@ -34,32 +34,27 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [deliveryTime, setDeliveryTime] = useState("");
   const [notes, setNotes] = useState("");
-  const [orderType, setOrderType] = useState("");
+  const [orderType, setOrderType] = useState(""); // "sur_place" | "emporter" | "livrer"
   const [tableNumber, setTableNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [restaurantUserId, setRestaurantUserId] = useState<string | null>(null);
-
   const { toast } = useToast();
   const location = useLocation();
 
   useEffect(() => {
     const fetchRestaurantUser = async () => {
       const params = new URLSearchParams(location.search);
-      const menuId = params.get('menu_id');
-
+      const menuId = params.get("menu_id");
       if (!menuId) {
         console.error("No menu_id found in URL");
         return;
       }
-      
       const { data, error } = await supabase
-        .from('menus')
-        .select('user_id')
-        .eq('id', menuId)
+        .from("menus")
+        .select("user_id")
+        .eq("id", menuId)
         .single();
-      
       if (error) {
         console.error("Error fetching restaurant user ID:", error);
         toast({
@@ -72,22 +67,56 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
       }
     };
 
-    if(open) {
+    if (open) {
       fetchRestaurantUser();
     }
   }, [location.search, toast, open]);
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!orderType) {
-      toast({ title: "Champ requis", description: "Veuillez sélectionner un type de commande.", variant: "destructive" });
+      toast({
+        title: "Type de commande requis",
+        description: "Veuillez sélectionner un type de commande.",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!restaurantUserId) {
-      toast({ title: "Erreur", description: "Impossible d'identifier le restaurant. La commande ne peut être passée.", variant: "destructive" });
+      toast({
+        title: "Erreur",
+        description: "Impossible d'identifier le restaurant. La commande ne peut être passée.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (cart.length === 0) {
+      toast({
+        title: "Panier vide",
+        description: "Ajoutez un plat avant de passer commande.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (orderType === "sur_place" && !tableNumber) {
+      toast({
+        title: "Numéro de table requis",
+        description: "Veuillez choisir un numéro de table.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (orderType === "livrer" && !deliveryAddress) {
+      toast({
+        title: "Adresse de livraison requise",
+        description: "Veuillez saisir votre adresse de livraison.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -98,36 +127,37 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
         user_id: restaurantUserId,
         customer_name: customerName,
         customer_phone: customerPhone,
-        items: cart,
-        total_amount: totalPrice,
-        status: 'pending',
         notes: notes || null,
-        order_type: orderType,
+        items: cart.map((item) => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        total_amount: totalPrice,
+        status: "pending",
+        order_type: orderType, // now it matches the form: "sur_place" | "emporter" | "livrer"
+        table_number: orderType === "sur_place" ? tableNumber : null,
+        delivery_address: orderType === "livrer" ? deliveryAddress : null,
       };
-
-      if (orderType === 'delivery') {
-        orderData.delivery_address = deliveryAddress;
-        orderData.delivery_time = deliveryTime;
-      } else if (orderType === 'dine-in') {
-        orderData.table_number = tableNumber;
-      }
-
-      const { error } = await supabase.from('orders').insert([orderData]);
+      const { error } = await supabase.from("orders").insert([orderData]);
 
       if (error) throw error;
 
-      toast({ title: "Commande envoyée !", description: "Votre commande a été transmise au restaurant." });
+      toast({
+        title: "Commande envoyée !",
+        description: "Votre commande a été transmise au restaurant.",
+      });
       onClearCart();
       onOpenChange(false);
-      
+
       setCustomerName("");
       setCustomerPhone("");
       setDeliveryAddress("");
-      setDeliveryTime("");
       setNotes("");
       setOrderType("");
       setTableNumber("");
-
+      // keep restaurantUserId intact
     } catch (err: any) {
       console.error("Order submission error:", err);
       toast({
@@ -157,8 +187,6 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
             setCustomerPhone={setCustomerPhone}
             deliveryAddress={deliveryAddress}
             setDeliveryAddress={setDeliveryAddress}
-            deliveryTime={deliveryTime}
-            setDeliveryTime={setDeliveryTime}
             notes={notes}
             setNotes={setNotes}
             orderType={orderType}
