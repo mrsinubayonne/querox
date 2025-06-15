@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +10,7 @@ import ShoppingCartSidebar from '@/components/public-menu/ShoppingCartSidebar';
 import PublicMenuLoader from '@/components/public-menu/PublicMenuLoader';
 import PromotionalBanner from '@/components/public-menu/PromotionalBanner';
 import CategoryFilter from '@/components/CategoryFilter';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const PublicMenu: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -205,8 +207,9 @@ const PublicMenu: React.FC = () => {
                 />
               </div>
 
+              {/* Desktop cart sidebar */}
               {showCart && (
-                <div className="w-full lg:w-96 animate-slide-in-right z-40">
+                <div className="hidden lg:block w-full lg:w-96 animate-slide-in-right z-40">
                   <ShoppingCartSidebar
                     cart={cart}
                     onAddToCart={addToCart}
@@ -219,6 +222,22 @@ const PublicMenu: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+      
+      {/* Mobile cart sheet */}
+      <div className="lg:hidden">
+        <Sheet open={showCart} onOpenChange={setShowCart}>
+          <SheetContent>
+            <ShoppingCartSidebar
+              cart={cart}
+              onAddToCart={addToCart}
+              onRemoveFromCart={removeFromCart}
+              onClearCart={clearCart}
+              totalPrice={getTotalPrice()}
+              className="p-0 shadow-none border-0 bg-transparent h-full sticky top-0"
+            />
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   );

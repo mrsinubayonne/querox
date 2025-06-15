@@ -13,7 +13,7 @@ interface MenuItemCardProps {
 
 const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, onAddToCart }) => {
   return (
-    <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl group border-0 shadow-lg">
+    <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl group border-0 shadow-md">
       <div className="relative overflow-hidden">
         <img
           src={item.image_url || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"}
@@ -43,7 +43,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, onAddToCart }) => {
             onClick={() => onAddToCart(item)}
             size="sm"
             variant="outline"
-            className="border-emerald-300 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-full group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 transition-all duration-300 ease-in-out"
+            className="rounded-full border-emerald-200 text-emerald-700 bg-emerald-50 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 transition-colors duration-300"
           >
             <Plus className="w-4 h-4 mr-1" />
             Ajouter

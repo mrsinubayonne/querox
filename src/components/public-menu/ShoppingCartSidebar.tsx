@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus, ShoppingCart, ArrowRight } from 'lucide-react';
 import { CartItem, MenuItem } from '@/types/menu';
+import { cn } from '@/lib/utils';
 
 interface ShoppingCartProps {
   cart: CartItem[];
@@ -10,6 +11,7 @@ interface ShoppingCartProps {
   onRemoveFromCart: (itemId: string) => void;
   onClearCart: () => void;
   totalPrice: number;
+  className?: string;
 }
 
 const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({ 
@@ -17,10 +19,11 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
   onAddToCart, 
   onRemoveFromCart, 
   onClearCart, 
-  totalPrice 
+  totalPrice,
+  className,
 }) => {
   return (
-    <div className="w-full bg-white rounded-2xl shadow-xl p-6 h-fit sticky top-28 border-0">
+    <div className={cn("w-full bg-white rounded-2xl shadow-lg p-6 h-fit sticky top-28 border-0", className)}>
       <div className="flex items-center justify-between mb-6 pb-4 border-b">
         <h3 className="text-xl font-bold text-gray-800 font-playfair">Votre Panier</h3>
         {cart.length > 0 && (
@@ -88,7 +91,7 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg" 
               size="lg"
             >
-              Commander Maintenant
+              Passer la commande
               <ArrowRight />
             </Button>
             <p className="text-xs text-gray-500 text-center mt-3">
