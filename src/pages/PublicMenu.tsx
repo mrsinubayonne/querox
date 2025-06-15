@@ -174,7 +174,7 @@ const PublicMenu: React.FC = () => {
 
   // 🔥 NOUVEAU: fond dégradé tout doux et container superposée sur desktop
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex flex-col">
+    <div className="min-h-screen w-full bg-slate-50 flex flex-col">
       <PublicMenuHeader totalItems={getTotalItems()} onCartToggle={() => setShowCart(!showCart)} />
       
       <div className="relative flex-1">
