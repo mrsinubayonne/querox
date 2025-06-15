@@ -1,8 +1,6 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 import { MenuItem } from '@/types/menu';
 
@@ -13,44 +11,34 @@ interface MenuItemCardProps {
 
 const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, onAddToCart }) => {
   return (
-    <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl group border-0 shadow-md">
-      <div className="relative overflow-hidden">
+    <article className="flex items-center p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-transparent hover:border-emerald-200 group w-full">
+      <div className="relative shrink-0">
         <img
           src={item.image_url || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"}
           alt={item.name}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-20 h-20 md:w-24 md:h-24 object-cover rounded-md"
         />
-        <div className="absolute top-3 right-3">
-          <Badge className="bg-emerald-100 text-emerald-800 shadow-lg border border-emerald-200">
-            Disponible
-          </Badge>
-        </div>
       </div>
-      
-      <CardContent className="p-5 flex flex-col">
-        <div className="flex-grow">
-          <h3 className="font-playfair font-bold text-xl mb-2 text-gray-800">{item.name}</h3>
-          {item.description && (
-            <p className="text-gray-500 text-sm mb-4 h-10 line-clamp-2">{item.description}</p>
-          )}
+      <div className="flex-grow px-4 min-w-0">
+        <h3 className="font-playfair font-bold text-md md:text-lg text-gray-800 truncate">{item.name}</h3>
+        {item.description && (
+          <p className="text-gray-500 text-sm mt-1 line-clamp-2 h-10">{item.description}</p>
+        )}
+      </div>
+      <div className="flex flex-col items-end justify-center gap-2 pl-4 shrink-0 w-28 md:w-32 text-right">
+        <div className="text-md md:text-lg font-bold text-gray-900">
+          {item.price.toLocaleString('fr-FR')} FCFA
         </div>
-        
-        <div className="flex items-center justify-between pt-4 mt-auto">
-          <div className="text-xl font-bold text-gray-900">
-            {item.price.toLocaleString('fr-FR')} FCFA
-          </div>
-          <Button
-            onClick={() => onAddToCart(item)}
-            size="sm"
-            variant="outline"
-            className="rounded-full border-emerald-200 text-emerald-700 bg-emerald-50 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 transition-colors duration-300"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Ajouter
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        <Button
+          onClick={() => onAddToCart(item)}
+          size="sm"
+          className="w-full rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="hidden md:inline ml-1">Ajouter</span>
+        </Button>
+      </div>
+    </article>
   );
 };
 

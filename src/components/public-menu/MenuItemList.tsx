@@ -35,7 +35,7 @@ const MenuItemList: React.FC<MenuItemListProps> = ({
   return (
     <>
       {Object.entries(groupedItems).map(([category, items]) => (
-        <div key={category} className="mb-12">
+        <section key={category} className="mb-12">
           <div className="flex items-center gap-4 mb-6">
             <h2 className="text-3xl font-bold font-playfair text-gray-800">{category}</h2>
             <div className="flex-1 h-px bg-gray-200"></div>
@@ -44,12 +44,12 @@ const MenuItemList: React.FC<MenuItemListProps> = ({
             </Badge>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          <div className="flex flex-col gap-4">
             {items.map((item) => (
               <MenuItemCard key={item.id} item={item} onAddToCart={onAddToCart} />
             ))}
           </div>
-        </div>
+        </section>
       ))}
     </>
   );

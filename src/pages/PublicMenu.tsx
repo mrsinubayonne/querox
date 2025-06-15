@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -184,7 +183,6 @@ const PublicMenu: React.FC = () => {
             {/* Légère surcouche blanc en transparence pour laisser passer le gradient */}
           </div>
 
-          {/* Cart visible en mode side-panel desktop */}
           <div className="xl:px-20">
             {/* Banner centrée */}
             <PromotionalBanner />
@@ -198,7 +196,7 @@ const PublicMenu: React.FC = () => {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-10 items-start">
-              <div className="flex-1 w-full">
+              <div className="flex-1 w-full min-w-0">
                 <MenuItemList
                   groupedItems={groupedItems}
                   onAddToCart={addToCart}
@@ -208,8 +206,7 @@ const PublicMenu: React.FC = () => {
               </div>
 
               {/* Desktop cart sidebar */}
-              {showCart && (
-                <div className="hidden lg:block w-full lg:w-96 animate-slide-in-right z-40">
+              <div className="hidden lg:block w-full lg:w-96 xl:w-[420px] shrink-0">
                   <ShoppingCartSidebar
                     cart={cart}
                     onAddToCart={addToCart}
@@ -217,8 +214,7 @@ const PublicMenu: React.FC = () => {
                     onClearCart={clearCart}
                     totalPrice={getTotalPrice()}
                   />
-                </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
