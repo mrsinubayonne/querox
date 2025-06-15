@@ -28,6 +28,15 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!customerName.trim() || !customerPhone.trim()) {
+      toast({
+        title: "Champs obligatoires",
+        description: "Veuillez renseigner votre nom et votre numéro de téléphone.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!orderType) {
       toast({ title: "Type de commande requis", description: "Veuillez sélectionner un type de commande.", variant: "destructive" });
       return;

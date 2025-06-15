@@ -47,7 +47,6 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
     setTableNumber,
     loading,
     handleSubmit,
-    restaurantUserId,
   } = useCheckoutOrderModal(cart, totalPrice, onOpenChange, onClearCart);
 
   return (
@@ -85,7 +84,7 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || !orderType || !restaurantUserId}
+              disabled={loading || !orderType}
             >
               {loading
                 ? "Transmission en cours..."
