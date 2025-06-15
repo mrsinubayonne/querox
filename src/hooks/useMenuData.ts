@@ -27,20 +27,26 @@ export const useMenuData = (menuId: string | null) => {
 
       // D'abord vérifier si le menu existe
       console.log("🔥 Vérification de l'existence du menu dans la base de données...");
-      const { data: menuData, error: menuError } = await supabase
+      const { data: menusData, error: menuError } = await supabase
         .from('menus')
         .select('id, name, user_id, is_active')
-        .eq('id', id)
-        .single();
+        .eq('id', id);
 
       if (menuError) {
         console.error("🔥 Erreur lors de la vérification du menu:", menuError);
-        if (menuError.code === 'PGRST116') {
-          throw new Error("Ce menu n'existe pas. Veuillez vérifier l'ID du menu.");
-        }
         throw new Error(`Erreur de base de données: ${menuError.message}`);
       }
 
+      if (!menusData || menusData.length === 0) {
+        console.error(`🔥 Aucun menu trouvé avec l'ID : ${id}`);
+        throw new Error("Ce menu n'existe pas. Veuillez vérifier l'ID du menu.");
+      }
+      
+      const menuData = menusData[0];
+      if (menusData.length > 1) {
+          console.warn(`🔥 Plusieurs menus trouvés pour l'ID ${id}. Utilisation du premier.`);
+      }
+      
       console.log("🔥 Menu trouvé:", menuData);
 
       if (!menuData.is_active) {
