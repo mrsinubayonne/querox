@@ -1,70 +1,49 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface Menu {
+export interface MenuInfo {
   id: string;
   name: string;
-  description?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
 export const useMenusList = () => {
-  const [menus, setMenus] = useState<Menu[]>([]);
+  const { user } = useAuth();
+  const [menus, setMenus] = useState<MenuInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+
+  const fetchMenus = useCallback(async () => {
+    if (!user) {
+      setMenus([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('menus')
+        .select('id, name')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching menus list:', error);
+        setMenus([]);
+      } else {
+        setMenus(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching menus list:', error);
+      setMenus([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
-    const fetchMenus = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          setError("Utilisateur non connecté");
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('menus')
-          .select('id, name, description, is_active, created_at, updated_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          throw error;
-        }
-
-        setMenus(data || []);
-        setError(null);
-
-        if (!data || data.length === 0) {
-          toast({
-            title: "Aucun menu",
-            description: "Vous n'avez pas encore créé de menu. Créez-en un pour commencer.",
-            variant: "default",
-          });
-        }
-
-      } catch (err: any) {
-        console.error('Error loading menus:', err);
-        const errorMessage = err.message || 'Erreur lors du chargement des menus';
-        setError(errorMessage);
-        toast({
-          title: "Erreur",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMenus();
-  }, [toast]);
+  }, [fetchMenus]);
 
-  return { menus, loading, error };
+  return { menus, loading, refetch: fetchMenus };
 };

@@ -15,13 +15,11 @@ const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { menus, loading } = useMenusList();
-  
-  // On prend le premier menu ACTIF comme menu par défaut
-  const activeMenu = menus && menus.length > 0 
-    ? menus.find(menu => menu.is_active) || menus[0] 
-    : null;
+  // On prend le premier menu comme actif par défaut (vous pouvez affiner selon la logique d'activation)
+  const activeMenu = menus && menus.length > 0 ? menus[0] : null;
 
   const handleAddItem = () => {
+    // Cette logique reste inchangée.
     console.log("Add item clicked");
   };
 
@@ -32,29 +30,20 @@ const Menus: React.FC = () => {
       <div className="flex-1 overflow-y-auto">
         <div className="p-6">
           <MenuHeader onAddItem={handleAddItem} />
-          
           <div className="flex justify-end items-center mb-6">
-            {loading ? (
-              <Button variant="outline" disabled className="flex items-center gap-2">
+            <Link
+              to={
+                activeMenu
+                  ? `/menu-public?menu_id=${activeMenu.id}`
+                  : '/menu-public'
+              }
+              target="_blank"
+            >
+              <Button variant="outline" className="flex items-center gap-2" disabled={!activeMenu}>
                 <ExternalLink className="w-4 h-4" />
-                Chargement...
+                Voir le menu public
               </Button>
-            ) : !activeMenu ? (
-              <div className="text-center">
-                <p className="text-gray-600 mb-2">Aucun menu trouvé</p>
-                <p className="text-sm text-gray-500">Créez d'abord un menu pour pouvoir le visualiser</p>
-              </div>
-            ) : (
-              <Link
-                to={`/menu-public?menu_id=${activeMenu.id}`}
-                target="_blank"
-              >
-                <Button variant="outline" className="flex items-center gap-2">
-                  <ExternalLink className="w-4 h-4" />
-                  Voir le menu public ({activeMenu.name})
-                </Button>
-              </Link>
-            )}
+            </Link>
           </div>
           
           <Tabs defaultValue="items" className="w-full">
@@ -81,3 +70,4 @@ const Menus: React.FC = () => {
 };
 
 export default Menus;
+

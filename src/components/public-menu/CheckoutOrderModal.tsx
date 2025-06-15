@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Dialog,
@@ -20,7 +21,6 @@ type CheckoutOrderModalProps = {
   cart: CartItem[];
   totalPrice: number;
   onClearCart: () => void;
-  restaurantUserId: string | null;
 };
 
 const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
@@ -29,7 +29,6 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
   cart,
   totalPrice,
   onClearCart,
-  restaurantUserId,
 }) => {
   const {
     customerName,
@@ -48,7 +47,8 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
     setTableNumber,
     loading,
     handleSubmit,
-  } = useCheckoutOrderModal(cart, totalPrice, onOpenChange, onClearCart, restaurantUserId);
+    restaurantUserId,
+  } = useCheckoutOrderModal(cart, totalPrice, onOpenChange, onClearCart);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -81,13 +81,6 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
             totalPrice={totalPrice}
             orderType={orderType}
           />
-          {!restaurantUserId && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-red-600 text-sm">
-                ⚠️ Configuration manquante: impossible d'identifier le restaurant
-              </p>
-            </div>
-          )}
           <DialogFooter>
             <Button
               type="submit"

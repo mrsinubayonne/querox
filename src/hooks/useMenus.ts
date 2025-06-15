@@ -37,7 +37,6 @@ export const useMenus = () => {
       const { data: userMenus, error: menuError } = await supabase
         .from('menus')
         .select('id')
-        .eq('user_id', user.id)
         .limit(1);
 
       if (menuError) {
@@ -67,7 +66,6 @@ export const useMenus = () => {
             )
           )
         `)
-        .eq('menu_categories.menus.user_id', user.id)
         .order('name');
 
       if (error) {

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useMenuCategories } from '@/hooks/useMenuCategories';
 import { useMenuCategoryActions, MenuCategoryInput } from '@/hooks/useMenuCategoryActions';
-import { useMenusList } from '@/hooks/useMenusList';
+import { useMenusList, MenuInfo } from '@/hooks/useMenusList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -15,49 +14,32 @@ export const useMenuData = (menuId: string | null) => {
     setLoading(true);
     setError(null);
     setRestaurantUserId(null);
-    
     try {
-      if (!id || id.length < 10) {
-        throw new Error("L'identifiant du menu n'est pas valide.");
-      }
+      console.log(`🔥 Début récupération menu public pour menu_id: ${id}`);
 
-      const { data: menusData, error: menuError } = await supabase
+      const { data: menuData, error: menuError } = await supabase
         .from('menus')
-        .select('id, name, user_id, is_active')
-        .eq('id', id);
-
+        .select('user_id')
+        .eq('id', id)
+        .single();
+      
       if (menuError) {
-        console.error("Error fetching menu:", menuError);
-        throw new Error(`Erreur de base de données: ${menuError.message}`);
+        console.error("Error fetching restaurant user ID in useMenuData:", menuError);
+      } else if (menuData) {
+        setRestaurantUserId(menuData.user_id);
       }
-
-      if (!menusData || menusData.length === 0) {
-        throw new Error("Ce menu n'existe pas. Veuillez vérifier l'ID du menu.");
-      }
-      
-      const menuData = menusData[0];
-      if (menusData.length > 1) {
-          console.warn(`Multiple menus found for ID ${id}. Using the first one.`);
-      }
-      
-      if (!menuData.is_active) {
-        throw new Error("Ce menu n'est pas disponible actuellement.");
-      }
-
-      setRestaurantUserId(menuData.user_id);
 
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('menu_categories')
         .select('id, name')
         .eq('menu_id', id);
 
-      if (categoriesError) {
-        console.error("Error fetching categories:", categoriesError);
-        throw new Error(`Erreur lors du chargement des catégories: ${categoriesError.message}`);
-      }
+      if (categoriesError) throw categoriesError;
 
       if (!categoriesData || categoriesData.length === 0) {
-        throw new Error("Ce menu ne contient aucune catégorie. Veuillez contacter le restaurant.");
+        console.warn("🔥 Aucune catégorie trouvée pour ce menu.");
+        setMenuItems([]);
+        return;
       }
       
       const categoryMap = new Map(categoriesData.map((c: any) => [c.id, c.name]));
@@ -70,12 +52,10 @@ export const useMenuData = (menuId: string | null) => {
         .eq('is_available', true)
         .order('name');
 
-      if (itemsError) {
-        console.error("Error fetching menu items:", itemsError);
-        throw new Error(`Erreur lors du chargement des plats: ${itemsError.message}`);
-      }
+      if (itemsError) throw itemsError;
 
       if (!menuItemsData || menuItemsData.length === 0) {
+        console.warn("🔥 Aucun plat disponible trouvé pour ce menu");
         setMenuItems([]);
         return;
       }
@@ -90,14 +70,14 @@ export const useMenuData = (menuId: string | null) => {
         is_available: item.is_available,
       }));
 
+      console.log("🔥 Plats transformés :", transformedItems);
       setMenuItems(transformedItems);
     } catch (err: any) {
-      console.error('Error loading menu:', err);
-      const errorMessage = err.message || "Impossible de charger le menu.";
-      setError(errorMessage);
+      console.error('🔥 Erreur complète:', err);
+      setError("Impossible de charger le menu. " + err.message);
       toast({
         title: "Erreur de chargement",
-        description: errorMessage,
+        description: "Impossible de charger le menu.",
         variant: "destructive",
       });
     } finally {
@@ -110,7 +90,6 @@ export const useMenuData = (menuId: string | null) => {
       fetchMenu(menuId);
     } else {
       setLoading(false);
-      setError("Aucun identifiant de menu fourni dans l'URL.");
     }
   }, [menuId, fetchMenu]);
 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +35,6 @@ export const useCustomers = () => {
       const { data, error } = await supabase
         .from('customers')
         .select('*')
-        .eq('user_id', user.id)
         .order('name');
 
       if (error) {
