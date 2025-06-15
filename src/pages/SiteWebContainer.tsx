@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -18,7 +19,7 @@ import SiteWebRequestForm, {
 } from "./SiteWebRequestForm";
 
 // Numéro WhatsApp à configurer (format international, sans le +)
-const WHATSAPP_NUMBER = "33612345678"; // Remplace par ton numéro réel
+const WHATSAPP_NUMBER = "242064563021"; // Remplace par ton numéro réel
 
 const generateWhatsAppMessage = (data: SiteWebRequestFields) => {
   return encodeURIComponent(
@@ -111,3 +112,4 @@ const SiteWebContainer: React.FC = () => {
 };
 
 export default SiteWebContainer;
+
