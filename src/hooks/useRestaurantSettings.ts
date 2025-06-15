@@ -6,6 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 interface WebsiteSettings {
   id: string;
   name: string;
+  description: string | null;
+  logo_url: string | null;
+  header_image_url: string | null;
 }
 
 export function useRestaurantSettings() {
@@ -14,14 +17,13 @@ export function useRestaurantSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  // On suppose qu'il n'y a qu'un seul site web principal à éditer pour l'utilisateur
   useEffect(() => {
     const fetchWebsite = async () => {
       setLoading(true);
       try {
         const { data, error } = await supabase
           .from('websites')
-          .select('id, name')
+          .select('id, name, description, logo_url, header_image_url')
           .order('created_at', { ascending: true })
           .limit(1)
           .single();
@@ -43,21 +45,34 @@ export function useRestaurantSettings() {
     fetchWebsite();
   }, []);
 
-  const updateWebsiteName = async (name: string) => {
+  const updateWebsiteInfo = async (values: {
+    name: string,
+    description: string,
+    logo_url?: string | null,
+    header_image_url?: string | null,
+  }) => {
     if (!website) return;
     setIsSaving(true);
     try {
+      // upload images to supabase storage si besoin
+      // (à faire si bucket existe, ici on stocke directement la valeur en BDD)
+      const update: any = {
+        name: values.name,
+        description: values.description,
+        logo_url: values.logo_url ?? null,
+        header_image_url: values.header_image_url ?? null,
+      };
       const { data, error } = await supabase
         .from('websites')
-        .update({ name })
+        .update(update)
         .eq('id', website.id)
-        .select('id, name')
+        .select('id, name, description, logo_url, header_image_url')
         .single();
       if (error) throw error;
       setWebsite(data);
       toast({
         title: "Enregistré",
-        description: "Le nom du restaurant a été mis à jour.",
+        description: "Les informations du restaurant ont été mises à jour.",
       });
     } catch (error: any) {
       toast({
@@ -74,6 +89,6 @@ export function useRestaurantSettings() {
     website,
     loading,
     isSaving,
-    updateWebsiteName,
+    updateWebsiteInfo,
   };
 }

@@ -5,12 +5,23 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import SimpleImageUploader from "@/components/SimpleImageUploader";
 
 const RestaurantNameTab = () => {
-  const { website, loading, isSaving, updateWebsiteName } = useRestaurantSettings();
+  const { website, loading, isSaving, updateWebsiteInfo } = useRestaurantSettings();
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
+  const [headerUrl, setHeaderUrl] = useState<string | undefined>(undefined);
+
   useEffect(() => {
-    if (website?.name) setName(website.name);
+    if (website) {
+      setName(website.name);
+      setDescription(website.description ?? '');
+      setLogoUrl(website.logo_url ?? undefined);
+      setHeaderUrl(website.header_image_url ?? undefined);
+    }
   }, [website]);
 
   if (loading) {
@@ -29,11 +40,18 @@ const RestaurantNameTab = () => {
     );
   }
 
+  const hasChanged = (
+    name !== website.name ||
+    description !== (website.description ?? '') ||
+    logoUrl !== (website.logo_url ?? undefined) ||
+    headerUrl !== (website.header_image_url ?? undefined)
+  );
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Informations générales du restaurant</CardTitle>
-        <CardDescription>Définissez le nom de votre restaurant.</CardDescription>
+        <CardDescription>Définissez les informations principales de votre restaurant (nom, description, logo, image d'en-tête).</CardDescription>
       </CardHeader>
       <CardContent className="pt-8 space-y-6">
         <div className="space-y-2">
@@ -46,10 +64,40 @@ const RestaurantNameTab = () => {
             onChange={(e) => setName(e.target.value)}
           />
         </div>
+        <div className="space-y-2">
+          <label htmlFor="restaurant-desc" className="text-sm font-medium">
+            Description du restaurant
+          </label>
+          <Textarea
+            id="restaurant-desc"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Décrivez brièvement votre restaurant..."
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <SimpleImageUploader
+            imageUrl={logoUrl}
+            onImageChange={setLogoUrl}
+            label="Logo du restaurant"
+          />
+          <SimpleImageUploader
+            imageUrl={headerUrl}
+            onImageChange={setHeaderUrl}
+            label="Image d'en-tête"
+          />
+        </div>
         <div className="flex justify-end">
           <Button
-            onClick={() => updateWebsiteName(name)}
-            disabled={isSaving || name === website.name}
+            onClick={() =>
+              updateWebsiteInfo({
+                name,
+                description,
+                logo_url: logoUrl,
+                header_image_url: headerUrl,
+              })
+            }
+            disabled={isSaving || !hasChanged}
           >
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Enregistrer
