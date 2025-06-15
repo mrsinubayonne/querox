@@ -25,8 +25,12 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const { toast } = useToast();
   const { restaurantUserId } = useRestaurant();
 
+  console.log("🔥 RestaurantUserId in useCheckoutOrderModal:", restaurantUserId);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log("🔥 Début de handleSubmit avec restaurantUserId:", restaurantUserId);
 
     if (!customerName.trim() || !customerPhone.trim()) {
       toast({
@@ -43,7 +47,12 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     }
 
     if (!restaurantUserId) {
-      toast({ title: "Erreur", description: "Impossible d'identifier le restaurant. La commande ne peut être passée.", variant: "destructive" });
+      console.error("🔥 Erreur: restaurantUserId est null ou undefined");
+      toast({ 
+        title: "Erreur de configuration", 
+        description: "Impossible d'identifier le restaurant. Veuillez recharger la page et réessayer.", 
+        variant: "destructive" 
+      });
       return;
     }
 
@@ -83,9 +92,15 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
         delivery_address: orderType === "livrer" ? deliveryAddress : null,
         delivery_time: deliveryTime || null,
       };
+
+      console.log("🔥 Payload à envoyer:", payload);
+
       const { error } = await supabase.from("orders").insert([payload]);
 
-      if (error) throw error;
+      if (error) {
+        console.error("🔥 Erreur lors de l'insertion:", error);
+        throw error;
+      }
 
       toast({
         title: "Commande envoyée !",
@@ -103,7 +118,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       onOpenChange(false);
       onClearCart();
     } catch (err: any) {
-      console.error("Order submission error:", err);
+      console.error("🔥 Erreur complète lors de la soumission:", err);
       toast({
         title: "Erreur de soumission",
         description: err.message || "Une erreur est survenue lors de l'envoi de votre commande.",
