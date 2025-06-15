@@ -172,6 +172,7 @@ const Evenements: React.FC = () => {
             ))}
             {events.length === 0 && (
               <EmptyState
+                icon={CalendarDays}
                 title="Aucun événement"
                 description="Il n'y a aucun événement à afficher pour le moment."
               />
