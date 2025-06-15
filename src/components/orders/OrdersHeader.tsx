@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Package, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import AddOrderModal from './AddOrderModal';
 
 export const OrdersHeader: React.FC = () => {
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="flex items-center gap-3">
@@ -15,11 +18,11 @@ export const OrdersHeader: React.FC = () => {
           <p className="text-gray-600">Gérez toutes vos commandes</p>
         </div>
       </div>
-      
-      <Button className="bg-emerald-600 hover:bg-emerald-700">
+      <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setOpen(true)}>
         <Plus className="w-4 h-4 mr-2" />
         Nouvelle commande
       </Button>
+      <AddOrderModal open={open} onOpenChange={setOpen} />
     </div>
   );
 };
