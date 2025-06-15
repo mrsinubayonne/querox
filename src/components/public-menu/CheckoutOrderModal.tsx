@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Dialog,
@@ -31,7 +30,8 @@ const ORDER_TYPE_OPTIONS = [
   { value: "livrer", label: "À livrer" },
 ];
 
-const TABLE_NUMBERS = Array.from({ length: 25 }, (_, i) => (i + 1).toString());
+// Limite maintenant à 1-20
+const TABLE_NUMBERS = Array.from({ length: 20 }, (_, i) => (i + 1).toString());
 
 const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
   open,
@@ -228,20 +228,22 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
                 />
               </div>
             )}
-            {/* Champ heure de livraison et notes toujours visibles mais facultatifs */}
-            <div>
-              <label className="block font-medium mb-1">
-                Heure de livraison souhaitée
-              </label>
-              <Input
-                type="datetime-local"
-                value={deliveryTime}
-                onChange={(e) => setDeliveryTime(e.target.value)}
-                placeholder="Sélectionner une date/heure"
-                min={new Date().toISOString().slice(0, 16)}
-                disabled={orderType === ""}
-              />
-            </div>
+            {/* Affiche heure de livraison seulement si "livrer" OU "emporter" */}
+            {(orderType === "livrer" || orderType === "emporter") && (
+              <div>
+                <label className="block font-medium mb-1">
+                  Heure de livraison souhaitée
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={deliveryTime}
+                  onChange={(e) => setDeliveryTime(e.target.value)}
+                  placeholder="Sélectionner une date/heure"
+                  min={new Date().toISOString().slice(0, 16)}
+                  disabled={orderType === ""}
+                />
+              </div>
+            )}
             <div>
               <label className="block font-medium mb-1">
                 Notes (optionnel)
