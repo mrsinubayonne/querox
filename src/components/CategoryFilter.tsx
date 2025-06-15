@@ -28,7 +28,6 @@ const getCategoryImage = (category: string) => {
   return categoryImages['default'];
 };
 
-
 const CategoryFilter: React.FC<CategoryFilterProps> = ({ 
   categories, 
   activeCategory, 
@@ -36,16 +35,16 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
 }) => {
   return (
     <div className="w-full">
-      <div className="flex items-center space-x-4 overflow-x-auto pb-4 -mx-4 px-4">
+      <div className="flex items-center space-x-6 overflow-x-auto pb-7 -mx-4 px-4">
         {categories.map((category) => (
           <button
             key={category}
             onClick={() => onCategoryChange(category)}
-            className={`flex-shrink-0 w-24 h-28 text-center rounded-xl overflow-hidden transition-all duration-300 focus:outline-none group shadow-md
+            className={`flex-shrink-0 w-32 h-36 text-center rounded-2xl overflow-hidden transition-all duration-300 focus:outline-none group shadow-lg
               ${activeCategory === category ? 'ring-4 ring-emerald-500 ring-offset-2 ring-offset-emerald-50/50' : 'ring-1 ring-gray-200 hover:ring-emerald-300'}
             `}
           >
-            <div className="relative w-full h-20 overflow-hidden">
+            <div className="relative w-full h-28 overflow-hidden">
               <img 
                 src={getCategoryImage(category)} 
                 alt={category} 
@@ -53,7 +52,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
             </div>
-            <div className={`w-full h-8 flex items-center justify-center font-semibold text-sm transition-colors duration-200
+            <div className={`w-full h-12 flex items-center justify-center font-semibold text-[1.1rem] md:text-lg transition-colors duration-200
               ${activeCategory === category ? 'bg-emerald-600 text-white' : 'bg-white text-gray-800'}
             `}>
               <span className="whitespace-nowrap">{category}</span>
