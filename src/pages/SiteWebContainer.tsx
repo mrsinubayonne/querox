@@ -66,7 +66,7 @@ const SiteWebContainer: React.FC = () => {
           Créez un <span className="bg-gradient-to-r from-purple-600 to-pink-500 text-transparent bg-clip-text">site web restaurant</span> qui fait la différence
         </h1>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
-          🚀 Attirez de nouveaux clients avec un site sublime, livré en 48h clé en main.
+          🚀 Attirez de nouveaux clients avec un site sublime, livré sous 72h clé en main.
         </p>
 
         <div className="mt-10 flex flex-col items-center gap-4">
