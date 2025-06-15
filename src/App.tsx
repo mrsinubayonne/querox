@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from "./components/ui/toaster";
@@ -20,6 +19,7 @@ import Social from './pages/Social';
 import NotFound from './pages/NotFound';
 import AllMenus from './pages/AllMenus';
 import PublicMenu from './pages/PublicMenu';
+import Commandes from './pages/Commandes';
 import './App.css';
 
 function App() {
@@ -93,6 +93,11 @@ function App() {
           <Route path="/qr-codes" element={
             <ProtectedRoute>
               <QRCodes />
+            </ProtectedRoute>
+          } />
+          <Route path="/commandes" element={
+            <ProtectedRoute>
+              <Commandes />
             </ProtectedRoute>
           } />
           <Route path="*" element={<NotFound />} />

@@ -1,11 +1,14 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Menu, CalendarDays, Users, Globe, QrCode, MessageSquare, BarChart2, DollarSign, Package, Settings, ShieldCheck, ChevronLeft } from 'lucide-react';
+import { LayoutDashboard, Menu, CalendarDays, Users, Globe, QrCode, MessageSquare, BarChart2, DollarSign, Package, Settings, ShieldCheck, ChevronLeft, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
 interface ModernSidebarProps {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
 }
+
 const ModernSidebar: React.FC<ModernSidebarProps> = ({
   collapsed,
   setCollapsed
@@ -25,6 +28,11 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: "Réservations",
     path: "/reservations",
     color: "text-purple-600"
+  }, {
+    icon: ShoppingBag,
+    label: "Commandes",
+    path: "/commandes",
+    color: "text-emerald-600"
   }, {
     icon: Users,
     label: "Clients",
@@ -122,4 +130,5 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     </div>
   );
 };
+
 export default ModernSidebar;
