@@ -5,10 +5,12 @@ import { useToast } from '@/hooks/use-toast';
 import { MenuItem, CartItem } from '@/types/menu';
 
 import PublicMenuHeader from '@/components/public-menu/PublicMenuHeader';
-import MenuSearchAndFilter from '@/components/public-menu/MenuSearchAndFilter';
+import MenuSearch from '@/components/public-menu/MenuSearch';
 import MenuItemList from '@/components/public-menu/MenuItemList';
 import ShoppingCartSidebar from '@/components/public-menu/ShoppingCartSidebar';
 import PublicMenuLoader from '@/components/public-menu/PublicMenuLoader';
+import PromotionalBanner from '@/components/public-menu/PromotionalBanner';
+import CategoryFilter from '@/components/CategoryFilter';
 
 const PublicMenu: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -187,13 +189,20 @@ const PublicMenu: React.FC = () => {
       <PublicMenuHeader totalItems={getTotalItems()} onCartToggle={() => setShowCart(!showCart)} />
       
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <MenuSearchAndFilter
+        <PromotionalBanner />
+        
+        <MenuSearch
           searchTerm={searchTerm}
           onSearchTermChange={setSearchTerm}
-          categories={categories}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
         />
+
+        <div className="mb-8">
+          <CategoryFilter
+            categories={categories}
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+          />
+        </div>
 
         <div className="flex gap-8">
           <div className="flex-1">
