@@ -227,6 +227,7 @@ export type Database = {
           notes: string | null
           order_type: string | null
           status: string
+          table_number: string | null
           total_amount: number
           updated_at: string
           user_id: string
@@ -243,6 +244,7 @@ export type Database = {
           notes?: string | null
           order_type?: string | null
           status?: string
+          table_number?: string | null
           total_amount?: number
           updated_at?: string
           user_id: string
@@ -259,6 +261,7 @@ export type Database = {
           notes?: string | null
           order_type?: string | null
           status?: string
+          table_number?: string | null
           total_amount?: number
           updated_at?: string
           user_id?: string
