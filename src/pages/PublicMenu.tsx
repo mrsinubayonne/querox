@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -70,14 +69,14 @@ const PublicMenu: React.FC = () => {
       // Ajout de logs pour debug
       console.log("Résultat menu_items reçus:", menuItemsData);
 
-      // Pour chaque plat, le champ menu_categories est soit null, soit un objet { name }
+      // Fix: menu_categories is an array, get the first element's name if exists
       const transformedItems: MenuItem[] = (menuItemsData || []).map(item => ({
         id: item.id,
         name: item.name,
         description: item.description || '',
         price: Number(item.price),
         image_url: item.image_url || undefined,
-        category_name: item.menu_categories?.name || 'Autres',
+        category_name: item.menu_categories?.[0]?.name || 'Autres',
         is_available: item.is_available
       }));
 
