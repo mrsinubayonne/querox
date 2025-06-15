@@ -1,6 +1,4 @@
-
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +14,7 @@ import CheckoutOrderCartSummary from "./CheckoutOrderCartSummary";
 import type { CartItem } from "@/types/menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useRestaurant } from "@/contexts/RestaurantContext";
 
 type CheckoutOrderModalProps = {
   open: boolean;
@@ -40,39 +39,18 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
   const [orderType, setOrderType] = useState(""); // "sur_place" | "emporter" | "livrer"
   const [tableNumber, setTableNumber] = useState("");
   const [loading, setLoading] = useState(false);
-  const [restaurantUserId, setRestaurantUserId] = useState<string | null>(null);
+  const { restaurantUserId } = useRestaurant();
   const { toast } = useToast();
-  const location = useLocation();
 
   useEffect(() => {
-    const fetchRestaurantUser = async () => {
-      const params = new URLSearchParams(location.search);
-      const menuId = params.get("menu_id");
-      if (!menuId) {
-        console.error("No menu_id found in URL");
-        return;
-      }
-      const { data, error } = await supabase
-        .from("menus")
-        .select("user_id")
-        .eq("id", menuId)
-        .single();
-      if (error) {
-        console.error("Error fetching restaurant user ID:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de vérifier les informations du restaurant.",
-          variant: "destructive",
-        });
-      } else if (data) {
-        setRestaurantUserId(data.user_id);
-      }
-    };
-
-    if (open) {
-      fetchRestaurantUser();
+    if (open && !restaurantUserId) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de vérifier les informations du restaurant. La commande ne peut être passée.",
+        variant: "destructive",
+      });
     }
-  }, [location.search, toast, open]);
+  }, [open, restaurantUserId, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,5 +206,3 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
 };
 
 export default CheckoutOrderModal;
-
-// ... end of file

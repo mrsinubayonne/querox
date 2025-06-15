@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useMenuData } from './useMenuData';
@@ -32,7 +31,7 @@ export const usePublicMenu = () => {
     }
   }, [location.search, toast]);
 
-  const { menuItems, loading: dataLoading, error: dataError } = useMenuData(menuId);
+  const { menuItems, loading: dataLoading, error: dataError, restaurantUserId } = useMenuData(menuId);
   
   const {
     filteredItems,
@@ -66,6 +65,6 @@ export const usePublicMenu = () => {
     categories,
     groupedItems,
     menuError,
+    restaurantUserId,
   };
 };
-

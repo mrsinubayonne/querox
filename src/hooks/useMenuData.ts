@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -8,13 +7,27 @@ export const useMenuData = (menuId: string | null) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [restaurantUserId, setRestaurantUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchMenu = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
+    setRestaurantUserId(null);
     try {
       console.log(`🔥 Début récupération menu public pour menu_id: ${id}`);
+
+      const { data: menuData, error: menuError } = await supabase
+        .from('menus')
+        .select('user_id')
+        .eq('id', id)
+        .single();
+      
+      if (menuError) {
+        console.error("Error fetching restaurant user ID in useMenuData:", menuError);
+      } else if (menuData) {
+        setRestaurantUserId(menuData.user_id);
+      }
 
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('menu_categories')
@@ -80,6 +93,5 @@ export const useMenuData = (menuId: string | null) => {
     }
   }, [menuId, fetchMenu]);
 
-  return { menuItems, loading, error };
+  return { menuItems, loading, error, restaurantUserId };
 };
-
