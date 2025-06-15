@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { RestaurantProvider } from '@/contexts/RestaurantContext';
@@ -10,7 +11,7 @@ import PromotionalBanner from '@/components/public-menu/PromotionalBanner';
 import CategoryFilter from '@/components/CategoryFilter';
 import MenuSearch from '@/components/public-menu/MenuSearch';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Search } from 'lucide-react';
 
 const PublicMenu: React.FC = () => {
   const [showCart, setShowCart] = useState(false);
@@ -43,22 +44,31 @@ const PublicMenu: React.FC = () => {
       <div className="min-h-screen w-full bg-gradient-to-br from-red-50 via-white to-amber-50 flex flex-col items-center justify-center p-4">
         <div className="text-center max-w-2xl">
           <AlertTriangle className="mx-auto h-16 w-16 text-red-500 mb-6" />
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Erreur de configuration du menu</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Menu introuvable</h1>
           <p className="text-lg text-gray-600 mb-6">{menuError}</p>
-          <p className="text-gray-500">
-            Pour afficher un menu, l'adresse de la page doit inclure l'identifiant du menu, comme ceci :
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+            <h2 className="text-lg font-semibold text-blue-800 mb-3">💡 Solutions possibles :</h2>
+            <ul className="text-left text-blue-700 space-y-2">
+              <li>• Vérifiez que l'ID du menu dans l'URL est correct</li>
+              <li>• Assurez-vous que le menu n'a pas été supprimé</li>
+              <li>• Contactez le restaurant pour obtenir le bon lien</li>
+              <li>• Vérifiez que le menu est bien actif</li>
+            </ul>
+          </div>
+          
+          <p className="text-gray-500 text-sm">
+            Format attendu de l'URL :
             <br />
             <code className="bg-gray-200 text-gray-700 rounded-md px-2 py-1 mt-2 inline-block">
               /menu-public?menu_id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
             </code>
           </p>
-          <p className="mt-8 text-sm text-gray-400">Si vous êtes le propriétaire du restaurant, vous pouvez trouver ce lien dans votre panneau d'administration des menus.</p>
         </div>
       </div>
     );
   }
 
-  // 🔥 NOUVEAU: fond dégradé tout doux et container superposée sur desktop
   return (
     <RestaurantProvider restaurantUserId={restaurantUserId}>
       <div className="min-h-screen w-full bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex flex-col">
@@ -66,12 +76,7 @@ const PublicMenu: React.FC = () => {
         
         <div className="relative flex-1">
           <div className="max-w-8xl mx-auto px-2 md:px-6 py-10">
-            <div className="absolute inset-0 pointer-events-none" aria-hidden>
-              {/* Légère surcouche blanc en transparence pour laisser passer le gradient */}
-            </div>
-
             <div className="xl:px-20">
-              {/* Banner centrée */}
               <PromotionalBanner />
 
               <MenuSearch searchTerm={searchTerm} onSearchTermChange={setSearchTerm} />
@@ -94,7 +99,6 @@ const PublicMenu: React.FC = () => {
                   />
                 </div>
 
-                {/* Desktop cart sidebar */}
                 <div className="hidden lg:block w-full lg:w-96 xl:w-[420px] shrink-0">
                   <ShoppingCartSidebar
                     cart={cart}
@@ -109,7 +113,6 @@ const PublicMenu: React.FC = () => {
           </div>
         </div>
         
-        {/* Mobile cart sheet */}
         <div className="lg:hidden">
           <Sheet open={showCart} onOpenChange={setShowCart}>
             <SheetContent>
