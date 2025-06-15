@@ -35,13 +35,7 @@ const Menus: React.FC = () => {
       <div className="flex-1 overflow-y-auto">
         <div className="p-8">
           <MenuHeader onVisitorView={handleVisitorView} onAddItem={handleAddItem} />
-          <div className="flex justify-between items-center mb-6">
-            <Link
-              to="/tous-les-menus"
-              className="text-blue-600 hover:text-blue-800 underline text-sm font-medium transition"
-            >
-              Voir tous les menus
-            </Link>
+          <div className="flex justify-end items-center mb-6">
             <Link to="/menu-public" target="_blank">
               <Button variant="outline" className="flex items-center gap-2">
                 <ExternalLink className="w-4 h-4" />
