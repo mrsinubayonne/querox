@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -113,7 +112,7 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
         orderData.table_number = tableNumber;
       }
 
-      const { error } = await supabase.from('orders').insert([orderData]).select().single();
+      const { error } = await supabase.from('orders').insert([orderData]);
 
       if (error) throw error;
 
