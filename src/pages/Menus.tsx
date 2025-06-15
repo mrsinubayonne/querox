@@ -9,9 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
 import CategoryManager from '@/components/menu-management/CategoryManager';
 import RestaurantNameTab from '@/components/menu-management/RestaurantNameTab';
+import { useMenusList } from '@/hooks/useMenusList';
 
 const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const { menus, loading } = useMenusList();
+  // On prend le premier menu comme actif par défaut (vous pouvez affiner selon la logique d'activation)
+  const activeMenu = menus && menus.length > 0 ? menus[0] : null;
 
   const handleAddItem = () => {
     // Cette logique reste inchangée.
@@ -26,8 +31,15 @@ const Menus: React.FC = () => {
         <div className="p-6">
           <MenuHeader onAddItem={handleAddItem} />
           <div className="flex justify-end items-center mb-6">
-            <Link to="/menu-public" target="_blank">
-              <Button variant="outline" className="flex items-center gap-2">
+            <Link
+              to={
+                activeMenu
+                  ? `/menu-public?menu_id=${activeMenu.id}`
+                  : '/menu-public'
+              }
+              target="_blank"
+            >
+              <Button variant="outline" className="flex items-center gap-2" disabled={!activeMenu}>
                 <ExternalLink className="w-4 h-4" />
                 Voir le menu public
               </Button>
@@ -58,3 +70,4 @@ const Menus: React.FC = () => {
 };
 
 export default Menus;
+
