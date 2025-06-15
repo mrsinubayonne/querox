@@ -18,22 +18,30 @@ export const useMenuData = (menuId: string | null) => {
     try {
       console.log(`🔥 Début récupération menu public pour menu_id: ${id}`);
 
+      // Vérifier d'abord si l'ID est valide
+      if (!id || id.length < 10) {
+        console.error("🔥 ID de menu invalide:", id);
+        throw new Error("L'identifiant du menu n'est pas valide.");
+      }
+
       // D'abord récupérer l'user_id du restaurant
       const { data: menuData, error: menuError } = await supabase
         .from('menus')
         .select('user_id, name, is_active')
         .eq('id', id)
-        .single();
+        .maybeSingle(); // Utiliser maybeSingle au lieu de single pour éviter l'erreur PGRST116
       
       if (menuError) {
         console.error("🔥 Erreur lors de la récupération du menu:", menuError);
-        if (menuError.code === 'PGRST116') {
-          throw new Error("Ce menu n'existe pas ou a été supprimé.");
-        }
         throw new Error(`Erreur de base de données: ${menuError.message}`);
       }
 
-      if (!menuData || !menuData.user_id) {
+      if (!menuData) {
+        console.error("🔥 Aucun menu trouvé avec l'ID:", id);
+        throw new Error("Ce menu n'existe pas ou a été supprimé.");
+      }
+
+      if (!menuData.user_id) {
         console.error("🔥 Aucun user_id trouvé pour ce menu");
         throw new Error("Menu non trouvé ou mal configuré");
       }
@@ -110,8 +118,10 @@ export const useMenuData = (menuId: string | null) => {
 
   useEffect(() => {
     if (menuId) {
+      console.log("🔥 useMenuData: menuId fourni:", menuId);
       fetchMenu(menuId);
     } else {
+      console.warn("🔥 useMenuData: Aucun menuId fourni");
       setLoading(false);
       setError("Aucun identifiant de menu fourni dans l'URL.");
     }
