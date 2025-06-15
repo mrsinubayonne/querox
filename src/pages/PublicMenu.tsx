@@ -44,7 +44,6 @@ const PublicMenu: React.FC = () => {
     try {
       setLoading(true);
 
-      // Correction : éviter la jointure INNER qui exclut les plats sans catégorie
       const { data: menuItemsData, error: itemsError } = await supabase
         .from('menu_items')
         .select(`
@@ -66,21 +65,34 @@ const PublicMenu: React.FC = () => {
         throw itemsError;
       }
 
-      // Ajout de logs pour debug
-      console.log("Résultat menu_items reçus:", menuItemsData);
+      // Ajoute un log détaillé pour comprendre la donnée 
+      console.log("‼️ Structure brute menu_items reçus:", menuItemsData);
 
-      // Fix: menu_categories is an array, get the first element's name if exists
-      const transformedItems: MenuItem[] = (menuItemsData || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        description: item.description || '',
-        price: Number(item.price),
-        image_url: item.image_url || undefined,
-        category_name: item.menu_categories?.[0]?.name || 'Autres',
-        is_available: item.is_available
-      }));
+      // Correction : traite menu_categories comme objet OU array, selon le retour de Supabase.
+      const transformedItems: MenuItem[] = (menuItemsData || []).map(item => {
+        let category_name = 'Autres';
+        // Si c’est array et il y a au moins un élément
+        if (Array.isArray(item.menu_categories) && item.menu_categories.length > 0 && item.menu_categories[0]?.name) {
+          category_name = item.menu_categories[0].name;
+        }
+        // Si c’est un objet unique
+        else if (item.menu_categories && typeof item.menu_categories === 'object' && item.menu_categories.name) {
+          category_name = item.menu_categories.name;
+        }
+        // Sinon, 'Autres' par défaut
 
-      console.log("Plats transformés:", transformedItems);
+        return {
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          price: Number(item.price),
+          image_url: item.image_url || undefined,
+          category_name,
+          is_available: item.is_available
+        }
+      });
+
+      console.log("‼️ Plats transformés pour affichage:", transformedItems);
 
       setMenuItems(transformedItems);
     } catch (error) {
