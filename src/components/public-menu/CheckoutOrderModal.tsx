@@ -240,7 +240,6 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
                   onChange={(e) => setDeliveryTime(e.target.value)}
                   placeholder="Sélectionner une date/heure"
                   min={new Date().toISOString().slice(0, 16)}
-                  disabled={orderType === ""}
                 />
               </div>
             )}
