@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -171,42 +172,53 @@ const PublicMenu: React.FC = () => {
     return <PublicMenuLoader />;
   }
 
-  console.log("🔥 Rendu final - menuItems:", menuItems.length, "filteredItems:", filteredItems.length, "groupedItems:", Object.keys(groupedItems).length);
-
+  // 🔥 NOUVEAU: fond dégradé tout doux et container superposée sur desktop
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen w-full bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex flex-col">
       <PublicMenuHeader totalItems={getTotalItems()} onCartToggle={() => setShowCart(!showCart)} />
       
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <PromotionalBanner />
-
-        <div className="mb-8">
-          <CategoryFilter
-            categories={categories}
-            activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-          />
-        </div>
-
-        <div className="flex gap-8">
-          <div className="flex-1">
-            <MenuItemList
-              groupedItems={groupedItems}
-              onAddToCart={addToCart}
-              menuItemsCount={menuItems.length}
-              filteredItemsCount={filteredItems.length}
-            />
+      <div className="relative flex-1">
+        <div className="max-w-8xl mx-auto px-2 md:px-6 py-10">
+          <div className="absolute inset-0 pointer-events-none" aria-hidden>
+            {/* Légère surcouche blanc en transparence pour laisser passer le gradient */}
           </div>
 
-          {showCart && (
-            <ShoppingCartSidebar
-              cart={cart}
-              onAddToCart={addToCart}
-              onRemoveFromCart={removeFromCart}
-              onClearCart={clearCart}
-              totalPrice={getTotalPrice()}
-            />
-          )}
+          {/* Cart visible en mode side-panel desktop */}
+          <div className="xl:px-20">
+            {/* Banner centrée */}
+            <PromotionalBanner />
+
+            <div className="mb-10">
+              <CategoryFilter
+                categories={categories}
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+              />
+            </div>
+
+            <div className="flex flex-col lg:flex-row gap-10 items-start">
+              <div className="flex-1 w-full">
+                <MenuItemList
+                  groupedItems={groupedItems}
+                  onAddToCart={addToCart}
+                  menuItemsCount={menuItems.length}
+                  filteredItemsCount={filteredItems.length}
+                />
+              </div>
+
+              {showCart && (
+                <div className="w-full lg:w-[380px] animate-slide-in-right z-40">
+                  <ShoppingCartSidebar
+                    cart={cart}
+                    onAddToCart={addToCart}
+                    onRemoveFromCart={removeFromCart}
+                    onClearCart={clearCart}
+                    totalPrice={getTotalPrice()}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -214,3 +226,4 @@ const PublicMenu: React.FC = () => {
 };
 
 export default PublicMenu;
+
