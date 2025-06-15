@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
 import MenuHeader from '@/components/MenuHeader';
-import { useToast } from '@/hooks/use-toast';
 import { Link } from "react-router-dom";
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
@@ -13,14 +12,6 @@ import GeneralSettingsTab from '@/components/menu-management/GeneralSettingsTab'
 
 const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { toast } = useToast();
-
-  const handleVisitorView = () => {
-    toast({
-      title: "Vue visiteur",
-      description: "Ouverture de la vue publique du menu",
-    });
-  };
 
   const handleAddItem = () => {
     // This logic is now in MenuItemManager, but we can open the modal from here
@@ -34,7 +25,7 @@ const Menus: React.FC = () => {
       
       <div className="flex-1 overflow-y-auto">
         <div className="p-8">
-          <MenuHeader onVisitorView={handleVisitorView} onAddItem={handleAddItem} />
+          <MenuHeader onAddItem={handleAddItem} />
           <div className="flex justify-end items-center mb-6">
             <Link to="/menu-public" target="_blank">
               <Button variant="outline" className="flex items-center gap-2">

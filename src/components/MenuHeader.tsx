@@ -1,14 +1,13 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Eye, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 interface MenuHeaderProps {
-  onVisitorView: () => void;
   onAddItem: () => void;
 }
 
-const MenuHeader: React.FC<MenuHeaderProps> = ({ onVisitorView, onAddItem }) => {
+const MenuHeader: React.FC<MenuHeaderProps> = ({ onAddItem }) => {
   return (
     <div className="flex items-center justify-between mb-8">
       <div>
@@ -17,15 +16,6 @@ const MenuHeader: React.FC<MenuHeaderProps> = ({ onVisitorView, onAddItem }) => 
       </div>
       
       <div className="flex items-center gap-4">
-        <Button 
-          variant="outline" 
-          className="flex items-center gap-2"
-          onClick={onVisitorView}
-        >
-          <Eye size={16} />
-          Vue visiteur
-        </Button>
-        
         <Button 
           className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
           onClick={onAddItem}
