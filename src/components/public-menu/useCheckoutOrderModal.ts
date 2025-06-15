@@ -4,6 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { CartItem } from '@/types/menu';
 
+export const ORDER_TYPE_OPTIONS = [
+  { value: 'sur_place', label: 'Sur place' },
+  { value: 'emporter', label: 'À emporter' },
+  { value: 'livrer', label: 'Livraison' },
+];
+
+export const TABLE_NUMBERS = [
+  'Table 1', 'Table 2', 'Table 3', 'Table 4', 'Table 5',
+  'Table 6', 'Table 7', 'Table 8', 'Table 9', 'Table 10'
+];
+
 export const useCheckoutOrderModal = (
   cart: CartItem[],
   totalPrice: number,
@@ -53,11 +64,11 @@ export const useCheckoutOrderModal = (
         customer_name: customerName,
         customer_phone: customerPhone || null,
         customer_email: null,
-        delivery_address: orderType === 'delivery' ? deliveryAddress : null,
+        delivery_address: orderType === 'livrer' ? deliveryAddress : null,
         delivery_time: deliveryTime || null,
         notes: notes || null,
         order_type: orderType,
-        table_number: orderType === 'dine_in' ? tableNumber : null,
+        table_number: orderType === 'sur_place' ? tableNumber : null,
         items: cart.map(item => ({
           id: item.id,
           name: item.name,
