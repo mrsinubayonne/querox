@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Clock, MapPin } from 'lucide-react';
+import { ShoppingCart, Clock, MapPin, Image } from 'lucide-react';
 import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
 
 interface PublicMenuHeaderProps {
@@ -19,8 +19,16 @@ const PublicMenuHeader: React.FC<PublicMenuHeaderProps> = ({ totalItems, onCartT
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="text-center lg:text-left w-full">
             <div className="flex items-center justify-center lg:justify-start gap-4 mb-2">
-              <div className="w-14 h-14 bg-emerald-600 rounded-full flex items-center justify-center shadow">
-                <span className="text-white font-bold text-2xl">🍽️</span>
+              <div className="w-14 h-14 bg-emerald-600 rounded-full flex items-center justify-center shadow overflow-hidden">
+                {website?.logo_url ? (
+                  <img
+                    src={website.logo_url}
+                    alt={website?.name || 'Logo'}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <span className="text-white font-bold text-2xl">🍽️</span>
+                )}
               </div>
               <div className="flex flex-col">
                 <h1 className="text-4xl font-bold text-gray-800 font-playfair">
@@ -68,4 +76,3 @@ const PublicMenuHeader: React.FC<PublicMenuHeaderProps> = ({ totalItems, onCartT
 };
 
 export default PublicMenuHeader;
-
