@@ -453,6 +453,7 @@ export type Database = {
           description: string | null
           domain: string | null
           email: string | null
+          header_image_url: string | null
           id: string
           is_published: boolean | null
           logo_url: string | null
@@ -476,6 +477,7 @@ export type Database = {
           description?: string | null
           domain?: string | null
           email?: string | null
+          header_image_url?: string | null
           id?: string
           is_published?: boolean | null
           logo_url?: string | null
@@ -499,6 +501,7 @@ export type Database = {
           description?: string | null
           domain?: string | null
           email?: string | null
+          header_image_url?: string | null
           id?: string
           is_published?: boolean | null
           logo_url?: string | null
