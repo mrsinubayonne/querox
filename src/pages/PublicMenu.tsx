@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -72,7 +71,7 @@ const PublicMenu: React.FC = () => {
         description: item.description || '',
         price: Number(item.price),
         image_url: item.image_url || undefined,
-        category_name: item.menu_categories?.name || 'Autres',
+        category_name: (item.menu_categories as any)?.[0]?.name || 'Autres',
         is_available: item.is_available
       }));
 
