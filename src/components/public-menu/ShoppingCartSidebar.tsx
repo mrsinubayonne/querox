@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus, ShoppingCart, ArrowRight } from 'lucide-react';
@@ -5,6 +6,7 @@ import { CartItem, MenuItem } from '@/types/menu';
 import { cn } from '@/lib/utils';
 import CheckoutOrderModal from './CheckoutOrderModal';
 import { useState } from "react";
+import { useRestaurant } from '@/contexts/RestaurantContext';
 
 interface ShoppingCartProps {
   cart: CartItem[];
@@ -14,6 +16,7 @@ interface ShoppingCartProps {
   totalPrice: number;
   className?: string;
 }
+
 const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
   cart,
   onAddToCart,
@@ -23,13 +26,23 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
   className
 }) => {
   const [showCheckout, setShowCheckout] = useState(false);
+  const { restaurantUserId } = useRestaurant();
 
-  return <div className={cn("w-full bg-white rounded-2xl shadow-lg p-6 h-fit sticky top-28 border-0", className)}>
+  console.log("🔥 ShoppingCartSidebar - restaurantUserId:", restaurantUserId);
+
+  return (
+    <div className={cn("w-full bg-white rounded-2xl shadow-lg p-6 h-fit sticky top-28 border-0", className)}>
       <div className="flex items-center justify-between mb-6 pb-4 border-b">
         <h3 className="text-xl font-bold text-gray-800 font-playfair">Votre Panier</h3>
-        {cart.length > 0 && <Button variant="ghost" onClick={onClearCart} className="text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md">
+        {cart.length > 0 && (
+          <Button 
+            variant="ghost" 
+            onClick={onClearCart} 
+            className="text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md"
+          >
             Vider
-          </Button>}
+          </Button>
+        )}
       </div>
       
       {cart.length === 0 ? (
@@ -43,8 +56,13 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
       ) : (
         <>
           <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2 -mr-2">
-            {cart.map(item => <div key={item.id} className="flex items-center gap-4">
-                <img src={item.image_url || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"} alt={item.name} className="w-16 h-16 object-cover rounded-lg" />
+            {cart.map(item => (
+              <div key={item.id} className="flex items-center gap-4">
+                <img 
+                  src={item.image_url || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"} 
+                  alt={item.name} 
+                  className="w-16 h-16 object-cover rounded-lg" 
+                />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-gray-800 truncate">{item.name}</h4>
                   <p className="text-sm text-gray-500">
@@ -52,15 +70,26 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button size="icon" variant="ghost" onClick={() => onRemoveFromCart(item.id)} className="h-8 w-8 text-gray-500 hover:bg-gray-200 rounded-full">
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={() => onRemoveFromCart(item.id)} 
+                    className="h-8 w-8 text-gray-500 hover:bg-gray-200 rounded-full"
+                  >
                     <Minus className="w-4 h-4" />
                   </Button>
                   <span className="w-8 text-center font-semibold text-gray-800">{item.quantity}</span>
-                  <Button size="icon" variant="ghost" onClick={() => onAddToCart(item)} className="h-8 w-8 text-gray-500 hover:bg-gray-200 rounded-full">
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={() => onAddToCart(item)} 
+                    className="h-8 w-8 text-gray-500 hover:bg-gray-200 rounded-full"
+                  >
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
-              </div>)}
+              </div>
+            ))}
           </div>
           
           <div className="border-t pt-6">
@@ -70,13 +99,26 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
                 {totalPrice.toLocaleString('fr-FR')} FCFA
               </span>
             </div>
-            <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+            
+            {!restaurantUserId && (
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
+                <p className="text-amber-700 text-sm">
+                  ⚠️ Chargement de la configuration du restaurant...
+                </p>
+              </div>
+            )}
+            
+            <Button 
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
               size="lg"
-              onClick={() => setShowCheckout(true)}>
+              onClick={() => setShowCheckout(true)}
+              disabled={!restaurantUserId}
+            >
               Passer la commande
               <ArrowRight />
             </Button>
           </div>
+          
           <CheckoutOrderModal
             open={showCheckout}
             onOpenChange={setShowCheckout}
@@ -86,6 +128,8 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
           />
         </>
       )}
-    </div>;
+    </div>
+  );
 };
+
 export default ShoppingCartSidebar;

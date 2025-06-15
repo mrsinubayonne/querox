@@ -47,7 +47,10 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
     setTableNumber,
     loading,
     handleSubmit,
+    restaurantUserId,
   } = useCheckoutOrderModal(cart, totalPrice, onOpenChange, onClearCart);
+
+  console.log("🔥 CheckoutOrderModal - restaurantUserId reçu:", restaurantUserId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -80,11 +83,18 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
             totalPrice={totalPrice}
             orderType={orderType}
           />
+          {!restaurantUserId && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+              <p className="text-red-600 text-sm">
+                ⚠️ Configuration manquante: impossible d'identifier le restaurant
+              </p>
+            </div>
+          )}
           <DialogFooter>
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || !orderType}
+              disabled={loading || !orderType || !restaurantUserId}
             >
               {loading
                 ? "Transmission en cours..."
