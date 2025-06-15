@@ -38,7 +38,7 @@ const PublicMenuHeader: React.FC<PublicMenuHeaderProps> = ({ totalItems, onCartT
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <Button
               onClick={onCartToggle}
-              className="relative bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+              className="relative bg-emerald-600 hover:bg-emerald-700 text-white shadow-md lg:hidden"
               size="lg"
             >
               <ShoppingCart className="w-5 h-5 mr-2" />
