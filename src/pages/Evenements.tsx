@@ -5,54 +5,64 @@ import EmptyState from '@/components/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, MapPin, Users, Clock, Plus } from 'lucide-react';
+import { CalendarDays, MapPin, Users, Clock, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+const initialMockEvents = [
+  {
+    id: 1,
+    title: "Soirée Jazz",
+    date: "2024-06-20",
+    time: "20:00",
+    location: "Salle principale",
+    capacity: 50,
+    registered: 35,
+    status: "Confirmé",
+    description: "Soirée jazz avec le trio local Les Notes Bleues"
+  },
+  {
+    id: 2,
+    title: "Dîner dégustation",
+    date: "2024-06-25",
+    time: "19:30",
+    location: "Restaurant",
+    capacity: 24,
+    registered: 18,
+    status: "En cours",
+    description: "Menu dégustation 5 services avec accords mets-vins"
+  },
+  {
+    id: 3,
+    title: "Brunch du dimanche",
+    date: "2024-06-30",
+    time: "11:00",
+    location: "Terrasse",
+    capacity: 40,
+    registered: 12,
+    status: "Ouvert",
+    description: "Brunch buffet avec vue sur le jardin"
+  }
+];
 
 const Evenements: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { toast } = useToast();
 
-  // Données de démonstration
-  const mockEvents = [
-    {
-      id: 1,
-      title: "Soirée Jazz",
-      date: "2024-06-20",
-      time: "20:00",
-      location: "Salle principale",
-      capacity: 50,
-      registered: 35,
-      status: "Confirmé",
-      description: "Soirée jazz avec le trio local Les Notes Bleues"
-    },
-    {
-      id: 2,
-      title: "Dîner dégustation",
-      date: "2024-06-25",
-      time: "19:30",
-      location: "Restaurant",
-      capacity: 24,
-      registered: 18,
-      status: "En cours",
-      description: "Menu dégustation 5 services avec accords mets-vins"
-    },
-    {
-      id: 3,
-      title: "Brunch du dimanche",
-      date: "2024-06-30",
-      time: "11:00",
-      location: "Terrasse",
-      capacity: 40,
-      registered: 12,
-      status: "Ouvert",
-      description: "Brunch buffet avec vue sur le jardin"
-    }
-  ];
+  const [events, setEvents] = useState(initialMockEvents);
 
   const handleAddEvent = () => {
     toast({
       title: "Nouvel événement",
       description: "Fonctionnalité bientôt disponible",
+    });
+  };
+
+  const handleDeleteEvent = (id: number) => {
+    setEvents(prev => prev.filter(event => event.id !== id));
+    toast({
+      title: "Événement supprimé",
+      description: "L'événement a été retiré de la liste.",
+      variant: "default",
     });
   };
 
@@ -101,7 +111,7 @@ const Evenements: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {mockEvents.map((event) => (
+            {events.map((event) => (
               <Card key={event.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -147,10 +157,25 @@ const Evenements: React.FC = () => {
                     <Button variant="outline" size="sm" className="flex-1">
                       Participants
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-red-500 border-red-200 hover:bg-red-50"
+                      onClick={() => handleDeleteEvent(event.id)}
+                    >
+                      <Trash2 size={14} className="mr-1" />
+                      Supprimer
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             ))}
+            {events.length === 0 && (
+              <EmptyState
+                title="Aucun événement"
+                description="Il n'y a aucun événement à afficher pour le moment."
+              />
+            )}
           </div>
         </div>
       </div>
