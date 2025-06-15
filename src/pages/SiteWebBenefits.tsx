@@ -2,44 +2,50 @@
 import React from "react";
 import { Rocket, Smartphone, BadgeCheck } from "lucide-react";
 
-const benefits = [
+interface Benefit {
+  icon: React.ElementType;
+  title: string;
+  desc: string;
+  color: string;
+}
+
+const benefits: Benefit[] = [
   {
-    icon: <Rocket size={20} className="text-purple-500" />,
+    icon: Rocket,
     title: "Mise en ligne Express",
-    desc: "Site livré en 1 à 3 jours avec accompagnement humain.",
+    desc: "Votre site livré en 1 à 3 jours, prêt à l'emploi.",
+    color: "text-purple-600",
   },
   {
-    icon: <Smartphone size={20} className="text-blue-500" />,
+    icon: Smartphone,
     title: "Adapté mobile/tablette",
-    desc: "Design responsive conçu pour augmenter les réservations.",
+    desc: "Un design parfait sur tous les écrans pour une expérience client optimale.",
+    color: "text-blue-600",
   },
   {
-    icon: <BadgeCheck size={20} className="text-green-500" />,
+    icon: BadgeCheck,
     title: "Aucun engagement",
-    desc: "Zéro risque, service 100% sans abonnement, sans engagement.",
+    desc: "Service 100% sans abonnement. Vous êtes propriétaire de votre site.",
+    color: "text-green-600",
   },
 ];
 
 const SiteWebBenefits: React.FC = () => (
-  <div className="flex flex-col gap-3 mt-4">
-    <div className="flex justify-center gap-2">
-      {benefits.map((b, idx) => (
-        <div
-          key={idx}
-          className="flex flex-col items-center text-center w-24"
-        >
-          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 mb-1">
-            {b.icon}
+  <div className="mt-8 space-y-5">
+    {benefits.map((benefit, idx) => {
+      const Icon = benefit.icon;
+      return (
+        <div key={idx} className="flex items-start gap-4">
+          <span className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-gray-100">
+            <Icon size={22} className={benefit.color} />
           </span>
-          <span className="text-xs font-semibold text-gray-700">{b.title}</span>
+          <div>
+            <h4 className="font-semibold text-gray-800">{benefit.title}</h4>
+            <p className="text-sm text-gray-600">{benefit.desc}</p>
+          </div>
         </div>
-      ))}
-    </div>
-    <div className="flex justify-center gap-2 text-xs text-gray-500 mt-2">
-      {benefits.map((b, idx) => (
-        <span key={idx} className="w-24">{b.desc}</span>
-      ))}
-    </div>
+      );
+    })}
   </div>
 );
 
