@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { CartItem } from "@/types/menu";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 type CheckoutOrderModalProps = {
   open: boolean;
@@ -24,6 +25,12 @@ type CheckoutOrderModalProps = {
   onClearCart: () => void;
 };
 
+const ORDER_TYPE_OPTIONS = [
+  { value: "sur_place", label: "À manger sur place" },
+  { value: "emporter", label: "À emporter" },
+  { value: "livrer", label: "À livrer" },
+];
+
 const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
   open,
   onOpenChange,
@@ -32,11 +39,12 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
   onClearCart,
 }) => {
   const [customerName, setCustomerName] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
+  // const [customerEmail, setCustomerEmail] = useState(""); // supprimé
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryTime, setDeliveryTime] = useState("");
   const [notes, setNotes] = useState("");
+  const [orderType, setOrderType] = useState("sur_place");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -52,10 +60,9 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
     }
     setLoading(true);
     try {
-      // Pas d'auth côté public, on laisse user_id à null, les policies le permettent.
       const payload: any = {
         customer_name: customerName,
-        customer_email: customerEmail,
+        // customer_email: customerEmail, // supprimé
         customer_phone: customerPhone,
         delivery_address: deliveryAddress,
         delivery_time: deliveryTime ? new Date(deliveryTime).toISOString() : null,
@@ -68,6 +75,7 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
           price: item.price,
         })),
         total_amount: totalPrice,
+        order_type: orderType,
       };
       const { error } = await supabase.from("orders").insert([payload]);
 
@@ -78,13 +86,13 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
         description:
           "Votre commande a bien été transmise. Nous vous contacterons rapidement.",
       });
-      // Réinitialise les champs et le panier
       setCustomerName("");
-      setCustomerEmail("");
+      // setCustomerEmail(""); // supprimé
       setCustomerPhone("");
       setDeliveryAddress("");
       setDeliveryTime("");
       setNotes("");
+      setOrderType("sur_place");
       onOpenChange(false);
       onClearCart();
     } catch (err: any) {
@@ -120,16 +128,7 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
                 placeholder="Votre nom complet"
               />
             </div>
-            <div>
-              <label className="block font-medium mb-1">Email *</label>
-              <Input
-                required
-                type="email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="ex : client@email.com"
-              />
-            </div>
+            {/* Email supprimé */}
             <div>
               <label className="block font-medium mb-1">Téléphone *</label>
               <Input
@@ -139,6 +138,21 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
                 onChange={(e) => setCustomerPhone(e.target.value)}
                 placeholder="Numéro de téléphone"
               />
+            </div>
+            <div>
+              <label className="block font-medium mb-1">Type de commande *</label>
+              <Select value={orderType} onValueChange={setOrderType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {ORDER_TYPE_OPTIONS.map(option => (
+                    <SelectItem value={option.value} key={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="block font-medium mb-1">Adresse de livraison *</label>
@@ -202,3 +216,4 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
 };
 
 export default CheckoutOrderModal;
+
