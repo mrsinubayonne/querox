@@ -23,7 +23,7 @@ const WHATSAPP_NUMBER = "242064563021"; // Remplace par ton numéro réel
 
 const generateWhatsAppMessage = (data: SiteWebRequestFields) => {
   return encodeURIComponent(
-    `📝 Nouvelle demande de site restaurant depuis l’app Lovable\n\n` +
+    `📝 Nouvelle demande de site restaurant depuis QUEROX\n\n` +
     `Nom du restaurant : ${data.restaurantName}\n` +
     `Adresse : ${data.address}\n` +
     `Gestion du site après mise en ligne : ${
