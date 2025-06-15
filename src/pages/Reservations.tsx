@@ -14,40 +14,6 @@ const Reservations: React.FC = () => {
   const { toast } = useToast();
   const { reservations, loading } = useReservations();
 
-  // Données de démonstration pour interface vide
-  const mockReservations = [
-    {
-      id: "mock-1",
-      customer_name: "Marie Dupont",
-      date: "2024-06-15",
-      time: "19:30",
-      party_size: 4,
-      customer_phone: "06 12 34 56 78",
-      status: "confirmed" as const,
-      notes: "Table près de la fenêtre si possible"
-    },
-    {
-      id: "mock-2",
-      customer_name: "Pierre Martin",
-      date: "2024-06-15",
-      time: "20:00",
-      party_size: 2,
-      customer_phone: "06 98 76 54 32",
-      status: "pending" as const,
-      notes: ""
-    },
-    {
-      id: "mock-3",
-      customer_name: "Sophie Leblanc",
-      date: "2024-06-16",
-      time: "12:30",
-      party_size: 6,
-      customer_phone: "06 11 22 33 44",
-      status: "confirmed" as const,
-      notes: "Anniversaire - gâteau prévu"
-    }
-  ];
-
   const handleAddReservation = () => {
     toast({
       title: "Nouvelle réservation",
