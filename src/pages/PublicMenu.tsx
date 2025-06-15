@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,8 +44,8 @@ const PublicMenu: React.FC = () => {
   const fetchPublicMenu = async () => {
     try {
       setLoading(true);
-      
-      // First get all available menu items with their categories
+
+      // Correction : éviter la jointure INNER qui exclut les plats sans catégorie
       const { data: menuItemsData, error: itemsError } = await supabase
         .from('menu_items')
         .select(`
@@ -54,7 +55,9 @@ const PublicMenu: React.FC = () => {
           price,
           image_url,
           is_available,
-          menu_categories!inner(name)
+          menu_categories(
+            name
+          )
         `)
         .eq('is_available', true)
         .order('name');
@@ -64,16 +67,21 @@ const PublicMenu: React.FC = () => {
         throw itemsError;
       }
 
-      // Transform the data to match our interface
+      // Ajout de logs pour debug
+      console.log("Résultat menu_items reçus:", menuItemsData);
+
+      // Pour chaque plat, le champ menu_categories est soit null, soit un objet { name }
       const transformedItems: MenuItem[] = (menuItemsData || []).map(item => ({
         id: item.id,
         name: item.name,
         description: item.description || '',
         price: Number(item.price),
         image_url: item.image_url || undefined,
-        category_name: (item.menu_categories as any)?.[0]?.name || 'Autres',
+        category_name: item.menu_categories?.name || 'Autres',
         is_available: item.is_available
       }));
+
+      console.log("Plats transformés:", transformedItems);
 
       setMenuItems(transformedItems);
     } catch (error) {
