@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MenuItem, CartItem } from '@/types/menu';
@@ -19,24 +20,39 @@ const PublicMenu: React.FC = () => {
   const [showCart, setShowCart] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Tous');
   const { toast } = useToast();
+  const location = useLocation();
 
   useEffect(() => {
-    fetchPublicMenu();
-  }, []);
+    const params = new URLSearchParams(location.search);
+    const menuId = params.get('menu_id');
+
+    if (menuId) {
+      fetchPublicMenu(menuId);
+    } else {
+      console.error("No menu_id found in URL for PublicMenu");
+      toast({
+        title: "Menu non spécifié",
+        description: "Aucun menu n'a été sélectionné pour être affiché.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     filterItems();
   }, [menuItems, activeCategory]);
 
-  const fetchPublicMenu = async () => {
+  const fetchPublicMenu = async (menuId: string) => {
     try {
       setLoading(true);
-      console.log("🔥 Début récupération menu public (nouvelle méthode)");
+      console.log(`🔥 Début récupération menu public pour menu_id: ${menuId}`);
 
-      // Étape 1: Récupérer toutes les catégories de menu
+      // Étape 1: Récupérer les catégories pour ce menu
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('menu_categories')
-        .select('id, name');
+        .select('id, name')
+        .eq('menu_id', menuId);
 
       if (categoriesError) {
         console.error('Erreur récupération catégories:', categoriesError);
@@ -44,19 +60,21 @@ const PublicMenu: React.FC = () => {
       }
       console.log("🔥 Catégories reçues:", categoriesData);
 
-      if (!categoriesData) {
-        console.warn("🔥 Aucune catégorie trouvée.");
+      if (!categoriesData || categoriesData.length === 0) {
+        console.warn("🔥 Aucune catégorie trouvée pour ce menu.");
         setMenuItems([]);
         setLoading(false);
         return;
       }
       
       const categoryMap = new Map(categoriesData.map((c: any) => [c.id, c.name]));
+      const categoryIds = categoriesData.map((c: any) => c.id);
       
-      // Étape 2: Récupérer tous les plats disponibles
+      // Étape 2: Récupérer tous les plats disponibles pour ces catégories
       const { data: menuItemsData, error: itemsError } = await supabase
         .from('menu_items')
         .select('*')
+        .in('category_id', categoryIds)
         .eq('is_available', true)
         .order('name');
 
@@ -67,7 +85,7 @@ const PublicMenu: React.FC = () => {
       console.log("🔥 Plats reçus:", menuItemsData);
 
       if (!menuItemsData || menuItemsData.length === 0) {
-        console.warn("🔥 Aucun plat disponible trouvé");
+        console.warn("🔥 Aucun plat disponible trouvé pour ce menu");
         setMenuItems([]);
         setLoading(false);
         return;
