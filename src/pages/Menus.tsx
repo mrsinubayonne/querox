@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
 import MenuHeader from '@/components/MenuHeader';
@@ -9,8 +10,9 @@ import EditMenuItemModal from '@/components/EditMenuItemModal';
 import { useMenus } from '@/hooks/useMenus';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useToast } from '@/hooks/use-toast';
-import { Menu } from 'lucide-react';
+import { Menu, ExternalLink } from 'lucide-react';
 import { Link } from "react-router-dom";
+import { Button } from '@/components/ui/button';
 
 const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -98,12 +100,18 @@ const Menus: React.FC = () => {
       <div className="flex-1 overflow-auto">
         <div className="p-8">
           <MenuHeader onVisitorView={handleVisitorView} onAddItem={handleAddItem} />
-          <div className="flex justify-end mb-6">
+          <div className="flex justify-between items-center mb-6">
             <Link
               to="/tous-les-menus"
               className="text-blue-600 hover:text-blue-800 underline text-sm font-medium transition"
             >
               Voir tous les menus & catégories
+            </Link>
+            <Link to="/menu-public" target="_blank">
+              <Button variant="outline" className="flex items-center gap-2">
+                <ExternalLink className="w-4 h-4" />
+                Voir le menu public
+              </Button>
             </Link>
           </div>
           {transformedItems.length > 0 ? (

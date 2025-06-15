@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from "./components/ui/toaster";
@@ -19,6 +20,7 @@ import Marketing from './pages/Marketing';
 import Social from './pages/Social';
 import NotFound from './pages/NotFound';
 import AllMenus from './pages/AllMenus';
+import PublicMenu from './pages/PublicMenu';
 import './App.css';
 
 function App() {
@@ -28,6 +30,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/menu-public" element={<PublicMenu />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
