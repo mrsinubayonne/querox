@@ -2,7 +2,7 @@
 import React from 'react';
 import { useOrders } from '@/hooks/useOrders';
 import { OrderCard } from './OrderCard';
-import { EmptyState } from '@/components/EmptyState';
+import EmptyState from '@/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package } from 'lucide-react';
 
