@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +12,7 @@ export const usePublicMenu = () => {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('Tous');
   const [searchTerm, setSearchTerm] = useState('');
+  const [menuError, setMenuError] = useState<string | null>(null);
   const { toast } = useToast();
   const location = useLocation();
 
@@ -92,9 +94,11 @@ export const usePublicMenu = () => {
     const menuId = params.get('menu_id');
 
     if (menuId) {
+      setMenuError(null);
       fetchPublicMenu(menuId);
     } else {
       console.error("No menu_id found in URL for PublicMenu");
+      setMenuError("Aucun menu n'est spécifié. Veuillez vous assurer que l'URL contient un `menu_id`.");
       toast({
         title: "Menu non spécifié",
         description: "Aucun menu n'a été sélectionné pour être affiché.",
@@ -201,5 +205,6 @@ export const usePublicMenu = () => {
     getTotalItems,
     searchTerm,
     setSearchTerm,
+    menuError,
   };
 };

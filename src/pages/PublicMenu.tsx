@@ -10,6 +10,7 @@ import PromotionalBanner from '@/components/public-menu/PromotionalBanner';
 import CategoryFilter from '@/components/CategoryFilter';
 import MenuSearch from '@/components/public-menu/MenuSearch';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { AlertTriangle } from 'lucide-react';
 
 const PublicMenu: React.FC = () => {
   const [showCart, setShowCart] = useState(false);
@@ -29,10 +30,31 @@ const PublicMenu: React.FC = () => {
     getTotalItems,
     searchTerm,
     setSearchTerm,
+    menuError,
   } = usePublicMenu();
 
   if (loading) {
     return <PublicMenuLoader />;
+  }
+
+  if (menuError) {
+    return (
+      <div className="min-h-screen w-full bg-gradient-to-br from-red-50 via-white to-amber-50 flex flex-col items-center justify-center p-4">
+        <div className="text-center max-w-2xl">
+          <AlertTriangle className="mx-auto h-16 w-16 text-red-500 mb-6" />
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Erreur de configuration du menu</h1>
+          <p className="text-lg text-gray-600 mb-6">{menuError}</p>
+          <p className="text-gray-500">
+            Pour afficher un menu, l'adresse de la page doit inclure l'identifiant du menu, comme ceci :
+            <br />
+            <code className="bg-gray-200 text-gray-700 rounded-md px-2 py-1 mt-2 inline-block">
+              /menu-public?menu_id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            </code>
+          </p>
+          <p className="mt-8 text-sm text-gray-400">Si vous êtes le propriétaire du restaurant, vous pouvez trouver ce lien dans votre panneau d'administration des menus.</p>
+        </div>
+      </div>
+    );
   }
 
   // 🔥 NOUVEAU: fond dégradé tout doux et container superposée sur desktop
