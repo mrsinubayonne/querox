@@ -8,14 +8,13 @@ import { ExternalLink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
 import CategoryManager from '@/components/menu-management/CategoryManager';
-import GeneralSettingsTab from '@/components/menu-management/GeneralSettingsTab';
+import RestaurantNameTab from '@/components/menu-management/RestaurantNameTab';
 
 const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleAddItem = () => {
-    // This logic is now in MenuItemManager, but we can open the modal from here
-    // For now, let's rely on the button within the manager
+    // Cette logique reste inchangée.
     console.log("Add item clicked");
   };
 
@@ -48,7 +47,7 @@ const Menus: React.FC = () => {
               <CategoryManager />
             </TabsContent>
             <TabsContent value="general">
-              <GeneralSettingsTab />
+              <RestaurantNameTab />
             </TabsContent>
           </Tabs>
 
