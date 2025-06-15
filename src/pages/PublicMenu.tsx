@@ -44,38 +44,52 @@ const PublicMenu: React.FC = () => {
     try {
       setLoading(true);
 
-      // Nouvelle requête brute, sans jointure ni filtre
+      // Correction : jointure avec menu_categories pour récupérer le nom de la catégorie
       const { data: menuItemsData, error: itemsError } = await supabase
         .from('menu_items')
-        .select('*')
+        .select(`
+          *,
+          menu_categories (
+            name
+          )
+        `)
+        .eq('is_available', true)
         .order('name');
 
-      console.log("‼️ Résultat brut table menu_items :", menuItemsData, itemsError);
+      console.log("‼️ Résultat menu_items avec jointure menu_categories :", menuItemsData, itemsError);
 
       if (itemsError) {
         console.error('Error fetching menu items:', itemsError);
         throw itemsError;
       }
 
-      // Afficher les données telles qu'on les reçoit
       if (!menuItemsData || menuItemsData.length === 0) {
         console.warn("‼️ Aucun plat trouvé dans la table menu_items");
       }
 
-      const transformedItems: MenuItem[] = (menuItemsData || []).map(item => {
+      // On prend le nom de la catégorie obtenu via la jointure (objet ou tableau selon le retour Supabase)
+      const transformedItems: MenuItem[] = (menuItemsData || []).map((item: any) => {
+        let category_name = 'Autres';
+
+        // La clé peut être un objet ou un tableau (selon relation et configuration Supabase)
+        if (Array.isArray(item.menu_categories) && item.menu_categories.length > 0 && item.menu_categories[0]?.name) {
+          category_name = item.menu_categories[0].name;
+        } else if (item.menu_categories && item.menu_categories.name) {
+          category_name = item.menu_categories.name;
+        }
+
         return {
           id: item.id,
           name: item.name,
           description: item.description || '',
           price: Number(item.price),
           image_url: item.image_url || undefined,
-          // Si on a une catégorie, on l'affiche, sinon 'Autres'
-          category_name: item.category_name || 'Autres',
+          category_name,
           is_available: item.is_available
         }
       });
 
-      console.log("‼️ Table menu_items transformée :", transformedItems);
+      console.log("‼️ Plats transformés pour affichage:", transformedItems);
       setMenuItems(transformedItems);
     } catch (error) {
       console.error('Error fetching menu:', error);
