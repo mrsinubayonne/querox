@@ -37,8 +37,6 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
     setCustomerPhone,
     deliveryAddress,
     setDeliveryAddress,
-    deliveryTime,
-    setDeliveryTime,
     notes,
     setNotes,
     orderType,
@@ -67,8 +65,6 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
             setCustomerPhone={setCustomerPhone}
             deliveryAddress={deliveryAddress}
             setDeliveryAddress={setDeliveryAddress}
-            deliveryTime={deliveryTime}
-            setDeliveryTime={setDeliveryTime}
             notes={notes}
             setNotes={setNotes}
             orderType={orderType}
