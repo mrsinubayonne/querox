@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { 
   Menu, 
-  CalendarDays, 
   Users, 
   DollarSign, 
   Package, 
@@ -29,13 +28,6 @@ const Dashboard: React.FC = () => {
       icon: Menu,
       link: "/menus",
       color: "from-green-500 to-green-600"
-    },
-    {
-      title: "Réservations",
-      description: "Gérez les réservations de votre restaurant",
-      icon: CalendarDays,
-      link: "/reservations",
-      color: "from-purple-500 to-purple-600"
     },
     {
       title: "Clients",
@@ -156,12 +148,6 @@ const Dashboard: React.FC = () => {
                 <CardTitle>Fonctionnalités populaires</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Link to="/reservations" className="block p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <CalendarDays className="h-5 w-5 text-purple-600" />
-                    <span className="font-medium">Système de réservations</span>
-                  </div>
-                </Link>
                 <Link to="/inventaire" className="block p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
                   <div className="flex items-center space-x-3">
                     <Package className="h-5 w-5 text-red-600" />

@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from "./components/ui/toaster";
@@ -13,7 +14,6 @@ import Statistiques from './pages/Statistiques';
 import Clients from './pages/Clients';
 import Comptabilite from './pages/Comptabilite';
 import QRCodes from './pages/QRCodes';
-import Reservations from './pages/Reservations';
 import Marketing from './pages/Marketing';
 import Social from './pages/Social';
 import NotFound from './pages/NotFound';
@@ -43,11 +43,6 @@ function App() {
           <Route path="/tous-les-menus" element={
             <ProtectedRoute>
               <AllMenus />
-            </ProtectedRoute>
-          } />
-          <Route path="/reservations" element={
-            <ProtectedRoute>
-              <Reservations />
             </ProtectedRoute>
           } />
           <Route path="/marketing" element={

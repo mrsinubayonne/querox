@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Menu, CalendarDays, Users, Globe, QrCode, MessageSquare, BarChart2, DollarSign, Package, Settings, ShieldCheck, ChevronLeft, ShoppingBag } from 'lucide-react';
+import { LayoutDashboard, Menu, Users, Globe, QrCode, MessageSquare, BarChart2, DollarSign, Package, Settings, ShieldCheck, ChevronLeft, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ModernSidebarProps {
@@ -23,11 +23,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: "Menus",
     path: "/menus",
     color: "text-green-600"
-  }, {
-    icon: CalendarDays,
-    label: "Réservations",
-    path: "/reservations",
-    color: "text-purple-600"
   }, {
     icon: ShoppingBag,
     label: "Commandes",
