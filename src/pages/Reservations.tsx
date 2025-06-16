@@ -51,7 +51,6 @@ const Reservations: React.FC = () => {
     }
   };
 
-  const displayReservations = reservations && reservations.length > 0 ? reservations : mockReservations;
   const isEmptyState = !reservations || reservations.length === 0;
 
   if (loading) {
@@ -85,23 +84,17 @@ const Reservations: React.FC = () => {
             </Button>
           </div>
 
-          {isEmptyState && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-sm font-medium text-blue-800">
-                  Interface de démonstration - Aucune réservation trouvée
-                </span>
-              </div>
-              <p className="text-sm text-blue-600 mt-1">
-                Voici à quoi ressemblera votre système de réservations avec de vraies données.
-              </p>
-            </div>
-          )}
-
-          {displayReservations.length > 0 ? (
+          {isEmptyState ? (
+            <EmptyState
+              icon={CalendarDays}
+              title="Aucune réservation"
+              description="Commencez par ajouter votre première réservation"
+              actionLabel="Nouvelle réservation"
+              onAction={handleAddReservation}
+            />
+          ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {displayReservations.map((reservation) => (
+              {reservations.map((reservation) => (
                 <Card key={reservation.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -149,14 +142,6 @@ const Reservations: React.FC = () => {
                 </Card>
               ))}
             </div>
-          ) : (
-            <EmptyState
-              icon={CalendarDays}
-              title="Aucune réservation"
-              description="Commencez par ajouter votre première réservation"
-              actionLabel="Nouvelle réservation"
-              onAction={handleAddReservation}
-            />
           )}
         </div>
       </div>
