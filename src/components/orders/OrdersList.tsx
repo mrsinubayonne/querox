@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Package } from 'lucide-react';
 
 export const OrdersList: React.FC = () => {
-  const { orders, loading } = useOrders();
+  const { orders, loading, refetch } = useOrders();
 
   if (loading) {
     return (
@@ -32,7 +32,11 @@ export const OrdersList: React.FC = () => {
   return (
     <div className="space-y-4">
       {orders.map((order) => (
-        <OrderCard key={order.id} order={order} />
+        <OrderCard 
+          key={order.id} 
+          order={order} 
+          onStatusChange={refetch}
+        />
       ))}
     </div>
   );

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Clock, MapPin, Phone, Mail } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { OrderStatusSelect } from './OrderStatusSelect';
 
 interface OrderItem {
   id: string;
@@ -25,10 +26,13 @@ export interface Order {
   delivery_address?: string;
   delivery_time?: string;
   created_at: string;
+  table_number?: string;
+  order_type?: string;
 }
 
 interface OrderCardProps {
   order: Order;
+  onStatusChange: () => void;
 }
 
 const getStatusBadge = (status: string) => {
@@ -45,7 +49,22 @@ const getStatusBadge = (status: string) => {
   return <Badge variant={config.variant}>{config.label}</Badge>;
 };
 
-export const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
+const getOrderTypeDisplay = (orderType?: string, tableNumber?: string) => {
+  if (!orderType) return null;
+  
+  switch (orderType) {
+    case 'sur_place':
+      return `Sur place ${tableNumber ? `- Table ${tableNumber}` : ''}`;
+    case 'emporter':
+      return 'À emporter';
+    case 'livrer':
+      return 'À livrer';
+    default:
+      return orderType;
+  }
+};
+
+export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) => {
   const orderDate = new Date(order.created_at).toLocaleDateString('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -53,6 +72,8 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
     hour: '2-digit',
     minute: '2-digit',
   });
+
+  const orderTypeDisplay = getOrderTypeDisplay(order.order_type, order.table_number);
 
   return (
     <Card>
@@ -66,6 +87,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
                   <Clock className="w-4 h-4" />
                   {orderDate}
                 </div>
+                {orderTypeDisplay && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                    {orderTypeDisplay}
+                  </span>
+                )}
                 {order.customer_phone && (
                   <div className="flex items-center gap-1">
                     <Phone className="w-4 h-4" />
@@ -82,7 +108,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {getStatusBadge(order.status)}
+            <OrderStatusSelect 
+              orderId={order.id}
+              currentStatus={order.status}
+              onStatusChange={onStatusChange}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -91,7 +121,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                <DropdownMenuItem>Modifier le statut</DropdownMenuItem>
                 <DropdownMenuItem>Éditer</DropdownMenuItem>
                 <DropdownMenuItem className="text-red-600">Supprimer</DropdownMenuItem>
               </DropdownMenuContent>

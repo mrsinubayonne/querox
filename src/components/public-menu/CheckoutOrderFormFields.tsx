@@ -12,8 +12,6 @@ type Props = {
   setCustomerPhone: (val: string) => void;
   deliveryAddress: string;
   setDeliveryAddress: (val: string) => void;
-  deliveryTime: string;
-  setDeliveryTime: (val: string) => void;
   notes: string;
   setNotes: (val: string) => void;
   orderType: string;
@@ -29,8 +27,6 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
   setCustomerPhone,
   deliveryAddress,
   setDeliveryAddress,
-  deliveryTime,
-  setDeliveryTime,
   notes,
   setNotes,
   orderType,
@@ -102,42 +98,17 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
         </div>
       )}
 
-      {orderType === "emporter" && (
+      {orderType === "livrer" && (
         <div>
           <label className="block font-medium mb-1">
-            Heure de retrait souhaitée (optionnel)
+            Adresse de livraison *
           </label>
-          <Input
-            type="time"
-            value={deliveryTime}
-            onChange={(e) => setDeliveryTime(e.target.value)}
+          <Textarea
+            required
+            value={deliveryAddress}
+            onChange={(e) => setDeliveryAddress(e.target.value)}
+            placeholder="Rue, quartier, spécificités…"
           />
-        </div>
-      )}
-
-      {orderType === "livrer" && (
-        <div className="space-y-2">
-          <div>
-            <label className="block font-medium mb-1">
-              Adresse de livraison *
-            </label>
-            <Textarea
-              required
-              value={deliveryAddress}
-              onChange={(e) => setDeliveryAddress(e.target.value)}
-              placeholder="Rue, quartier, spécificités…"
-            />
-          </div>
-          <div>
-            <label className="block font-medium mb-1">
-              Heure de livraison souhaitée (optionnel)
-            </label>
-            <Input
-              type="time"
-              value={deliveryTime}
-              onChange={(e) => setDeliveryTime(e.target.value)}
-            />
-          </div>
         </div>
       )}
 
