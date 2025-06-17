@@ -27,10 +27,10 @@ const LandingPricing: React.FC = () => {
         
         <div className="mt-12 text-center">
           <p className="text-gray-600">
-            Tous nos plans incluent un essai gratuit de 14 jours
+            Tous nos plans sont des abonnements mensuels
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            Aucune carte bancaire requise • Annulation à tout moment
+            Paiement sécurisé • Annulation à tout moment
           </p>
         </div>
       </div>

@@ -5,7 +5,7 @@ export const plans = [
     price: "20 000",
     period: "FCFA/mois",
     description: "Parfait pour les petits restaurants",
-    cta: "Commencer",
+    cta: "S'abonner",
     tier: "starter",
     popular: false,
     features: [
@@ -21,7 +21,7 @@ export const plans = [
     price: "35 000",
     period: "FCFA/mois",
     description: "Idéal pour les restaurants en croissance",
-    cta: "Choisir Pro",
+    cta: "S'abonner Pro",
     tier: "professional",
     popular: true,
     features: [
@@ -39,7 +39,7 @@ export const plans = [
     price: "40 000",
     period: "FCFA/mois",
     description: "Pour les chaînes et grands restaurants",
-    cta: "Devenir VIP",
+    cta: "S'abonner VIP",
     tier: "enterprise",
     popular: false,
     features: [
