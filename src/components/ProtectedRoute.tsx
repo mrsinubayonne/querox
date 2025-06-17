@@ -5,9 +5,13 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requiresSubscription?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requiresSubscription = false 
+}) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 

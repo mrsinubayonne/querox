@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +14,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import ModernSidebar from '@/components/ModernSidebar';
+import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { useState } from 'react';
 
 const Dashboard: React.FC = () => {
@@ -81,91 +81,93 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
-      
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Bienvenue sur QUEROX, {user?.user_metadata?.full_name || user?.email}!
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Voici votre tableau de bord. Cliquez sur une fonctionnalité pour commencer à configurer votre restaurant.
-            </p>
-          </div>
+    <SubscriptionGuard feature="le tableau de bord">
+      <div className="flex h-screen bg-gray-50">
+        <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+        
+        <div className="flex-1 overflow-auto">
+          <div className="p-8">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Bienvenue sur QUEROX, {user?.user_metadata?.full_name || user?.email}!
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Voici votre tableau de bord. Cliquez sur une fonctionnalité pour commencer à configurer votre restaurant.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {quickActions.map((action, index) => (
-              <Link key={index} to={action.link}>
-                <Card className="h-full hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer">
-                  <CardHeader className="pb-3">
-                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${action.color} flex items-center justify-center mb-3`}>
-                      <action.icon className="h-6 w-6 text-white" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {quickActions.map((action, index) => (
+                <Link key={index} to={action.link}>
+                  <Card className="h-full hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer">
+                    <CardHeader className="pb-3">
+                      <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${action.color} flex items-center justify-center mb-3`}>
+                        <action.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <CardTitle className="text-lg">{action.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-600 text-sm mb-4">{action.description}</p>
+                      <Button variant="outline" size="sm" className="w-full">
+                        Configurer →
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Démarrage rapide</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                    <span className="text-sm font-medium">1. Créez votre premier menu</span>
+                    <Link to="/menus">
+                      <Button size="sm">Commencer</Button>
+                    </Link>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium">2. Configurez votre site web</span>
+                    <Link to="/site-web">
+                      <Button size="sm" variant="outline">Configurer</Button>
+                    </Link>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium">3. Générez vos QR codes</span>
+                    <Link to="/qr-codes">
+                      <Button size="sm" variant="outline">Générer</Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Fonctionnalités populaires</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Link to="/inventaire" className="block p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <Package className="h-5 w-5 text-red-600" />
+                      <span className="font-medium">Gestion d'inventaire</span>
                     </div>
-                    <CardTitle className="text-lg">{action.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 text-sm mb-4">{action.description}</p>
-                    <Button variant="outline" size="sm" className="w-full">
-                      Configurer →
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Démarrage rapide</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <span className="text-sm font-medium">1. Créez votre premier menu</span>
-                  <Link to="/menus">
-                    <Button size="sm">Commencer</Button>
                   </Link>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium">2. Configurez votre site web</span>
-                  <Link to="/site-web">
-                    <Button size="sm" variant="outline">Configurer</Button>
+                  <Link to="/comptabilite" className="block p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <DollarSign className="h-5 w-5 text-yellow-600" />
+                      <span className="font-medium">Suivi financier</span>
+                    </div>
                   </Link>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium">3. Générez vos QR codes</span>
-                  <Link to="/qr-codes">
-                    <Button size="sm" variant="outline">Générer</Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Fonctionnalités populaires</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Link to="/inventaire" className="block p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <Package className="h-5 w-5 text-red-600" />
-                    <span className="font-medium">Gestion d'inventaire</span>
-                  </div>
-                </Link>
-                <Link to="/comptabilite" className="block p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <DollarSign className="h-5 w-5 text-yellow-600" />
-                    <span className="font-medium">Suivi financier</span>
-                  </div>
-                </Link>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </SubscriptionGuard>
   );
 };
 

@@ -22,6 +22,7 @@ import PublicMenu from './pages/PublicMenu';
 import Commandes from './pages/Commandes';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailure from './pages/PaymentFailure';
+import Abonnement from './pages/Abonnement';
 import './App.css';
 
 function App() {
@@ -34,6 +35,11 @@ function App() {
           <Route path="/menu-public" element={<PublicMenu />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-failure" element={<PaymentFailure />} />
+          <Route path="/abonnement" element={
+            <ProtectedRoute>
+              <Abonnement />
+            </ProtectedRoute>
+          } />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />

@@ -34,7 +34,8 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
 
     setProcessing(true);
     try {
-      const paymentData = await createPayment(plan.tier, 1000); // 1000 FCFA pour les tests
+      // Tous les plans redirigent vers le paiement test à 1000 FCFA
+      const paymentData = await createPayment(plan.tier, 1000);
       
       if (paymentData?.payment_url) {
         // Rediriger vers la page de paiement Lygos
@@ -48,7 +49,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
   };
 
   return (
-    <Card className={`relative ${plan.popular ? 'border-2 border-blue-500 shadow-lg' : ''}`}>
+    <Card className={`relative ${plan.popular ? 'border-2 border-blue-500 shadow-lg scale-105' : ''}`}>
       {plan.popular && (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
           <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
@@ -64,6 +65,13 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
           <span className="text-gray-600 ml-2">{plan.period}</span>
         </div>
         <p className="text-gray-600 mt-2">{plan.description}</p>
+        
+        {/* Badge de test visible */}
+        <div className="mt-3">
+          <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-medium">
+            Mode Test - 1000 FCFA
+          </span>
+        </div>
       </CardHeader>
       
       <CardContent>
@@ -82,7 +90,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
           disabled={loading || processing}
           variant={plan.popular ? "default" : "outline"}
         >
-          {processing ? 'Redirection...' : plan.cta}
+          {processing ? 'Redirection...' : `${plan.cta} - Test 1000 FCFA`}
         </Button>
       </CardContent>
     </Card>
