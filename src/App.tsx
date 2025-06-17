@@ -20,6 +20,8 @@ import NotFound from './pages/NotFound';
 import AllMenus from './pages/AllMenus';
 import PublicMenu from './pages/PublicMenu';
 import Commandes from './pages/Commandes';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailure from './pages/PaymentFailure';
 import './App.css';
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/menu-public" element={<PublicMenu />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-failure" element={<PaymentFailure />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />

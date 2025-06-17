@@ -1,98 +1,88 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
-import { Plan } from './pricingData';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
+import { Check } from 'lucide-react';
+
+interface PricingPlan {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  popular?: boolean;
+  cta: string;
+  tier: string;
+}
 
 interface PricingCardProps {
-  plan: Plan;
+  plan: PricingPlan;
 }
 
 const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
-  const navigate = useNavigate();
   const { user } = useAuth();
+  const { createPayment, loading } = useSubscription();
+  const [processing, setProcessing] = useState(false);
 
-  const handleGetStarted = () => {
-    if (user) {
-      navigate('/menus');
-    } else {
-      navigate('/auth');
+  const handleSubscribe = async () => {
+    if (!user) {
+      window.location.href = '/auth';
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const paymentData = await createPayment(plan.tier, 1000); // 1000 FCFA pour les tests
+      
+      if (paymentData?.payment_url) {
+        // Rediriger vers la page de paiement Lygos
+        window.location.href = paymentData.payment_url;
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+    } finally {
+      setProcessing(false);
     }
   };
 
-  const getPlacesBadgeColor = (places: number) => {
-    if (places <= 10) return "bg-gradient-to-r from-red-500 to-pink-500 text-white border-0";
-    if (places <= 30) return "bg-gradient-to-r from-orange-500 to-yellow-500 text-white border-0";
-    return "bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0";
-  };
-
   return (
-    <Card 
-      className={`relative ${plan.badge ? 'border-primary shadow-lg scale-105' : 'border-gray-200'} hover:shadow-xl transition-all duration-300`}
-    >
-      {plan.badge && (
+    <Card className={`relative ${plan.popular ? 'border-2 border-blue-500 shadow-lg' : ''}`}>
+      {plan.popular && (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-          <Badge className="bg-primary text-white px-4 py-1">
-            {plan.badge}
-          </Badge>
+          <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+            Le plus populaire
+          </span>
         </div>
       )}
       
-      <CardHeader className="text-center pb-4">
-        <CardTitle className="text-2xl font-bold text-gray-900">
-          {plan.name}
-        </CardTitle>
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
         <div className="mt-4">
-          <span className="text-4xl font-extrabold text-gray-900">
-            {plan.price}
-          </span>
-          <span className="text-lg text-gray-600 ml-1">
-            {plan.period}
-          </span>
+          <span className="text-4xl font-bold">{plan.price}</span>
+          <span className="text-gray-600 ml-2">{plan.period}</span>
         </div>
-        
-        <p className="mt-2 text-gray-600">
-          {plan.description}
-        </p>
-        
-        {/* Places disponibles avec couleurs attractives */}
-        <div className="mt-3">
-          <Badge 
-            className={getPlacesBadgeColor(plan.availablePlaces)}
-          >
-            {plan.availablePlaces} places disponibles
-          </Badge>
-          {plan.closingSoon && (
-            <div className="mt-2">
-              <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs animate-pulse">
-                URGENT
-              </Badge>
-            </div>
-          )}
-        </div>
+        <p className="text-gray-600 mt-2">{plan.description}</p>
       </CardHeader>
       
-      <CardContent className="pt-0">
-        <ul className="space-y-3 mb-8">
-          {plan.features.map((feature, featureIndex) => (
-            <li key={featureIndex} className="flex items-center">
+      <CardContent>
+        <ul className="space-y-3 mb-6">
+          {plan.features.map((feature, index) => (
+            <li key={index} className="flex items-center">
               <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-              <span className="text-gray-700">{feature}</span>
+              <span className="text-sm">{feature}</span>
             </li>
           ))}
         </ul>
         
         <Button 
-          className={`w-full ${plan.badge ? 'bg-primary hover:bg-primary/90' : ''}`}
-          variant={plan.badge ? 'default' : 'outline'}
-          size="lg"
-          onClick={handleGetStarted}
+          className="w-full" 
+          onClick={handleSubscribe}
+          disabled={loading || processing}
+          variant={plan.popular ? "default" : "outline"}
         >
-          {user ? 'Accéder au dashboard' : 'Commencer maintenant'}
+          {processing ? 'Redirection...' : plan.cta}
         </Button>
       </CardContent>
     </Card>
