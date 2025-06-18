@@ -28,6 +28,12 @@ serve(async (req) => {
       }
     )
 
+    // Client pour les opérations base de données avec service role
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    )
+
     console.log('🔑 Vérification de l\'autorisation...');
     const authorization = req.headers.get('Authorization')
     if (!authorization) {
@@ -93,9 +99,9 @@ serve(async (req) => {
     const lygosData = await lygosResponse.json()
     console.log('✅ Réponse Lygos successful:', lygosData);
 
-    // Enregistrer la transaction en attente dans la base
+    // Enregistrer la transaction en attente dans la base avec service role
     console.log('💾 Enregistrement dans la base de données...');
-    const { error: insertError } = await supabaseClient
+    const { error: insertError } = await supabaseAdmin
       .from('subscribers')
       .upsert({
         user_id: user.id,
@@ -108,13 +114,44 @@ serve(async (req) => {
 
     if (insertError) {
       console.error('❌ Erreur base de données:', insertError)
+      // Ne pas faire échouer la requête pour cette erreur
     } else {
       console.log('✅ Données enregistrées en base');
     }
 
-    // Construire l'URL complète avec https://
-    const paymentUrl = lygosData.link ? `https://${lygosData.link}` : null;
+    // Construire l'URL de paiement - vérifier plusieurs formats possibles
+    let paymentUrl = null;
+    if (lygosData.link) {
+      // Si l'URL ne commence pas par http, ajouter https://
+      if (lygosData.link.startsWith('http://') || lygosData.link.startsWith('https://')) {
+        paymentUrl = lygosData.link;
+      } else {
+        paymentUrl = `https://${lygosData.link}`;
+      }
+    } else if (lygosData.payment_url) {
+      paymentUrl = lygosData.payment_url;
+    } else if (lygosData.url) {
+      paymentUrl = lygosData.url;
+    }
+
     console.log('🔗 URL de paiement construite:', paymentUrl);
+
+    // Vérifier que l'URL semble valide
+    if (!paymentUrl || (!paymentUrl.includes('checkout') && !paymentUrl.includes('payment'))) {
+      console.log('⚠️ URL de paiement suspecte:', paymentUrl);
+      console.log('📄 Réponse Lygos complète:', JSON.stringify(lygosData, null, 2));
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'URL de paiement invalide reçue de Lygos',
+          debug: lygosData
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
 
     const responseData = {
       success: true,

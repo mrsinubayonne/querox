@@ -49,16 +49,37 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
       
       if (paymentData?.payment_url) {
         console.log('✅ URL de paiement trouvée:', paymentData.payment_url);
-        console.log('🌐 Redirection vers Lygos...');
-        window.location.href = paymentData.payment_url;
+        
+        // Vérifier que l'URL semble valide avant la redirection
+        try {
+          const url = new URL(paymentData.payment_url);
+          console.log('🌐 Redirection vers:', url.href);
+          window.location.href = url.href;
+        } catch (urlError) {
+          console.error('❌ URL de paiement invalide:', paymentData.payment_url);
+          toast({
+            title: "Erreur",
+            description: "L'URL de paiement reçue est invalide",
+            variant: "destructive",
+          });
+        }
       } else {
         console.log('❌ Aucune URL de paiement dans la réponse');
         console.log('📄 Réponse complète:', JSON.stringify(paymentData, null, 2));
-        toast({
-          title: "Erreur",
-          description: "Impossible de créer le lien de paiement",
-          variant: "destructive",
-        });
+        
+        if (paymentData?.error) {
+          toast({
+            title: "Erreur",
+            description: paymentData.error,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Erreur",
+            description: "Impossible de créer le lien de paiement",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error('💥 Erreur lors du paiement:', error);
