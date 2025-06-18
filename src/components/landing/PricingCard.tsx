@@ -43,7 +43,17 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
     console.log('⏳ Processing activé');
 
     try {
-      console.log('🔄 Appel de createPayment...');
+      // Pour l'offre Starter, utiliser directement l'URL fournie
+      if (plan.tier === 'starter') {
+        console.log('🎯 Plan Starter détecté - utilisation de l\'URL directe');
+        const paymentUrl = 'https://bador.mychariow.com/prd_abf7e6/checkout';
+        console.log('🌐 Redirection vers:', paymentUrl);
+        window.location.href = paymentUrl;
+        return;
+      }
+
+      // Pour les autres plans, utiliser l'API Lygos
+      console.log('🔄 Appel de createPayment pour les autres plans...');
       const paymentData = await createPayment(plan.tier, 1000);
       console.log('📋 Données de paiement reçues:', paymentData);
       
@@ -112,11 +122,13 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
         </div>
         <p className="text-gray-600 mt-2">{plan.description}</p>
         
-        <div className="mt-3">
-          <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-medium">
-            Mode Test - 1000 FCFA
-          </span>
-        </div>
+        {plan.tier !== 'starter' && (
+          <div className="mt-3">
+            <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-medium">
+              Mode Test - 1000 FCFA
+            </span>
+          </div>
+        )}
       </CardHeader>
       
       <CardContent>
@@ -135,7 +147,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
           disabled={loading || processing}
           variant={plan.popular ? "default" : "outline"}
         >
-          {processing ? 'Redirection...' : `${plan.cta} - Test 1000 FCFA`}
+          {processing ? 'Redirection...' : plan.tier === 'starter' ? plan.cta : `${plan.cta} - Test 1000 FCFA`}
         </Button>
       </CardContent>
     </Card>
