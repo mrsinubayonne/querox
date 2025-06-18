@@ -112,9 +112,13 @@ serve(async (req) => {
       console.log('✅ Données enregistrées en base');
     }
 
+    // Construire l'URL complète avec https://
+    const paymentUrl = lygosData.link ? `https://${lygosData.link}` : null;
+    console.log('🔗 URL de paiement construite:', paymentUrl);
+
     const responseData = {
       success: true,
-      payment_url: lygosData.payment_url || lygosData.url,
+      payment_url: paymentUrl,
       order_id: orderId
     };
 
