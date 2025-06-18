@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface PricingPlan {
   name: string;
@@ -24,27 +25,51 @@ interface PricingCardProps {
 const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
   const { user } = useAuth();
   const { createPayment, loading } = useSubscription();
+  const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
 
   const handleSubscribe = async () => {
+    console.log('🚀 Bouton cliqué - Début du processus de paiement');
+    console.log('👤 Utilisateur connecté:', !!user);
+    console.log('📦 Plan sélectionné:', plan.tier);
+
     if (!user) {
+      console.log('❌ Utilisateur non connecté - redirection vers auth');
       window.location.href = '/auth';
       return;
     }
 
     setProcessing(true);
+    console.log('⏳ Processing activé');
+
     try {
-      // Tous les plans redirigent vers le paiement test à 1000 FCFA
+      console.log('🔄 Appel de createPayment...');
       const paymentData = await createPayment(plan.tier, 1000);
+      console.log('📋 Données de paiement reçues:', paymentData);
       
       if (paymentData?.payment_url) {
-        // Rediriger vers la page de paiement Lygos
+        console.log('✅ URL de paiement trouvée:', paymentData.payment_url);
+        console.log('🌐 Redirection vers Lygos...');
         window.location.href = paymentData.payment_url;
+      } else {
+        console.log('❌ Aucune URL de paiement dans la réponse');
+        console.log('📄 Réponse complète:', JSON.stringify(paymentData, null, 2));
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer le lien de paiement",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error('Payment error:', error);
+      console.error('💥 Erreur lors du paiement:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la création du paiement",
+        variant: "destructive",
+      });
     } finally {
       setProcessing(false);
+      console.log('🏁 Processing désactivé');
     }
   };
 
@@ -66,7 +91,6 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
         </div>
         <p className="text-gray-600 mt-2">{plan.description}</p>
         
-        {/* Badge de test visible */}
         <div className="mt-3">
           <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-medium">
             Mode Test - 1000 FCFA

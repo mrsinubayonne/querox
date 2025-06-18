@@ -8,11 +8,15 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log('🚀 Edge function appelée:', req.method);
+
   if (req.method === 'OPTIONS') {
+    console.log('✅ Requête OPTIONS - retour CORS headers');
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    console.log('🔧 Initialisation du client Supabase...');
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -24,8 +28,10 @@ serve(async (req) => {
       }
     )
 
+    console.log('🔑 Vérification de l\'autorisation...');
     const authorization = req.headers.get('Authorization')
     if (!authorization) {
+      console.log('❌ Aucun header Authorization');
       return new Response(
         JSON.stringify({ error: 'No authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -33,31 +39,39 @@ serve(async (req) => {
     }
 
     const token = authorization.replace('Bearer ', '')
+    console.log('👤 Vérification du token utilisateur...');
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
 
     if (authError || !user) {
+      console.log('❌ Token invalide:', authError);
       return new Response(
         JSON.stringify({ error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    console.log('✅ Utilisateur authentifié:', user.id);
+
+    console.log('📦 Récupération des données de la requête...');
     const { tier, amount } = await req.json()
+    console.log('📝 Données reçues:', { tier, amount });
 
     // Générer un order_id unique
     const orderId = `querox_${user.id}_${Date.now()}`
+    console.log('🆔 Order ID généré:', orderId);
 
     // Préparer la requête vers l'API Lygos
     const lygosPayload = {
-      amount: amount || 1000, // Prix par défaut 1000 FCFA
+      amount: amount || 1000,
       shop_name: "QUEROX",
       message: `Abonnement ${tier} - QUEROX`,
       success_url: `${req.headers.get('origin')}/payment-success?order_id=${orderId}`,
       failure_url: `${req.headers.get('origin')}/payment-failure?order_id=${orderId}`,
       order_id: orderId
     }
+    console.log('🌐 Payload Lygos:', lygosPayload);
 
-    // Appel à l'API Lygos
+    console.log('📡 Appel à l\'API Lygos...');
     const lygosResponse = await fetch('https://api.lygosapp.com/v1/gateway', {
       method: 'POST',
       headers: {
@@ -67,13 +81,20 @@ serve(async (req) => {
       body: JSON.stringify(lygosPayload)
     })
 
+    console.log('📨 Réponse Lygos status:', lygosResponse.status);
+
     if (!lygosResponse.ok) {
-      throw new Error(`Lygos API error: ${lygosResponse.status}`)
+      console.log('❌ Erreur API Lygos:', lygosResponse.status);
+      const errorText = await lygosResponse.text();
+      console.log('❌ Détails erreur Lygos:', errorText);
+      throw new Error(`Lygos API error: ${lygosResponse.status} - ${errorText}`)
     }
 
     const lygosData = await lygosResponse.json()
+    console.log('✅ Réponse Lygos successful:', lygosData);
 
     // Enregistrer la transaction en attente dans la base
+    console.log('💾 Enregistrement dans la base de données...');
     const { error: insertError } = await supabaseClient
       .from('subscribers')
       .upsert({
@@ -86,15 +107,21 @@ serve(async (req) => {
       })
 
     if (insertError) {
-      console.error('Database error:', insertError)
+      console.error('❌ Erreur base de données:', insertError)
+    } else {
+      console.log('✅ Données enregistrées en base');
     }
 
+    const responseData = {
+      success: true,
+      payment_url: lygosData.payment_url || lygosData.url,
+      order_id: orderId
+    };
+
+    console.log('📤 Réponse finale:', responseData);
+
     return new Response(
-      JSON.stringify({
-        success: true,
-        payment_url: lygosData.payment_url || lygosData.url,
-        order_id: orderId
-      }),
+      JSON.stringify(responseData),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -102,7 +129,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('💥 Erreur dans la fonction edge:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

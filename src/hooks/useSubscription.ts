@@ -58,22 +58,33 @@ export const useSubscription = () => {
   };
 
   const createPayment = async (tier: string, amount: number = 1000) => {
-    if (!user) return null;
+    if (!user) {
+      console.log('❌ createPayment: Aucun utilisateur connecté');
+      return null;
+    }
+
+    console.log('🔄 createPayment: Début de la création du paiement');
+    console.log('📝 Paramètres:', { tier, amount, userId: user.id });
 
     try {
       setLoading(true);
+      console.log('📡 Appel de la fonction edge create-subscription-payment...');
 
       const { data, error } = await supabase.functions.invoke('create-subscription-payment', {
         body: { tier, amount }
       });
 
+      console.log('📨 Réponse de la fonction edge:', { data, error });
+
       if (error) {
+        console.error('❌ Erreur de la fonction edge:', error);
         throw new Error(error.message);
       }
 
+      console.log('✅ Paiement créé avec succès:', data);
       return data;
     } catch (error) {
-      console.error('Error creating payment:', error);
+      console.error('💥 Erreur dans createPayment:', error);
       toast({
         title: "Erreur",
         description: "Impossible de créer le paiement",
@@ -82,6 +93,7 @@ export const useSubscription = () => {
       return null;
     } finally {
       setLoading(false);
+      console.log('🏁 createPayment: Loading désactivé');
     }
   };
 
