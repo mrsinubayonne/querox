@@ -121,7 +121,13 @@ serve(async (req) => {
 
     // Construire l'URL de paiement - vérifier plusieurs formats possibles
     let paymentUrl = null;
+    
+    // Vérifier toutes les propriétés possibles pour l'URL
+    console.log('🔍 Recherche de l\'URL de paiement dans la réponse...');
+    console.log('📄 Propriétés disponibles:', Object.keys(lygosData));
+    
     if (lygosData.link) {
+      console.log('🔗 Propriété "link" trouvée:', lygosData.link);
       // Si l'URL ne commence pas par http, ajouter https://
       if (lygosData.link.startsWith('http://') || lygosData.link.startsWith('https://')) {
         paymentUrl = lygosData.link;
@@ -129,21 +135,47 @@ serve(async (req) => {
         paymentUrl = `https://${lygosData.link}`;
       }
     } else if (lygosData.payment_url) {
+      console.log('🔗 Propriété "payment_url" trouvée:', lygosData.payment_url);
       paymentUrl = lygosData.payment_url;
     } else if (lygosData.url) {
+      console.log('🔗 Propriété "url" trouvée:', lygosData.url);
       paymentUrl = lygosData.url;
+    } else if (lygosData.checkout_url) {
+      console.log('🔗 Propriété "checkout_url" trouvée:', lygosData.checkout_url);
+      paymentUrl = lygosData.checkout_url;
     }
 
     console.log('🔗 URL de paiement construite:', paymentUrl);
 
-    // Vérifier que l'URL semble valide
-    if (!paymentUrl || (!paymentUrl.includes('checkout') && !paymentUrl.includes('payment'))) {
-      console.log('⚠️ URL de paiement suspecte:', paymentUrl);
+    // Validation plus flexible de l'URL - on accepte toute URL qui semble être une URL de paiement
+    if (!paymentUrl) {
+      console.log('❌ Aucune URL de paiement trouvée dans la réponse');
       console.log('📄 Réponse Lygos complète:', JSON.stringify(lygosData, null, 2));
       
       return new Response(
         JSON.stringify({ 
-          error: 'URL de paiement invalide reçue de Lygos',
+          error: 'Aucune URL de paiement trouvée dans la réponse de Lygos',
+          debug: lygosData
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Validation basique pour s'assurer que c'est une URL valide
+    try {
+      new URL(paymentUrl);
+      console.log('✅ URL de paiement valide confirmée');
+    } catch (urlError) {
+      console.log('❌ URL de paiement malformée:', paymentUrl);
+      console.log('❌ Erreur URL:', urlError);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'URL de paiement malformée reçue de Lygos',
+          payment_url: paymentUrl,
           debug: lygosData
         }),
         { 
