@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription } from '@/hooks/useSubscription';
 import { Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,9 +23,17 @@ interface PricingCardProps {
 
 const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
   const { user } = useAuth();
-  const { createPayment, loading } = useSubscription();
   const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
+
+  const getPaymentUrl = (tier: string) => {
+    const urls = {
+      starter: 'https://querox.mychariow.com/prd_fbf5sx/checkout',
+      premium: 'https://querox.mychariow.com/prd_aba7bf/checkout',
+      pro: 'https://querox.mychariow.com/prd_idfv3d/checkout'
+    };
+    return urls[tier as keyof typeof urls];
+  };
 
   const handleSubscribe = async () => {
     console.log('🚀 Bouton cliqué - Début du processus de paiement');
@@ -43,59 +50,25 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
     console.log('⏳ Processing activé');
 
     try {
-      // Pour l'offre Starter, utiliser directement l'URL fournie
-      if (plan.tier === 'starter') {
-        console.log('🎯 Plan Starter détecté - utilisation de l\'URL directe');
-        const paymentUrl = 'https://bador.mychariow.com/prd_abf7e6/checkout';
+      const paymentUrl = getPaymentUrl(plan.tier);
+      
+      if (paymentUrl) {
+        console.log('✅ URL de paiement trouvée:', paymentUrl);
         console.log('🌐 Redirection vers:', paymentUrl);
         window.location.href = paymentUrl;
-        return;
-      }
-
-      // Pour les autres plans, utiliser l'API Lygos
-      console.log('🔄 Appel de createPayment pour les autres plans...');
-      const paymentData = await createPayment(plan.tier, 1000);
-      console.log('📋 Données de paiement reçues:', paymentData);
-      
-      if (paymentData?.payment_url) {
-        console.log('✅ URL de paiement trouvée:', paymentData.payment_url);
-        
-        // Vérifier que l'URL semble valide avant la redirection
-        try {
-          const url = new URL(paymentData.payment_url);
-          console.log('🌐 Redirection vers:', url.href);
-          window.location.href = url.href;
-        } catch (urlError) {
-          console.error('❌ URL de paiement invalide:', paymentData.payment_url);
-          toast({
-            title: "Erreur",
-            description: "L'URL de paiement reçue est invalide",
-            variant: "destructive",
-          });
-        }
       } else {
-        console.log('❌ Aucune URL de paiement dans la réponse');
-        console.log('📄 Réponse complète:', JSON.stringify(paymentData, null, 2));
-        
-        if (paymentData?.error) {
-          toast({
-            title: "Erreur",
-            description: paymentData.error,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Erreur",
-            description: "Impossible de créer le lien de paiement",
-            variant: "destructive",
-          });
-        }
+        console.log('❌ Aucune URL de paiement trouvée pour le tier:', plan.tier);
+        toast({
+          title: "Erreur",
+          description: "URL de paiement non configurée pour ce plan",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('💥 Erreur lors du paiement:', error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la création du paiement",
+        description: "Une erreur est survenue lors de la redirection",
         variant: "destructive",
       });
     } finally {
@@ -121,14 +94,6 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
           <span className="text-gray-600 ml-2">{plan.period}</span>
         </div>
         <p className="text-gray-600 mt-2">{plan.description}</p>
-        
-        {plan.tier !== 'starter' && (
-          <div className="mt-3">
-            <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-medium">
-              Mode Test - 1000 FCFA
-            </span>
-          </div>
-        )}
       </CardHeader>
       
       <CardContent>
@@ -144,10 +109,10 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
         <Button 
           className="w-full" 
           onClick={handleSubscribe}
-          disabled={loading || processing}
+          disabled={processing}
           variant={plan.popular ? "default" : "outline"}
         >
-          {processing ? 'Redirection...' : plan.tier === 'starter' ? plan.cta : `${plan.cta} - Test 1000 FCFA`}
+          {processing ? 'Redirection...' : plan.cta}
         </Button>
       </CardContent>
     </Card>

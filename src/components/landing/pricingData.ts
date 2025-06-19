@@ -2,70 +2,52 @@
 export const plans = [
   {
     name: "Starter",
-    price: "20 000",
+    price: "10 000",
     period: "FCFA/mois",
-    description: "Parfait pour les petits restaurants",
-    cta: "S'abonner",
-    tier: "starter",
-    popular: false,
+    description: "Parfait pour débuter avec les fonctionnalités essentielles",
     features: [
-      "Gestion des menus",
-      "Jusqu'à 50 réservations/mois",
-      "Inventaire de base",
-      "Support par email",
-      "1 utilisateur"
-    ]
+      "Menu numérique interactif",
+      "QR Code personnalisé",
+      "Gestion des commandes",
+      "5 catégories de plats",
+      "Support email"
+    ],
+    popular: false,
+    cta: "Commencer",
+    tier: "starter"
   },
   {
     name: "Professionnel",
-    price: "35 000",
+    price: "20 000",
     period: "FCFA/mois",
     description: "Idéal pour les restaurants en croissance",
-    cta: "S'abonner Pro",
-    tier: "professional",
-    popular: true,
     features: [
       "Toutes les fonctionnalités Starter",
-      "Réservations illimitées",
+      "Catégories illimitées",
+      "Gestion des stocks",
       "Statistiques avancées",
-      "Gestion des clients",
-      "QR Codes",
-      "3 utilisateurs",
+      "Site web personnalisé",
       "Support prioritaire"
-    ]
+    ],
+    popular: true,
+    cta: "Choisir Pro",
+    tier: "premium"
   },
   {
-    name: "Enterprise VIP",
-    price: "40 000",
+    name: "Entreprise",
+    price: "35 000",
     period: "FCFA/mois",
-    description: "Pour les chaînes et grands restaurants",
-    cta: "S'abonner VIP",
-    tier: "enterprise",
-    popular: false,
+    description: "Pour les chaînes et grandes structures",
     features: [
       "Toutes les fonctionnalités Pro",
-      "Comptabilité complète",
-      "Marketing & Social",
-      "Multi-restaurants",
-      "API access",
-      "Utilisateurs illimités",
-      "Support 24/7",
-      "Formation personnalisée"
-    ]
+      "Multi-établissements",
+      "API personnalisée",
+      "Intégrations avancées",
+      "Formations personnalisées",
+      "Support dédié 24/7"
+    ],
+    popular: false,
+    cta: "Contactez-nous",
+    tier: "pro"
   }
 ];
-
-export const featureComparison = [
-  { feature: "Gestion des menus", starter: true, pro: true, enterprise: true },
-  { feature: "Réservations", starter: "50/mois", pro: "Illimitées", enterprise: "Illimitées" },
-  { feature: "Inventaire", starter: "Base", pro: "Avancé", enterprise: "Complet" },
-  { feature: "Statistiques", starter: false, pro: true, enterprise: true },
-  { feature: "QR Codes", starter: false, pro: true, enterprise: true },
-  { feature: "Multi-restaurants", starter: false, pro: false, enterprise: true },
-  { feature: "API access", starter: false, pro: false, enterprise: true },
-  { feature: "Support 24/7", starter: false, pro: false, enterprise: true },
-  { feature: "Formation", starter: false, pro: false, enterprise: true }
-];
-
-export type Plan = typeof plans[0];
-export type FeatureComparison = typeof featureComparison[0];
