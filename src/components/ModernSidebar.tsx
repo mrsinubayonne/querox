@@ -84,6 +84,12 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     color: "text-purple-600",
     requiresSubscription: false
   }, {
+    icon: ShieldCheck,
+    label: "Admin Abonnements",
+    path: "/admin/subscriptions",
+    color: "text-red-600",
+    requiresSubscription: false
+  }, {
     icon: Settings,
     label: "Paramètres",
     path: "/parametres",

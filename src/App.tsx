@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from "./components/ui/toaster";
@@ -23,6 +22,7 @@ import Commandes from './pages/Commandes';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailure from './pages/PaymentFailure';
 import Abonnement from './pages/Abonnement';
+import AdminSubscriptions from './pages/AdminSubscriptions';
 import './App.css';
 
 function App() {
@@ -38,6 +38,11 @@ function App() {
           <Route path="/abonnement" element={
             <ProtectedRoute>
               <Abonnement />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/subscriptions" element={
+            <ProtectedRoute>
+              <AdminSubscriptions />
             </ProtectedRoute>
           } />
           <Route path="/dashboard" element={
