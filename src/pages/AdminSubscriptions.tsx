@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, UserPlus, Edit, Calendar, Crown } from 'lucide-react';
+import { Search, UserPlus, Edit, Calendar, Crown, AlertTriangle } from 'lucide-react';
 import ModernSidebar from '@/components/ModernSidebar';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Subscription {
   id: string;
@@ -21,18 +21,49 @@ interface Subscription {
   updated_at: string;
 }
 
+// Remplacez cette adresse email par la vôtre
+const ADMIN_EMAIL = 'bayonnecastadorkhloe@gmail.com';
+
 const AdminSubscriptions: React.FC = () => {
+  const { user } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchEmail, setSearchEmail] = useState('');
   const [selectedTier, setSelectedTier] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('30');
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchSubscriptions();
-  }, []);
+    checkAuthorization();
+  }, [user]);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchSubscriptions();
+    }
+  }, [isAuthorized]);
+
+  const checkAuthorization = () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    // Vérifier si l'utilisateur connecté est l'administrateur autorisé
+    if (user.email === ADMIN_EMAIL) {
+      setIsAuthorized(true);
+    } else {
+      setIsAuthorized(false);
+      toast({
+        title: "Accès refusé",
+        description: "Vous n'avez pas l'autorisation d'accéder à cette interface",
+        variant: "destructive",
+      });
+    }
+    setLoading(false);
+  };
 
   const fetchSubscriptions = async () => {
     try {
@@ -211,8 +242,36 @@ const AdminSubscriptions: React.FC = () => {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-600">Chargement...</p>
+            <p className="mt-2 text-sm text-gray-600">Vérification des autorisations...</p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Affichage pour les utilisateurs non autorisés
+  if (!isAuthorized) {
+    return (
+      <div className="flex h-screen bg-gray-50">
+        <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+        
+        <div className="flex-1 flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Accès Restreint
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  Cette interface d'administration est réservée aux administrateurs autorisés uniquement.
+                </p>
+                <p className="text-sm text-gray-500">
+                  Connecté en tant que: {user?.email || 'Non connecté'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -234,6 +293,9 @@ const AdminSubscriptions: React.FC = () => {
             <p className="text-gray-600 mt-2">
               Gérez manuellement les abonnements et accès aux fonctionnalités premium
             </p>
+            <div className="mt-2 text-sm text-green-600 font-medium">
+              ✓ Connecté en tant qu'administrateur: {user?.email}
+            </div>
           </div>
 
           {/* Formulaire d'ajout/modification */}
