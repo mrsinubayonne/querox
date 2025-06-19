@@ -2,7 +2,7 @@
 export const plans = [
   {
     name: "Starter",
-    price: "10 000",
+    price: "20 000",
     period: "FCFA/mois",
     description: "Parfait pour débuter avec les fonctionnalités essentielles",
     features: [
@@ -18,7 +18,7 @@ export const plans = [
   },
   {
     name: "Professionnel",
-    price: "20 000",
+    price: "35 000",
     period: "FCFA/mois",
     description: "Idéal pour les restaurants en croissance",
     features: [
@@ -35,7 +35,7 @@ export const plans = [
   },
   {
     name: "Entreprise",
-    price: "35 000",
+    price: "40 000",
     period: "FCFA/mois",
     description: "Pour les chaînes et grandes structures",
     features: [
