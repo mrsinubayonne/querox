@@ -51,3 +51,66 @@ export const plans = [
     tier: "pro"
   }
 ];
+
+export const featureComparison = [
+  {
+    feature: "Menu numérique interactif",
+    starter: true,
+    pro: true,
+    enterprise: true
+  },
+  {
+    feature: "QR Code personnalisé",
+    starter: true,
+    pro: true,
+    enterprise: true
+  },
+  {
+    feature: "Gestion des commandes",
+    starter: true,
+    pro: true,
+    enterprise: true
+  },
+  {
+    feature: "Catégories de plats",
+    starter: "5 max",
+    pro: "Illimitées",
+    enterprise: "Illimitées"
+  },
+  {
+    feature: "Gestion des stocks",
+    starter: false,
+    pro: true,
+    enterprise: true
+  },
+  {
+    feature: "Statistiques avancées",
+    starter: false,
+    pro: true,
+    enterprise: true
+  },
+  {
+    feature: "Site web personnalisé",
+    starter: false,
+    pro: true,
+    enterprise: true
+  },
+  {
+    feature: "Multi-établissements",
+    starter: false,
+    pro: false,
+    enterprise: true
+  },
+  {
+    feature: "API personnalisée",
+    starter: false,
+    pro: false,
+    enterprise: true
+  },
+  {
+    feature: "Support",
+    starter: "Email",
+    pro: "Prioritaire",
+    enterprise: "Dédié 24/7"
+  }
+];
