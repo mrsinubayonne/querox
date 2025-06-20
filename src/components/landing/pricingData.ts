@@ -13,7 +13,7 @@ export const plans = [
       "Support email"
     ],
     popular: false,
-    cta: "Commencer",
+    cta: "Choisir Starter",
     tier: "starter"
   },
   {
@@ -47,7 +47,7 @@ export const plans = [
       "Support dédié 24/7"
     ],
     popular: false,
-    cta: "Contactez-nous",
+    cta: "Choisir Entreprise",
     tier: "pro"
   }
 ];
