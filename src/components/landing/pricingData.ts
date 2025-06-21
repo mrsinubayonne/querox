@@ -4,6 +4,8 @@ export const plans = [
     name: "Starter",
     price: "20 000",
     period: "FCFA/mois",
+    annualPrice: "200 000",
+    annualPeriod: "FCFA/an",
     description: "Parfait pour débuter avec les fonctionnalités essentielles",
     features: [
       "Menu numérique interactif",
@@ -20,6 +22,8 @@ export const plans = [
     name: "Professionnel",
     price: "35 000",
     period: "FCFA/mois",
+    annualPrice: "350 000",
+    annualPeriod: "FCFA/an",
     description: "Idéal pour les restaurants en croissance",
     features: [
       "Toutes les fonctionnalités Starter",
@@ -37,6 +41,8 @@ export const plans = [
     name: "Entreprise",
     price: "40 000",
     period: "FCFA/mois",
+    annualPrice: "400 000",
+    annualPeriod: "FCFA/an",
     description: "Pour les chaînes et grandes structures",
     features: [
       "Toutes les fonctionnalités Pro",
@@ -49,6 +55,25 @@ export const plans = [
     popular: false,
     cta: "Choisir Entreprise",
     tier: "pro"
+  },
+  {
+    name: "LICENCE QUEROX",
+    price: "Sur devis",
+    period: "",
+    description: "Solution personnalisée sans abonnement mensuel",
+    features: [
+      "Licence perpétuelle",
+      "Installation sur vos serveurs",
+      "Personnalisation complète",
+      "Formation dédiée",
+      "Support technique inclus",
+      "Pas d'abonnement mensuel"
+    ],
+    popular: false,
+    cta: "Contacter sur WhatsApp",
+    tier: "licence",
+    isWhatsApp: true,
+    whatsappNumber: "+242064563021"
   }
 ];
 
@@ -57,60 +82,70 @@ export const featureComparison = [
     feature: "Menu numérique interactif",
     starter: true,
     pro: true,
-    enterprise: true
+    enterprise: true,
+    licence: true
   },
   {
     feature: "QR Code personnalisé",
     starter: true,
     pro: true,
-    enterprise: true
+    enterprise: true,
+    licence: true
   },
   {
     feature: "Gestion des commandes",
     starter: true,
     pro: true,
-    enterprise: true
+    enterprise: true,
+    licence: true
   },
   {
     feature: "Catégories de plats",
     starter: "5 max",
     pro: "Illimitées",
-    enterprise: "Illimitées"
+    enterprise: "Illimitées",
+    licence: "Illimitées"
   },
   {
     feature: "Gestion des stocks",
     starter: false,
     pro: true,
-    enterprise: true
+    enterprise: true,
+    licence: true
   },
   {
     feature: "Statistiques avancées",
     starter: false,
     pro: true,
-    enterprise: true
+    enterprise: true,
+    licence: true
   },
   {
     feature: "Site web personnalisé",
     starter: false,
     pro: true,
-    enterprise: true
+    enterprise: true,
+    licence: true
   },
   {
     feature: "Multi-établissements",
     starter: false,
     pro: false,
-    enterprise: true
+    enterprise: true,
+    licence: true
   },
   {
     feature: "API personnalisée",
     starter: false,
     pro: false,
-    enterprise: true
+    enterprise: true,
+    licence: true
   },
   {
     feature: "Support",
     starter: "Email",
     pro: "Prioritaire",
-    enterprise: "Dédié 24/7"
+    enterprise: "Dédié 24/7",
+    licence: "Technique inclus"
   }
 ];

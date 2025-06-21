@@ -26,7 +26,11 @@ interface Subscription {
   updated_at: string;
 }
 
-const ADMIN_EMAIL = 'emmanuelhussinbayonne@gmail.com';
+const ADMIN_EMAILS = [
+  'emmanuelhussinbayonne@gmail.com',
+  'bayonnecastadorkhloe@gmail.com', 
+  'mrsinulion@gmail.com'
+];
 
 const AdminSubscriptions: React.FC = () => {
   const { user } = useAuth();
@@ -52,7 +56,7 @@ const AdminSubscriptions: React.FC = () => {
       return;
     }
 
-    if (user.email === ADMIN_EMAIL) {
+    if (ADMIN_EMAILS.includes(user.email || '')) {
       setIsAuthorized(true);
     } else {
       setIsAuthorized(false);

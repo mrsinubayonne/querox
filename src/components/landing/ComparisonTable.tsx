@@ -30,7 +30,10 @@ const ComparisonTable: React.FC = () => {
                   Professionnel
                 </th>
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">
-                  Enterprise VIP
+                  Entreprise
+                </th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900 bg-yellow-50">
+                  LICENCE QUEROX
                 </th>
               </tr>
             </thead>
@@ -48,6 +51,9 @@ const ComparisonTable: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-center">
                     {renderFeatureValue(item.enterprise)}
+                  </td>
+                  <td className="px-6 py-4 text-center bg-yellow-25">
+                    {renderFeatureValue(item.licence)}
                   </td>
                 </tr>
               ))}
