@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -27,24 +27,40 @@ export const useSubscription = () => {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchSubscription();
-      // Rafraîchir les données toutes les 30 secondes
-      const interval = setInterval(fetchSubscription, 30000);
-      return () => clearInterval(interval);
-    } else {
-      setSubscription(null);
-      setLoading(false);
-    }
+  // Vérifier immédiatement si l'utilisateur est admin
+  const isAdminUser = useCallback(() => {
+    const isAdmin = user && ADMIN_EMAILS.includes(user.email || '');
+    console.log('🔍 Vérification admin immédiate:', {
+      email: user?.email,
+      isAdmin,
+      adminEmails: ADMIN_EMAILS
+    });
+    return isAdmin;
   }, [user]);
 
-  const isAdminUser = () => {
-    return user && ADMIN_EMAILS.includes(user.email || '');
-  };
+  const fetchSubscription = useCallback(async () => {
+    if (!user) {
+      setSubscription(null);
+      setLoading(false);
+      return;
+    }
 
-  const fetchSubscription = async () => {
-    if (!user) return;
+    // Si l'utilisateur est admin, on peut définir immédiatement un état valide
+    if (isAdminUser()) {
+      console.log('✅ Utilisateur admin détecté - configuration immédiate');
+      setSubscription({
+        id: 'admin-override',
+        user_id: user.id,
+        email: user.email || '',
+        subscribed: true,
+        subscription_tier: 'admin',
+        subscription_end: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
       console.log('🔄 Récupération des données d\'abonnement pour:', user.email);
@@ -82,11 +98,6 @@ export const useSubscription = () => {
 
       if (error && error.code !== 'PGRST116') {
         console.error('❌ Erreur lors de la récupération de l\'abonnement:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les informations d'abonnement",
-          variant: "destructive",
-        });
       } else {
         console.log('✅ Données d\'abonnement récupérées:', data);
         setSubscription(data);
@@ -96,7 +107,17 @@ export const useSubscription = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, isAdminUser]);
+
+  useEffect(() => {
+    fetchSubscription();
+    
+    if (user && !isAdminUser()) {
+      // Rafraîchir les données toutes les 30 secondes seulement pour les non-admins
+      const interval = setInterval(fetchSubscription, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [fetchSubscription, user, isAdminUser]);
 
   const createPayment = async (tier: string, amount: number = 1000) => {
     if (!user) {
@@ -169,17 +190,10 @@ export const useSubscription = () => {
     }
   };
 
-  const isSubscriptionActive = () => {
-    console.log('🔍 Vérification de l\'abonnement - Détails complets:', {
-      user: user?.email,
-      userId: user?.id,
-      subscription,
-      isAdmin: isAdminUser()
-    });
-    
-    // Les administrateurs ont toujours accès
+  const isSubscriptionActive = useCallback(() => {
+    // Les administrateurs ont TOUJOURS accès
     if (isAdminUser()) {
-      console.log('✅ Utilisateur administrateur - accès autorisé');
+      console.log('✅ Accès admin accordé immédiatement');
       return true;
     }
     
@@ -218,7 +232,7 @@ export const useSubscription = () => {
     });
     
     return isActive;
-  };
+  }, [subscription, isAdminUser]);
 
   const getDaysRemaining = () => {
     if (!subscription?.subscription_end) return null;
