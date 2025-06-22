@@ -58,6 +58,7 @@ export const useSubscription = () => {
 
       // Si pas trouvé par user_id, chercher par email
       if (!data && !error) {
+        console.log('📧 Recherche par email:', user.email);
         const { data: emailData, error: emailError } = await supabase
           .from('subscribers')
           .select('*')
@@ -169,7 +170,12 @@ export const useSubscription = () => {
   };
 
   const isSubscriptionActive = () => {
-    console.log('🔍 Vérification de l\'abonnement:', subscription);
+    console.log('🔍 Vérification de l\'abonnement - Détails complets:', {
+      user: user?.email,
+      userId: user?.id,
+      subscription,
+      isAdmin: isAdminUser()
+    });
     
     // Les administrateurs ont toujours accès
     if (isAdminUser()) {
@@ -178,17 +184,25 @@ export const useSubscription = () => {
     }
     
     if (!subscription) {
-      console.log('❌ Pas d\'abonnement trouvé');
+      console.log('❌ Pas d\'abonnement trouvé dans la base de données');
       return false;
     }
     
+    console.log('📊 Vérification des détails de l\'abonnement:', {
+      subscribed: subscription.subscribed,
+      subscription_tier: subscription.subscription_tier,
+      subscription_end: subscription.subscription_end,
+      email: subscription.email,
+      user_id: subscription.user_id
+    });
+    
     if (!subscription.subscribed) {
-      console.log('❌ Abonnement marqué comme inactif');
+      console.log('❌ Abonnement marqué comme inactif (subscribed=false)');
       return false;
     }
     
     if (!subscription.subscription_end) {
-      console.log('✅ Abonnement permanent actif');
+      console.log('✅ Abonnement permanent actif (pas de date de fin)');
       return true;
     }
     
@@ -199,7 +213,8 @@ export const useSubscription = () => {
     console.log('📅 Vérification de la date d\'expiration:', {
       endDate: endDate.toISOString(),
       now: now.toISOString(),
-      isActive
+      isActive,
+      daysRemaining: Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     });
     
     return isActive;

@@ -20,11 +20,25 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   const { isSubscriptionActive, loading, subscription, refetch, isAdmin } = useSubscription();
   const navigate = useNavigate();
 
-  // Forcer un rafraîchissement au montage du composant
+  // Forcer un rafraîchissement au montage du composant et périodiquement
   useEffect(() => {
     if (user) {
-      console.log('🔄 SubscriptionGuard: Rafraîchissement des données d\'abonnement');
+      console.log('🔄 SubscriptionGuard: Rafraîchissement des données d\'abonnement au montage');
       refetch();
+      
+      // Rafraîchir toutes les 10 secondes pendant les 2 premières minutes
+      const aggressiveRefresh = setInterval(() => {
+        console.log('🔄 SubscriptionGuard: Rafraîchissement agressif');
+        refetch();
+      }, 10000);
+      
+      // Arrêter le rafraîchissement agressif après 2 minutes
+      setTimeout(() => {
+        clearInterval(aggressiveRefresh);
+        console.log('⏹️ Arrêt du rafraîchissement agressif');
+      }, 120000);
+      
+      return () => clearInterval(aggressiveRefresh);
     }
   }, [user, refetch]);
 
@@ -47,6 +61,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   // Informations de débogage dans la console
   console.log('🔍 SubscriptionGuard - État actuel:', {
     user: user?.email,
+    userId: user?.id,
     subscription,
     isSubscriptionActive,
     isAdmin,
@@ -85,16 +100,24 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
               Pour accéder à {feature}, vous devez avoir un abonnement QUEROX actif.
             </p>
             
-            {/* Informations de débogage pour l'utilisateur */}
-            {subscription && (
-              <div className="bg-gray-100 p-3 rounded-lg text-xs text-left">
-                <p><strong>Email:</strong> {subscription.email}</p>
-                <p><strong>Abonné:</strong> {subscription.subscribed ? 'Oui' : 'Non'}</p>
-                <p><strong>Tier:</strong> {subscription.subscription_tier || 'Aucun'}</p>
-                <p><strong>Fin:</strong> {subscription.subscription_end || 'Permanent'}</p>
-                <p><strong>Dernière MAJ:</strong> {new Date(subscription.updated_at).toLocaleString('fr-FR')}</p>
-              </div>
-            )}
+            {/* Informations de débogage détaillées pour l'utilisateur */}
+            <div className="bg-gray-100 p-3 rounded-lg text-xs text-left space-y-2">
+              <p><strong>🔍 Informations de diagnostic :</strong></p>
+              <p><strong>Email:</strong> {user?.email || 'Non défini'}</p>
+              <p><strong>User ID:</strong> {user?.id || 'Non défini'}</p>
+              {subscription ? (
+                <>
+                  <p><strong>Abonnement trouvé:</strong> ✅</p>
+                  <p><strong>Email abonnement:</strong> {subscription.email}</p>
+                  <p><strong>Abonné:</strong> {subscription.subscribed ? '✅ Oui' : '❌ Non'}</p>
+                  <p><strong>Tier:</strong> {subscription.subscription_tier || 'Aucun'}</p>
+                  <p><strong>Fin:</strong> {subscription.subscription_end ? new Date(subscription.subscription_end).toLocaleDateString('fr-FR') : 'Permanent'}</p>
+                  <p><strong>Dernière MAJ:</strong> {new Date(subscription.updated_at).toLocaleString('fr-FR')}</p>
+                </>
+              ) : (
+                <p><strong>Abonnement trouvé:</strong> ❌ Aucun</p>
+              )}
+            </div>
             
             <div className="space-y-2">
               <Button 
