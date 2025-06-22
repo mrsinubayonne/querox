@@ -5,7 +5,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lock, Crown, RefreshCw } from 'lucide-react';
+import { Lock, Crown, RefreshCw, Shield } from 'lucide-react';
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
@@ -17,7 +17,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   feature = "cette fonctionnalité" 
 }) => {
   const { user } = useAuth();
-  const { isSubscriptionActive, loading, subscription, refetch } = useSubscription();
+  const { isSubscriptionActive, loading, subscription, refetch, isAdmin } = useSubscription();
   const navigate = useNavigate();
 
   // Forcer un rafraîchissement au montage du composant
@@ -49,8 +49,24 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     user: user?.email,
     subscription,
     isSubscriptionActive,
+    isAdmin,
     loading
   });
+
+  // Si l'utilisateur est admin, afficher directement le contenu avec un indicateur
+  if (isAdmin) {
+    return (
+      <div className="relative">
+        <div className="fixed top-4 right-4 z-50">
+          <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 shadow-lg">
+            <Shield className="w-3 h-3" />
+            <span>Mode Admin</span>
+          </div>
+        </div>
+        {children}
+      </div>
+    );
+  }
 
   if (!isSubscriptionActive) {
     return (

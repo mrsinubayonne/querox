@@ -15,6 +15,12 @@ interface Subscription {
   updated_at: string;
 }
 
+const ADMIN_EMAILS = [
+  'emmanuelhussinbayonne@gmail.com',
+  'bayonnecastadorkhloe@gmail.com', 
+  'mrsinulion@gmail.com'
+];
+
 export const useSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -32,6 +38,10 @@ export const useSubscription = () => {
       setLoading(false);
     }
   }, [user]);
+
+  const isAdminUser = () => {
+    return user && ADMIN_EMAILS.includes(user.email || '');
+  };
 
   const fetchSubscription = async () => {
     if (!user) return;
@@ -161,6 +171,12 @@ export const useSubscription = () => {
   const isSubscriptionActive = () => {
     console.log('🔍 Vérification de l\'abonnement:', subscription);
     
+    // Les administrateurs ont toujours accès
+    if (isAdminUser()) {
+      console.log('✅ Utilisateur administrateur - accès autorisé');
+      return true;
+    }
+    
     if (!subscription) {
       console.log('❌ Pas d\'abonnement trouvé');
       return false;
@@ -208,5 +224,6 @@ export const useSubscription = () => {
     isSubscriptionActive: isSubscriptionActive(),
     daysRemaining: getDaysRemaining(),
     refetch: fetchSubscription,
+    isAdmin: isAdminUser(),
   };
 };
