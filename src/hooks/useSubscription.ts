@@ -24,6 +24,9 @@ export const useSubscription = () => {
   useEffect(() => {
     if (user) {
       fetchSubscription();
+      // Rafraîchir les données toutes les 30 secondes
+      const interval = setInterval(fetchSubscription, 30000);
+      return () => clearInterval(interval);
     } else {
       setSubscription(null);
       setLoading(false);
@@ -34,24 +37,51 @@ export const useSubscription = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      console.log('🔄 Récupération des données d\'abonnement pour:', user.email);
+      
+      // Chercher d'abord par user_id, puis par email
+      let { data, error } = await supabase
         .from('subscribers')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching subscription:', error);
+      // Si pas trouvé par user_id, chercher par email
+      if (!data && !error) {
+        const { data: emailData, error: emailError } = await supabase
+          .from('subscribers')
+          .select('*')
+          .eq('email', user.email)
+          .maybeSingle();
+        
+        data = emailData;
+        error = emailError;
+        
+        // Si trouvé par email mais pas de user_id, mettre à jour le user_id
+        if (data && !data.user_id) {
+          console.log('📝 Mise à jour du user_id pour l\'abonnement trouvé par email');
+          await supabase
+            .from('subscribers')
+            .update({ user_id: user.id })
+            .eq('id', data.id);
+          
+          data.user_id = user.id;
+        }
+      }
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('❌ Erreur lors de la récupération de l\'abonnement:', error);
         toast({
           title: "Erreur",
           description: "Impossible de charger les informations d'abonnement",
           variant: "destructive",
         });
       } else {
+        console.log('✅ Données d\'abonnement récupérées:', data);
         setSubscription(data);
       }
     } catch (error) {
-      console.error('Error fetching subscription:', error);
+      console.error('💥 Erreur dans fetchSubscription:', error);
     } finally {
       setLoading(false);
     }
@@ -129,10 +159,34 @@ export const useSubscription = () => {
   };
 
   const isSubscriptionActive = () => {
-    if (!subscription || !subscription.subscribed) return false;
-    if (!subscription.subscription_end) return true;
+    console.log('🔍 Vérification de l\'abonnement:', subscription);
     
-    return new Date(subscription.subscription_end) > new Date();
+    if (!subscription) {
+      console.log('❌ Pas d\'abonnement trouvé');
+      return false;
+    }
+    
+    if (!subscription.subscribed) {
+      console.log('❌ Abonnement marqué comme inactif');
+      return false;
+    }
+    
+    if (!subscription.subscription_end) {
+      console.log('✅ Abonnement permanent actif');
+      return true;
+    }
+    
+    const endDate = new Date(subscription.subscription_end);
+    const now = new Date();
+    const isActive = endDate > now;
+    
+    console.log('📅 Vérification de la date d\'expiration:', {
+      endDate: endDate.toISOString(),
+      now: now.toISOString(),
+      isActive
+    });
+    
+    return isActive;
   };
 
   const getDaysRemaining = () => {
