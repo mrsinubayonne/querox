@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useMenuCategories } from '@/hooks/useMenuCategories';
 import ImageUpload from '@/components/ImageUpload';
+import { PREDEFINED_CATEGORIES } from '@/data/menuCategories';
 
 interface MenuItem {
   id: string;
@@ -142,11 +143,28 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
                 <SelectValue placeholder="Sélectionner une catégorie" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
+                {categories.length > 0 && (
+                  <>
+                    <SelectItem value="" disabled className="font-semibold text-gray-500">
+                      Vos catégories existantes
+                    </SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+                <SelectItem value="" disabled className="font-semibold text-gray-500 border-t pt-2 mt-2">
+                  Catégories suggérées
+                </SelectItem>
+                {PREDEFINED_CATEGORIES
+                  .filter(predefined => !categories.some(cat => cat.name.toLowerCase() === predefined.toLowerCase()))
+                  .map((categoryName) => (
+                    <SelectItem key={`predefined-${categoryName}`} value={`predefined-${categoryName}`}>
+                      {categoryName}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
