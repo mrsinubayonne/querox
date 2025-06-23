@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -82,14 +83,6 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
     }));
   };
 
-  // Combine existing categories with predefined ones, removing duplicates
-  const allCategoryOptions = [
-    ...categories.map(cat => ({ id: cat.id, name: cat.name, isExisting: true })),
-    ...PREDEFINED_CATEGORIES
-      .filter(predefined => !categories.some(cat => cat.name.toLowerCase() === predefined.toLowerCase()))
-      .map(name => ({ id: `predefined-${name}`, name, isExisting: false }))
-  ];
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
@@ -132,7 +125,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
               <SelectContent>
                 {categories.length > 0 && (
                   <>
-                    <SelectItem value="" disabled className="font-semibold text-gray-500">
+                    <SelectItem value="header-existing" disabled className="font-semibold text-gray-500">
                       Vos catégories existantes
                     </SelectItem>
                     {categories.map((category) => (
@@ -142,7 +135,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
                     ))}
                   </>
                 )}
-                <SelectItem value="" disabled className="font-semibold text-gray-500 border-t pt-2 mt-2">
+                <SelectItem value="header-suggested" disabled className="font-semibold text-gray-500 border-t pt-2 mt-2">
                   Catégories suggérées
                 </SelectItem>
                 {PREDEFINED_CATEGORIES

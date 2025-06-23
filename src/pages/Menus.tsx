@@ -15,11 +15,10 @@ const Menus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { menus, loading } = useMenusList();
-  // On prend le premier menu comme actif par défaut (vous pouvez affiner selon la logique d'activation)
+  // Utilise automatiquement le premier menu (menu principal) par défaut
   const activeMenu = menus && menus.length > 0 ? menus[0] : null;
 
   const handleAddItem = () => {
-    // Cette logique reste inchangée.
     console.log("Add item clicked");
   };
 
@@ -70,4 +69,3 @@ const Menus: React.FC = () => {
 };
 
 export default Menus;
-

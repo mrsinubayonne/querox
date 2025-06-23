@@ -145,7 +145,7 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
               <SelectContent>
                 {categories.length > 0 && (
                   <>
-                    <SelectItem value="" disabled className="font-semibold text-gray-500">
+                    <SelectItem value="header-existing" disabled className="font-semibold text-gray-500">
                       Vos catégories existantes
                     </SelectItem>
                     {categories.map((category) => (
@@ -155,7 +155,7 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
                     ))}
                   </>
                 )}
-                <SelectItem value="" disabled className="font-semibold text-gray-500 border-t pt-2 mt-2">
+                <SelectItem value="header-suggested" disabled className="font-semibold text-gray-500 border-t pt-2 mt-2">
                   Catégories suggérées
                 </SelectItem>
                 {PREDEFINED_CATEGORIES
