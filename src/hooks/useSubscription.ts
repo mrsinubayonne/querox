@@ -40,17 +40,10 @@ export const useSubscription = () => {
 
   const fetchSubscription = useCallback(async () => {
     if (!user) {
-      console.log('❌ Pas d\'utilisateur connecté');
       setSubscription(null);
       setLoading(false);
       return;
     }
-
-    console.log('🔄 fetchSubscription démarré pour:', {
-      email: user.email,
-      userId: user.id,
-      isAdmin: isAdminUser()
-    });
 
     // Si l'utilisateur est admin, on peut définir immédiatement un état valide
     if (isAdminUser()) {
@@ -70,75 +63,58 @@ export const useSubscription = () => {
     }
 
     try {
-      console.log('🔄 Récupération des données d\'abonnement pour utilisateur non-admin');
+      console.log('🔄 Récupération des données d\'abonnement pour:', user.email);
       
-      // Stratégie améliorée : chercher d'abord par email (plus fiable)
+      // Chercher d'abord par user_id, puis par email
       let { data, error } = await supabase
         .from('subscribers')
         .select('*')
-        .eq('email', user.email)
+        .eq('user_id', user.id)
         .maybeSingle();
 
-      console.log('📧 Résultat recherche par email:', { data, error, email: user.email });
-
-      // Si pas trouvé par email, chercher par user_id
+      // Si pas trouvé par user_id, chercher par email
       if (!data && !error) {
-        console.log('🆔 Recherche par user_id:', user.id);
-        const { data: userIdData, error: userIdError } = await supabase
+        console.log('📧 Recherche par email:', user.email);
+        const { data: emailData, error: emailError } = await supabase
           .from('subscribers')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('email', user.email)
           .maybeSingle();
         
-        data = userIdData;
-        error = userIdError;
-        console.log('📊 Résultat recherche par user_id:', { data, error });
-      }
-
-      // Si trouvé mais pas de user_id, mettre à jour le user_id
-      if (data && !data.user_id) {
-        console.log('📝 Mise à jour du user_id pour l\'abonnement trouvé');
-        const { error: updateError } = await supabase
-          .from('subscribers')
-          .update({ 
-            user_id: user.id,
-            updated_at: new Date().toISOString() 
-          })
-          .eq('id', data.id);
+        data = emailData;
+        error = emailError;
         
-        if (!updateError) {
+        // Si trouvé par email mais pas de user_id, mettre à jour le user_id
+        if (data && !data.user_id) {
+          console.log('📝 Mise à jour du user_id pour l\'abonnement trouvé par email');
+          await supabase
+            .from('subscribers')
+            .update({ user_id: user.id })
+            .eq('id', data.id);
+          
           data.user_id = user.id;
-          console.log('✅ user_id mis à jour avec succès');
-        } else {
-          console.error('❌ Erreur lors de la mise à jour du user_id:', updateError);
         }
       }
 
       if (error && error.code !== 'PGRST116') {
         console.error('❌ Erreur lors de la récupération de l\'abonnement:', error);
-        throw error;
       } else {
         console.log('✅ Données d\'abonnement récupérées:', data);
         setSubscription(data);
       }
     } catch (error) {
       console.error('💥 Erreur dans fetchSubscription:', error);
-      // En cas d'erreur, on garde l'ancien état plutôt que de tout effacer
     } finally {
       setLoading(false);
     }
   }, [user, isAdminUser]);
 
   useEffect(() => {
-    console.log('🔄 useEffect fetchSubscription déclenché');
     fetchSubscription();
     
     if (user && !isAdminUser()) {
       // Rafraîchir les données toutes les 30 secondes seulement pour les non-admins
-      const interval = setInterval(() => {
-        console.log('⏰ Rafraîchissement automatique des données d\'abonnement');
-        fetchSubscription();
-      }, 30000);
+      const interval = setInterval(fetchSubscription, 30000);
       return () => clearInterval(interval);
     }
   }, [fetchSubscription, user, isAdminUser]);
@@ -215,12 +191,6 @@ export const useSubscription = () => {
   };
 
   const isSubscriptionActive = useCallback(() => {
-    console.log('🔍 isSubscriptionActive appelé avec:', {
-      isAdmin: isAdminUser(),
-      subscription,
-      userEmail: user?.email
-    });
-
     // Les administrateurs ont TOUJOURS accès
     if (isAdminUser()) {
       console.log('✅ Accès admin accordé immédiatement');
@@ -262,7 +232,7 @@ export const useSubscription = () => {
     });
     
     return isActive;
-  }, [subscription, isAdminUser, user]);
+  }, [subscription, isAdminUser]);
 
   const getDaysRemaining = () => {
     if (!subscription?.subscription_end) return null;
@@ -275,7 +245,7 @@ export const useSubscription = () => {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  const result = {
+  return {
     subscription,
     loading,
     createPayment,
@@ -285,13 +255,4 @@ export const useSubscription = () => {
     refetch: fetchSubscription,
     isAdmin: isAdminUser(),
   };
-
-  console.log('📤 useSubscription retourne:', {
-    subscription: result.subscription,
-    loading: result.loading,
-    isSubscriptionActive: result.isSubscriptionActive,
-    isAdmin: result.isAdmin
-  });
-
-  return result;
 };
