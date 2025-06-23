@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, Calendar, Crown, AlertTriangle } from 'lucide-react';
+import { UserPlus, Calendar, Crown, AlertTriangle, RefreshCw } from 'lucide-react';
 import ModernSidebar from '@/components/ModernSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -37,7 +37,9 @@ const AdminSubscriptions: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchingSubscriptions, setFetchingSubscriptions] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,14 +53,21 @@ const AdminSubscriptions: React.FC = () => {
   }, [isAuthorized]);
 
   const checkAuthorization = () => {
+    console.log('🔍 AdminSubscriptions - Vérification des autorisations');
+    console.log('🔍 Utilisateur actuel:', user?.email);
+    console.log('🔍 Emails admin autorisés:', ADMIN_EMAILS);
+    
     if (!user) {
+      console.log('❌ Aucun utilisateur connecté');
       setLoading(false);
       return;
     }
 
     if (ADMIN_EMAILS.includes(user.email || '')) {
+      console.log('✅ Utilisateur autorisé comme admin');
       setIsAuthorized(true);
     } else {
+      console.log('❌ Utilisateur non autorisé');
       setIsAuthorized(false);
       toast({
         title: "Accès refusé",
@@ -70,24 +79,54 @@ const AdminSubscriptions: React.FC = () => {
   };
 
   const fetchSubscriptions = async () => {
+    console.log('🔄 AdminSubscriptions - Début du chargement des abonnements');
+    setFetchingSubscriptions(true);
+    setError(null);
+    
     try {
-      const { data, error } = await supabase
+      console.log('📡 Requête vers la table subscribers...');
+      
+      const { data, error, count } = await supabase
         .from('subscribers')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('📊 Résultat de la requête:', {
+        data: data,
+        error: error,
+        count: count,
+        dataLength: data?.length
+      });
+
+      if (error) {
+        console.error('❌ Erreur Supabase:', error);
+        throw error;
+      }
+
+      console.log('✅ Abonnements récupérés avec succès:', data?.length || 0);
       setSubscriptions(data || []);
-    } catch (error) {
-      console.error('Erreur lors du chargement des abonnements:', error);
+      
+      if (data && data.length === 0) {
+        console.log('ℹ️ Aucun abonnement trouvé dans la base de données');
+      }
+      
+    } catch (error: any) {
+      console.error('💥 Erreur lors du chargement des abonnements:', error);
+      setError(error.message || 'Erreur inconnue');
       toast({
         title: "Erreur",
-        description: "Impossible de charger les abonnements",
+        description: `Impossible de charger les abonnements: ${error.message}`,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
+      setFetchingSubscriptions(false);
     }
+  };
+
+  const handleRefreshSubscriptions = () => {
+    console.log('🔄 Rafraîchissement manuel des abonnements');
+    fetchSubscriptions();
   };
 
   if (loading) {
@@ -121,9 +160,51 @@ const AdminSubscriptions: React.FC = () => {
         <div className="p-8">
           <AdminHeader userEmail={user?.email} />
           
+          {error && (
+            <Card className="mb-6 border-red-200 bg-red-50">
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                  <div>
+                    <p className="text-red-800 font-medium">Erreur de chargement</p>
+                    <p className="text-red-600 text-sm">{error}</p>
+                    <Button 
+                      onClick={handleRefreshSubscriptions}
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2"
+                      disabled={fetchingSubscriptions}
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${fetchingSubscriptions ? 'animate-spin' : ''}`} />
+                      Réessayer
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
           <SubscriptionForm 
             onSubscriptionCreated={fetchSubscriptions}
           />
+
+          <div className="mb-4 flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <h2 className="text-xl font-semibold">Abonnements</h2>
+              {fetchingSubscriptions && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              )}
+            </div>
+            <Button 
+              onClick={handleRefreshSubscriptions}
+              variant="outline" 
+              size="sm"
+              disabled={fetchingSubscriptions}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${fetchingSubscriptions ? 'animate-spin' : ''}`} />
+              Actualiser
+            </Button>
+          </div>
 
           <SubscriptionsList 
             subscriptions={subscriptions}
