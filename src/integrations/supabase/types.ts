@@ -51,6 +51,51 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          capacity: number
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+          location: string
+          registered: number
+          status: string
+          time: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          date: string
+          description?: string | null
+          id?: string
+          location: string
+          registered?: number
+          status?: string
+          time: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          location?: string
+          registered?: number
+          status?: string
+          time?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       inventory_items: {
         Row: {
           category: string
