@@ -56,7 +56,7 @@ export const useInventory = () => {
     }
   };
 
-  const createItem = async (itemData: Partial<InventoryItem>) => {
+  const createItem = async (itemData: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
       toast({
         title: "Erreur",
@@ -69,7 +69,13 @@ export const useInventory = () => {
     try {
       const { data, error } = await supabase
         .from('inventory_items')
-        .insert([{ ...itemData, user_id: user.id }])
+        .insert({ 
+          ...itemData, 
+          user_id: user.id,
+          current_stock: itemData.current_stock || 0,
+          min_stock: itemData.min_stock || 0,
+          unit: itemData.unit || 'pcs'
+        })
         .select()
         .single();
 

@@ -3,12 +3,29 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { Order as BaseOrder } from '@/components/orders/OrderCard';
 
-export type Order = BaseOrder & {
+interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface Order {
+  id: string;
+  customer_name: string;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  items: OrderItem[];
+  total_amount: number;
+  status: string;
+  notes?: string | null;
+  delivery_address?: string | null;
+  delivery_time?: string | null;
+  created_at: string;
   table_number?: string | null;
   order_type?: string | null;
-};
+}
 
 export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -36,12 +53,12 @@ export const useOrders = () => {
         throw error;
       }
 
-      const transformedOrders = (data || []).map(order => ({
+      const transformedOrders: Order[] = (data || []).map(order => ({
         id: order.id,
         customer_name: order.customer_name,
         customer_email: order.customer_email,
         customer_phone: order.customer_phone,
-        items: order.items || [],
+        items: Array.isArray(order.items) ? order.items as OrderItem[] : [],
         total_amount: Number(order.total_amount),
         status: order.status,
         notes: order.notes,
@@ -80,3 +97,5 @@ export const useOrders = () => {
     refetch
   };
 };
+
+export type { Order };

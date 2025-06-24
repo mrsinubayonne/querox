@@ -56,7 +56,7 @@ export const useCustomers = () => {
     }
   };
 
-  const createCustomer = async (customerData: Partial<Customer>) => {
+  const createCustomer = async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
       toast({
         title: "Erreur",
@@ -69,7 +69,12 @@ export const useCustomers = () => {
     try {
       const { data, error } = await supabase
         .from('customers')
-        .insert({ ...customerData, user_id: user.id })
+        .insert({ 
+          ...customerData, 
+          user_id: user.id,
+          total_visits: customerData.total_visits || 0,
+          total_spent: customerData.total_spent || 0
+        })
         .select()
         .single();
 

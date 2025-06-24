@@ -13,7 +13,7 @@ interface Event {
   location: string;
   capacity: number;
   registered: number;
-  status: 'Ouvert' | 'En cours' | 'Confirmé' | 'Complet' | 'Annulé';
+  status: string;
   created_at: string;
   updated_at: string;
   user_id: string;
