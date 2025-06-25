@@ -66,7 +66,7 @@ export const useTransactions = () => {
     }
   };
 
-  const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'created_at' | 'user_id'>) => {
+  const createTransaction = async (transactionData: Omit<Transaction, 'id' | 'created_at' | 'user_id'>) => {
     if (!user) return false;
 
     try {
@@ -120,7 +120,8 @@ export const useTransactions = () => {
   return {
     transactions,
     loading,
-    addTransaction,
+    createTransaction,
+    addTransaction: createTransaction, // Keep both names for backward compatibility
     refetch: fetchTransactions,
   };
 };

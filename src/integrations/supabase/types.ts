@@ -583,12 +583,31 @@ export type Database = {
       websites: {
         Row: {
           address: string | null
+          contact_subtitle: string | null
+          contact_title: string | null
           created_at: string
           custom_css: string | null
           description: string | null
+          dish1_image_url: string | null
+          dish1_name: string | null
+          dish1_price: string | null
+          dish1_rating: string | null
+          dish2_image_url: string | null
+          dish2_name: string | null
+          dish2_price: string | null
+          dish2_rating: string | null
+          dish3_image_url: string | null
+          dish3_name: string | null
+          dish3_price: string | null
+          dish3_rating: string | null
           domain: string | null
           email: string | null
           header_image_url: string | null
+          hero_button_primary: string | null
+          hero_button_secondary: string | null
+          hero_image_url: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
           id: string
           is_published: boolean | null
           logo_url: string | null
@@ -601,18 +620,43 @@ export type Database = {
           seo_title: string | null
           slug: string
           social_links: Json | null
+          specialities_subtitle: string | null
+          specialities_title: string | null
+          stats_clients: string | null
+          stats_dishes: string | null
+          stats_experience: string | null
+          stats_rating: string | null
           template_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           address?: string | null
+          contact_subtitle?: string | null
+          contact_title?: string | null
           created_at?: string
           custom_css?: string | null
           description?: string | null
+          dish1_image_url?: string | null
+          dish1_name?: string | null
+          dish1_price?: string | null
+          dish1_rating?: string | null
+          dish2_image_url?: string | null
+          dish2_name?: string | null
+          dish2_price?: string | null
+          dish2_rating?: string | null
+          dish3_image_url?: string | null
+          dish3_name?: string | null
+          dish3_price?: string | null
+          dish3_rating?: string | null
           domain?: string | null
           email?: string | null
           header_image_url?: string | null
+          hero_button_primary?: string | null
+          hero_button_secondary?: string | null
+          hero_image_url?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
           id?: string
           is_published?: boolean | null
           logo_url?: string | null
@@ -625,18 +669,43 @@ export type Database = {
           seo_title?: string | null
           slug: string
           social_links?: Json | null
+          specialities_subtitle?: string | null
+          specialities_title?: string | null
+          stats_clients?: string | null
+          stats_dishes?: string | null
+          stats_experience?: string | null
+          stats_rating?: string | null
           template_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           address?: string | null
+          contact_subtitle?: string | null
+          contact_title?: string | null
           created_at?: string
           custom_css?: string | null
           description?: string | null
+          dish1_image_url?: string | null
+          dish1_name?: string | null
+          dish1_price?: string | null
+          dish1_rating?: string | null
+          dish2_image_url?: string | null
+          dish2_name?: string | null
+          dish2_price?: string | null
+          dish2_rating?: string | null
+          dish3_image_url?: string | null
+          dish3_name?: string | null
+          dish3_price?: string | null
+          dish3_rating?: string | null
           domain?: string | null
           email?: string | null
           header_image_url?: string | null
+          hero_button_primary?: string | null
+          hero_button_secondary?: string | null
+          hero_image_url?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
           id?: string
           is_published?: boolean | null
           logo_url?: string | null
@@ -649,6 +718,12 @@ export type Database = {
           seo_title?: string | null
           slug?: string
           social_links?: Json | null
+          specialities_subtitle?: string | null
+          specialities_title?: string | null
+          stats_clients?: string | null
+          stats_dishes?: string | null
+          stats_experience?: string | null
+          stats_rating?: string | null
           template_id?: string | null
           updated_at?: string
           user_id?: string

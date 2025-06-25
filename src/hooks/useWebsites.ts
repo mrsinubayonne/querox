@@ -27,6 +27,43 @@ interface Website {
   created_at: string;
   updated_at: string;
   user_id: string;
+  
+  // Hero section
+  hero_title?: string;
+  hero_subtitle?: string;
+  hero_image_url?: string;
+  hero_button_primary?: string;
+  hero_button_secondary?: string;
+  
+  // Stats section
+  stats_experience?: string;
+  stats_clients?: string;
+  stats_dishes?: string;
+  stats_rating?: string;
+  
+  // Specialities section
+  specialities_title?: string;
+  specialities_subtitle?: string;
+  
+  // Dishes
+  dish1_name?: string;
+  dish1_price?: string;
+  dish1_rating?: string;
+  dish1_image_url?: string;
+  
+  dish2_name?: string;
+  dish2_price?: string;
+  dish2_rating?: string;
+  dish2_image_url?: string;
+  
+  dish3_name?: string;
+  dish3_price?: string;
+  dish3_rating?: string;
+  dish3_image_url?: string;
+  
+  // Contact section
+  contact_title?: string;
+  contact_subtitle?: string;
 }
 
 interface WebsiteFormData {
