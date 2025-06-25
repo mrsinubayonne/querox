@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Save, Restaurant } from 'lucide-react';
+import { Save, Store } from 'lucide-react';
 
 interface RestaurantSettings {
   restaurant_name: string;
@@ -124,7 +123,7 @@ const RestaurantNameTab: React.FC = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Restaurant className="h-5 w-5 text-emerald-500" />
+            <Store className="h-5 w-5 text-emerald-500" />
             <div>
               <CardTitle>Informations générales</CardTitle>
               <CardDescription>Configurez les informations de base de votre restaurant</CardDescription>
