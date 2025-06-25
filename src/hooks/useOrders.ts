@@ -58,7 +58,7 @@ export const useOrders = () => {
         customer_name: order.customer_name,
         customer_email: order.customer_email,
         customer_phone: order.customer_phone,
-        items: Array.isArray(order.items) ? order.items as OrderItem[] : [],
+        items: Array.isArray(order.items) ? (order.items as unknown as OrderItem[]) : [],
         total_amount: Number(order.total_amount),
         status: order.status,
         notes: order.notes,

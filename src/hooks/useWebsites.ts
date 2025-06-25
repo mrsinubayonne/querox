@@ -1,91 +1,56 @@
+
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-export interface Website {
+interface Website {
   id: string;
-  user_id: string;
   name: string;
+  slug: string;
+  description?: string;
+  is_published: boolean;
   domain?: string;
   logo_url?: string;
+  header_image_url?: string;
   primary_color: string;
   secondary_color: string;
-  description?: string;
+  template_id: string;
   address?: string;
   phone?: string;
   email?: string;
-  opening_hours: any;
-  social_links: any;
-  is_published: boolean;
-  template_id: string;
+  opening_hours?: any;
+  social_links?: any;
   custom_css?: string;
   seo_title?: string;
   seo_description?: string;
   created_at: string;
   updated_at: string;
-  slug: string; // <-- Add slug
-
-  // New customizable fields
-  hero_title?: string;
-  hero_subtitle?: string;
-  hero_image_url?: string;
-  hero_button_primary?: string;
-  hero_button_secondary?: string;
-  
-  stats_experience?: string;
-  stats_clients?: string;
-  stats_dishes?: string;
-  stats_rating?: string;
-  
-  specialities_title?: string;
-  specialities_subtitle?: string;
-  dish1_name?: string;
-  dish1_price?: string;
-  dish1_rating?: string;
-  dish1_image_url?: string;
-  dish2_name?: string;
-  dish2_price?: string;
-  dish2_rating?: string;
-  dish2_image_url?: string;
-  dish3_name?: string;
-  dish3_price?: string;
-  dish3_rating?: string;
-  dish3_image_url?: string;
-  
-  contact_title?: string;
-  contact_subtitle?: string;
+  user_id: string;
 }
 
-export interface WebsiteFormData {
+interface WebsiteFormData {
   name: string;
   description?: string;
   address?: string;
   phone?: string;
   email?: string;
-  template_id?: string;
-  primary_color?: string;
-  secondary_color?: string;
 }
 
 export const useWebsites = () => {
-  const [websites, setWebsites] = useState<Website[]>([]);
-  const [currentWebsite, setCurrentWebsite] = useState<Website | null>(null);
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [websites, setWebsites] = useState<Website[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchWebsites = async () => {
     if (!user) {
       setWebsites([]);
-      setCurrentWebsite(null);
       setLoading(false);
       return;
     }
 
     try {
-      console.log('Fetching websites for user:', user.id);
-      setLoading(true);
       const { data, error } = await supabase
         .from('websites')
         .select('*')
@@ -94,142 +59,59 @@ export const useWebsites = () => {
 
       if (error) {
         console.error('Error fetching websites:', error);
-        throw error;
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les sites web",
+          variant: "destructive",
+        });
+      } else {
+        setWebsites(data || []);
       }
-
-      console.log('Websites fetched:', data);
-      setWebsites(data || []);
-      
-      // Set the first website as current if none is set
-      if (data && data.length > 0 && !currentWebsite) {
-        setCurrentWebsite(data[0]);
-      }
-    } catch (error: any) {
-      console.error('Websites fetch error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les sites web",
-        variant: "destructive"
-      });
-      setWebsites([]);
+    } catch (error) {
+      console.error('Error fetching websites:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const createWebsite = async (websiteData: WebsiteFormData) => {
-    if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour créer un site web",
-        variant: "destructive"
-      });
-      return false;
-    }
+    if (!user) return false;
 
     try {
-      console.log('Creating website with data:', websiteData);
+      const slug = websiteData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       
       const { data, error } = await supabase
         .from('websites')
-        .insert([{ 
-          ...websiteData, 
+        .insert({
+          ...websiteData,
           user_id: user.id,
-          primary_color: websiteData.primary_color || '#3B82F6',
-          secondary_color: websiteData.secondary_color || '#EF4444',
-          template_id: websiteData.template_id || 'modern'
-        }])
+          slug: slug,
+          primary_color: '#3B82F6',
+          secondary_color: '#EF4444',
+          template_id: 'modern',
+        })
         .select()
         .single();
 
       if (error) {
         console.error('Error creating website:', error);
-        throw error;
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer le site web",
+          variant: "destructive",
+        });
+        return false;
+      } else {
+        setWebsites(prev => [data, ...prev]);
+        toast({
+          title: "Succès",
+          description: "Site web créé avec succès",
+        });
+        return data;
       }
-
-      console.log('Website created successfully:', data);
-
-      // Create default pages for the website
-      await createDefaultPages(data.id);
-
-      // Update the websites list and current website
-      setWebsites(prev => [data, ...prev]);
-      setCurrentWebsite(data);
-      
-      toast({
-        title: "Succès",
-        description: `Site web "${data.name}" créé avec succès !`,
-      });
-
-      return data;
-    } catch (error: any) {
-      console.error('Website creation error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer le site web",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  const createDefaultPages = async (websiteId: string) => {
-    try {
-      console.log('Creating default pages for website:', websiteId);
-      
-      const defaultPages = [
-        {
-          website_id: websiteId,
-          page_type: 'home',
-          title: 'Accueil',
-          content: {
-            hero_title: 'Bienvenue dans notre restaurant',
-            hero_subtitle: 'Une expérience culinaire exceptionnelle vous attend'
-          },
-          order_index: 1
-        },
-        {
-          website_id: websiteId,
-          page_type: 'menu',
-          title: 'Notre Menu',
-          content: {
-            description: 'Découvrez nos spécialités culinaires'
-          },
-          order_index: 2
-        },
-        {
-          website_id: websiteId,
-          page_type: 'about',
-          title: 'À Propos',
-          content: {
-            description: 'L\'histoire de notre restaurant'
-          },
-          order_index: 3
-        },
-        {
-          website_id: websiteId,
-          page_type: 'contact',
-          title: 'Contact',
-          content: {
-            description: 'Contactez-nous pour vos réservations'
-          },
-          order_index: 4
-        }
-      ];
-
-      const { error } = await supabase
-        .from('website_pages')
-        .insert(defaultPages);
-
-      if (error) {
-        console.error('Error creating default pages:', error);
-        throw error;
-      }
-
-      console.log('Default pages created successfully');
     } catch (error) {
-      console.error('Error in createDefaultPages:', error);
-      // Don't throw here to avoid breaking the website creation process
+      console.error('Error creating website:', error);
+      return false;
     }
   };
 
@@ -237,88 +119,85 @@ export const useWebsites = () => {
     if (!user) return false;
 
     try {
-      console.log('Updating website:', id, 'with:', updates);
-
-      // Slug must be lowercase and use only valid chars if present
-      if ('slug' in updates && updates.slug) {
-        updates.slug = updates.slug
-          .toLowerCase()
-          .replace(/[^a-z0-9-]/g, '-')
-          .replace(/--+/g, '-')
-          .replace(/^-*|-*$/g, '');
-      }
-
       const { data, error } = await supabase
         .from('websites')
-        .update(updates)
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
+        .eq('user_id', user.id)
         .select()
         .single();
 
-      if (error) throw error;
-
-      console.log('Website updated successfully:', data);
-
-      setWebsites(prev => prev.map(website => website.id === id ? data : website));
-      if (currentWebsite && currentWebsite.id === id) {
-        setCurrentWebsite(data);
+      if (error) {
+        console.error('Error updating website:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de modifier le site web",
+          variant: "destructive",
+        });
+        return false;
+      } else {
+        setWebsites(prev => prev.map(website => 
+          website.id === id ? data : website
+        ));
+        toast({
+          title: "Succès",
+          description: "Site web modifié avec succès",
+        });
+        return data;
       }
-      
-      toast({
-        title: "Succès",
-        description: "Site web mis à jour avec succès"
-      });
-
-      return data;
-    } catch (error: any) {
-      console.error('Update error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le site web",
-        variant: "destructive"
-      });
+    } catch (error) {
+      console.error('Error updating website:', error);
       return false;
     }
   };
 
-  const publishWebsite = async (id: string) => {
-    const result = await updateWebsite(id, { is_published: true });
-    if (result) {
-      toast({
-        title: "Site publié",
-        description: "Votre site web est maintenant en ligne !",
-      });
-    }
-    return result;
-  };
+  const deleteWebsite = async (id: string) => {
+    if (!user) return false;
 
-  const unpublishWebsite = async (id: string) => {
-    const result = await updateWebsite(id, { is_published: false });
-    if (result) {
-      toast({
-        title: "Site dépublié",
-        description: "Votre site web n'est plus en ligne",
-        variant: "destructive"
-      });
+    try {
+      const { error } = await supabase
+        .from('websites')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting website:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer le site web",
+          variant: "destructive",
+        });
+        return false;
+      } else {
+        setWebsites(prev => prev.filter(website => website.id !== id));
+        toast({
+          title: "Succès",
+          description: "Site web supprimé avec succès",
+        });
+        return true;
+      }
+    } catch (error) {
+      console.error('Error deleting website:', error);
+      return false;
     }
-    return result;
   };
 
   useEffect(() => {
-    if (user) {
-      fetchWebsites();
-    }
+    fetchWebsites();
   }, [user]);
 
   return {
     websites,
-    currentWebsite,
-    setCurrentWebsite,
     loading,
-    fetchWebsites,
     createWebsite,
     updateWebsite,
-    publishWebsite,
-    unpublishWebsite
+    deleteWebsite,
+    refetch: fetchWebsites,
   };
 };
+
+export type { Website, WebsiteFormData };

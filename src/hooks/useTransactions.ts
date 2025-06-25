@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface Transaction {
@@ -14,13 +14,14 @@ interface Transaction {
   status: 'pending' | 'completed' | 'cancelled';
   description?: string;
   created_at: string;
+  user_id: string;
 }
 
 export const useTransactions = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchTransactions = async () => {
     if (!user) {
@@ -28,113 +29,88 @@ export const useTransactions = () => {
       setLoading(false);
       return;
     }
-    
+
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
+        .eq('user_id', user.id)
         .order('date', { ascending: false });
 
       if (error) {
         console.error('Error fetching transactions:', error);
-        throw error;
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les transactions",
+          variant: "destructive",
+        });
+      } else {
+        const transformedTransactions: Transaction[] = (data || []).map(transaction => ({
+          id: transaction.id,
+          title: transaction.title,
+          amount: Number(transaction.amount),
+          type: transaction.type as 'income' | 'expense',
+          category: transaction.category,
+          date: transaction.date,
+          status: transaction.status as 'pending' | 'completed' | 'cancelled',
+          description: transaction.description,
+          created_at: transaction.created_at,
+          user_id: transaction.user_id,
+        }));
+        setTransactions(transformedTransactions);
       }
-      
-      setTransactions(data || []);
-    } catch (error: any) {
-      console.error('Transaction fetch error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les transactions",
-        variant: "destructive"
-      });
-      setTransactions([]);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const createTransaction = async (transactionData: Partial<Transaction>) => {
-    if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour créer une transaction",
-        variant: "destructive"
-      });
-      return false;
-    }
+  const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'created_at' | 'user_id'>) => {
+    if (!user) return false;
 
     try {
       const { data, error } = await supabase
         .from('transactions')
-        .insert([{ ...transactionData, user_id: user.id }])
+        .insert({
+          ...transactionData,
+          user_id: user.id,
+        })
         .select()
         .single();
 
       if (error) {
-        console.error('Error creating transaction:', error);
-        throw error;
+        console.error('Error adding transaction:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible d'ajouter la transaction",
+          variant: "destructive",
+        });
+        return false;
+      } else {
+        const newTransaction: Transaction = {
+          id: data.id,
+          title: data.title,
+          amount: Number(data.amount),
+          type: data.type as 'income' | 'expense',
+          category: data.category,
+          date: data.date,
+          status: data.status as 'pending' | 'completed' | 'cancelled',
+          description: data.description,
+          created_at: data.created_at,
+          user_id: data.user_id,
+        };
+        setTransactions(prev => [newTransaction, ...prev]);
+        toast({
+          title: "Succès",
+          description: "Transaction ajoutée avec succès",
+        });
+        return true;
       }
-      
-      setTransactions(prev => [data, ...prev]);
-      toast({
-        title: "Succès",
-        description: "Transaction créée avec succès"
-      });
-      
-      return data;
-    } catch (error: any) {
-      console.error('Transaction creation error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer la transaction",
-        variant: "destructive"
-      });
+    } catch (error) {
+      console.error('Error adding transaction:', error);
       return false;
     }
-  };
-
-  const getMonthlyStats = () => {
-    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-    const monthlyTransactions = transactions.filter(t => 
-      t.date.startsWith(currentMonth) && t.status === 'completed'
-    );
-
-    const income = monthlyTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const expenses = monthlyTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    return {
-      income,
-      expenses,
-      profit: income - expenses,
-      transactionCount: monthlyTransactions.length
-    };
-  };
-
-  const getCategoryStats = () => {
-    const categories = transactions.reduce((acc, transaction) => {
-      if (transaction.status !== 'completed') return acc;
-      
-      if (!acc[transaction.category]) {
-        acc[transaction.category] = { income: 0, expense: 0 };
-      }
-      
-      if (transaction.type === 'income') {
-        acc[transaction.category].income += transaction.amount;
-      } else {
-        acc[transaction.category].expense += transaction.amount;
-      }
-      
-      return acc;
-    }, {} as Record<string, { income: number; expense: number }>);
-
-    return categories;
   };
 
   useEffect(() => {
@@ -144,9 +120,9 @@ export const useTransactions = () => {
   return {
     transactions,
     loading,
-    fetchTransactions,
-    createTransaction,
-    getMonthlyStats,
-    getCategoryStats
+    addTransaction,
+    refetch: fetchTransactions,
   };
 };
+
+export type { Transaction };

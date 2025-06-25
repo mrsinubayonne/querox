@@ -1,110 +1,229 @@
 
-import React, { useState, useEffect } from "react";
-import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-import SimpleImageUploader from "@/components/SimpleImageUploader";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Save, Restaurant } from 'lucide-react';
 
-const RestaurantNameTab = () => {
-  const { website, loading, isSaving, updateWebsiteInfo } = useRestaurantSettings();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
-  const [headerUrl, setHeaderUrl] = useState<string | undefined>(undefined);
+interface RestaurantSettings {
+  restaurant_name: string;
+  currency: string;
+  language: string;
+  timezone: string;
+}
+
+const RestaurantNameTab: React.FC = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  const [settings, setSettings] = useState<RestaurantSettings>({
+    restaurant_name: 'Mon Restaurant',
+    currency: 'FCFA',
+    language: 'fr',
+    timezone: 'Africa/Dakar',
+  });
+
+  const fetchSettings = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      
+      // Try to get existing settings from profiles or create default ones
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error fetching profile:', profileError);
+        return;
+      }
+
+      if (profile) {
+        // Use profile data or defaults
+        setSettings({
+          restaurant_name: profile.full_name || 'Mon Restaurant',
+          currency: 'FCFA',
+          language: 'fr',
+          timezone: 'Africa/Dakar',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveSettings = async () => {
+    if (!user) return;
+
+    try {
+      setSaving(true);
+
+      // Update the profile with restaurant name
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          full_name: settings.restaurant_name,
+          email: user.email,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Paramètres sauvegardés avec succès",
+      });
+    } catch (error: any) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder les paramètres",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
-    if (website) {
-      setName(website.name);
-      setDescription(website.description ?? '');
-      setLogoUrl(website.logo_url ?? undefined);
-      setHeaderUrl(website.header_image_url ?? undefined);
-    }
-  }, [website]);
+    fetchSettings();
+  }, [user]);
+
+  const handleInputChange = (field: keyof RestaurantSettings, value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
-
-  if (!website) {
-    return (
-      <div className="text-center py-16">
-        <p className="text-gray-600">Aucune information de restaurant n’a été trouvée.</p>
-      </div>
-    );
-  }
-
-  const hasChanged = (
-    name !== website.name ||
-    description !== (website.description ?? '') ||
-    logoUrl !== (website.logo_url ?? undefined) ||
-    headerUrl !== (website.header_image_url ?? undefined)
-  );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Informations générales du restaurant</CardTitle>
-        <CardDescription>Définissez les informations principales de votre restaurant (nom, description, logo, image d'en-tête).</CardDescription>
-      </CardHeader>
-      <CardContent className="pt-8 space-y-6">
-        <div className="space-y-2">
-          <label htmlFor="restaurant-name" className="text-sm font-medium">
-            Nom du restaurant
-          </label>
-          <Input
-            id="restaurant-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="restaurant-desc" className="text-sm font-medium">
-            Description du restaurant
-          </label>
-          <Textarea
-            id="restaurant-desc"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Décrivez brièvement votre restaurant..."
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SimpleImageUploader
-            imageUrl={logoUrl}
-            onImageChange={setLogoUrl}
-            label="Logo du restaurant"
-          />
-          <SimpleImageUploader
-            imageUrl={headerUrl}
-            onImageChange={setHeaderUrl}
-            label="Image d'en-tête"
-          />
-        </div>
-        <div className="flex justify-end">
-          <Button
-            onClick={() =>
-              updateWebsiteInfo({
-                name,
-                description,
-                logo_url: logoUrl,
-                header_image_url: headerUrl,
-              })
-            }
-            disabled={isSaving || !hasChanged}
-          >
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Enregistrer
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Restaurant className="h-5 w-5 text-emerald-500" />
+            <div>
+              <CardTitle>Informations générales</CardTitle>
+              <CardDescription>Configurez les informations de base de votre restaurant</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="restaurant-name">
+              Nom du restaurant
+            </Label>
+            <Input
+              id="restaurant-name"
+              value={settings.restaurant_name}
+              onChange={(e) => handleInputChange('restaurant_name', e.target.value)}
+              placeholder="Entrez le nom de votre restaurant"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="currency">
+              Devise
+            </Label>
+            <Select 
+              value={settings.currency} 
+              onValueChange={(value) => handleInputChange('currency', value)}
+            >
+              <SelectTrigger id="currency">
+                <SelectValue placeholder="Sélectionner une devise" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FCFA">Franc CFA (FCFA)</SelectItem>
+                <SelectItem value="EUR">Euro (€)</SelectItem>
+                <SelectItem value="USD">Dollar américain ($)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="language">
+              Langue
+            </Label>
+            <Select 
+              value={settings.language} 
+              onValueChange={(value) => handleInputChange('language', value)}
+            >
+              <SelectTrigger id="language">
+                <SelectValue placeholder="Sélectionner une langue" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fr">Français</SelectItem>
+                <SelectItem value="en">Anglais</SelectItem>
+                <SelectItem value="es">Espagnol</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="timezone">
+              Fuseau horaire
+            </Label>
+            <Select 
+              value={settings.timezone} 
+              onValueChange={(value) => handleInputChange('timezone', value)}
+            >
+              <SelectTrigger id="timezone">
+                <SelectValue placeholder="Sélectionner un fuseau horaire" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Africa/Dakar">Dakar (GMT+0)</SelectItem>
+                <SelectItem value="Africa/Casablanca">Casablanca (GMT+1)</SelectItem>
+                <SelectItem value="Europe/Paris">Paris (GMT+2)</SelectItem>
+                <SelectItem value="America/New_York">New York (GMT-4)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="pt-4">
+            <Button 
+              onClick={saveSettings} 
+              disabled={saving}
+              className="w-full"
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Sauvegarde...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Sauvegarder
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
