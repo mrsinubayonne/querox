@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import EmptyState from '@/components/EmptyState';
 import AddMenuItemModal from '@/components/AddMenuItemModal';
 import EditMenuItemModal from '@/components/EditMenuItemModal';
-import { useMenus } from '@/hooks/useMenus';
-import { useMenuItems } from '@/hooks/useMenuItems';
+import { useOptimizedMenus } from '@/hooks/useOptimizedMenus';
+import { useOptimizedMenuItems } from '@/hooks/useOptimizedMenuItems';
 import { Menu, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,8 +25,8 @@ const MenuItemManager: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   
-  const { items, loading, refetch } = useMenus();
-  const { toggleAvailability, deleteMenuItem } = useMenuItems();
+  const { items, loading, refetch } = useOptimizedMenus();
+  const { toggleAvailability, deleteMenuItem } = useOptimizedMenuItems();
 
   const handleAddItem = () => {
     setShowAddModal(true);

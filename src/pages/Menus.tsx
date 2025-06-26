@@ -32,15 +32,15 @@ const Menus: React.FC = () => {
           <div className="flex justify-end items-center mb-6">
             <Link
               to={
-                activeMenu
+                activeMenu && activeMenu.id
                   ? `/menu-public?menu_id=${activeMenu.id}`
                   : '/menu-public'
               }
               target="_blank"
             >
-              <Button variant="outline" className="flex items-center gap-2" disabled={!activeMenu}>
+              <Button variant="outline" className="flex items-center gap-2" disabled={!activeMenu || loading}>
                 <ExternalLink className="w-4 h-4" />
-                Voir le menu public
+                {loading ? 'Chargement...' : 'Voir le menu public'}
               </Button>
             </Link>
           </div>
