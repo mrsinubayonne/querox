@@ -8,74 +8,69 @@ export const useDefaultMenu = () => {
   const { toast } = useToast();
 
   const createDefaultMenu = async () => {
-    if (!user) return null;
+    if (!user) {
+      console.error('Pas d\'utilisateur connecté pour créer le menu par défaut');
+      return;
+    }
 
     try {
-      // Check if user already has a menu
-      const { data: existingMenus, error: checkError } = await supabase
-        .from('menus')
-        .select('id')
-        .limit(1);
+      console.log('🔥 Création du menu par défaut pour:', user.id);
 
-      if (checkError) {
-        console.error('Error checking for existing menus:', checkError);
-        throw checkError;
-      }
-
-      if (existingMenus && existingMenus.length > 0) {
-        return existingMenus[0];
-      }
-
-      // Create default menu
+      // Créer le menu principal
       const { data: menu, error: menuError } = await supabase
         .from('menus')
-        .insert([{
+        .insert({
           name: 'Menu Principal',
-          description: 'Menu par défaut de votre restaurant',
+          description: 'Votre menu principal',
           user_id: user.id,
           is_active: true
-        }])
+        })
         .select()
         .single();
 
       if (menuError) {
-        console.error('Error creating default menu:', menuError);
+        console.error('Erreur création menu:', menuError);
         throw menuError;
       }
 
-      // Create default categories
+      console.log('🔥 Menu créé:', menu.id);
+
+      // Créer les catégories par défaut
       const defaultCategories = [
-        { name: 'Entrées', description: 'Nos délicieuses entrées', order_index: 1 },
-        { name: 'Plats principaux', description: 'Nos spécialités', order_index: 2 },
-        { name: 'Desserts', description: 'Pour finir en beauté', order_index: 3 },
-        { name: 'Boissons', description: 'Nos boissons fraîches', order_index: 4 }
+        { name: 'Entrées', order_index: 0 },
+        { name: 'Plats principaux', order_index: 1 },
+        { name: 'Desserts', order_index: 2 },
+        { name: 'Boissons', order_index: 3 }
       ];
+
+      const categoriesToInsert = defaultCategories.map(cat => ({
+        ...cat,
+        menu_id: menu.id
+      }));
 
       const { error: categoriesError } = await supabase
         .from('menu_categories')
-        .insert(
-          defaultCategories.map(cat => ({
-            ...cat,
-            menu_id: menu.id
-          }))
-        );
+        .insert(categoriesToInsert);
 
       if (categoriesError) {
-        console.error('Error creating default categories:', categoriesError);
-        // Don't throw here, menu creation was successful
+        console.error('Erreur création catégories:', categoriesError);
+        throw categoriesError;
       }
 
-      console.log('Default menu and categories created successfully');
-      return menu;
+      console.log('🔥 Catégories par défaut créées');
+
+      toast({
+        title: "Menu créé",
+        description: "Votre menu par défaut a été créé avec succès",
+      });
 
     } catch (error: any) {
-      console.error('Error in createDefaultMenu:', error);
+      console.error('🔥 Erreur création menu par défaut:', error);
       toast({
         title: "Erreur",
         description: "Impossible de créer le menu par défaut",
         variant: "destructive"
       });
-      return null;
     }
   };
 
