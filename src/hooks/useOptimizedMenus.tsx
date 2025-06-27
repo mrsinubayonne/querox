@@ -1,9 +1,8 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useDefaultMenu } from './useDefaultMenu';
 
 interface MenuItem {
   id: string;
@@ -21,17 +20,87 @@ export const useOptimizedMenus = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { createDefaultMenu } = useDefaultMenu();
+  const fetchingRef = useRef(false);
 
-  const fetchMenuItems = useCallback(async () => {
+  const createDefaultMenu = useCallback(async () => {
     if (!user) {
-      console.log('🔥 Pas d\'utilisateur connecté');
-      setItems([]);
-      setLoading(false);
+      console.error('Pas d\'utilisateur connecté pour créer le menu par défaut');
       return;
     }
 
     try {
+      console.log('🔥 Création du menu par défaut pour:', user.id);
+
+      // Créer le menu principal
+      const { data: menu, error: menuError } = await supabase
+        .from('menus')
+        .insert({
+          name: 'Menu Principal',
+          description: 'Votre menu principal',
+          user_id: user.id,
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (menuError) {
+        console.error('Erreur création menu:', menuError);
+        throw menuError;
+      }
+
+      console.log('🔥 Menu créé:', menu.id);
+
+      // Créer les catégories par défaut
+      const defaultCategories = [
+        { name: 'Entrées', order_index: 0 },
+        { name: 'Plats principaux', order_index: 1 },
+        { name: 'Desserts', order_index: 2 },
+        { name: 'Boissons', order_index: 3 }
+      ];
+
+      const categoriesToInsert = defaultCategories.map(cat => ({
+        ...cat,
+        menu_id: menu.id
+      }));
+
+      const { error: categoriesError } = await supabase
+        .from('menu_categories')
+        .insert(categoriesToInsert);
+
+      if (categoriesError) {
+        console.error('Erreur création catégories:', categoriesError);
+        throw categoriesError;
+      }
+
+      console.log('🔥 Catégories par défaut créées');
+
+      toast({
+        title: "Menu créé",
+        description: "Votre menu par défaut a été créé avec succès",
+      });
+
+    } catch (error: any) {
+      console.error('🔥 Erreur création menu par défaut:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer le menu par défaut",
+        variant: "destructive"
+      });
+    }
+  }, [user?.id, toast]);
+
+  const fetchMenuItems = useCallback(async () => {
+    if (!user || fetchingRef.current) {
+      console.log('🔥 Pas d\'utilisateur connecté ou déjà en cours de récupération');
+      if (!user) {
+        setItems([]);
+        setLoading(false);
+      }
+      return;
+    }
+
+    try {
+      fetchingRef.current = true;
       setLoading(true);
       console.log('🔥 Début récupération des plats pour l\'utilisateur:', user.id);
       
@@ -51,7 +120,6 @@ export const useOptimizedMenus = () => {
         console.log('🔥 Aucun menu trouvé, création du menu par défaut...');
         await createDefaultMenu();
         setItems([]);
-        setLoading(false);
         return;
       }
 
@@ -72,7 +140,6 @@ export const useOptimizedMenus = () => {
       if (!categories || categories.length === 0) {
         console.log('🔥 Aucune catégorie trouvée');
         setItems([]);
-        setLoading(false);
         return;
       }
 
@@ -118,16 +185,21 @@ export const useOptimizedMenus = () => {
       setItems([]);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
-  }, [user, createDefaultMenu, toast]);
+  }, [user?.id, createDefaultMenu, toast]);
 
   useEffect(() => {
     fetchMenuItems();
   }, [fetchMenuItems]);
 
+  const refetch = useCallback(() => {
+    return fetchMenuItems();
+  }, [fetchMenuItems]);
+
   return {
     items,
     loading,
-    refetch: fetchMenuItems
+    refetch
   };
 };
