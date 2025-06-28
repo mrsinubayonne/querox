@@ -1,186 +1,136 @@
 
 import React, { useState } from 'react';
-import EmptyState from '@/components/EmptyState';
-import AddMenuItemModal from '@/components/AddMenuItemModal';
-import EditMenuItemModal from '@/components/EditMenuItemModal';
-import { useOptimizedMenus } from '@/hooks/useOptimizedMenus';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useMenuCategories } from '@/hooks/useMenuCategories';
 import { useOptimizedMenuItems } from '@/hooks/useOptimizedMenuItems';
-import { Menu, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-
-interface MenuItem {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  category: string;
-  image?: string;
-  isActive: boolean;
-  allergens?: string[];
-}
+import CategoryManager from './CategoryManager';
+import GeneralSettingsTab from './GeneralSettingsTab';
+import RestaurantNameTab from './RestaurantNameTab';
+import { Package, Settings, Store, Building } from 'lucide-react';
 
 const MenuItemManager: React.FC = () => {
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  
-  const { items, loading, refetch } = useOptimizedMenus();
-  const { toggleAvailability, deleteMenuItem } = useOptimizedMenuItems();
+  const [activeTab, setActiveTab] = useState('general');
+  const { categories, loading: categoriesLoading } = useMenuCategories();
+  const { items, loading: itemsLoading } = useOptimizedMenuItems();
 
-  const handleAddItem = () => {
-    setShowAddModal(true);
-  };
+  const isLoading = categoriesLoading || itemsLoading;
 
-  const handleModalSuccess = async () => {
-    await refetch();
-    setShowAddModal(false);
-  };
-
-  const handleEditSuccess = async () => {
-    await refetch();
-    setEditingItem(null);
-  };
-
-  const handleToggleAvailability = async (id: string, isActive: boolean) => {
-    const success = await toggleAvailability(id, !isActive);
-    if (success) {
-      await refetch();
-    }
-  };
-
-  const handleDeleteItem = async (id: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) {
-      const success = await deleteMenuItem(id);
-      if (success) {
-        await refetch();
-      }
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center py-16">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-sm text-gray-600">Chargement des plats...</p>
-        </div>
+      <div className="flex items-center justify-center py-16">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <>
-        <div className="mt-6">
-          <EmptyState
-            icon={Menu}
-            title="Aucun plat configuré"
-            description="Commencez par ajouter vos premiers plats à votre menu"
-            actionLabel="Ajouter un plat"
-            onAction={handleAddItem}
-          />
-        </div>
-
-        <AddMenuItemModal
-          isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onSuccess={handleModalSuccess}
-        />
-      </>
     );
   }
 
   return (
-    <>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Mes Plats ({items.length})</h2>
-          <Button onClick={handleAddItem} className="bg-green-600 hover:bg-green-700">
-            <Menu className="w-4 h-4 mr-2" />
-            Ajouter un plat
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Gestion du Menu
+          </CardTitle>
+          <CardDescription>
+            Configurez votre menu, vos catégories et vos plats
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="general" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Général
+              </TabsTrigger>
+              <TabsTrigger value="categories" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Catégories
+              </TabsTrigger>
+              <TabsTrigger value="items" className="flex items-center gap-2">
+                <Store className="h-4 w-4" />
+                Plats
+              </TabsTrigger>
+              <TabsTrigger value="restaurant" className="flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                Restaurant
+              </TabsTrigger>
+            </TabsList>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map((item) => (
-            <Card key={item.id} className="overflow-hidden">
-              <div className="aspect-video bg-gray-100 overflow-hidden">
-                <img
-                  src={item.image || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"}
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg line-clamp-1">{item.name}</CardTitle>
-                  <Badge variant={item.isActive ? "default" : "secondary"}>
-                    {item.isActive ? "Disponible" : "Indisponible"}
-                  </Badge>
+            <div className="mt-6">
+              <TabsContent value="general" className="space-y-6">
+                <GeneralSettingsTab />
+              </TabsContent>
+
+              <TabsContent value="categories" className="space-y-6">
+                <CategoryManager />
+              </TabsContent>
+
+              <TabsContent value="items" className="space-y-6">
+                <div className="grid gap-6">
+                  {categories.length === 0 ? (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="text-center py-8">
+                          <Package className="mx-auto h-12 w-12 text-gray-400" />
+                          <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                            Aucune catégorie
+                          </h3>
+                          <p className="mt-2 text-gray-600">
+                            Créez d'abord des catégories pour organiser vos plats
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid gap-4">
+                      {items.map((item) => (
+                        <Card key={item.id}>
+                          <CardContent className="pt-6">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-lg">{item.name}</h3>
+                                <p className="text-gray-600 mt-1">{item.description}</p>
+                                <div className="flex items-center gap-4 mt-2">
+                                  <span className="text-lg font-bold text-primary">
+                                    {item.price}€
+                                  </span>
+                                  <span className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                    {item.category}
+                                  </span>
+                                  <span className={`text-sm px-2 py-1 rounded ${
+                                    item.isActive 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {item.isActive ? 'Disponible' : 'Indisponible'}
+                                  </span>
+                                </div>
+                              </div>
+                              {item.image && (
+                                <img 
+                                  src={item.image} 
+                                  alt={item.name}
+                                  className="w-20 h-20 object-cover rounded-lg ml-4"
+                                />
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm text-gray-600">{item.category}</p>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                {item.description && (
-                  <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.description}</p>
-                )}
-                
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-bold text-green-600">
-                    {item.price.toLocaleString()} FCFA
-                  </span>
-                </div>
+              </TabsContent>
 
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingItem(item)}
-                    className="flex-1"
-                  >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Modifier
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleToggleAvailability(item.id, item.isActive)}
-                  >
-                    {item.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteItem(item.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      <AddMenuItemModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSuccess={handleModalSuccess}
-      />
-
-      <EditMenuItemModal
-        item={editingItem}
-        isOpen={!!editingItem}
-        onClose={() => setEditingItem(null)}
-        onSuccess={handleEditSuccess}
-      />
-    </>
+              <TabsContent value="restaurant" className="space-y-6">
+                <RestaurantNameTab />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
