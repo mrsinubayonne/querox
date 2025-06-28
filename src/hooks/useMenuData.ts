@@ -12,6 +12,7 @@ export const useMenuData = (menuId: string | null) => {
   const { toast } = useToast();
 
   const fetchMenu = useCallback(async (id: string) => {
+    console.log(`🔥 fetchMenu appelé avec id: ${id}`);
     setLoading(true);
     setError(null);
     setRestaurantUserId(null);
@@ -22,13 +23,15 @@ export const useMenuData = (menuId: string | null) => {
       // Vérifier d'abord si le menu existe
       const { data: menuData, error: menuError } = await supabase
         .from('menus')
-        .select('user_id, name')
+        .select('user_id, name, is_active')
         .eq('id', id)
         .eq('is_active', true)
         .maybeSingle();
       
+      console.log('🔥 Résultat requête menu:', { menuData, menuError });
+      
       if (menuError) {
-        console.error("Error fetching menu:", menuError);
+        console.error("🔥 Error fetching menu:", menuError);
         throw new Error("Erreur lors de la récupération du menu");
       }
 
@@ -40,7 +43,7 @@ export const useMenuData = (menuId: string | null) => {
       }
 
       setRestaurantUserId(menuData.user_id);
-      console.log("🔥 Menu trouvé:", menuData.name);
+      console.log("🔥 Menu trouvé:", menuData.name, "User ID:", menuData.user_id);
 
       // Récupérer les catégories du menu
       const { data: categoriesData, error: categoriesError } = await supabase
@@ -49,8 +52,10 @@ export const useMenuData = (menuId: string | null) => {
         .eq('menu_id', id)
         .order('order_index', { ascending: true });
 
+      console.log('🔥 Résultat requête catégories:', { categoriesData, categoriesError });
+
       if (categoriesError) {
-        console.error("Error fetching categories:", categoriesError);
+        console.error("🔥 Error fetching categories:", categoriesError);
         throw new Error("Erreur lors de la récupération des catégories");
       }
 
@@ -73,8 +78,10 @@ export const useMenuData = (menuId: string | null) => {
         .order('order_index', { ascending: true })
         .order('name', { ascending: true });
 
+      console.log('🔥 Résultat requête plats:', { menuItemsData, itemsError });
+
       if (itemsError) {
-        console.error("Error fetching menu items:", itemsError);
+        console.error("🔥 Error fetching menu items:", itemsError);
         throw new Error("Erreur lors de la récupération des plats");
       }
 
@@ -115,11 +122,15 @@ export const useMenuData = (menuId: string | null) => {
   }, [toast]);
 
   useEffect(() => {
+    console.log('🔥 useMenuData useEffect - menuId:', menuId);
     if (menuId) {
       fetchMenu(menuId);
     } else {
+      console.log('🔥 Pas de menuId, arrêt du loading');
       setLoading(false);
-      setError("Aucun identifiant de menu fourni");
+      if (menuId === null) {
+        setError("Aucun identifiant de menu fourni");
+      }
     }
   }, [menuId, fetchMenu]);
 

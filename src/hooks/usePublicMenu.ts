@@ -12,28 +12,35 @@ export const usePublicMenu = () => {
   
   const [menuId, setMenuId] = useState<string | null>(null);
   const [menuError, setMenuError] = useState<string | null>(null);
+  const [hasShownToast, setHasShownToast] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const id = params.get('menu_id');
     
+    console.log("🔥 Extraction menu_id de l'URL:", id);
+    console.log("🔥 URL complète:", location.search);
+    
     if (id) {
       console.log("🔥 Menu ID trouvé dans l'URL:", id);
       setMenuId(id);
       setMenuError(null);
+      setHasShownToast(false);
     } else {
-      setMenuId(null);
-      console.error("No menu_id found in URL for PublicMenu");
+      console.error("🔥 Aucun menu_id trouvé dans l'URL");
       const errorMsg = "Aucun menu n'est spécifié. Veuillez vous assurer que l'URL contient un `menu_id`.";
       setMenuError(errorMsg);
       
-      toast({
-        title: "Menu non spécifié",
-        description: "Aucun menu n'a été sélectionné pour être affiché.",
-        variant: "destructive",
-      });
+      if (!hasShownToast) {
+        toast({
+          title: "Menu non spécifié",
+          description: "Aucun menu n'a été sélectionné pour être affiché.",
+          variant: "destructive",
+        });
+        setHasShownToast(true);
+      }
     }
-  }, [location.search, toast]);
+  }, [location.search, toast, hasShownToast]);
 
   const { menuItems, loading: dataLoading, error: dataError, restaurantUserId } = useMenuData(menuId);
   
@@ -49,13 +56,14 @@ export const usePublicMenu = () => {
   
   const cartHook = useShoppingCart();
 
-  // Gérer les erreurs de données
+  // Gérer les erreurs de données sans affecter menuId
   useEffect(() => {
-    if (dataError) {
+    if (dataError && !hasShownToast) {
       console.error("🔥 Erreur de données:", dataError);
       setMenuError(dataError);
+      setHasShownToast(true);
     }
-  }, [dataError]);
+  }, [dataError, hasShownToast]);
 
   const loading = dataLoading;
   
@@ -68,9 +76,10 @@ export const usePublicMenu = () => {
       filteredItemsCount: filteredItems.length,
       categoriesCount: categories.length,
       menuError,
-      dataError
+      dataError,
+      hasShownToast
     });
-  }, [menuId, loading, menuItems.length, filteredItems.length, categories.length, menuError, dataError]);
+  }, [menuId, loading, menuItems.length, filteredItems.length, categories.length, menuError, dataError, hasShownToast]);
   
   return {
     loading,
