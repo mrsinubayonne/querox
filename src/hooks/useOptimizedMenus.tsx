@@ -109,6 +109,7 @@ export const useOptimizedMenus = () => {
         .from('menus')
         .select('id')
         .eq('user_id', user.id)
+        .eq('is_active', true)
         .limit(1);
 
       if (menuError) {
@@ -117,20 +118,21 @@ export const useOptimizedMenus = () => {
       }
 
       if (!userMenus || userMenus.length === 0) {
-        console.log('🔥 Aucun menu trouvé, création du menu par défaut...');
+        console.log('🔥 Aucun menu actif trouvé, création du menu par défaut...');
         await createDefaultMenu();
         setItems([]);
         return;
       }
 
       const menuId = userMenus[0].id;
-      console.log('🔥 Menu trouvé:', menuId);
+      console.log('🔥 Menu actif trouvé:', menuId);
 
       // Étape 2: Récupérer les catégories pour ce menu
       const { data: categories, error: categoriesError } = await supabase
         .from('menu_categories')
         .select('id, name')
-        .eq('menu_id', menuId);
+        .eq('menu_id', menuId)
+        .order('order_index', { ascending: true });
 
       if (categoriesError) {
         console.error('Erreur récupération catégories:', categoriesError);
@@ -147,12 +149,14 @@ export const useOptimizedMenus = () => {
       const categoryMap = new Map(categories.map(c => [c.id, c.name]));
       const categoryIds = categories.map(c => c.id);
 
-      // Étape 3: Récupérer les plats pour ces catégories
+      // Étape 3: Récupérer les plats disponibles pour ces catégories
       const { data: menuItems, error: itemsError } = await supabase
         .from('menu_items')
         .select('*')
         .in('category_id', categoryIds)
-        .order('name');
+        .eq('is_available', true)
+        .order('order_index', { ascending: true })
+        .order('name', { ascending: true });
 
       if (itemsError) {
         console.error('Erreur récupération plats:', itemsError);

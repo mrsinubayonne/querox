@@ -1,70 +1,184 @@
-
-import React, { useState } from 'react';
-import ModernSidebar from '@/components/ModernSidebar';
-import MenuHeader from '@/components/MenuHeader';
-import { Link } from "react-router-dom";
-import { Button } from '@/components/ui/button';
-import { ExternalLink } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import PageWithSidebar from '@/components/PageWithSidebar';
+import EmptyState from '@/components/EmptyState';
+import CreateMenuModal from '@/components/CreateMenuModal';
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
-import CategoryManager from '@/components/menu-management/CategoryManager';
-import RestaurantNameTab from '@/components/menu-management/RestaurantNameTab';
-import { useMenusList } from '@/hooks/useMenusList';
+import { Menu, Plus, Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+
+interface MenuType {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+}
 
 const Menus: React.FC = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [menus, setMenus] = useState<MenuType[]>([]);
+  const [activeMenu, setActiveMenu] = useState<MenuType | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const { menus, loading } = useMenusList();
-  // Utilise automatiquement le premier menu (menu principal) par défaut
-  const activeMenu = menus && menus.length > 0 ? menus[0] : null;
+  const fetchMenus = useCallback(async () => {
+    if (!user) {
+      console.error('Pas d\'utilisateur connecté');
+      return;
+    }
 
-  const handleAddItem = () => {
-    console.log("Add item clicked");
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('menus')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Erreur récupération menus:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les menus",
+          variant: "destructive",
+        });
+      } else {
+        setMenus(data || []);
+        if (data && data.length > 0 && !activeMenu) {
+          setActiveMenu(data[0]);
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [user, toast, activeMenu]);
+
+  useEffect(() => {
+    fetchMenus();
+  }, [fetchMenus]);
+
+  const handleMenuChange = (menuId: string) => {
+    const selectedMenu = menus.find(menu => menu.id === menuId);
+    setActiveMenu(selectedMenu || null);
   };
 
+  const handleMenuCreated = async () => {
+    setShowCreateModal(false);
+    await fetchMenus();
+  };
+
+  const generatePublicMenuUrl = useCallback(() => {
+    if (!activeMenu?.id) {
+      toast({
+        title: "Erreur",
+        description: "Aucun menu actif sélectionné",
+        variant: "destructive",
+      });
+      return '';
+    }
+    
+    const baseUrl = window.location.origin;
+    const publicUrl = `${baseUrl}/menu-public?menu_id=${activeMenu.id}`;
+    console.log('🔥 URL du menu public générée:', publicUrl);
+    return publicUrl;
+  }, [activeMenu?.id, toast]);
+
+  const handleViewPublicMenu = useCallback(() => {
+    const url = generatePublicMenuUrl();
+    if (url) {
+      window.open(url, '_blank');
+    }
+  }, [generatePublicMenuUrl]);
+
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
-      
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
-          <MenuHeader onAddItem={handleAddItem} />
-          <div className="flex justify-end items-center mb-6">
-            <Link
-              to={
-                activeMenu && activeMenu.id
-                  ? `/menu-public?menu_id=${activeMenu.id}`
-                  : '/menu-public'
-              }
-              target="_blank"
-            >
-              <Button variant="outline" className="flex items-center gap-2" disabled={!activeMenu || loading}>
-                <ExternalLink className="w-4 h-4" />
-                {loading ? 'Chargement...' : 'Voir le menu public'}
-              </Button>
-            </Link>
+    <PageWithSidebar>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Gestion des Menus</h1>
+            <p className="text-gray-600 mt-2">Gérez vos menus et vos plats</p>
           </div>
           
-          <Tabs defaultValue="items" className="w-full">
-            <TabsList>
-              <TabsTrigger value="items">Plats</TabsTrigger>
-              <TabsTrigger value="categories">Catégories</TabsTrigger>
-              <TabsTrigger value="general">Général</TabsTrigger>
-            </TabsList>
-            <TabsContent value="items">
-              <MenuItemManager />
-            </TabsContent>
-            <TabsContent value="categories">
-              <CategoryManager />
-            </TabsContent>
-            <TabsContent value="general">
-              <RestaurantNameTab />
-            </TabsContent>
-          </Tabs>
-
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              onClick={handleViewPublicMenu}
+              variant="outline" 
+              className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+              disabled={!activeMenu}
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              Menu Public
+            </Button>
+            
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nouveau Menu
+            </Button>
+          </div>
         </div>
+
+        {/* Menu Selection */}
+        {menus.length > 0 && (
+          <div className="bg-white p-6 rounded-lg shadow border">
+            <h2 className="text-xl font-semibold mb-4">Menu Actuel</h2>
+            <div className="flex items-center gap-4">
+              <Select 
+                value={activeMenu?.id || ''} 
+                onValueChange={handleMenuChange}
+              >
+                <SelectTrigger className="w-[300px]">
+                  <SelectValue placeholder="Sélectionner un menu" />
+                </SelectTrigger>
+                <SelectContent>
+                  {menus.map((menu) => (
+                    <SelectItem key={menu.id} value={menu.id}>
+                      {menu.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {activeMenu && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Badge variant={activeMenu.is_active ? "default" : "secondary"}>
+                    {activeMenu.is_active ? "Actif" : "Inactif"}
+                  </Badge>
+                  <span>•</span>
+                  <span>{new Date(activeMenu.created_at).toLocaleDateString()}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Main Content */}
+        {activeMenu ? (
+          <MenuItemManager />
+        ) : (
+          <EmptyState
+            icon={Menu}
+            title="Aucun menu sélectionné"
+            description="Créez votre premier menu ou sélectionnez un menu existant pour commencer"
+            actionLabel="Créer un menu"
+            onAction={() => setShowCreateModal(true)}
+          />
+        )}
+
+        {/* Modals */}
+        <CreateMenuModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={handleMenuCreated}
+        />
       </div>
-    </div>
+    </PageWithSidebar>
   );
 };
 
