@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,9 +50,12 @@ const Menus: React.FC = () => {
           variant: "destructive",
         });
       } else {
+        console.log('🔥 Menus récupérés:', data);
         setMenus(data || []);
         if (data && data.length > 0 && !activeMenu) {
-          setActiveMenu(data[0]);
+          const firstMenu = data[0];
+          console.log('🔥 Définition du menu actif:', firstMenu);
+          setActiveMenu(firstMenu);
         }
       }
     } finally {
@@ -65,6 +69,7 @@ const Menus: React.FC = () => {
 
   const handleMenuChange = (menuId: string) => {
     const selectedMenu = menus.find(menu => menu.id === menuId);
+    console.log('🔥 Changement de menu:', selectedMenu);
     setActiveMenu(selectedMenu || null);
   };
 
@@ -73,28 +78,25 @@ const Menus: React.FC = () => {
     await fetchMenus();
   };
 
-  const generatePublicMenuUrl = useCallback(() => {
+  const handleViewPublicMenu = useCallback(() => {
     if (!activeMenu?.id) {
+      console.error('🔥 Aucun menu actif pour générer l\'URL publique');
       toast({
         title: "Erreur",
         description: "Aucun menu actif sélectionné",
         variant: "destructive",
       });
-      return '';
+      return;
     }
     
     const baseUrl = window.location.origin;
     const publicUrl = `${baseUrl}/menu-public?menu_id=${activeMenu.id}`;
     console.log('🔥 URL du menu public générée:', publicUrl);
-    return publicUrl;
-  }, [activeMenu?.id, toast]);
-
-  const handleViewPublicMenu = useCallback(() => {
-    const url = generatePublicMenuUrl();
-    if (url) {
-      window.open(url, '_blank');
-    }
-  }, [generatePublicMenuUrl]);
+    console.log('🔥 Menu actif utilisé:', activeMenu);
+    
+    // Ouvrir dans un nouvel onglet
+    window.open(publicUrl, '_blank');
+  }, [activeMenu, toast]);
 
   return (
     <PageWithSidebar>
@@ -123,6 +125,15 @@ const Menus: React.FC = () => {
             </Button>
           </div>
         </div>
+
+        {/* Debug info */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-gray-100 p-4 rounded-lg text-sm">
+            <p><strong>Debug:</strong></p>
+            <p>Menus disponibles: {menus.length}</p>
+            <p>Menu actif: {activeMenu ? `${activeMenu.name} (${activeMenu.id})` : 'Aucun'}</p>
+          </div>
+        )}
 
         {/* Menu Selection */}
         {menus.length > 0 && (
