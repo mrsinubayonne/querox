@@ -6,7 +6,7 @@ import { MenuItem } from '@/types/menu';
 
 export const useMenuData = (menuId: string | null) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [restaurantUserId, setRestaurantUserId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -16,7 +16,6 @@ export const useMenuData = (menuId: string | null) => {
     setLoading(true);
     setError(null);
     setRestaurantUserId(null);
-    setMenuItems([]);
     
     try {
       console.log(`🔥 Début récupération menu public pour menu_id: ${id}`);
@@ -38,7 +37,9 @@ export const useMenuData = (menuId: string | null) => {
 
       if (!menuData) {
         console.warn("🔥 Menu non trouvé ou inactif");
-        throw new Error("Menu non trouvé ou indisponible");
+        setError("Menu non trouvé ou indisponible");
+        setMenuItems([]);
+        return;
       }
 
       setRestaurantUserId(menuData.user_id);
@@ -109,21 +110,27 @@ export const useMenuData = (menuId: string | null) => {
       const errorMessage = err.message || "Impossible de charger le menu";
       setError(errorMessage);
       setMenuItems([]);
+      
+      toast({
+        title: "Erreur de chargement",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     console.log('🔥 useMenuData useEffect - menuId:', menuId);
     if (menuId) {
       fetchMenu(menuId);
     } else {
-      console.log('🔥 Pas de menuId, reset des states');
+      console.log('🔥 Pas de menuId, arrêt du loading');
       setLoading(false);
-      setError(null);
-      setMenuItems([]);
-      setRestaurantUserId(null);
+      if (menuId === null) {
+        setError("Aucun identifiant de menu fourni");
+      }
     }
   }, [menuId, fetchMenu]);
 
