@@ -10,20 +10,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-interface MenuItem {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
+// Utiliser le type global MenuItem au lieu d'un type local
+import { MenuItem } from '@/types/menu';
+
+interface LocalMenuItem extends Omit<MenuItem, 'category_name'> {
   category: string;
-  image?: string;
   isActive: boolean;
-  allergens?: string[];
 }
 
 const MenuItemManager: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [editingItem, setEditingItem] = useState<LocalMenuItem | null>(null);
   
   const { items, loading, refetch } = useOptimizedMenus();
   const { toggleAvailability, deleteMenuItem } = useOptimizedMenuItems();
