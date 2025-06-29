@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMenuCategories } from '@/hooks/useMenuCategories';
-import { useOptimizedMenuItems } from '@/hooks/useOptimizedMenuItems';
+import { useOptimizedMenus } from '@/hooks/useOptimizedMenus';
 import CategoryManager from './CategoryManager';
 import GeneralSettingsTab from './GeneralSettingsTab';
 import RestaurantNameTab from './RestaurantNameTab';
@@ -12,7 +12,7 @@ import { Package, Settings, Store, Building } from 'lucide-react';
 const MenuItemManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState('general');
   const { categories, loading: categoriesLoading } = useMenuCategories();
-  const { items, loading: itemsLoading } = useOptimizedMenuItems();
+  const { items, loading: itemsLoading } = useOptimizedMenus();
 
   const isLoading = categoriesLoading || itemsLoading;
 
