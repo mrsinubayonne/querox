@@ -55,6 +55,21 @@ const MenuItemManager: React.FC = () => {
     }
   };
 
+  const handleEditItem = (item: any) => {
+    // Transform the item to match LocalMenuItem interface
+    const localMenuItem: LocalMenuItem = {
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      image_url: item.image,
+      category: item.category,
+      isActive: item.isActive,
+      is_available: item.isActive
+    };
+    setEditingItem(localMenuItem);
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center py-16">
@@ -135,7 +150,7 @@ const MenuItemManager: React.FC = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setEditingItem(item)}
+                    onClick={() => handleEditItem(item)}
                     className="flex-1"
                   >
                     <Edit className="w-4 h-4 mr-1" />
