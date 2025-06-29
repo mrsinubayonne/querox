@@ -35,7 +35,7 @@ export const usePublicMenu = () => {
     }
   }, [location.search, toast]);
 
-  const { menuItems, loading, error: dataError, restaurantUserId } = useMenuData(menuId);
+  const { menuItems, loading, error: dataError, restaurantUserId, menuData } = useMenuData(menuId);
   
   const {
     filteredItems,
@@ -59,7 +59,8 @@ export const usePublicMenu = () => {
     filteredItemsCount: filteredItems.length,
     categoriesCount: categories.length,
     error: finalError,
-    restaurantUserId
+    restaurantUserId,
+    menuData
   });
   
   return {
@@ -75,5 +76,6 @@ export const usePublicMenu = () => {
     groupedItems,
     menuError: finalError,
     restaurantUserId,
+    menuData,
   };
 };

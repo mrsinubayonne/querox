@@ -4,8 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MenuItem } from '@/types/menu';
 
+interface MenuData {
+  id: string;
+  name: string;
+  description?: string;
+  logo_url?: string;
+  header_image_url?: string;
+}
+
 export const useMenuData = (menuId: string | null) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [menuData, setMenuData] = useState<MenuData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [restaurantUserId, setRestaurantUserId] = useState<string | null>(null);
@@ -20,7 +29,7 @@ export const useMenuData = (menuId: string | null) => {
       // 1. Récupérer le menu et vérifier qu'il existe
       const { data: menuData, error: menuError } = await supabase
         .from('menus')
-        .select('user_id, name, is_active')
+        .select('user_id, name, description, logo_url, header_image_url, is_active')
         .eq('id', id)
         .eq('is_active', true)
         .single();
@@ -31,6 +40,13 @@ export const useMenuData = (menuId: string | null) => {
 
       console.log("🔥 Menu trouvé:", menuData.name);
       setRestaurantUserId(menuData.user_id);
+      setMenuData({
+        id,
+        name: menuData.name,
+        description: menuData.description || undefined,
+        logo_url: menuData.logo_url || undefined,
+        header_image_url: menuData.header_image_url || undefined,
+      });
 
       // 2. Récupérer les catégories
       const { data: categoriesData, error: categoriesError } = await supabase
@@ -90,6 +106,7 @@ export const useMenuData = (menuId: string | null) => {
       const errorMessage = err.message || "Erreur lors du chargement du menu";
       setError(errorMessage);
       setMenuItems([]);
+      setMenuData(null);
     } finally {
       setLoading(false);
     }
@@ -106,5 +123,5 @@ export const useMenuData = (menuId: string | null) => {
     }
   }, [menuId, fetchMenu]);
 
-  return { menuItems, loading, error, restaurantUserId };
+  return { menuItems, loading, error, restaurantUserId, menuData };
 };

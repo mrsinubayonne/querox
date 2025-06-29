@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { RestaurantProvider } from '@/contexts/RestaurantContext';
@@ -6,7 +7,6 @@ import PublicMenuHeader from '@/components/public-menu/PublicMenuHeader';
 import MenuItemList from '@/components/public-menu/MenuItemList';
 import ShoppingCartSidebar from '@/components/public-menu/ShoppingCartSidebar';
 import PublicMenuLoader from '@/components/public-menu/PublicMenuLoader';
-import PromotionalBanner from '@/components/public-menu/PromotionalBanner';
 import CategoryFilter from '@/components/CategoryFilter';
 import MenuSearch from '@/components/public-menu/MenuSearch';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -32,6 +32,7 @@ const PublicMenu: React.FC = () => {
     setSearchTerm,
     menuError,
     restaurantUserId,
+    menuData,
   } = usePublicMenu();
 
   if (loading) {
@@ -58,21 +59,41 @@ const PublicMenu: React.FC = () => {
     );
   }
 
-  // 🔥 NOUVEAU: fond dégradé tout doux et container superposée sur desktop
   return (
     <RestaurantProvider restaurantUserId={restaurantUserId}>
       <div className="min-h-screen w-full bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex flex-col">
-        <PublicMenuHeader totalItems={getTotalItems()} onCartToggle={() => setShowCart(!showCart)} />
+        <PublicMenuHeader 
+          totalItems={getTotalItems()} 
+          onCartToggle={() => setShowCart(!showCart)}
+          menuName={menuData?.name}
+          menuLogo={menuData?.logo_url}
+        />
         
         <div className="relative flex-1">
           <div className="max-w-8xl mx-auto px-2 md:px-6 py-10">
-            <div className="absolute inset-0 pointer-events-none" aria-hidden>
-              {/* Légère surcouche blanc en transparence pour laisser passer le gradient */}
-            </div>
-
             <div className="xl:px-20">
-              {/* Banner centrée */}
-              <PromotionalBanner />
+              {/* Hero section avec les informations du menu */}
+              {menuData && (
+                <div className="text-center mb-10">
+                  {menuData.header_image_url && (
+                    <div className="mb-8 rounded-2xl overflow-hidden shadow-lg">
+                      <img
+                        src={menuData.header_image_url}
+                        alt={menuData.name}
+                        className="w-full h-64 md:h-80 object-cover"
+                      />
+                    </div>
+                  )}
+                  <h1 className="font-playfair text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+                    {menuData.name}
+                  </h1>
+                  {menuData.description && (
+                    <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                      {menuData.description}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <MenuSearch searchTerm={searchTerm} onSearchTermChange={setSearchTerm} />
 
