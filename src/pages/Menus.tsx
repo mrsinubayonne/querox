@@ -71,6 +71,13 @@ const Menus: React.FC = () => {
     setActiveMenu(selectedMenu || null);
   };
 
+  const slugify = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
   const handleViewPublicMenu = useCallback(() => {
     if (!activeMenu?.id) {
       console.error('🔥 Aucun menu actif pour générer l\'URL publique');
@@ -82,8 +89,8 @@ const Menus: React.FC = () => {
       return;
     }
     
-    const baseUrl = window.location.origin;
-    const publicUrl = `${baseUrl}/menu-public?menu_id=${activeMenu.id}`;
+    const restaurantSlug = slugify(activeMenu.name);
+    const publicUrl = `https://${restaurantSlug}-menu.querox.me?menu_id=${activeMenu.id}`;
     console.log('🔥 URL du menu public générée:', publicUrl);
     console.log('🔥 Menu actif utilisé:', activeMenu);
     
