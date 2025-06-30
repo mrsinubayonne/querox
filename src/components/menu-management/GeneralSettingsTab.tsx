@@ -27,6 +27,12 @@ const GeneralSettingsTab = () => {
   }, [menu]);
 
   const handleSave = () => {
+    console.log('Saving menu settings with:', {
+      name,
+      description,
+      logo_url: logoUrl,
+      header_image_url: headerImageUrl
+    });
     updateMenuSettings({
       name,
       description,
@@ -59,8 +65,8 @@ const GeneralSettingsTab = () => {
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
         <div className="space-y-2">
-          <label htmlFor="menu-name" className="text-sm font-medium">Nom du menu</label>
-          <Input id="menu-name" value={name} onChange={(e) => setName(e.target.value)} />
+          <label htmlFor="restaurant-name" className="text-sm font-medium">Nom du restaurant</label>
+          <Input id="restaurant-name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         
         <div className="space-y-2">
@@ -71,11 +77,17 @@ const GeneralSettingsTab = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <LogoUpload
                 currentLogo={logoUrl}
-                onLogoChange={(url) => setLogoUrl(url)}
+                onLogoChange={(url) => {
+                  console.log('Logo changed to:', url);
+                  setLogoUrl(url);
+                }}
             />
             <SimpleImageUploader
                 imageUrl={headerImageUrl}
-                onImageChange={(url) => setHeaderImageUrl(url)}
+                onImageChange={(url) => {
+                  console.log('Header image changed to:', url);
+                  setHeaderImageUrl(url);
+                }}
                 label="Image d'en-tête"
             />
         </div>

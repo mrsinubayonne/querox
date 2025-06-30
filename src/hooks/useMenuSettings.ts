@@ -40,7 +40,10 @@ export const useMenuSettings = () => {
         .single();
 
       if (error) throw error;
-      if (data) setMenu(data);
+      if (data) {
+        console.log('Menu settings fetched:', data);
+        setMenu(data);
+      }
     } catch (error: any) {
       console.error("Error fetching menu settings:", error);
       toast({ title: "Erreur", description: "Impossible de charger les paramètres du menu.", variant: "destructive" });
@@ -55,49 +58,16 @@ export const useMenuSettings = () => {
     }
   }, [activeMenuId, fetchMenuSettings]);
 
-  const uploadImage = async (file: string, bucket: string): Promise<string | null> => {
-    try {
-      const response = await fetch(file);
-      const blob = await response.blob();
-      const filePath = `public/${uuidv4()}`;
-      
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, blob, {
-          contentType: blob.type,
-          upsert: true,
-        });
-
-      if (error) throw error;
-      
-      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
-      return urlData.publicUrl;
-
-    } catch (error: any) {
-      console.error('Error uploading image:', error);
-      toast({ title: "Erreur d'upload", description: `Impossible d'uploader l'image: ${error.message}`, variant: "destructive" });
-      return null;
-    }
-  };
-
   const updateMenuSettings = async (updates: Partial<Omit<MenuSettings, 'id'>>) => {
     if (!menu) return;
 
+    console.log('Starting menu settings update with:', updates);
     setIsSaving(true);
     try {
       const newUpdates = { ...updates };
 
-      if (newUpdates.logo_url && newUpdates.logo_url.startsWith('data:image')) {
-        const uploadedUrl = await uploadImage(newUpdates.logo_url, 'menu-assets');
-        if (uploadedUrl) newUpdates.logo_url = uploadedUrl;
-        else delete newUpdates.logo_url;
-      }
-
-      if (newUpdates.header_image_url && newUpdates.header_image_url.startsWith('data:image')) {
-        const uploadedUrl = await uploadImage(newUpdates.header_image_url, 'menu-assets');
-        if (uploadedUrl) newUpdates.header_image_url = uploadedUrl;
-        else delete newUpdates.header_image_url;
-      }
+      // Pour cette version, on garde les images en data URL directement
+      // Dans une version future, on peut implémenter l'upload vers Supabase Storage
       
       const { data, error } = await supabase
         .from('menus')
@@ -106,8 +76,12 @@ export const useMenuSettings = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Database update error:', error);
+        throw error;
+      }
 
+      console.log('Menu settings updated successfully:', data);
       setMenu(data);
       toast({ title: "Succès", description: "Paramètres du menu mis à jour." });
 
