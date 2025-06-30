@@ -117,14 +117,14 @@ const Menus: React.FC = () => {
         {/* Menu Selection */}
         {menus.length > 0 && (
           <div className="bg-white p-6 rounded-lg shadow border">
-            <h2 className="text-xl font-semibold mb-4">Menu Actuel</h2>
+            <h2 className="text-xl font-semibold mb-4">Restaurant</h2>
             <div className="flex items-center gap-4">
               <Select 
                 value={activeMenu?.id || ''} 
                 onValueChange={handleMenuChange}
               >
                 <SelectTrigger className="w-[300px]">
-                  <SelectValue placeholder="Sélectionner un menu" />
+                  <SelectValue placeholder="Sélectionner un restaurant" />
                 </SelectTrigger>
                 <SelectContent>
                   {menus.map((menu) => (
