@@ -6,9 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import EmptyState from '@/components/EmptyState';
-import CreateMenuModal from '@/components/CreateMenuModal';
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
-import { Menu, Plus, Eye } from 'lucide-react';
+import { Menu, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +22,6 @@ interface MenuType {
 const Menus: React.FC = () => {
   const [menus, setMenus] = useState<MenuType[]>([]);
   const [activeMenu, setActiveMenu] = useState<MenuType | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -73,11 +71,6 @@ const Menus: React.FC = () => {
     setActiveMenu(selectedMenu || null);
   };
 
-  const handleMenuCreated = async () => {
-    setShowCreateModal(false);
-    await fetchMenus();
-  };
-
   const handleViewPublicMenu = useCallback(() => {
     if (!activeMenu?.id) {
       console.error('🔥 Aucun menu actif pour générer l\'URL publique');
@@ -108,7 +101,7 @@ const Menus: React.FC = () => {
             <p className="text-gray-600 mt-2">Gérez vos menus et vos plats</p>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div>
             <Button 
               onClick={handleViewPublicMenu}
               variant="outline" 
@@ -118,22 +111,8 @@ const Menus: React.FC = () => {
               <Eye className="w-4 h-4 mr-2" />
               Menu Public
             </Button>
-            
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nouveau Menu
-            </Button>
           </div>
         </div>
-
-        {/* Debug info */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-gray-100 p-4 rounded-lg text-sm">
-            <p><strong>Debug:</strong></p>
-            <p>Menus disponibles: {menus.length}</p>
-            <p>Menu actif: {activeMenu ? `${activeMenu.name} (${activeMenu.id})` : 'Aucun'}</p>
-          </div>
-        )}
 
         {/* Menu Selection */}
         {menus.length > 0 && (
@@ -178,16 +157,9 @@ const Menus: React.FC = () => {
             title="Aucun menu sélectionné"
             description="Créez votre premier menu ou sélectionnez un menu existant pour commencer"
             actionLabel="Créer un menu"
-            onAction={() => setShowCreateModal(true)}
+            onAction={() => {}}
           />
         )}
-
-        {/* Modals */}
-        <CreateMenuModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={handleMenuCreated}
-        />
       </div>
     </PageWithSidebar>
   );
