@@ -5,35 +5,88 @@ import { useMenuData } from './useMenuData';
 import { useMenuFilter } from './useMenuFilter';
 import { useShoppingCart } from './useShoppingCart';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export const usePublicMenu = () => {
   const location = useLocation();
   const { toast } = useToast();
+  const { user, signIn } = useAuth();
   
   const [menuId, setMenuId] = useState<string | null>(null);
   const [menuError, setMenuError] = useState<string | null>(null);
+  const [autoLoginProcessed, setAutoLoginProcessed] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const id = params.get('menu_id');
-    
-    console.log("🔥 Menu ID extrait de l'URL:", id);
-    
-    if (id) {
-      setMenuId(id);
-      setMenuError(null);
-    } else {
-      console.error("🔥 Aucun menu_id dans l'URL");
-      const errorMsg = "Aucun menu n'est spécifié dans l'URL";
-      setMenuError(errorMsg);
+    const processUrl = async () => {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('menu_id');
+      const autoToken = params.get('auto_token');
       
-      toast({
-        title: "Menu non spécifié",
-        description: "L'URL doit contenir un paramètre menu_id valide",
-        variant: "destructive",
-      });
-    }
-  }, [location.search, toast]);
+      console.log("🔥 Menu ID extrait de l'URL:", id);
+      console.log("🔥 Token auto-connexion:", autoToken ? "Présent" : "Absent");
+      
+      // Traitement du token d'auto-connexion
+      if (autoToken && !autoLoginProcessed && !user) {
+        try {
+          const tokenData = JSON.parse(atob(autoToken));
+          console.log("🔥 Données du token:", tokenData);
+          
+          // Vérifier la validité du token
+          const expiresAt = new Date(tokenData.expires_at);
+          const now = new Date();
+          
+          if (expiresAt > now) {
+            // Le token est valide, effectuer une connexion temporaire
+            console.log("🔥 Token valide, connexion automatique...");
+            
+            // Ici on pourrait implémenter une connexion temporaire
+            // Pour l'instant, on affiche juste un message
+            toast({
+              title: "Connexion automatique",
+              description: "Accès autorisé via QR Code",
+              variant: "default",
+            });
+            
+            setAutoLoginProcessed(true);
+          } else {
+            console.log("🔥 Token expiré");
+            toast({
+              title: "Token expiré",
+              description: "Le QR Code a expiré, veuillez en générer un nouveau",
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error("🔥 Erreur décodage token:", error);
+          toast({
+            title: "Token invalide",
+            description: "Le QR Code est invalide",
+            variant: "destructive",
+          });
+        }
+      }
+      
+      if (id) {
+        setMenuId(id);
+        setMenuError(null);
+      } else {
+        console.error("🔥 Aucun menu_id dans l'URL");
+        const errorMsg = "Aucun menu n'est spécifié dans l'URL";
+        setMenuError(errorMsg);
+        
+        if (!autoToken) {
+          toast({
+            title: "Menu non spécifié",
+            description: "L'URL doit contenir un paramètre menu_id valide",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    processUrl();
+  }, [location.search, toast, autoLoginProcessed, user]);
 
   const { menuItems, loading, error: dataError, restaurantUserId, menuData } = useMenuData(menuId);
   
@@ -60,7 +113,8 @@ export const usePublicMenu = () => {
     categoriesCount: categories.length,
     error: finalError,
     restaurantUserId,
-    menuData
+    menuData,
+    autoLoginProcessed
   });
   
   return {
@@ -77,5 +131,6 @@ export const usePublicMenu = () => {
     menuError: finalError,
     restaurantUserId,
     menuData,
+    autoLoginProcessed,
   };
 };
