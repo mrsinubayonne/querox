@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import QRCodeGenerator from '../components/QRCodeGenerator';
@@ -10,41 +9,37 @@ import { Download, Share2, QrCode as QrCodeIcon, Menu, Eye, Settings } from 'luc
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
 interface MenuType {
   id: string;
   name: string;
   is_active: boolean;
 }
-
 const QRCodes: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [restaurantLogo, setRestaurantLogo] = useState<string | undefined>();
   const [showSettings, setShowSettings] = useState(false);
   const [menus, setMenus] = useState<MenuType[]>([]);
   const [activeMenu, setActiveMenu] = useState<MenuType | null>(null);
-  const { user } = useAuth();
-  const { toast } = useToast();
-
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     fetchMenus();
   }, [user]);
-
   const fetchMenus = async () => {
     if (!user) return;
-
     try {
-      const { data, error } = await supabase
-        .from('menus')
-        .select('id, name, is_active')
-        .eq('user_id', user.id)
-        .eq('is_active', true);
-
+      const {
+        data,
+        error
+      } = await supabase.from('menus').select('id, name, is_active').eq('user_id', user.id).eq('is_active', true);
       if (error) {
         console.error('Erreur récupération menus:', error);
         return;
       }
-
       setMenus(data || []);
       if (data && data.length > 0) {
         setActiveMenu(data[0]);
@@ -53,10 +48,8 @@ const QRCodes: React.FC = () => {
       console.error('Erreur:', error);
     }
   };
-
   const generateAutoLoginToken = async () => {
     if (!user || !activeMenu) return null;
-
     try {
       // Créer un token temporaire d'accès au menu
       const tokenData = {
@@ -74,50 +67,39 @@ const QRCodes: React.FC = () => {
       return null;
     }
   };
-
   const getQRCodeTypes = async () => {
     const autoLoginToken = await generateAutoLoginToken();
     const baseUrl = window.location.origin;
-    
-    const types = [
-      {
-        id: 'menu',
-        title: 'Menu du restaurant',
-        description: 'Code QR pour accéder au menu avec connexion automatique',
-        url: activeMenu ? `${baseUrl}/menu-public?menu_id=${activeMenu.id}&auto_token=${autoLoginToken}` : `${baseUrl}/menus`,
-        color: 'from-blue-500 to-blue-600',
-        icon: Menu,
-        isActive: !!activeMenu
-      },
-      {
-        id: 'dashboard',
-        title: 'Accès administrateur',
-        description: 'Code QR pour accès direct au tableau de bord',
-        url: `${baseUrl}/dashboard?auto_token=${autoLoginToken}`,
-        color: 'from-purple-500 to-purple-600',
-        icon: Eye,
-        isActive: true
-      }
-    ];
-
+    const types = [{
+      id: 'menu',
+      title: 'Menu du restaurant',
+      description: 'Code QR pour accéder au menu avec connexion automatique',
+      url: activeMenu ? `${baseUrl}/menu-public?menu_id=${activeMenu.id}&auto_token=${autoLoginToken}` : `${baseUrl}/menus`,
+      color: 'from-blue-500 to-blue-600',
+      icon: Menu,
+      isActive: !!activeMenu
+    }, {
+      id: 'dashboard',
+      title: 'Accès administrateur',
+      description: 'Code QR pour accès direct au tableau de bord',
+      url: `${baseUrl}/dashboard?auto_token=${autoLoginToken}`,
+      color: 'from-purple-500 to-purple-600',
+      icon: Eye,
+      isActive: true
+    }];
     return types;
   };
-
   const [qrCodeTypes, setQrCodeTypes] = useState<any[]>([]);
-
   useEffect(() => {
     const loadQRTypes = async () => {
       const types = await getQRCodeTypes();
       setQrCodeTypes(types);
     };
-    
     if (user) {
       loadQRTypes();
     }
   }, [user, activeMenu]);
-
-  return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+  return <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       
       <div className="flex-1 overflow-auto">
@@ -134,11 +116,7 @@ const QRCodes: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-4">
-              <Button 
-                variant="outline"
-                onClick={() => setShowSettings(!showSettings)}
-                className="bg-white/50 hover:bg-white/80"
-              >
+              <Button variant="outline" onClick={() => setShowSettings(!showSettings)} className="bg-white/50 hover:bg-white/80">
                 <Settings size={16} className="mr-2" />
                 Paramètres
               </Button>
@@ -152,8 +130,7 @@ const QRCodes: React.FC = () => {
 
         <main className="p-8">
           {/* Menu Selection */}
-          {menus.length > 0 && (
-            <Card className="mb-8 border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+          {menus.length > 0 && <Card className="mb-8 border-0 shadow-sm bg-white/60 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-gray-900">
                   Menu actif
@@ -165,12 +142,10 @@ const QRCodes: React.FC = () => {
                   <Badge variant="default">Actif</Badge>
                 </div>
               </CardContent>
-            </Card>
-          )}
+            </Card>}
 
           {/* Paramètres du logo */}
-          {showSettings && (
-            <Card className="mb-8 border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+          {showSettings && <Card className="mb-8 border-0 shadow-sm bg-white/60 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
                   <Settings size={20} />
@@ -178,13 +153,9 @@ const QRCodes: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <LogoUpload 
-                  currentLogo={restaurantLogo}
-                  onLogoChange={setRestaurantLogo}
-                />
+                <LogoUpload currentLogo={restaurantLogo} onLogoChange={setRestaurantLogo} />
               </CardContent>
-            </Card>
-          )}
+            </Card>}
 
           {/* Introduction */}
           <Card className="mb-8 border-0 shadow-sm bg-white/60 backdrop-blur-sm">
@@ -200,11 +171,9 @@ const QRCodes: React.FC = () => {
                   <p className="text-gray-600">
                     Ces codes QR permettent aux utilisateurs d'accéder directement à votre menu ou dashboard sans avoir besoin de se connecter manuellement.
                     La connexion se fait automatiquement de manière sécurisée.
-                    {restaurantLogo && (
-                      <span className="block mt-2 text-sm text-blue-600 font-medium">
+                    {restaurantLogo && <span className="block mt-2 text-sm text-blue-600 font-medium">
                         ✨ Logo du restaurant activé - vos QR codes sont maintenant personnalisés !
-                      </span>
-                    )}
+                      </span>}
                   </p>
                 </div>
               </div>
@@ -213,37 +182,12 @@ const QRCodes: React.FC = () => {
 
           {/* QR Codes Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {qrCodeTypes.map((qrType) => (
-              <Card key={qrType.id} className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-2xl bg-gradient-to-br ${qrType.color} text-white shadow-lg`}>
-                        <qrType.icon size={24} />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl font-bold text-gray-900">
-                          {qrType.title}
-                        </CardTitle>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {qrType.description}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge className={qrType.isActive ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-700 border-gray-200"}>
-                      {qrType.isActive ? "Actif" : "Inactif"}
-                    </Badge>
-                  </div>
-                </CardHeader>
+            {qrCodeTypes.map(qrType => <Card key={qrType.id} className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                
                 
                 <CardContent className="pt-0">
-                  {qrType.isActive && (
-                    <>
-                      <QRCodeGenerator 
-                        url={qrType.url}
-                        title={qrType.title}
-                        logo={restaurantLogo}
-                      />
+                  {qrType.isActive && <>
+                      <QRCodeGenerator url={qrType.url} title={qrType.title} logo={restaurantLogo} />
                       
                       <div className="mt-6 pt-4 border-t border-gray-100">
                         <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
@@ -262,17 +206,13 @@ const QRCodes: React.FC = () => {
                           </Button>
                         </div>
                       </div>
-                    </>
-                  )}
+                    </>}
                   
-                  {!qrType.isActive && (
-                    <div className="text-center py-8 text-gray-500">
+                  {!qrType.isActive && <div className="text-center py-8 text-gray-500">
                       <p>QR Code inactif - Aucun menu sélectionné</p>
-                    </div>
-                  )}
+                    </div>}
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
 
           {/* Tips Section */}
@@ -307,8 +247,6 @@ const QRCodes: React.FC = () => {
           </Card>
         </main>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default QRCodes;
