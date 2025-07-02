@@ -29,7 +29,6 @@ const Menus: React.FC = () => {
 
   const fetchMenus = useCallback(async () => {
     if (!user) {
-      console.error('Pas d\'utilisateur connecté');
       return;
     }
 
@@ -41,18 +40,15 @@ const Menus: React.FC = () => {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Erreur récupération menus:', error);
         toast({
           title: "Erreur",
           description: "Impossible de charger les menus",
           variant: "destructive",
         });
       } else {
-        console.log('🔥 Menus récupérés:', data);
         setMenus(data || []);
         if (data && data.length > 0 && !activeMenu) {
           const firstMenu = data[0];
-          console.log('🔥 Définition du menu actif:', firstMenu);
           setActiveMenu(firstMenu);
         }
       }
@@ -67,13 +63,11 @@ const Menus: React.FC = () => {
 
   const handleMenuChange = (menuId: string) => {
     const selectedMenu = menus.find(menu => menu.id === menuId);
-    console.log('🔥 Changement de menu:', selectedMenu);
     setActiveMenu(selectedMenu || null);
   };
 
   const handleViewPublicMenu = useCallback(() => {
     if (!activeMenu?.id) {
-      console.error('🔥 Aucun menu actif pour générer l\'URL publique');
       toast({
         title: "Erreur",
         description: "Aucun menu actif sélectionné",
@@ -83,8 +77,6 @@ const Menus: React.FC = () => {
     }
     
     const publicUrl = `${window.location.origin}/menu-public?menu_id=${activeMenu.id}`;
-    console.log('🔥 URL du menu public générée:', publicUrl);
-    console.log('🔥 Menu actif utilisé:', activeMenu);
     
     // Ouvrir dans un nouvel onglet
     window.open(publicUrl, '_blank');

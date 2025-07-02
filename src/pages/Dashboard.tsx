@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -19,7 +21,42 @@ import { useState } from 'react';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const { toast } = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const autoToken = params.get('auto_token');
+    
+    if (autoToken && user) {
+      try {
+        const tokenData = JSON.parse(atob(autoToken));
+        const expiresAt = new Date(tokenData.expires_at);
+        const now = new Date();
+        
+        if (expiresAt > now) {
+          toast({
+            title: "Accès autorisé",
+            description: "Connexion via QR Code réussie",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "QR Code expiré",
+            description: "Veuillez générer un nouveau QR Code",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "QR Code invalide",
+          description: "Le code QR semble corrompu",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [location.search, user, toast]);
 
   const quickActions = [
     {

@@ -21,7 +21,6 @@ export const useMenuData = (menuId: string | null) => {
   const { toast } = useToast();
 
   const fetchMenu = useCallback(async (id: string) => {
-    console.log(`🔥 Récupération du menu pour ID: ${id}`);
     setLoading(true);
     setError(null);
     
@@ -38,7 +37,6 @@ export const useMenuData = (menuId: string | null) => {
         throw new Error("Menu non trouvé ou inactif");
       }
 
-      console.log("🔥 Menu trouvé:", menuData.name);
       setRestaurantUserId(menuData.user_id);
       setMenuData({
         id,
@@ -60,12 +58,9 @@ export const useMenuData = (menuId: string | null) => {
       }
 
       if (!categoriesData || categoriesData.length === 0) {
-        console.warn("🔥 Aucune catégorie trouvée");
         setMenuItems([]);
         return;
       }
-      
-      console.log("🔥 Catégories trouvées:", categoriesData.length);
       const categoryMap = new Map(categoriesData.map((c: any) => [c.id, c.name]));
       const categoryIds = categoriesData.map((c: any) => c.id);
       
@@ -82,7 +77,6 @@ export const useMenuData = (menuId: string | null) => {
       }
 
       if (!menuItemsData || menuItemsData.length === 0) {
-        console.warn("🔥 Aucun plat trouvé");
         setMenuItems([]);
         return;
       }
@@ -98,11 +92,9 @@ export const useMenuData = (menuId: string | null) => {
         is_available: item.is_available,
       }));
 
-      console.log("🔥 Plats transformés:", transformedItems.length);
       setMenuItems(transformedItems);
       
     } catch (err: any) {
-      console.error('🔥 Erreur:', err);
       const errorMessage = err.message || "Erreur lors du chargement du menu";
       setError(errorMessage);
       setMenuItems([]);

@@ -21,7 +21,6 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({ url, title, size = 20
 
   const generateQRCode = async () => {
     try {
-      console.log('Generating QR code for URL:', url);
       const canvas = canvasRef.current;
       if (canvas) {
         // Générer le QR code de base
@@ -65,8 +64,6 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({ url, title, size = 20
           // Sans logo, utiliser directement la data URL du canvas
           setQrCodeDataUrl(canvas.toDataURL());
         }
-        
-        console.log('QR code generated successfully');
       }
     } catch (error) {
       console.error('Erreur lors de la génération du QR code:', error);
