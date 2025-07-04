@@ -10,7 +10,7 @@ const Statistiques: React.FC = () => {
   const statsData = [
     {
       title: "Chiffre d'affaires",
-      value: "0 €",
+      value: "0 FCFA",
       icon: <DollarSign size={20} />,
       color: "green" as const,
     },
