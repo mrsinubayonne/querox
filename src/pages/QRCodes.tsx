@@ -6,7 +6,7 @@ import LogoUpload from '../components/LogoUpload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, Share2, QrCode as QrCodeIcon, Menu, Eye, Settings } from 'lucide-react';
+import { QrCode as QrCodeIcon, Menu, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -54,67 +54,11 @@ const QRCodes: React.FC = () => {
     }
   };
 
-  const generateAutoLoginToken = async () => {
-    if (!user || !activeMenu) return null;
-
-    try {
-      // Créer un token temporaire d'accès au menu
-      const tokenData = {
-        user_id: user.id,
-        menu_id: activeMenu.id,
-        created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 jours
-      };
-
-      // Encoder le token en base64 pour l'URL
-      const token = btoa(JSON.stringify(tokenData));
-      return token;
-    } catch (error) {
-      console.error('Erreur génération token:', error);
-      return null;
-    }
-  };
-
-  const getQRCodeTypes = async () => {
-    const autoLoginToken = await generateAutoLoginToken();
+  const getMenuUrl = () => {
+    if (!activeMenu) return '';
     const baseUrl = window.location.origin;
-    
-    const types = [
-      {
-        id: 'menu',
-        title: 'Menu du restaurant',
-        description: 'Code QR pour accéder au menu avec connexion automatique',
-        url: activeMenu ? `${baseUrl}/menu-public?menu_id=${activeMenu.id}&auto_token=${autoLoginToken}` : `${baseUrl}/menus`,
-        color: 'from-blue-500 to-blue-600',
-        icon: Menu,
-        isActive: !!activeMenu
-      },
-      {
-        id: 'dashboard',
-        title: 'Accès administrateur',
-        description: 'Code QR pour accès direct au tableau de bord',
-        url: `${baseUrl}/dashboard?auto_token=${autoLoginToken}`,
-        color: 'from-purple-500 to-purple-600',
-        icon: Eye,
-        isActive: true
-      }
-    ];
-
-    return types;
+    return `${baseUrl}/menu-public?menu_id=${activeMenu.id}`;
   };
-
-  const [qrCodeTypes, setQrCodeTypes] = useState<any[]>([]);
-
-  useEffect(() => {
-    const loadQRTypes = async () => {
-      const types = await getQRCodeTypes();
-      setQrCodeTypes(types);
-    };
-    
-    if (user) {
-      loadQRTypes();
-    }
-  }, [user, activeMenu]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
@@ -126,10 +70,10 @@ const QRCodes: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
-                Codes QR
+                QR Code du Menu
               </h1>
               <p className="text-sm text-gray-500 mt-1 font-medium">
-                Générez et gérez vos codes QR avec connexion automatique
+                Générez le QR code pour accéder à votre menu
               </p>
             </div>
             
@@ -141,10 +85,6 @@ const QRCodes: React.FC = () => {
               >
                 <Settings size={16} className="mr-2" />
                 Paramètres
-              </Button>
-              <Button className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-blue-500/25">
-                <QrCodeIcon size={16} className="mr-2" />
-                Nouveau QR Code
               </Button>
             </div>
           </div>
@@ -174,7 +114,7 @@ const QRCodes: React.FC = () => {
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
                   <Settings size={20} />
-                  Paramètres des QR Codes
+                  Paramètres du QR Code
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -195,14 +135,14 @@ const QRCodes: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    Codes QR avec connexion automatique
+                    QR Code du Menu
                   </h3>
                   <p className="text-gray-600">
-                    Ces codes QR permettent aux utilisateurs d'accéder directement à votre menu ou dashboard sans avoir besoin de se connecter manuellement.
-                    La connexion se fait automatiquement de manière sécurisée.
+                    Ce QR code permet aux clients d'accéder directement au menu de votre restaurant.
+                    Ils pourront consulter vos plats et passer commande facilement.
                     {restaurantLogo && (
                       <span className="block mt-2 text-sm text-blue-600 font-medium">
-                        ✨ Logo du restaurant activé - vos QR codes sont maintenant personnalisés !
+                        ✨ Logo du restaurant activé - votre QR code est personnalisé !
                       </span>
                     )}
                   </p>
@@ -211,95 +151,88 @@ const QRCodes: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* QR Codes Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {qrCodeTypes.map((qrType) => (
-              <Card key={qrType.id} className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-2xl bg-gradient-to-br ${qrType.color} text-white shadow-lg`}>
-                        <qrType.icon size={24} />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl font-bold text-gray-900">
-                          {qrType.title}
-                        </CardTitle>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {qrType.description}
-                        </p>
-                      </div>
+          {/* QR Code Principal */}
+          {activeMenu ? (
+            <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg">
+                      <Menu size={24} />
                     </div>
-                    <Badge className={qrType.isActive ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-700 border-gray-200"}>
-                      {qrType.isActive ? "Actif" : "Inactif"}
-                    </Badge>
+                    <div>
+                      <CardTitle className="text-xl font-bold text-gray-900">
+                        Menu du Restaurant
+                      </CardTitle>
+                      <p className="text-sm text-gray-500 mt-1">
+                        QR Code pour accéder au menu
+                      </p>
+                    </div>
                   </div>
-                </CardHeader>
+                  <Badge className="bg-green-50 text-green-700 border-green-200">
+                    Actif
+                  </Badge>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="pt-0">
+                <QRCodeGenerator 
+                  url={getMenuUrl()}
+                  title="Menu du Restaurant"
+                  logo={restaurantLogo}
+                />
                 
-                <CardContent className="pt-0">
-                  {qrType.isActive && (
-                    <>
-                      <QRCodeGenerator 
-                        url={qrType.url}
-                        title={qrType.title}
-                        logo={restaurantLogo}
-                      />
-                      
-                      <div className="mt-6 pt-4 border-t border-gray-100">
-                        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                          <span>Connexion automatique:</span>
-                          <span className="font-medium text-green-600">Activée</span>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" className="flex-1">
-                            <Download size={14} className="mr-2" />
-                            Télécharger
-                          </Button>
-                          <Button variant="outline" size="sm" className="flex-1">
-                            <Share2 size={14} className="mr-2" />
-                            Partager
-                          </Button>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                <div className="mt-6 pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <span>Lien du menu:</span>
+                    <span className="font-medium text-green-600">Disponible</span>
+                  </div>
                   
-                  {!qrType.isActive && (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>QR Code inactif - Aucun menu sélectionné</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                    <code className="text-xs text-gray-700 break-all">
+                      {getMenuUrl()}
+                    </code>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <CardContent className="text-center py-12">
+                <div className="text-gray-500 mb-4">
+                  <QrCodeIcon size={48} className="mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-semibold mb-2">Aucun menu actif</h3>
+                  <p>Vous devez avoir un menu actif pour générer un QR code.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Tips Section */}
+          {/* Conseils d'utilisation */}
           <Card className="mt-8 border-0 shadow-sm bg-white/60 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-xl font-bold text-gray-900">
-                Conseils d'utilisation
+                Comment utiliser ce QR Code
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900">Connexion automatique</h4>
+                  <h4 className="font-semibold text-gray-900">Utilisation</h4>
                   <ul className="space-y-2 text-sm text-gray-600">
-                    <li>• Les QR codes incluent un token de connexion sécurisé</li>
-                    <li>• Validité de 7 jours pour des raisons de sécurité</li>
-                    <li>• Accès direct sans saisie de mot de passe</li>
-                    <li>• Idéal pour le personnel ou les accès fréquents</li>
+                    <li>• Imprimez le QR code et placez-le sur vos tables</li>
+                    <li>• Les clients scannent le code avec leur téléphone</li>
+                    <li>• Ils accèdent directement au menu</li>
+                    <li>• Ils peuvent consulter et commander</li>
                   </ul>
                 </div>
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900">Sécurité</h4>
+                  <h4 className="font-semibold text-gray-900">Avantages</h4>
                   <ul className="space-y-2 text-sm text-gray-600">
-                    <li>• Tokens d'accès temporaires et chiffrés</li>
-                    <li>• Accès limité aux fonctions autorisées</li>
-                    <li>• Régénération automatique des codes</li>
-                    <li>• {restaurantLogo ? 'Logo de sécurité intégré' : 'Ajoutez votre logo pour plus de sécurité'}</li>
+                    <li>• Accès instantané au menu</li>
+                    <li>• Pas besoin de menus papier</li>
+                    <li>• Facilite la commande en ligne</li>
+                    <li>• {restaurantLogo ? 'QR code personnalisé avec votre logo' : 'Ajoutez votre logo pour personnaliser'}</li>
                   </ul>
                 </div>
               </div>
