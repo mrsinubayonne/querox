@@ -18,6 +18,11 @@ const LandingNavigation: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
+            <img 
+              src="/lovable-uploads/a3efddc0-fd23-4923-9d99-aca95a7a152a.png" 
+              alt="QUEROX Logo" 
+              className="h-8 w-8 mr-3"
+            />
             <h1 className="text-2xl font-bold text-primary cursor-pointer" onClick={() => navigate('/')}>
               QUEROX
             </h1>
@@ -57,8 +62,8 @@ const LandingNavigation: React.FC = () => {
                 <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
                   Connexion
                 </Button>
-                <Button size="sm" onClick={() => navigate('/auth')}>
-                  Commencer
+                <Button size="sm" onClick={() => navigate('/auth')} className="bg-primary hover:bg-primary/90 text-white font-semibold">
+                  Essai Gratuit 3 Jours
                 </Button>
               </>
             )}

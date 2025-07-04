@@ -2,150 +2,149 @@
 export const plans = [
   {
     name: "Starter",
-    price: "20 000",
-    period: "FCFA/mois",
-    annualPrice: "200 000",
-    annualPeriod: "FCFA/an",
+    price: "2,500 FCFA",
+    period: "/mois",
     description: "Parfait pour débuter avec les fonctionnalités essentielles",
     features: [
-      "Menu numérique interactif",
-      "QR Code personnalisé",
-      "Gestion des commandes",
-      "5 catégories de plats",
-      "Support email"
+      "Menu numérique avec QR Code",
+      "Jusqu'à 50 plats",
+      "Gestion des commandes de base",
+      "Support par email",
+      "1 utilisateur"
     ],
-    popular: false,
-    cta: "Choisir Starter",
-    tier: "starter"
+    highlighted: false,
+    trialText: "3 jours gratuits",
+    cta: "Commencer l'essai gratuit"
   },
   {
     name: "Professionnel",
-    price: "35 000",
-    period: "FCFA/mois",
-    annualPrice: "350 000",
-    annualPeriod: "FCFA/an",
-    description: "Idéal pour les restaurants en croissance",
+    price: "7,500 FCFA",
+    period: "/mois",
+    description: "La solution complète pour restaurants établis",
     features: [
-      "Toutes les fonctionnalités Starter",
-      "Catégories illimitées",
-      "Gestion des stocks",
-      "Statistiques avancées",
-      "Site web personnalisé",
-      "Support prioritaire"
+      "Tout du plan Starter",
+      "Menus illimités",
+      "Gestion avancée des commandes",
+      "Statistiques détaillées",
+      "Gestion des réservations",
+      "Support prioritaire 24/7",
+      "5 utilisateurs inclus",
+      "Sauvegarde automatique"
     ],
-    popular: true,
-    cta: "Choisir Pro",
-    tier: "premium"
+    highlighted: true,
+    trialText: "3 jours gratuits",
+    cta: "Commencer l'essai gratuit",
+    badge: "Le plus populaire"
   },
   {
     name: "Entreprise",
-    price: "40 000",
-    period: "FCFA/mois",
-    annualPrice: "400 000",
-    annualPeriod: "FCFA/an",
-    description: "Pour les chaînes et grandes structures",
+    price: "15,000 FCFA",
+    period: "/mois",
+    description: "Pour les chaînes et restaurants multi-sites",
     features: [
-      "Toutes les fonctionnalités Pro",
-      "Multi-établissements",
-      "API personnalisée",
-      "Intégrations avancées",
-      "Formations personnalisées",
-      "Support dédié 24/7"
+      "Tout du plan Professionnel",
+      "Multi-restaurants",
+      "API complète",
+      "Intégrations personnalisées",
+      "Formation personnalisée",
+      "Gestionnaire de compte dédié",
+      "Utilisateurs illimités",
+      "SLA garanti 99.9%"
     ],
-    popular: false,
-    cta: "Choisir Entreprise",
-    tier: "pro"
+    highlighted: false,
+    trialText: "3 jours gratuits + Demo personnalisée",
+    cta: "Demander une démo"
   },
   {
     name: "LICENCE QUEROX",
     price: "Sur devis",
     period: "",
-    description: "Solution personnalisée sans abonnement mensuel",
+    description: "Solution sur-mesure avec licence complète",
     features: [
-      "Licence perpétuelle",
+      "Code source complet",
       "Installation sur vos serveurs",
-      "Personnalisation complète",
-      "Formation dédiée",
-      "Support technique inclus",
-      "Pas d'abonnement mensuel"
+      "Personnalisation illimitée",
+      "Formation équipe technique",
+      "Support technique premium",
+      "Mises à jour incluses 1 an",
+      "Nom de domaine personnalisé",
+      "Marque blanche complète"
     ],
-    popular: false,
-    cta: "Contacter sur WhatsApp",
-    tier: "licence",
-    isWhatsApp: true,
-    whatsappNumber: "+242064563021"
+    highlighted: false,
+    trialText: "Consultation gratuite",
+    cta: "Nous contacter"
   }
 ];
 
 export const featureComparison = [
   {
-    feature: "Menu numérique interactif",
+    feature: "Menu numérique QR Code",
     starter: true,
     pro: true,
     enterprise: true,
     licence: true
   },
   {
-    feature: "QR Code personnalisé",
-    starter: true,
-    pro: true,
-    enterprise: true,
-    licence: true
+    feature: "Nombre de plats",
+    starter: "50",
+    pro: "Illimité",
+    enterprise: "Illimité",
+    licence: "Illimité"
   },
   {
     feature: "Gestion des commandes",
-    starter: true,
-    pro: true,
-    enterprise: true,
-    licence: true
+    starter: "Basique",
+    pro: "Avancée",
+    enterprise: "Complète",
+    licence: "Complète"
   },
   {
-    feature: "Catégories de plats",
-    starter: "5 max",
-    pro: "Illimitées",
-    enterprise: "Illimitées",
-    licence: "Illimitées"
+    feature: "Statistiques et rapports",
+    starter: "Basiques",
+    pro: "Détaillées",
+    enterprise: "Avancées + Export",
+    licence: "Personnalisées"
   },
   {
-    feature: "Gestion des stocks",
+    feature: "Gestion des réservations",
     starter: false,
     pro: true,
     enterprise: true,
     licence: true
   },
   {
-    feature: "Statistiques avancées",
-    starter: false,
-    pro: true,
-    enterprise: true,
-    licence: true
-  },
-  {
-    feature: "Site web personnalisé",
-    starter: false,
-    pro: true,
-    enterprise: true,
-    licence: true
-  },
-  {
-    feature: "Multi-établissements",
+    feature: "Multi-restaurants",
     starter: false,
     pro: false,
     enterprise: true,
     licence: true
   },
   {
-    feature: "API personnalisée",
-    starter: false,
-    pro: false,
-    enterprise: true,
-    licence: true
-  },
-  {
-    feature: "Support",
+    feature: "Support client",
     starter: "Email",
-    pro: "Prioritaire",
-    enterprise: "Dédié 24/7",
-    licence: "Technique inclus"
+    pro: "24/7 Prioritaire",
+    enterprise: "Gestionnaire dédié",
+    licence: "Premium technique"
+  },
+  {
+    feature: "Nombre d'utilisateurs",
+    starter: "1",
+    pro: "5",
+    enterprise: "Illimité",
+    licence: "Illimité"
+  },
+  {
+    feature: "API et intégrations",
+    starter: false,
+    pro: "API limitée",
+    enterprise: "API complète",
+    licence: "Code source"
+  },
+  {
+    feature: "Essai gratuit",
+    starter: "3 jours",
+    pro: "3 jours",
+    enterprise: "3 jours + Démo",
+    licence: "Consultation"
   }
 ];

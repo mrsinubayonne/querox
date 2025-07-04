@@ -1,191 +1,102 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Check, Zap } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
-import { Check } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-interface PricingPlan {
-  name: string;
-  price: string;
-  period: string;
-  annualPrice?: string;
-  annualPeriod?: string;
-  description: string;
-  features: string[];
-  popular?: boolean;
-  cta: string;
-  tier: string;
-  isWhatsApp?: boolean;
-  whatsappNumber?: string;
-}
 
 interface PricingCardProps {
-  plan: PricingPlan;
+  plan: {
+    name: string;
+    price: string;
+    period: string;
+    description: string;
+    features: string[];
+    highlighted: boolean;
+    trialText: string;
+    cta: string;
+    badge?: string;
+  };
 }
 
 const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [processing, setProcessing] = useState(false);
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
 
-  const getPaymentUrl = (tier: string, period: 'monthly' | 'annual' = 'monthly') => {
-    const urls = {
-      starter: {
-        monthly: 'https://querox.mychariow.com/prd_fbf5sx/checkout',
-        annual: 'https://querox.mychariow.com/prd_fbf5sx_annual/checkout'
-      },
-      premium: {
-        monthly: 'https://querox.mychariow.com/prd_aba7bf/checkout',
-        annual: 'https://querox.mychariow.com/prd_aba7bf_annual/checkout'
-      },
-      pro: {
-        monthly: 'https://querox.mychariow.com/prd_idfv3d/checkout',
-        annual: 'https://querox.mychariow.com/prd_idfv3d_annual/checkout'
-      }
-    };
-    return urls[tier as keyof typeof urls]?.[period];
-  };
-
-  const handleSubscribe = async () => {
-    console.log('🚀 Bouton cliqué - Début du processus');
-    console.log('👤 Utilisateur connecté:', !!user);
-    console.log('📦 Plan sélectionné:', plan.tier);
-
-    if (plan.isWhatsApp && plan.whatsappNumber) {
-      const message = encodeURIComponent(`Bonjour, je suis intéressé par la LICENCE QUEROX. Pouvez-vous me donner plus d'informations ?`);
-      const whatsappUrl = `https://wa.me/${plan.whatsappNumber.replace(/[^0-9]/g, '')}?text=${message}`;
-      window.open(whatsappUrl, '_blank');
-      return;
-    }
-
-    if (!user) {
-      console.log('❌ Utilisateur non connecté - redirection vers auth');
-      window.location.href = '/auth';
-      return;
-    }
-
-    setProcessing(true);
-    console.log('⏳ Processing activé');
-
-    try {
-      const paymentUrl = getPaymentUrl(plan.tier, billingPeriod);
-      
-      if (paymentUrl) {
-        console.log('✅ URL de paiement trouvée:', paymentUrl);
-        console.log('🌐 Redirection vers:', paymentUrl);
-        window.location.href = paymentUrl;
+  const handleSelect = () => {
+    if (plan.name === "LICENCE QUEROX") {
+      // Contact pour licence
+      window.location.href = "mailto:contact@querox.me?subject=Demande de licence QUEROX";
+    } else if (plan.name === "Entreprise") {
+      // Demo pour entreprise
+      window.location.href = "mailto:contact@querox.me?subject=Demande de démo Entreprise";
+    } else {
+      // Essai gratuit pour les autres plans
+      if (user) {
+        navigate('/abonnement');
       } else {
-        console.log('❌ Aucune URL de paiement trouvée pour le tier:', plan.tier);
-        toast({
-          title: "Erreur",
-          description: "URL de paiement non configurée pour ce plan",
-          variant: "destructive",
-        });
+        navigate('/auth');
       }
-    } catch (error) {
-      console.error('💥 Erreur lors du paiement:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la redirection",
-        variant: "destructive",
-      });
-    } finally {
-      setProcessing(false);
-      console.log('🏁 Processing désactivé');
     }
-  };
-
-  const getCurrentPrice = () => {
-    if (plan.isWhatsApp) return plan.price;
-    return billingPeriod === 'annual' && plan.annualPrice ? plan.annualPrice : plan.price;
-  };
-
-  const getCurrentPeriod = () => {
-    if (plan.isWhatsApp) return plan.period;
-    return billingPeriod === 'annual' && plan.annualPeriod ? plan.annualPeriod : plan.period;
-  };
-
-  const getSavings = () => {
-    if (!plan.annualPrice || plan.isWhatsApp) return null;
-    const monthlyTotal = parseInt(plan.price.replace(/\s/g, '')) * 12;
-    const annualPrice = parseInt(plan.annualPrice.replace(/\s/g, ''));
-    const savings = monthlyTotal - annualPrice;
-    return savings > 0 ? savings : null;
   };
 
   return (
-    <Card className={`relative ${plan.popular ? 'border-2 border-blue-500 shadow-lg scale-105' : ''}`}>
-      {plan.popular && (
-        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-          <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
-            Le plus populaire
-          </span>
+    <Card className={`relative ${plan.highlighted ? 'border-primary shadow-xl scale-105' : 'border-gray-200'} transition-all duration-300 hover:shadow-lg`}>
+      {plan.badge && (
+        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+          <Badge className="bg-primary text-white px-4 py-1 font-semibold">
+            {plan.badge}
+          </Badge>
         </div>
       )}
       
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+      <CardHeader className="text-center pb-4">
+        <CardTitle className="text-xl font-bold">{plan.name}</CardTitle>
+        <div className="mt-4">
+          <span className="text-4xl font-bold text-primary">{plan.price}</span>
+          {plan.period && <span className="text-gray-600 ml-1">{plan.period}</span>}
+        </div>
+        <CardDescription className="mt-2 text-sm">
+          {plan.description}
+        </CardDescription>
         
-        {!plan.isWhatsApp && plan.annualPrice ? (
-          <div className="mt-4">
-            <Tabs value={billingPeriod} onValueChange={(value) => setBillingPeriod(value as 'monthly' | 'annual')}>
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="monthly">Mensuel</TabsTrigger>
-                <TabsTrigger value="annual">Annuel</TabsTrigger>
-              </TabsList>
-              <TabsContent value="monthly" className="mt-0">
-                <div>
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-gray-600 ml-2">{plan.period}</span>
-                </div>
-              </TabsContent>
-              <TabsContent value="annual" className="mt-0">
-                <div>
-                  <span className="text-4xl font-bold">{plan.annualPrice}</span>
-                  <span className="text-gray-600 ml-2">{plan.annualPeriod}</span>
-                  {getSavings() && (
-                    <div className="mt-2">
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                        Économisez {getSavings()?.toLocaleString()} FCFA (2 mois offerts)
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-            </Tabs>
+        {/* Badge d'essai gratuit */}
+        <div className="mt-4">
+          <div className="inline-flex items-center px-3 py-1 bg-green-50 border border-green-200 rounded-full text-green-700 text-xs font-medium">
+            <Zap className="w-3 h-3 mr-1" />
+            {plan.trialText}
           </div>
-        ) : (
-          <div className="mt-4">
-            <span className="text-4xl font-bold">{getCurrentPrice()}</span>
-            <span className="text-gray-600 ml-2">{getCurrentPeriod()}</span>
-          </div>
-        )}
-        
-        <p className="text-gray-600 mt-2">{plan.description}</p>
+        </div>
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="pt-0">
         <ul className="space-y-3 mb-6">
           {plan.features.map((feature, index) => (
-            <li key={index} className="flex items-center">
-              <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-              <span className="text-sm">{feature}</span>
+            <li key={index} className="flex items-start">
+              <Check className="h-4 w-4 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+              <span className="text-sm text-gray-700">{feature}</span>
             </li>
           ))}
         </ul>
         
         <Button 
-          className="w-full" 
-          onClick={handleSubscribe}
-          disabled={processing}
-          variant={plan.popular ? "default" : "outline"}
+          className={`w-full font-semibold ${
+            plan.highlighted 
+              ? 'bg-primary hover:bg-primary/90 text-white shadow-md' 
+              : 'bg-gray-50 hover:bg-gray-100 text-gray-900 border border-gray-200'
+          } transition-all duration-200 transform hover:scale-105`}
+          onClick={handleSelect}
         >
-          {processing ? 'Redirection...' : plan.cta}
+          {plan.cta}
         </Button>
+        
+        {(plan.name === "Starter" || plan.name === "Professionnel") && (
+          <p className="text-xs text-center text-gray-500 mt-3">
+            Aucune carte bancaire requise pour l'essai
+          </p>
+        )}
       </CardContent>
     </Card>
   );
