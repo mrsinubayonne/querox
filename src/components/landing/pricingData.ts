@@ -2,120 +2,150 @@
 export const plans = [
   {
     name: "Starter",
-    price: "29€",
-    period: "/mois",
+    price: "20 000",
+    period: "FCFA/mois",
+    annualPrice: "200 000",
+    annualPeriod: "FCFA/an",
     description: "Parfait pour débuter avec les fonctionnalités essentielles",
     features: [
-      "Menu numérique avec QR Code",
-      "Jusqu'à 50 plats",
-      "Gestion des commandes de base",
-      "Support par email",
-      "1 utilisateur"
+      "Menu numérique interactif",
+      "QR Code personnalisé",
+      "Gestion des commandes",
+      "5 catégories de plats",
+      "Support email"
     ],
-    highlighted: false,
-    trialText: "3 jours gratuits",
-    cta: "Commencer l'essai gratuit"
+    popular: false,
+    cta: "Choisir Starter",
+    tier: "starter"
   },
   {
     name: "Professionnel",
-    price: "79€",
-    period: "/mois",
-    description: "La solution complète pour restaurants établis",
+    price: "35 000",
+    period: "FCFA/mois",
+    annualPrice: "350 000",
+    annualPeriod: "FCFA/an",
+    description: "Idéal pour les restaurants en croissance",
     features: [
-      "Tout du plan Starter",
-      "Menus illimités",
-      "Gestion avancée des commandes",
-      "Statistiques détaillées",
-      "Gestion des réservations",
-      "Support prioritaire 24/7",
-      "5 utilisateurs inclus",
-      "Sauvegarde automatique"
+      "Toutes les fonctionnalités Starter",
+      "Catégories illimitées",
+      "Gestion des stocks",
+      "Statistiques avancées",
+      "Site web personnalisé",
+      "Support prioritaire"
     ],
-    highlighted: true,
-    trialText: "3 jours gratuits",
-    cta: "Commencer l'essai gratuit",
-    badge: "Le plus populaire"
+    popular: true,
+    cta: "Choisir Pro",
+    tier: "premium"
   },
   {
     name: "Entreprise",
-    price: "149€",
-    period: "/mois",
-    description: "Pour les chaînes et restaurants multi-sites",
+    price: "40 000",
+    period: "FCFA/mois",
+    annualPrice: "400 000",
+    annualPeriod: "FCFA/an",
+    description: "Pour les chaînes et grandes structures",
     features: [
-      "Tout du plan Professionnel",
-      "Multi-restaurants",
-      "API complète",
-      "Intégrations personnalisées",
-      "Formation personnalisée",
-      "Gestionnaire de compte dédié",
-      "Utilisateurs illimités",
-      "SLA garanti 99.9%"
+      "Toutes les fonctionnalités Pro",
+      "Multi-établissements",
+      "API personnalisée",
+      "Intégrations avancées",
+      "Formations personnalisées",
+      "Support dédié 24/7"
     ],
-    highlighted: false,
-    trialText: "3 jours gratuits + Demo personnalisée",
-    cta: "Demander une démo"
+    popular: false,
+    cta: "Choisir Entreprise",
+    tier: "pro"
+  },
+  {
+    name: "LICENCE QUEROX",
+    price: "Sur devis",
+    period: "",
+    description: "Solution personnalisée sans abonnement mensuel",
+    features: [
+      "Licence perpétuelle",
+      "Installation sur vos serveurs",
+      "Personnalisation complète",
+      "Formation dédiée",
+      "Support technique inclus",
+      "Pas d'abonnement mensuel"
+    ],
+    popular: false,
+    cta: "Contacter sur WhatsApp",
+    tier: "licence",
+    isWhatsApp: true,
+    whatsappNumber: "+242064563021"
   }
 ];
 
 export const featureComparison = [
   {
-    feature: "Menu numérique QR Code",
+    feature: "Menu numérique interactif",
     starter: true,
     pro: true,
-    enterprise: true
+    enterprise: true,
+    licence: true
   },
   {
-    feature: "Nombre de plats",
-    starter: "50",
-    pro: "Illimité",
-    enterprise: "Illimité"
+    feature: "QR Code personnalisé",
+    starter: true,
+    pro: true,
+    enterprise: true,
+    licence: true
   },
   {
     feature: "Gestion des commandes",
-    starter: "Basique",
-    pro: "Avancée",
-    enterprise: "Complète"
+    starter: true,
+    pro: true,
+    enterprise: true,
+    licence: true
   },
   {
-    feature: "Statistiques et rapports",
-    starter: "Basiques",
-    pro: "Détaillées",
-    enterprise: "Avancées + Export"
+    feature: "Catégories de plats",
+    starter: "5 max",
+    pro: "Illimitées",
+    enterprise: "Illimitées",
+    licence: "Illimitées"
   },
   {
-    feature: "Gestion des réservations",
+    feature: "Gestion des stocks",
     starter: false,
     pro: true,
-    enterprise: true
+    enterprise: true,
+    licence: true
   },
   {
-    feature: "Multi-restaurants",
+    feature: "Statistiques avancées",
+    starter: false,
+    pro: true,
+    enterprise: true,
+    licence: true
+  },
+  {
+    feature: "Site web personnalisé",
+    starter: false,
+    pro: true,
+    enterprise: true,
+    licence: true
+  },
+  {
+    feature: "Multi-établissements",
     starter: false,
     pro: false,
-    enterprise: true
+    enterprise: true,
+    licence: true
   },
   {
-    feature: "Support client",
-    starter: "Email",
-    pro: "24/7 Prioritaire",
-    enterprise: "Gestionnaire dédié"
-  },
-  {
-    feature: "Nombre d'utilisateurs",
-    starter: "1",
-    pro: "5",
-    enterprise: "Illimité"
-  },
-  {
-    feature: "API et intégrations",
+    feature: "API personnalisée",
     starter: false,
-    pro: "API limitée",
-    enterprise: "API complète"
+    pro: false,
+    enterprise: true,
+    licence: true
   },
   {
-    feature: "Essai gratuit",
-    starter: "3 jours",
-    pro: "3 jours",
-    enterprise: "3 jours + Démo"
+    feature: "Support",
+    starter: "Email",
+    pro: "Prioritaire",
+    enterprise: "Dédié 24/7",
+    licence: "Technique inclus"
   }
 ];

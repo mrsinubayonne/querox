@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Star, CheckCircle, Zap, TrendingUp, Users, Clock } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 
 const LandingHero: React.FC = () => {
@@ -11,163 +11,73 @@ const LandingHero: React.FC = () => {
 
   const handleGetStarted = () => {
     if (user) {
-      navigate('/dashboard');
+      navigate('/site-web');
     } else {
       navigate('/auth');
     }
   };
 
   const handleViewDemo = () => {
+    // For now, scroll to features section
     document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <section className="relative min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-600 overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-black/20"></div>
-      <div className="absolute top-0 left-0 w-full h-full">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-pink-500/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-3xl animate-pulse delay-500"></div>
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
-        <div className="text-center">
-          {/* Badge de notification */}
-          <div className="inline-flex items-center px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white text-sm font-medium mb-8">
-            <Zap className="w-4 h-4 mr-2 text-yellow-400" />
-            <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent font-bold">
-              NOUVEAU:
-            </span>
-            <span className="ml-2">Essai gratuit 3 jours - Sans engagement</span>
-          </div>
-
-          {/* Titre principal */}
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-6 leading-tight">
-            <span className="block">Transformez votre</span>
-            <span className="block bg-gradient-to-r from-pink-400 via-purple-400 to-orange-400 bg-clip-text text-transparent">
-              RESTAURANT
-            </span>
-            <span className="block">en machine à €€€</span>
-          </h1>
-
-          {/* Sous-titre */}
-          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-4xl mx-auto leading-relaxed">
-            La solution #1 qui fait exploser le chiffre d'affaires des restaurants.
-            <br className="hidden md:block" />
-            <span className="font-bold text-yellow-400">+40% de CA en moyenne</span> avec nos menus QR intelligents.
-          </p>
-
-          {/* Stats impressionnantes */}
-          <div className="flex flex-wrap justify-center items-center gap-8 mb-12">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-white">2,500+</div>
-              <div className="text-white/80 text-sm">Restaurants conquis</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-yellow-400">+40%</div>
-              <div className="text-white/80 text-sm">CA moyen</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-400">5 min</div>
-              <div className="text-white/80 text-sm">Configuration</div>
-            </div>
-          </div>
-
-          {/* Points clés avec icônes */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-              <TrendingUp className="w-8 h-8 text-green-400 mx-auto mb-3" />
-              <h3 className="text-white font-bold mb-2">Boost immédiat du CA</h3>
-              <p className="text-white/80 text-sm">+40% de revenus en moyenne dès le premier mois</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-              <Users className="w-8 h-8 text-blue-400 mx-auto mb-3" />
-              <h3 className="text-white font-bold mb-2">Clients plus satisfaits</h3>
-              <p className="text-white/80 text-sm">Commande facile via QR, moins d'attente</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-              <Clock className="w-8 h-8 text-purple-400 mx-auto mb-3" />
-              <h3 className="text-white font-bold mb-2">3h économisées/jour</h3>
-              <p className="text-white/80 text-sm">Gestion automatisée, plus de temps pour vos clients</p>
-            </div>
-          </div>
-
-          {/* Social proof */}
-          <div className="flex items-center justify-center mb-10">
-            <div className="flex items-center space-x-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-6 w-6 fill-yellow-400 text-yellow-400" />
-              ))}
-            </div>
-            <span className="ml-3 text-white/90 font-medium">4.9/5 • 2,500+ avis clients</span>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Button 
-              size="lg" 
-              className="text-lg px-10 py-6 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold shadow-2xl transform hover:scale-105 transition-all duration-300 rounded-2xl border-2 border-white/20" 
-              onClick={handleGetStarted}
-            >
-              🚀 COMMENCER L'ESSAI GRATUIT
-              <ArrowRight className="ml-3 h-6 w-6" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="text-lg px-10 py-6 border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm rounded-2xl font-bold transition-all duration-300" 
-              onClick={handleViewDemo}
-            >
-              Voir la démo en action
-            </Button>
-          </div>
-
-          {/* Garanties */}
-          <div className="text-center">
-            <div className="inline-flex flex-wrap justify-center items-center gap-6 text-white/90 text-sm font-medium">
-              <div className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
-                <span>3 jours gratuits</span>
+    <section className="bg-gradient-to-br from-primary/10 via-white to-secondary/10 py-20 lg:py-32">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+          <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
+            <div className="flex items-center justify-center lg:justify-start mb-6">
+              <div className="flex items-center space-x-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                ))}
               </div>
-              <div className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
-                <span>Aucune carte bancaire</span>
+              <span className="ml-2 text-sm text-gray-600">4.9/5 - Plus de 1000+ restaurants</span>
+            </div>
+            
+            <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+              <span className="block">Gérez votre</span>
+              <span className="block text-primary">restaurant</span>
+              <span className="block">facilement</span>
+            </h1>
+            
+            <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
+              QUEROX est la solution complète pour gérer votre restaurant : menus, réservations, inventaire, comptabilité et bien plus encore. Simplifiez votre gestion quotidienne.
+            </p>
+            
+            <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" className="text-base px-8 py-3" onClick={handleGetStarted}>
+                  {user ? 'Accéder au dashboard' : 'Commencer gratuitement'}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button variant="outline" size="lg" className="text-base px-8 py-3" onClick={handleViewDemo}>
+                  Voir la démo
+                </Button>
               </div>
-              <div className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
-                <span>Annulation à tout moment</span>
-              </div>
-              <div className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
-                <span>Support 24/7</span>
+              <p className="mt-3 text-sm text-gray-500">
+                Essai gratuit de 14 jours • Aucune carte bancaire requise
+              </p>
+            </div>
+          </div>
+          
+          <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
+            <div className="relative mx-auto w-full rounded-lg shadow-lg lg:max-w-md">
+              <div className="relative block w-full bg-white rounded-lg overflow-hidden">
+                <img
+                  className="w-full h-64 object-cover"
+                  src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+                  alt="Interface QUEROX"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                <div className="absolute bottom-4 left-4 right-4">
+                  <p className="text-white font-semibold">Interface moderne et intuitive</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Testimonial flottant */}
-      <div className="absolute bottom-10 right-10 bg-white rounded-2xl shadow-2xl p-6 max-w-sm hidden lg:block">
-        <div className="flex items-center mb-3">
-          <img 
-            className="w-12 h-12 rounded-full mr-4"
-            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
-            alt="Chef testimonial"
-          />
-          <div>
-            <div className="font-bold text-gray-900">Marc Dubois</div>
-            <div className="text-sm text-gray-600">Restaurant Le Gourmet</div>
-          </div>
-        </div>
-        <div className="flex text-yellow-400 mb-2">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} className="h-4 w-4 fill-current" />
-          ))}
-        </div>
-        <p className="text-gray-700 text-sm">
-          "QUEROX a révolutionné mon restaurant ! +45% de CA en 2 mois. Mes clients adorent commander via QR code."
-        </p>
       </div>
     </section>
   );
