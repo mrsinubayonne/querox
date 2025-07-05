@@ -38,6 +38,38 @@ export const useSubscription = () => {
     return isAdmin;
   }, [user]);
 
+  const createTrialSubscription = async (userEmail: string, userId: string) => {
+    try {
+      console.log('🆕 Création d\'un abonnement d\'essai de 7 jours pour:', userEmail);
+      
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 jours d'essai
+
+      const { data, error } = await supabase
+        .from('subscribers')
+        .insert({
+          user_id: userId,
+          email: userEmail,
+          subscribed: true,
+          subscription_tier: 'trial',
+          subscription_end: trialEndDate.toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Erreur lors de la création de l\'abonnement d\'essai:', error);
+        return null;
+      }
+
+      console.log('✅ Abonnement d\'essai créé avec succès:', data);
+      return data;
+    } catch (error) {
+      console.error('💥 Erreur dans createTrialSubscription:', error);
+      return null;
+    }
+  };
+
   const fetchSubscription = useCallback(async () => {
     if (!user) {
       setSubscription(null);
@@ -94,6 +126,12 @@ export const useSubscription = () => {
           
           data.user_id = user.id;
         }
+      }
+
+      // Si aucun abonnement trouvé, créer un essai gratuit de 7 jours
+      if (!data && !error) {
+        console.log('🎁 Aucun abonnement trouvé - création d\'un essai gratuit de 7 jours');
+        data = await createTrialSubscription(user.email || '', user.id);
       }
 
       if (error && error.code !== 'PGRST116') {
