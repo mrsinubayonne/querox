@@ -2,7 +2,7 @@
 export const plans = [
   {
     name: "Starter",
-    price: "2,500 FCFA",
+    price: "29€",
     period: "/mois",
     description: "Parfait pour débuter avec les fonctionnalités essentielles",
     features: [
@@ -18,7 +18,7 @@ export const plans = [
   },
   {
     name: "Professionnel",
-    price: "7,500 FCFA",
+    price: "79€",
     period: "/mois",
     description: "La solution complète pour restaurants établis",
     features: [
@@ -38,7 +38,7 @@ export const plans = [
   },
   {
     name: "Entreprise",
-    price: "15,000 FCFA",
+    price: "149€",
     period: "/mois",
     description: "Pour les chaînes et restaurants multi-sites",
     features: [
@@ -54,25 +54,6 @@ export const plans = [
     highlighted: false,
     trialText: "3 jours gratuits + Demo personnalisée",
     cta: "Demander une démo"
-  },
-  {
-    name: "LICENCE QUEROX",
-    price: "Sur devis",
-    period: "",
-    description: "Solution sur-mesure avec licence complète",
-    features: [
-      "Code source complet",
-      "Installation sur vos serveurs",
-      "Personnalisation illimitée",
-      "Formation équipe technique",
-      "Support technique premium",
-      "Mises à jour incluses 1 an",
-      "Nom de domaine personnalisé",
-      "Marque blanche complète"
-    ],
-    highlighted: false,
-    trialText: "Consultation gratuite",
-    cta: "Nous contacter"
   }
 ];
 
@@ -81,70 +62,60 @@ export const featureComparison = [
     feature: "Menu numérique QR Code",
     starter: true,
     pro: true,
-    enterprise: true,
-    licence: true
+    enterprise: true
   },
   {
     feature: "Nombre de plats",
     starter: "50",
     pro: "Illimité",
-    enterprise: "Illimité",
-    licence: "Illimité"
+    enterprise: "Illimité"
   },
   {
     feature: "Gestion des commandes",
     starter: "Basique",
     pro: "Avancée",
-    enterprise: "Complète",
-    licence: "Complète"
+    enterprise: "Complète"
   },
   {
     feature: "Statistiques et rapports",
     starter: "Basiques",
     pro: "Détaillées",
-    enterprise: "Avancées + Export",
-    licence: "Personnalisées"
+    enterprise: "Avancées + Export"
   },
   {
     feature: "Gestion des réservations",
     starter: false,
     pro: true,
-    enterprise: true,
-    licence: true
+    enterprise: true
   },
   {
     feature: "Multi-restaurants",
     starter: false,
     pro: false,
-    enterprise: true,
-    licence: true
+    enterprise: true
   },
   {
     feature: "Support client",
     starter: "Email",
     pro: "24/7 Prioritaire",
-    enterprise: "Gestionnaire dédié",
-    licence: "Premium technique"
+    enterprise: "Gestionnaire dédié"
   },
   {
     feature: "Nombre d'utilisateurs",
     starter: "1",
     pro: "5",
-    enterprise: "Illimité",
-    licence: "Illimité"
+    enterprise: "Illimité"
   },
   {
     feature: "API et intégrations",
     starter: false,
     pro: "API limitée",
-    enterprise: "API complète",
-    licence: "Code source"
+    enterprise: "API complète"
   },
   {
     feature: "Essai gratuit",
     starter: "3 jours",
     pro: "3 jours",
-    enterprise: "3 jours + Démo",
-    licence: "Consultation"
+    enterprise: "3 jours + Démo"
   }
 ];

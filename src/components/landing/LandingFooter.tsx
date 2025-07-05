@@ -13,11 +13,11 @@ const LandingFooter: React.FC = () => {
           <div>
             <div className="flex items-center mb-4">
               <img 
-                src="/lovable-uploads/a3efddc0-fd23-4923-9d99-aca95a7a152a.png" 
+                src="/lovable-uploads/78a2d79c-a1fb-4c60-a0db-7800ea5d0fa0.png" 
                 alt="QUEROX Logo" 
-                className="h-8 w-8 mr-3"
+                className="h-10 w-auto mr-3"
               />
-              <h3 className="text-2xl font-bold text-white">QUEROX</h3>
+              <h3 className="text-2xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">QUEROX</h3>
             </div>
             <p className="text-gray-300 mb-4">
               La solution N°1 pour digitaliser et développer votre restaurant.
@@ -75,7 +75,7 @@ const LandingFooter: React.FC = () => {
                 placeholder="Votre email"
                 className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
               />
-              <Button className="bg-primary hover:bg-primary/90">
+              <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                 S'abonner
               </Button>
             </div>
