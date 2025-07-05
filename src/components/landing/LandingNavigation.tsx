@@ -65,7 +65,7 @@ const LandingNavigation: React.FC = () => {
                   Connexion
                 </Button>
                 <Button size="sm" onClick={() => navigate('/auth')}>
-                  Essai Gratuit 3 Jours
+                  Essai Gratuit 7 Jours
                 </Button>
               </>
             )}

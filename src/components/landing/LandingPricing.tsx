@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { plans } from './pricingData';
 import PricingCard from './PricingCard';
@@ -18,7 +17,7 @@ const LandingPricing: React.FC = () => {
           <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
             <p className="text-green-800 font-semibold">🎉 Offre spéciale de lancement</p>
             <p className="text-green-700 text-sm mt-1">
-              3 jours d'essai gratuit sur tous nos plans • Aucun engagement
+              7 jours d'essai gratuit sur tous nos plans • Aucun engagement
             </p>
           </div>
         </div>
@@ -33,7 +32,7 @@ const LandingPricing: React.FC = () => {
         
         <div className="mt-12 text-center">
           <p className="text-gray-600">
-            Tous nos plans incluent 3 jours d'essai gratuit
+            Tous nos plans incluent 7 jours d'essai gratuit
           </p>
           <p className="text-sm text-gray-500 mt-2">
             Paiement sécurisé • Annulation à tout moment • Support client inclus

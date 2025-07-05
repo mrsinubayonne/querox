@@ -49,7 +49,7 @@ const LandingHero: React.FC = () => {
             <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" className="text-base px-8 py-3" onClick={handleGetStarted}>
-                  {user ? 'Accéder au dashboard' : 'Essai Gratuit 3 Jours'}
+                  {user ? 'Accéder au dashboard' : 'Essai Gratuit 7 Jours'}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 <Button variant="outline" size="lg" className="text-base px-8 py-3" onClick={handleViewDemo}>
@@ -57,7 +57,7 @@ const LandingHero: React.FC = () => {
                 </Button>
               </div>
               <p className="mt-3 text-sm text-gray-500">
-                🎉 3 jours d'essai gratuit • Aucune carte bancaire requise • Annulation à tout moment
+                🎉 7 jours d'essai gratuit • Aucune carte bancaire requise • Annulation à tout moment
               </p>
             </div>
           </div>

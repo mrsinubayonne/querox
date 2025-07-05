@@ -1,3 +1,4 @@
+
 export const plans = [
   {
     name: "Starter",
@@ -7,7 +8,7 @@ export const plans = [
     annualPeriod: "FCFA/an",
     description: "Parfait pour débuter avec les fonctionnalités essentielles",
     features: [
-      "✨ 3 jours d'essai gratuit",
+      "✨ 7 jours d'essai gratuit",
       "Menu numérique interactif",
       "QR Code personnalisé",
       "Gestion des commandes",
@@ -26,7 +27,7 @@ export const plans = [
     annualPeriod: "FCFA/an",
     description: "Idéal pour les restaurants en croissance",
     features: [
-      "✨ 3 jours d'essai gratuit",
+      "✨ 7 jours d'essai gratuit",
       "Toutes les fonctionnalités Starter",
       "Catégories illimitées",
       "Gestion des stocks",
@@ -46,7 +47,7 @@ export const plans = [
     annualPeriod: "FCFA/an",
     description: "Pour les chaînes et grandes structures",
     features: [
-      "✨ 3 jours d'essai gratuit",
+      "✨ 7 jours d'essai gratuit",
       "Toutes les fonctionnalités Pro",
       "Multi-établissements",
       "API personnalisée",
@@ -82,9 +83,9 @@ export const plans = [
 export const featureComparison = [
   {
     feature: "Essai gratuit",
-    starter: "3 jours",
-    pro: "3 jours",
-    enterprise: "3 jours",
+    starter: "7 jours",
+    pro: "7 jours",
+    enterprise: "7 jours",
     licence: "Démo sur demande"
   },
   {
