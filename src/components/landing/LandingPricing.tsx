@@ -15,6 +15,12 @@ const LandingPricing: React.FC = () => {
           <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-600">
             Des tarifs transparents qui s'adaptent à la taille de votre restaurant
           </p>
+          <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
+            <p className="text-green-800 font-semibold">🎉 Offre spéciale de lancement</p>
+            <p className="text-green-700 text-sm mt-1">
+              3 jours d'essai gratuit sur tous nos plans • Aucun engagement
+            </p>
+          </div>
         </div>
         
         <div className="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -27,10 +33,10 @@ const LandingPricing: React.FC = () => {
         
         <div className="mt-12 text-center">
           <p className="text-gray-600">
-            Tous nos plans sont des abonnements mensuels
+            Tous nos plans incluent 3 jours d'essai gratuit
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            Paiement sécurisé • Annulation à tout moment
+            Paiement sécurisé • Annulation à tout moment • Support client inclus
           </p>
         </div>
       </div>

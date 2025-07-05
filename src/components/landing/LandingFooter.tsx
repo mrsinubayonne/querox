@@ -11,7 +11,14 @@ const LandingFooter: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-2xl font-bold text-white mb-4">QUEROX</h3>
+            <div className="flex items-center space-x-3 mb-4">
+              <img 
+                src="/lovable-uploads/a2262c2b-4c9e-4359-bc71-081861dfbd12.png" 
+                alt="QUEROX Logo" 
+                className="h-8 w-auto"
+              />
+              <h3 className="text-2xl font-bold text-white">QUEROX</h3>
+            </div>
             <p className="text-gray-300 mb-4">
               La solution complète pour gérer votre restaurant efficacement.
             </p>
