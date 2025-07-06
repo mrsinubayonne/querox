@@ -20,61 +20,56 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Palette } from 'lucide-react';
+import { Camera } from 'lucide-react';
 
 const formSchema = z.object({
   restaurantName: z.string().min(2, 'Nom du restaurant requis'),
   contactName: z.string().min(2, 'Nom de contact requis'),
   email: z.string().email('Email invalide'),
   phone: z.string().min(10, 'Numéro de téléphone requis'),
-  serviceType: z.enum(['affiche', 'flyer', 'menu', 'logo', 'carte-visite', 'autre']),
-  dimensions: z.string().optional(),
+  contentTypes: z.array(z.string()).min(1, 'Sélectionnez au moins un type de contenu'),
+  shootingLocation: z.string().min(1, 'Lieu de tournage requis'),
+  deliveryQuantity: z.string().min(1, 'Quantité requise'),
+  style: z.string().min(1, 'Style requis'),
   message: z.string().min(10, 'Veuillez décrire votre projet'),
-  colors: z.string().optional(),
-  style: z.enum(['moderne', 'classique', 'elegante', 'fun', 'minimaliste']),
-  urgence: z.boolean().default(false),
-  budget: z.string().optional(),
 });
 
-type ConceptionGraphiqueFormData = z.infer<typeof formSchema>;
+type CreationContenuFormData = z.infer<typeof formSchema>;
 
-interface ConceptionGraphiqueModalProps {
+interface CreationContenuModalProps {
   onClose: () => void;
 }
 
-const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onClose }) => {
+const CreationContenuModal: React.FC<CreationContenuModalProps> = ({ onClose }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const form = useForm<ConceptionGraphiqueFormData>({
+  const form = useForm<CreationContenuFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       restaurantName: '',
       contactName: '',
       email: user?.email || '',
       phone: '',
-      serviceType: 'affiche',
-      dimensions: '',
+      contentTypes: [],
+      shootingLocation: '',
+      deliveryQuantity: '',
+      style: '',
       message: '',
-      colors: '',
-      style: 'moderne',
-      urgence: false,
-      budget: '',
     },
   });
 
-  const onSubmit = async (data: ConceptionGraphiqueFormData) => {
+  const onSubmit = async (data: CreationContenuFormData) => {
     try {
       const { error } = await supabase
         .from('service_requests')
         .insert({
           user_id: user?.id,
-          service_type: 'conception-graphique',
+          service_type: 'creation-contenu',
           service_data: data,
           status: 'pending',
         });
@@ -83,7 +78,7 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
 
       toast({
         title: "Demande envoyée !",
-        description: "Nous avons reçu votre demande de conception graphique. Vous recevrez votre création sous 3 jours.",
+        description: "Nous avons reçu votre demande de création de contenu. Vous recevrez vos visuels sous 5 jours.",
       });
 
       onClose();
@@ -97,13 +92,21 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
     }
   };
 
+  const contentTypes = [
+    { id: 'photos', label: 'Photos de plats' },
+    { id: 'videos', label: 'Vidéos courtes' },
+    { id: 'stories', label: 'Stories Instagram' },
+    { id: 'reels', label: 'Reels/TikToks' },
+    { id: 'ambiance', label: 'Photos d\'ambiance' },
+  ];
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <Palette className="h-5 w-5 text-purple-600" />
-            <span>Conception Graphique</span>
+            <Camera className="h-5 w-5 text-pink-600" />
+            <span>Création de Contenu</span>
           </DialogTitle>
         </DialogHeader>
 
@@ -171,41 +174,88 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
 
             <FormField
               control={form.control}
-              name="serviceType"
+              name="contentTypes"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Types de contenu souhaités *</FormLabel>
+                  <div className="grid grid-cols-2 gap-4">
+                    {contentTypes.map((type) => (
+                      <FormField
+                        key={type.id}
+                        control={form.control}
+                        name="contentTypes"
+                        render={({ field }) => {
+                          return (
+                            <FormItem
+                              key={type.id}
+                              className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value?.includes(type.id)}
+                                  onCheckedChange={(checked) => {
+                                    return checked
+                                      ? field.onChange([...field.value, type.id])
+                                      : field.onChange(
+                                          field.value?.filter(
+                                            (value) => value !== type.id
+                                          )
+                                        )
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                {type.label}
+                              </FormLabel>
+                            </FormItem>
+                          )
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="shootingLocation"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lieu de tournage *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Sur place, en studio..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="deliveryQuantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantité souhaitée *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: 20 photos + 5 vidéos" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="style"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type de création *</FormLabel>
+                  <FormLabel>Style visuel souhaité *</FormLabel>
                   <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="grid grid-cols-2 gap-4"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="affiche" id="affiche" />
-                        <label htmlFor="affiche">Affiche</label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="flyer" id="flyer" />
-                        <label htmlFor="flyer">Flyer</label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="menu" id="menu" />
-                        <label htmlFor="menu">Menu</label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="logo" id="logo" />
-                        <label htmlFor="logo">Logo</label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="carte-visite" id="carte-visite" />
-                        <label htmlFor="carte-visite">Carte de visite</label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="autre" id="autre" />
-                        <label htmlFor="autre">Autre</label>
-                      </div>
-                    </RadioGroup>
+                    <Input placeholder="Moderne, rustique, élégant, fun..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -217,10 +267,10 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
               name="message"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Décrivez votre projet *</FormLabel>
+                  <FormLabel>Détails du projet *</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Décrivez en détail ce que vous souhaitez : message à faire passer, éléments à inclure, inspiration..." 
+                      placeholder="Plats à mettre en avant, ambiance souhaitée, références..." 
                       rows={4}
                       {...field} 
                     />
@@ -234,7 +284,7 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
               <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                 Annuler
               </Button>
-              <Button type="submit" className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500">
+              <Button type="submit" className="flex-1 bg-gradient-to-r from-pink-500 to-rose-500">
                 Envoyer ma demande
               </Button>
             </div>
@@ -245,4 +295,4 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
   );
 };
 
-export default ConceptionGraphiqueModal;
+export default CreationContenuModal;

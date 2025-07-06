@@ -20,61 +20,51 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Palette } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 const formSchema = z.object({
   restaurantName: z.string().min(2, 'Nom du restaurant requis'),
   contactName: z.string().min(2, 'Nom de contact requis'),
   email: z.string().email('Email invalide'),
   phone: z.string().min(10, 'Numéro de téléphone requis'),
-  serviceType: z.enum(['affiche', 'flyer', 'menu', 'logo', 'carte-visite', 'autre']),
-  dimensions: z.string().optional(),
+  campaignType: z.string().min(1, 'Type de campagne requis'),
+  targetAudience: z.string().min(10, 'Veuillez décrire votre audience cible'),
   message: z.string().min(10, 'Veuillez décrire votre projet'),
-  colors: z.string().optional(),
-  style: z.enum(['moderne', 'classique', 'elegante', 'fun', 'minimaliste']),
-  urgence: z.boolean().default(false),
-  budget: z.string().optional(),
 });
 
-type ConceptionGraphiqueFormData = z.infer<typeof formSchema>;
+type EmailMarketingFormData = z.infer<typeof formSchema>;
 
-interface ConceptionGraphiqueModalProps {
+interface EmailMarketingModalProps {
   onClose: () => void;
 }
 
-const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onClose }) => {
+const EmailMarketingModal: React.FC<EmailMarketingModalProps> = ({ onClose }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const form = useForm<ConceptionGraphiqueFormData>({
+  const form = useForm<EmailMarketingFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       restaurantName: '',
       contactName: '',
       email: user?.email || '',
       phone: '',
-      serviceType: 'affiche',
-      dimensions: '',
+      campaignType: '',
+      targetAudience: '',
       message: '',
-      colors: '',
-      style: 'moderne',
-      urgence: false,
-      budget: '',
     },
   });
 
-  const onSubmit = async (data: ConceptionGraphiqueFormData) => {
+  const onSubmit = async (data: EmailMarketingFormData) => {
     try {
       const { error } = await supabase
         .from('service_requests')
         .insert({
           user_id: user?.id,
-          service_type: 'conception-graphique',
+          service_type: 'email-marketing',
           service_data: data,
           status: 'pending',
         });
@@ -83,7 +73,7 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
 
       toast({
         title: "Demande envoyée !",
-        description: "Nous avons reçu votre demande de conception graphique. Vous recevrez votre création sous 3 jours.",
+        description: "Nous avons reçu votre demande d'email marketing. Vous recevrez votre campagne sous 5 jours.",
       });
 
       onClose();
@@ -102,8 +92,8 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <Palette className="h-5 w-5 text-purple-600" />
-            <span>Conception Graphique</span>
+            <Mail className="h-5 w-5 text-blue-600" />
+            <span>Email Marketing</span>
           </DialogTitle>
         </DialogHeader>
 
@@ -171,41 +161,30 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
 
             <FormField
               control={form.control}
-              name="serviceType"
+              name="campaignType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type de création *</FormLabel>
+                  <FormLabel>Type de campagne *</FormLabel>
                   <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="grid grid-cols-2 gap-4"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="affiche" id="affiche" />
-                        <label htmlFor="affiche">Affiche</label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="flyer" id="flyer" />
-                        <label htmlFor="flyer">Flyer</label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="menu" id="menu" />
-                        <label htmlFor="menu">Menu</label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="logo" id="logo" />
-                        <label htmlFor="logo">Logo</label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="carte-visite" id="carte-visite" />
-                        <label htmlFor="carte-visite">Carte de visite</label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="autre" id="autre" />
-                        <label htmlFor="autre">Autre</label>
-                      </div>
-                    </RadioGroup>
+                    <Input placeholder="Newsletter, promotion, événement..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="targetAudience"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Audience cible *</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Décrivez votre audience cible : âge, habitudes, préférences..." 
+                      rows={3}
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -217,10 +196,10 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
               name="message"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Décrivez votre projet *</FormLabel>
+                  <FormLabel>Message et objectifs *</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Décrivez en détail ce que vous souhaitez : message à faire passer, éléments à inclure, inspiration..." 
+                      placeholder="Décrivez le message à transmettre et vos objectifs..." 
                       rows={4}
                       {...field} 
                     />
@@ -234,7 +213,7 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
               <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                 Annuler
               </Button>
-              <Button type="submit" className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500">
+              <Button type="submit" className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500">
                 Envoyer ma demande
               </Button>
             </div>
@@ -245,4 +224,4 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
   );
 };
 
-export default ConceptionGraphiqueModal;
+export default EmailMarketingModal;
