@@ -120,10 +120,10 @@ const Marketing: React.FC = () => {
             </div>
           </header>
 
-          <main className="p-6 space-y-6">
+          <main className="p-4 lg:p-6 space-y-4 lg:space-y-6">
             <div className="max-w-7xl mx-auto">
               {/* Section héro compacte */}
-              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-8 text-white shadow-xl mb-6">
+              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-6 lg:p-8 text-white shadow-xl mb-4 lg:mb-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 mb-4">
@@ -157,13 +157,13 @@ const Marketing: React.FC = () => {
               </div>
 
               {/* Processus en ligne pour PC */}
-              <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm mb-6">
-                <CardContent className="p-6">
-                  <div className="text-center mb-6">
-                    <h3 className="text-2xl font-black text-gray-900 mb-2">Comment ça marche ?</h3>
+              <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm mb-4 lg:mb-6">
+                <CardContent className="p-4 lg:p-6">
+                  <div className="text-center mb-4 lg:mb-6">
+                    <h3 className="text-xl lg:text-2xl font-black text-gray-900 mb-2">Comment ça marche ?</h3>
                     <p className="text-gray-600">Un processus simplifié en 3 étapes</p>
                   </div>
-                  <div className="grid grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8">
                     <div className="text-center">
                       <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                         <span className="text-2xl font-black text-white">1</span>
@@ -197,7 +197,7 @@ const Marketing: React.FC = () => {
                 </div>
 
                 <Tabs defaultValue="conception" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 mb-8">
+                  <TabsList className="grid w-full grid-cols-3 mb-4 lg:mb-8">
                     <TabsTrigger value="conception" className="flex items-center gap-2">
                       <Palette className="h-4 w-4" />
                       Design Créatif
@@ -213,7 +213,7 @@ const Marketing: React.FC = () => {
                   </TabsList>
 
                   <TabsContent value="conception">
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 lg:gap-6">
                       {conceptionGraphiqueServices.map((service, index) => (
                         <MarketingServiceCard
                           key={service.id}
@@ -225,7 +225,7 @@ const Marketing: React.FC = () => {
                   </TabsContent>
 
                   <TabsContent value="community">
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 lg:gap-6">
                       {communityManagementServices.map((service, index) => (
                         <MarketingServiceCard
                           key={service.id}
@@ -237,7 +237,7 @@ const Marketing: React.FC = () => {
                   </TabsContent>
 
                   <TabsContent value="facebook">
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 lg:gap-6">
                       {facebookAdvertisingServices.map((service, index) => (
                         <MarketingServiceCard
                           key={service.id}
