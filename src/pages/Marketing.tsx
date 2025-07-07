@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
@@ -15,7 +16,10 @@ import {
   Camera,
   Sparkles,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Facebook,
+  Share2,
+  MessageCircle
 } from 'lucide-react';
 import MarketingServiceCard from '@/components/marketing/MarketingServiceCard';
 import ConceptionGraphiqueModal from '@/components/marketing/ConceptionGraphiqueModal';
@@ -29,7 +33,7 @@ const Marketing: React.FC = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
-  const marketingServices = [
+  const conceptionGraphiqueServices = [
     {
       id: 'conception-graphique',
       title: 'Conception Graphique',
@@ -37,8 +41,11 @@ const Marketing: React.FC = () => {
       icon: Palette,
       color: 'from-purple-500 via-pink-500 to-rose-500',
       deliveryTime: '3 jours',
-      price: 'À partir de 49€'
-    },
+      price: 'Sur devis'
+    }
+  ];
+
+  const communityManagementServices = [
     {
       id: 'email-marketing',
       title: 'Email Marketing',
@@ -46,7 +53,7 @@ const Marketing: React.FC = () => {
       icon: Mail,
       color: 'from-blue-500 via-cyan-500 to-teal-500',
       deliveryTime: '5 jours',
-      price: 'À partir de 89€'
+      price: 'Sur devis'
     },
     {
       id: 'programme-fidelite',
@@ -55,16 +62,19 @@ const Marketing: React.FC = () => {
       icon: Users,
       color: 'from-green-500 via-emerald-500 to-lime-500',
       deliveryTime: '7 jours',
-      price: 'À partir de 149€'
-    },
+      price: 'Sur devis'
+    }
+  ];
+
+  const facebookAdvertisingServices = [
     {
       id: 'campagne-publicitaire',
-      title: 'Campagne Publicitaire',
-      description: 'Stratégie publicitaire complète sur Facebook, Instagram et Google Ads',
-      icon: Target,
-      color: 'from-orange-500 via-red-500 to-pink-500',
+      title: 'Campagne Publicitaire Facebook',
+      description: 'Stratégie publicitaire complète sur Facebook et Instagram pour maximiser votre visibilité',
+      icon: Facebook,
+      color: 'from-blue-600 via-blue-500 to-blue-400',
       deliveryTime: '10 jours',
-      price: 'À partir de 199€'
+      price: 'Sur devis'
     }
   ];
 
@@ -185,22 +195,83 @@ const Marketing: React.FC = () => {
                 </CardContent>
               </Card>
 
-              {/* Services Grid - responsive */}
+              {/* Services organisés par sections - responsive */}
               <div className="space-y-6">
                 <div className="text-center">
                   <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Nos Services Marketing</h3>
-                  <p className="text-gray-600">Choisissez parmi notre gamme de services professionnels</p>
+                  <p className="text-gray-600">Choisissez parmi notre gamme de services professionnels organisés par catégorie</p>
                 </div>
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
-                  {marketingServices.map((service, index) => (
-                    <div key={service.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                      <MarketingServiceCard
-                        service={service}
-                        onSelect={() => openModal(service.id)}
-                      />
+
+                <Tabs defaultValue="conception" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-8">
+                    <TabsTrigger value="conception" className="flex items-center gap-2">
+                      <Palette className="h-4 w-4" />
+                      <span className="hidden sm:inline">Conception Graphique</span>
+                      <span className="sm:hidden">Design</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="community" className="flex items-center gap-2">
+                      <MessageCircle className="h-4 w-4" />
+                      <span className="hidden sm:inline">Community Management</span>
+                      <span className="sm:hidden">Community</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="facebook" className="flex items-center gap-2">
+                      <Facebook className="h-4 w-4" />
+                      <span className="hidden sm:inline">Publicité Facebook</span>
+                      <span className="sm:hidden">Facebook</span>
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="conception" className="space-y-6">
+                    <div className="text-center mb-6">
+                      <h4 className="text-xl font-bold text-gray-900 mb-2">Conception Graphique</h4>
+                      <p className="text-gray-600">Créez des visuels impactants pour votre restaurant</p>
                     </div>
-                  ))}
-                </div>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
+                      {conceptionGraphiqueServices.map((service, index) => (
+                        <div key={service.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <MarketingServiceCard
+                            service={service}
+                            onSelect={() => openModal(service.id)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="community" className="space-y-6">
+                    <div className="text-center mb-6">
+                      <h4 className="text-xl font-bold text-gray-900 mb-2">Community Management</h4>
+                      <p className="text-gray-600">Gérez et développez votre communauté en ligne</p>
+                    </div>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
+                      {communityManagementServices.map((service, index) => (
+                        <div key={service.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <MarketingServiceCard
+                            service={service}
+                            onSelect={() => openModal(service.id)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="facebook" className="space-y-6">
+                    <div className="text-center mb-6">
+                      <h4 className="text-xl font-bold text-gray-900 mb-2">Publicité Facebook</h4>
+                      <p className="text-gray-600">Maximisez votre visibilité sur les réseaux sociaux</p>
+                    </div>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
+                      {facebookAdvertisingServices.map((service, index) => (
+                        <div key={service.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <MarketingServiceCard
+                            service={service}
+                            onSelect={() => openModal(service.id)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
 
               {/* Garanties responsive */}
