@@ -11,6 +11,7 @@ interface Subscription {
   subscribed: boolean;
   subscription_tier: string | null;
   subscription_end: string | null;
+  stripe_customer_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -87,6 +88,7 @@ export const useSubscription = () => {
         subscribed: true,
         subscription_tier: 'admin',
         subscription_end: null,
+        stripe_customer_id: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
@@ -132,16 +134,67 @@ export const useSubscription = () => {
       if (!data && !error) {
         console.log('🎁 Aucun abonnement trouvé - création d\'un essai gratuit de 7 jours');
         data = await createTrialSubscription(user.email || '', user.id);
+        
+        // Si la création d'essai a échoué, créer un état d'essai local temporaire
+        if (!data) {
+          console.log('⚠️ Échec de création d\'essai en base - création d\'un état temporaire');
+          const trialEndDate = new Date();
+          trialEndDate.setDate(trialEndDate.getDate() + 7);
+          
+          data = {
+            id: 'temp-trial-' + user.id,
+            user_id: user.id,
+            email: user.email || '',
+            subscribed: true,
+            subscription_tier: 'trial',
+            subscription_end: trialEndDate.toISOString(),
+            stripe_customer_id: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+        }
       }
 
       if (error && error.code !== 'PGRST116') {
         console.error('❌ Erreur lors de la récupération de l\'abonnement:', error);
-      } else {
-        console.log('✅ Données d\'abonnement récupérées:', data);
-        setSubscription(data);
+        // En cas d'erreur, créer quand même un essai temporaire
+        console.log('🆘 Création d\'un essai temporaire en cas d\'erreur');
+        const trialEndDate = new Date();
+        trialEndDate.setDate(trialEndDate.getDate() + 7);
+        
+        data = {
+          id: 'temp-trial-error-' + user.id,
+          user_id: user.id,
+          email: user.email || '',
+          subscribed: true,
+          subscription_tier: 'trial',
+          subscription_end: trialEndDate.toISOString(),
+          stripe_customer_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
       }
+
+      console.log('✅ Données d\'abonnement final:', data);
+      setSubscription(data);
     } catch (error) {
       console.error('💥 Erreur dans fetchSubscription:', error);
+      // En cas d'erreur critique, créer un essai temporaire
+      console.log('🚨 Création d\'un essai d\'urgence après erreur critique');
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + 7);
+      
+      setSubscription({
+        id: 'emergency-trial-' + user.id,
+        user_id: user.id,
+        email: user.email || '',
+        subscribed: true,
+        subscription_tier: 'trial',
+        subscription_end: trialEndDate.toISOString(),
+        stripe_customer_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
     } finally {
       setLoading(false);
     }
