@@ -14,7 +14,7 @@ import Clients from './pages/Clients';
 import Comptabilite from './pages/Comptabilite';
 import QRCodes from './pages/QRCodes';
 import Marketing from './pages/Marketing';
-import Social from './pages/Social';
+
 import NotFound from './pages/NotFound';
 import AllMenus from './pages/AllMenus';
 import PublicMenu from './pages/PublicMenu';
@@ -63,11 +63,6 @@ function App() {
           <Route path="/marketing" element={
             <ProtectedRoute>
               <Marketing />
-            </ProtectedRoute>
-          } />
-          <Route path="/social" element={
-            <ProtectedRoute>
-              <Social />
             </ProtectedRoute>
           } />
           <Route path="/site-web" element={

@@ -107,7 +107,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   return (
     <div
       className={`${
-        collapsed ? 'w-16' : 'w-72'
+        collapsed ? 'w-16' : 'w-64'
       } transition-all duration-300 ease-in-out flex flex-col bg-white h-screen border-r border-gray-100`}
     >
       <div className="p-6 border-b border-gray-100">
@@ -117,9 +117,9 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">Q</span>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                QUEROX
-              </span>
+              <div className="w-20 h-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded flex items-center justify-center">
+                <span className="text-white font-bold text-xs">LOGO</span>
+              </div>
             </div>
           )}
           <Button

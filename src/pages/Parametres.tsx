@@ -39,7 +39,7 @@ const Parametres = () => {
       </header>
       
       <main className="container py-8">
-        <Tabs defaultValue="profile" className="max-w-4xl mx-auto">
+        <Tabs defaultValue="profile" className="max-w-2xl mx-auto">
           <TabsList className="mb-8 grid grid-cols-3 w-full">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />

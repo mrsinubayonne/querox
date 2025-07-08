@@ -25,6 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Palette } from 'lucide-react';
 
 const formSchema = z.object({
@@ -50,6 +51,7 @@ interface ConceptionGraphiqueModalProps {
 const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onClose }) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { subscription } = useSubscription();
   
   const form = useForm<ConceptionGraphiqueFormData>({
     resolver: zodResolver(formSchema),
@@ -68,14 +70,44 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
     },
   });
 
+  // Fonction pour obtenir le nombre de designs autorisés selon le plan
+  const getDesignLimit = () => {
+    const tier = subscription?.subscription_tier;
+    switch (tier) {
+      case 'pro': // Entreprise dans pricingData
+        return 5;
+      case 'premium': // Professionnel dans pricingData  
+        return 1;
+      case 'starter':
+      case 'trial':
+        return 0;
+      case 'licence':
+        return 999; // Illimité pour licence
+      default:
+        return 0;
+    }
+  };
+
+  const designLimit = getDesignLimit();
+  const canUseService = designLimit > 0;
+
   const onSubmit = async (data: ConceptionGraphiqueFormData) => {
+    if (!canUseService) {
+      toast({
+        title: "Plan insuffisant",
+        description: "Vous devez avoir un plan Professionnel ou supérieur pour accéder à ce service.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('service_requests')
         .insert({
           user_id: user?.id,
           service_type: 'conception-graphique',
-          service_data: data,
+          service_data: { ...data, price: 7000 },
           status: 'pending',
         });
 
@@ -83,7 +115,7 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
 
       toast({
         title: "Demande envoyée !",
-        description: "Nous avons reçu votre demande de conception graphique. Vous recevrez votre création sous 3 jours.",
+        description: `Votre demande a été envoyée. Prix: 7 000 FCFA. Livraison sous 3 jours.`,
       });
 
       onClose();
@@ -103,9 +135,25 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Palette className="h-5 w-5 text-purple-600" />
-            <span>Conception Graphique</span>
+            <span>Conception Graphique - 7 000 FCFA</span>
           </DialogTitle>
         </DialogHeader>
+
+        {/* Affichage des limites selon le plan */}
+        <div className="mb-4 p-4 rounded-lg border">
+          <h3 className="font-semibold mb-2">Votre plan : {subscription?.subscription_tier === 'premium' ? 'Professionnel' : subscription?.subscription_tier === 'pro' ? 'Entreprise' : subscription?.subscription_tier === 'licence' ? 'Licence' : subscription?.subscription_tier}</h3>
+          {canUseService ? (
+            <div className="flex items-center space-x-2 text-green-600">
+              <span>✅ Designs autorisés : {designLimit === 999 ? 'Illimité' : designLimit}</span>
+            </div>
+          ) : (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <p className="text-orange-800 font-medium">⚠️ Plan insuffisant</p>
+              <p className="text-orange-700 text-sm">Vous devez avoir un plan Professionnel (1 design) ou Entreprise (5 designs) pour accéder à ce service.</p>
+              <p className="text-sm font-semibold mt-2">Prix : 7 000 FCFA par design</p>
+            </div>
+          )}
+        </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -234,8 +282,12 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
               <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                 Annuler
               </Button>
-              <Button type="submit" className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500">
-                Envoyer ma demande
+              <Button 
+                type="submit" 
+                disabled={!canUseService}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500"
+              >
+                {canUseService ? 'Commander (7 000 FCFA)' : 'Plan insuffisant'}
               </Button>
             </div>
           </form>
