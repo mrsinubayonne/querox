@@ -13,12 +13,14 @@ import Comptabilite from './pages/Comptabilite';
 import Statistiques from './pages/Statistiques';
 import Parametres from './pages/Parametres';
 import Abonnement from './pages/Abonnement';
+import Services from './pages/Services';
+import ServiceAppel from './pages/ServiceAppel';
+import Consulting from './pages/Consulting';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RestaurantProvider } from './contexts/RestaurantContext';
-import Services from './pages/Services';
 
 const queryClient = new QueryClient();
 
@@ -26,7 +28,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RestaurantProvider restaurantUserId={null}>
+        <RestaurantProvider restaurantUserId="default">
           <Router>
             <div className="min-h-screen bg-background">
               <Toaster />
@@ -45,6 +47,22 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Services />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/service-appel" 
+                  element={
+                    <ProtectedRoute>
+                      <ServiceAppel />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/consulting" 
+                  element={
+                    <ProtectedRoute>
+                      <Consulting />
                     </ProtectedRoute>
                   } 
                 />

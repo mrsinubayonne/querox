@@ -1,35 +1,26 @@
 
 import React, { useState } from 'react';
-import {
-  BarChart3,
-  ShoppingCart,
-  Menu,
-  Package,
-  Users,
+import { 
+  Home, 
+  ShoppingBag, 
+  Menu, 
+  Package, 
+  Users, 
   QrCode,
   Globe,
-  Megaphone,
-  Calculator,
   TrendingUp,
+  BarChart3,
   Settings,
   CreditCard,
-  LayoutDashboard,
-  Headphones
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  Headphones,
+  Phone,
+  UserCheck
 } from 'lucide-react';
-import { Separator } from "@/components/ui/separator"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
-import { Button } from "@/components/ui/button"
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
 
 interface ModernSidebarProps {
   collapsed: boolean;
@@ -37,121 +28,152 @@ interface ModernSidebarProps {
 }
 
 const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { signOut } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
-  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+  const [servicesExpanded, setServicesExpanded] = useState(location.pathname.includes('/service'));
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
+  const menuItems = [
+    { icon: Home, label: 'Dashboard', path: '/dashboard' },
+    { icon: ShoppingBag, label: 'Commandes', path: '/commandes' },
+    { icon: Menu, label: 'Menus', path: '/menus' },
+    { icon: Package, label: 'Inventaire', path: '/inventaire' },
+    { icon: Users, label: 'Clients', path: '/clients' },
+    { icon: QrCode, label: 'QR Codes', path: '/qr-codes' },
+    { icon: Globe, label: 'Site Web', path: '/site-web' },
+    { icon: TrendingUp, label: 'Marketing', path: '/marketing' },
+  ];
+
+  const servicesItems = [
+    { icon: Headphones, label: 'Aperçu Services', path: '/services' },
+    { icon: Phone, label: 'Service d\'Appel', path: '/service-appel' },
+    { icon: UserCheck, label: 'Consulting', path: '/consulting' },
+  ];
+
+  const bottomMenuItems = [
+    { icon: BarChart3, label: 'Statistiques', path: '/statistiques' },
+    { icon: Settings, label: 'Paramètres', path: '/parametres' },
+    { icon: CreditCard, label: 'Abonnement', path: '/abonnement' },
+  ];
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    if (path.includes('/service')) {
+      setServicesExpanded(true);
     }
   };
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+  const toggleServicesExpanded = () => {
+    setServicesExpanded(!servicesExpanded);
   };
 
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-  };
-
-  const menuItems = [
-    { name: 'Tableau de bord', icon: BarChart3, path: '/dashboard' },
-    { name: 'Commandes', icon: ShoppingCart, path: '/commandes' },
-    { name: 'Menus', icon: Menu, path: '/menus' },
-    { name: 'Inventaire', icon: Package, path: '/inventaire' },
-    { name: 'Clients', icon: Users, path: '/clients' },
-    { name: 'QR Codes', icon: QrCode, path: '/qr-codes' },
-    { name: 'Site Web', icon: Globe, path: '/site-web' },
-    { name: 'Marketing', icon: Megaphone, path: '/marketing' },
-    { name: 'Services', icon: Headphones, path: '/services' },
-    { name: 'Comptabilité', icon: Calculator, path: '/comptabilite' },
-    { name: 'Statistiques', icon: TrendingUp, path: '/statistiques' },
-    { name: 'Paramètres', icon: Settings, path: '/parametres' },
-    { name: 'Abonnement', icon: CreditCard, path: '/abonnement' },
-  ];
+  const isActive = (path: string) => location.pathname === path;
+  const isServicesSection = location.pathname.includes('/service');
 
   return (
-    <>
-      {isMobile ? (
-        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" onClick={toggleMenu}>
-              Menu
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="w-full sm:w-64">
-            <SheetHeader>
-              <SheetTitle>Menu</SheetTitle>
-              <SheetDescription>
-                Navigation
-              </SheetDescription>
-            </SheetHeader>
-            <div className="py-4">
-              {menuItems.map((item) => (
-                <Link
-                  to={item.path}
-                  key={item.name}
-                  className={cn(
-                    "flex items-center space-x-2 px-4 py-2 rounded-md hover:bg-secondary",
-                    location.pathname === item.path ? "bg-secondary text-foreground" : "text-muted-foreground"
-                  )}
-                  onClick={closeMenu}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.name}</span>
-                </Link>
-              ))}
-              <Separator className="my-2" />
-              <Button variant="ghost" onClick={handleLogout} className="w-full justify-start">
-                Déconnexion
-              </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
-      ) : (
-        <div
-          className={`flex flex-col bg-gray-50 border-r border-gray-200/60 transition-all duration-300 ease-in-out ${collapsed ? 'w-20' : 'w-64'
-            }`}
+    <div className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col ${
+      collapsed ? 'w-16' : 'w-64'
+    }`}>
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        {!collapsed && (
+          <h2 className="text-xl font-bold text-gray-800">Querox</h2>
+        )}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
         >
-          <div className="flex items-center justify-center h-16 shrink-0">
-            <Link to="/dashboard" className="flex items-center space-x-2">
-              <LayoutDashboard className="w-6 h-6 text-blue-600" />
-              {!collapsed && <span className="font-bold text-lg">QUEROX</span>}
-            </Link>
-          </div>
+          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+        </button>
+      </div>
 
-          <div className="flex-1 overflow-y-auto py-4">
-            <nav className="space-y-1">
-              {menuItems.map((item) => (
-                <Link
-                  to={item.path}
-                  key={item.name}
-                  className={`flex items-center space-x-3 px-4 py-2 rounded-md hover:bg-secondary ${location.pathname === item.path ? 'bg-secondary text-foreground' : 'text-muted-foreground'
-                    }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {!collapsed && <span>{item.name}</span>}
-                </Link>
-              ))}
-            </nav>
-          </div>
+      {/* Navigation */}
+      <nav className="flex-1 px-2 py-4 space-y-2">
+        {menuItems.map((item) => (
+          <button
+            key={item.path}
+            onClick={() => handleNavigation(item.path)}
+            className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
+              isActive(item.path)
+                ? 'bg-blue-100 text-blue-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <item.icon size={20} className="flex-shrink-0" />
+            {!collapsed && <span className="ml-3">{item.label}</span>}
+          </button>
+        ))}
 
-          <div className="p-4">
+        {/* Services Section */}
+        <div className="pt-2">
+          <button
+            onClick={toggleServicesExpanded}
+            className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
+              isServicesSection
+                ? 'bg-green-100 text-green-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <Headphones size={20} className="flex-shrink-0" />
             {!collapsed && (
-              <Button variant="ghost" onClick={handleLogout} className="w-full">
-                Déconnexion
-              </Button>
+              <>
+                <span className="ml-3 flex-1">Services</span>
+                <ChevronRight 
+                  size={16} 
+                  className={`transition-transform ${servicesExpanded ? 'rotate-90' : ''}`} 
+                />
+              </>
             )}
-          </div>
+          </button>
+
+          {/* Services Submenu */}
+          {(servicesExpanded && !collapsed) && (
+            <div className="ml-6 mt-1 space-y-1">
+              {servicesItems.map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => handleNavigation(item.path)}
+                  className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${
+                    isActive(item.path)
+                      ? 'bg-green-100 text-green-700 font-medium'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <item.icon size={16} className="flex-shrink-0" />
+                  <span className="ml-3">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      )}
-    </>
+      </nav>
+
+      {/* Bottom Navigation */}
+      <div className="border-t border-gray-200 px-2 py-4 space-y-2">
+        {bottomMenuItems.map((item) => (
+          <button
+            key={item.path}
+            onClick={() => handleNavigation(item.path)}
+            className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
+              isActive(item.path)
+                ? 'bg-blue-100 text-blue-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <item.icon size={20} className="flex-shrink-0" />
+            {!collapsed && <span className="ml-3">{item.label}</span>}
+          </button>
+        ))}
+        
+        <button
+          onClick={signOut}
+          className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50"
+        >
+          <LogOut size={20} className="flex-shrink-0" />
+          {!collapsed && <span className="ml-3">Déconnexion</span>}
+        </button>
+      </div>
+    </div>
   );
 };
 
