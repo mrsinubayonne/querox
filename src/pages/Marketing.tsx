@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
@@ -18,9 +19,6 @@ import {
   MessageCircle,
   Star,
   Award,
-  Phone,
-  Headphones,
-  UserCheck,
   Camera,
   BarChart2
 } from 'lucide-react';
@@ -29,8 +27,6 @@ import ConceptionGraphiqueModal from '@/components/marketing/ConceptionGraphique
 import EmailMarketingModal from '@/components/marketing/EmailMarketingModal';
 import ProgrammeFideliteModal from '@/components/marketing/ProgrammeFideliteModal';
 import CampagnePublicitaireModal from '@/components/marketing/CampagnePublicitaireModal';
-import ConsultingModal from '@/components/marketing/ConsultingModal';
-import ServiceAppelModal from '@/components/marketing/ServiceAppelModal';
 import GestionReseauxModal from '@/components/social/GestionReseauxModal';
 import CreationContenuModal from '@/components/social/CreationContenuModal';
 import AnalysePerformanceModal from '@/components/social/AnalysePerformanceModal';
@@ -113,30 +109,6 @@ const Marketing: React.FC = () => {
       icon: Users,
       color: 'from-emerald-500 via-green-500 to-teal-600',
       deliveryTime: '7 jours',
-      price: 'Sur devis'
-    }
-  ];
-
-  const serviceCallServices = [
-    {
-      id: 'service-appel',
-      title: 'Service d\'Appel',
-      description: 'Service d\'appel professionnel pour la prise de commandes et réservations',
-      icon: Phone,
-      color: 'from-green-500 via-emerald-500 to-teal-600',
-      deliveryTime: 'Immédiat',
-      price: 'Sur devis'
-    }
-  ];
-
-  const consultingServices = [
-    {
-      id: 'consulting',
-      title: 'Consulting Restaurant',
-      description: 'Conseils stratégiques personnalisés pour optimiser votre établissement',
-      icon: UserCheck,
-      color: 'from-purple-500 via-indigo-500 to-blue-600',
-      deliveryTime: '2h par session',
       price: 'Sur devis'
     }
   ];
@@ -252,12 +224,12 @@ const Marketing: React.FC = () => {
               {/* Services avec tabs */}
               <div>
                 <div className="text-center mb-8">
-                  <h3 className="text-4xl font-black text-gray-900 mb-3">Nos Solutions Expertes</h3>
-                  <p className="text-xl text-gray-600">Services marketing conçus spécialement pour les restaurants</p>
+                  <h3 className="text-4xl font-black text-gray-900 mb-3">Nos Solutions Marketing</h3>
+                  <p className="text-xl text-gray-600">Services marketing et communication pour restaurants</p>
                 </div>
 
                 <Tabs defaultValue="conception" className="w-full">
-                  <TabsList className="grid w-full grid-cols-6 mb-8 h-14">
+                  <TabsList className="grid w-full grid-cols-4 mb-8 h-14">
                     <TabsTrigger value="conception" className="flex items-center gap-2 text-sm">
                       <Palette className="h-4 w-4" />
                       Design
@@ -273,14 +245,6 @@ const Marketing: React.FC = () => {
                     <TabsTrigger value="communication" className="flex items-center gap-2 text-sm">
                       <Mail className="h-4 w-4" />
                       Communication
-                    </TabsTrigger>
-                    <TabsTrigger value="appel" className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4" />
-                      Service Appel
-                    </TabsTrigger>
-                    <TabsTrigger value="consulting" className="flex items-center gap-2 text-sm">
-                      <UserCheck className="h-4 w-4" />
-                      Consulting
                     </TabsTrigger>
                   </TabsList>
 
@@ -323,30 +287,6 @@ const Marketing: React.FC = () => {
                   <TabsContent value="communication">
                     <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-8">
                       {communicationServices.map((service) => (
-                        <MarketingServiceCard
-                          key={service.id}
-                          service={service}
-                          onSelect={() => openModal(service.id)}
-                        />
-                      ))}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="appel">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-8">
-                      {serviceCallServices.map((service) => (
-                        <MarketingServiceCard
-                          key={service.id}
-                          service={service}
-                          onSelect={() => openModal(service.id)}
-                        />
-                      ))}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="consulting">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-8">
-                      {consultingServices.map((service) => (
                         <MarketingServiceCard
                           key={service.id}
                           service={service}
@@ -453,12 +393,6 @@ const Marketing: React.FC = () => {
         )}
         {activeModal === 'campagne-publicitaire' && (
           <CampagnePublicitaireModal onClose={closeModal} />
-        )}
-        {activeModal === 'consulting' && (
-          <ConsultingModal onClose={closeModal} />
-        )}
-        {activeModal === 'service-appel' && (
-          <ServiceAppelModal onClose={closeModal} />
         )}
         {activeModal === 'gestion-reseaux' && (
           <GestionReseauxModal onClose={closeModal} />
