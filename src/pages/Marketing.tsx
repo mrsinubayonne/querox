@@ -1,27 +1,10 @@
-
 import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Megaphone, 
-  Palette, 
-  Mail, 
-  Users, 
-  Target,
-  TrendingUp,
-  Clock,
-  CheckCircle,
-  Facebook,
-  Share2,
-  MessageCircle,
-  Star,
-  Award,
-  Camera,
-  BarChart2
-} from 'lucide-react';
+import { Megaphone, Palette, Mail, Users, Target, TrendingUp, Clock, CheckCircle, Facebook, Share2, MessageCircle, Star, Award, Camera, BarChart2 } from 'lucide-react';
 import MarketingServiceCard from '@/components/marketing/MarketingServiceCard';
 import ConceptionGraphiqueModal from '@/components/marketing/ConceptionGraphiqueModal';
 import EmailMarketingModal from '@/components/marketing/EmailMarketingModal';
@@ -32,97 +15,77 @@ import CreationContenuModal from '@/components/social/CreationContenuModal';
 import AnalysePerformanceModal from '@/components/social/AnalysePerformanceModal';
 import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { useIsMobile } from '@/hooks/use-mobile';
-
 const Marketing: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const isMobile = useIsMobile();
-
-  const conceptionGraphiqueServices = [
-    {
-      id: 'conception-graphique',
-      title: 'Conception Graphique',
-      description: 'Création d\'affiches, flyers et supports visuels professionnels pour attirer vos clients',
-      icon: Palette,
-      color: 'from-violet-600 via-purple-600 to-fuchsia-600',
-      deliveryTime: '3 jours',
-      price: '7 000 FCFA'
-    }
-  ];
-
-  const socialMediaServices = [
-    {
-      id: 'gestion-reseaux',
-      title: 'Gestion Réseaux Sociaux',
-      description: 'Gestion complète de vos comptes Facebook, Instagram et TikTok',
-      icon: Share2,
-      color: 'from-blue-500 to-purple-500',
-      deliveryTime: 'Mensuel',
-      price: 'Sur devis'
-    },
-    {
-      id: 'creation-contenu',
-      title: 'Création de Contenu',
-      description: 'Photos, vidéos et visuels attractifs pour vos réseaux sociaux',
-      icon: Camera,
-      color: 'from-pink-500 to-rose-500',
-      deliveryTime: '5 jours',
-      price: 'Sur devis'
-    },
-    {
-      id: 'analyse-performance',
-      title: 'Analyse de Performance',
-      description: 'Rapports détaillés sur les performances de vos réseaux sociaux',
-      icon: BarChart2,
-      color: 'from-orange-500 to-yellow-500',
-      deliveryTime: 'Mensuel',
-      price: 'Sur devis'
-    }
-  ];
-
-  const facebookAdvertisingServices = [
-    {
-      id: 'campagne-publicitaire',
-      title: 'Campagne Publicitaire Facebook',
-      description: 'Stratégie publicitaire complète sur Facebook et Instagram pour maximiser votre visibilité',
-      icon: Facebook,
-      color: 'from-blue-600 via-indigo-600 to-purple-600',
-      deliveryTime: '10 jours',
-      price: 'Sur devis'
-    }
-  ];
-
-  const communicationServices = [
-    {
-      id: 'email-marketing',
-      title: 'Email Marketing',
-      description: 'Campagnes d\'emails personnalisées et automatisées pour fidéliser et convertir',
-      icon: Mail,
-      color: 'from-cyan-500 via-blue-500 to-indigo-600',
-      deliveryTime: '5 jours',
-      price: 'Sur devis'
-    },
-    {
-      id: 'programme-fidelite',
-      title: 'Programme de Fidélité',
-      description: 'Système complet de fidélisation avec récompenses et suivi client automatique',
-      icon: Users,
-      color: 'from-emerald-500 via-green-500 to-teal-600',
-      deliveryTime: '7 jours',
-      price: 'Sur devis'
-    }
-  ];
-
+  const conceptionGraphiqueServices = [{
+    id: 'conception-graphique',
+    title: 'Conception Graphique',
+    description: 'Création d\'affiches, flyers et supports visuels professionnels pour attirer vos clients',
+    icon: Palette,
+    color: 'from-violet-600 via-purple-600 to-fuchsia-600',
+    deliveryTime: '3 jours',
+    price: '7 000 FCFA'
+  }];
+  const socialMediaServices = [{
+    id: 'gestion-reseaux',
+    title: 'Gestion Réseaux Sociaux',
+    description: 'Gestion complète de vos comptes Facebook, Instagram et TikTok',
+    icon: Share2,
+    color: 'from-blue-500 to-purple-500',
+    deliveryTime: 'Mensuel',
+    price: 'Sur devis'
+  }, {
+    id: 'creation-contenu',
+    title: 'Création de Contenu',
+    description: 'Photos, vidéos et visuels attractifs pour vos réseaux sociaux',
+    icon: Camera,
+    color: 'from-pink-500 to-rose-500',
+    deliveryTime: '5 jours',
+    price: 'Sur devis'
+  }, {
+    id: 'analyse-performance',
+    title: 'Analyse de Performance',
+    description: 'Rapports détaillés sur les performances de vos réseaux sociaux',
+    icon: BarChart2,
+    color: 'from-orange-500 to-yellow-500',
+    deliveryTime: 'Mensuel',
+    price: 'Sur devis'
+  }];
+  const facebookAdvertisingServices = [{
+    id: 'campagne-publicitaire',
+    title: 'Campagne Publicitaire Facebook',
+    description: 'Stratégie publicitaire complète sur Facebook et Instagram pour maximiser votre visibilité',
+    icon: Facebook,
+    color: 'from-blue-600 via-indigo-600 to-purple-600',
+    deliveryTime: '10 jours',
+    price: 'Sur devis'
+  }];
+  const communicationServices = [{
+    id: 'email-marketing',
+    title: 'Email Marketing',
+    description: 'Campagnes d\'emails personnalisées et automatisées pour fidéliser et convertir',
+    icon: Mail,
+    color: 'from-cyan-500 via-blue-500 to-indigo-600',
+    deliveryTime: '5 jours',
+    price: 'Sur devis'
+  }, {
+    id: 'programme-fidelite',
+    title: 'Programme de Fidélité',
+    description: 'Système complet de fidélisation avec récompenses et suivi client automatique',
+    icon: Users,
+    color: 'from-emerald-500 via-green-500 to-teal-600',
+    deliveryTime: '7 jours',
+    price: 'Sur devis'
+  }];
   const openModal = (serviceId: string) => {
     setActiveModal(serviceId);
   };
-
   const closeModal = () => {
     setActiveModal(null);
   };
-
-  return (
-    <SubscriptionGuard feature="les outils marketing">
+  return <SubscriptionGuard feature="les outils marketing">
       <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40">
         <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
         
@@ -242,57 +205,30 @@ const Marketing: React.FC = () => {
                       <Facebook className="h-4 w-4" />
                       Pub Facebook
                     </TabsTrigger>
-                    <TabsTrigger value="communication" className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4" />
-                      Communication
-                    </TabsTrigger>
+                    
                   </TabsList>
 
                   <TabsContent value="conception">
                     <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-8">
-                      {conceptionGraphiqueServices.map((service) => (
-                        <MarketingServiceCard
-                          key={service.id}
-                          service={service}
-                          onSelect={() => openModal(service.id)}
-                        />
-                      ))}
+                      {conceptionGraphiqueServices.map(service => <MarketingServiceCard key={service.id} service={service} onSelect={() => openModal(service.id)} />)}
                     </div>
                   </TabsContent>
 
                   <TabsContent value="social">
                     <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-8">
-                      {socialMediaServices.map((service) => (
-                        <MarketingServiceCard
-                          key={service.id}
-                          service={service}
-                          onSelect={() => openModal(service.id)}
-                        />
-                      ))}
+                      {socialMediaServices.map(service => <MarketingServiceCard key={service.id} service={service} onSelect={() => openModal(service.id)} />)}
                     </div>
                   </TabsContent>
 
                   <TabsContent value="facebook">
                     <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-8">
-                      {facebookAdvertisingServices.map((service) => (
-                        <MarketingServiceCard
-                          key={service.id}
-                          service={service}
-                          onSelect={() => openModal(service.id)}
-                        />
-                      ))}
+                      {facebookAdvertisingServices.map(service => <MarketingServiceCard key={service.id} service={service} onSelect={() => openModal(service.id)} />)}
                     </div>
                   </TabsContent>
 
                   <TabsContent value="communication">
                     <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-8">
-                      {communicationServices.map((service) => (
-                        <MarketingServiceCard
-                          key={service.id}
-                          service={service}
-                          onSelect={() => openModal(service.id)}
-                        />
-                      ))}
+                      {communicationServices.map(service => <MarketingServiceCard key={service.id} service={service} onSelect={() => openModal(service.id)} />)}
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -349,9 +285,7 @@ const Marketing: React.FC = () => {
                           <h4 className="font-black">Jean Dupont</h4>
                           <p className="text-gray-600 text-sm">Restaurant Le Bistrot</p>
                           <div className="flex">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                            ))}
+                            {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />)}
                           </div>
                         </div>
                       </div>
@@ -366,9 +300,7 @@ const Marketing: React.FC = () => {
                           <h4 className="font-black">Marie Rodriguez</h4>
                           <p className="text-gray-600 text-sm">Pizzeria Bella Vista</p>
                           <div className="flex">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                            ))}
+                            {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />)}
                           </div>
                         </div>
                       </div>
@@ -382,32 +314,16 @@ const Marketing: React.FC = () => {
         </div>
 
         {/* Modals */}
-        {activeModal === 'conception-graphique' && (
-          <ConceptionGraphiqueModal onClose={closeModal} />
-        )}
-        {activeModal === 'email-marketing' && (
-          <EmailMarketingModal onClose={closeModal} />
-        )}
-        {activeModal === 'programme-fidelite' && (
-          <ProgrammeFideliteModal onClose={closeModal} />
-        )}
-        {activeModal === 'campagne-publicitaire' && (
-          <CampagnePublicitaireModal onClose={closeModal} />
-        )}
-        {activeModal === 'gestion-reseaux' && (
-          <GestionReseauxModal onClose={closeModal} />
-        )}
-        {activeModal === 'creation-contenu' && (
-          <CreationContenuModal onClose={closeModal} />
-        )}
-        {activeModal === 'analyse-performance' && (
-          <AnalysePerformanceModal onClose={closeModal} />
-        )}
+        {activeModal === 'conception-graphique' && <ConceptionGraphiqueModal onClose={closeModal} />}
+        {activeModal === 'email-marketing' && <EmailMarketingModal onClose={closeModal} />}
+        {activeModal === 'programme-fidelite' && <ProgrammeFideliteModal onClose={closeModal} />}
+        {activeModal === 'campagne-publicitaire' && <CampagnePublicitaireModal onClose={closeModal} />}
+        {activeModal === 'gestion-reseaux' && <GestionReseauxModal onClose={closeModal} />}
+        {activeModal === 'creation-contenu' && <CreationContenuModal onClose={closeModal} />}
+        {activeModal === 'analyse-performance' && <AnalysePerformanceModal onClose={closeModal} />}
 
         <SubscriptionPopup />
       </div>
-    </SubscriptionGuard>
-  );
+    </SubscriptionGuard>;
 };
-
 export default Marketing;
