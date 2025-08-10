@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Home, 
@@ -17,7 +16,10 @@ import {
   LogOut,
   Headphones,
   Phone,
-  UserCheck
+  UserCheck,
+  Palette,
+  Share2,
+  Facebook
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +34,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const [servicesExpanded, setServicesExpanded] = useState(location.pathname.includes('/service'));
+  const [marketingExpanded, setMarketingExpanded] = useState(location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook'));
 
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/dashboard' },
@@ -41,7 +44,13 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }
     { icon: Users, label: 'Clients', path: '/clients' },
     { icon: QrCode, label: 'QR Codes', path: '/qr-codes' },
     { icon: Globe, label: 'Site Web', path: '/site-web' },
-    { icon: TrendingUp, label: 'Marketing', path: '/marketing' },
+  ];
+
+  const marketingItems = [
+    { icon: TrendingUp, label: 'Aperçu Marketing', path: '/marketing' },
+    { icon: Palette, label: 'Conception Graphique', path: '/conception-graphique' },
+    { icon: Share2, label: 'Réseaux Sociaux', path: '/reseaux-sociaux' },
+    { icon: Facebook, label: 'Publicité Facebook', path: '/publicite-facebook' },
   ];
 
   const servicesItems = [
@@ -61,14 +70,22 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }
     if (path.includes('/service')) {
       setServicesExpanded(true);
     }
+    if (path.includes('/marketing') || path.includes('/conception-graphique') || path.includes('/reseaux-sociaux') || path.includes('/publicite-facebook')) {
+      setMarketingExpanded(true);
+    }
   };
 
   const toggleServicesExpanded = () => {
     setServicesExpanded(!servicesExpanded);
   };
 
+  const toggleMarketingExpanded = () => {
+    setMarketingExpanded(!marketingExpanded);
+  };
+
   const isActive = (path: string) => location.pathname === path;
   const isServicesSection = location.pathname.includes('/service');
+  const isMarketingSection = location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook');
 
   return (
     <div className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col ${
@@ -103,6 +120,49 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }
             {!collapsed && <span className="ml-3">{item.label}</span>}
           </button>
         ))}
+
+        {/* Marketing Section */}
+        <div className="pt-2">
+          <button
+            onClick={toggleMarketingExpanded}
+            className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
+              isMarketingSection
+                ? 'bg-purple-100 text-purple-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <TrendingUp size={20} className="flex-shrink-0" />
+            {!collapsed && (
+              <>
+                <span className="ml-3 flex-1">Marketing</span>
+                <ChevronRight 
+                  size={16} 
+                  className={`transition-transform ${marketingExpanded ? 'rotate-90' : ''}`} 
+                />
+              </>
+            )}
+          </button>
+
+          {/* Marketing Submenu */}
+          {(marketingExpanded && !collapsed) && (
+            <div className="ml-6 mt-1 space-y-1">
+              {marketingItems.map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => handleNavigation(item.path)}
+                  className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${
+                    isActive(item.path)
+                      ? 'bg-purple-100 text-purple-700 font-medium'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <item.icon size={16} className="flex-shrink-0" />
+                  <span className="ml-3">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Services Section */}
         <div className="pt-2">
