@@ -9,7 +9,7 @@ import {
   Bell, 
   Shield
 } from "lucide-react";
-import { ProfileTab } from "@/components/ProfileTab";
+import ProfileTab from "@/components/ProfileTab";
 import { NotificationsTab } from "@/components/NotificationsTab";
 import { SecurityTab } from "@/components/SecurityTab";
 
@@ -20,7 +20,7 @@ const Parametres = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
-        <div className="container py-4 flex items-center justify-between">
+        <div className="container max-w-4xl py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/site-web">
               <Button variant="ghost" size="icon" className="rounded-full">
@@ -38,9 +38,9 @@ const Parametres = () => {
         </div>
       </header>
       
-      <main className="container py-8">
-        <Tabs defaultValue="profile" className="max-w-2xl mx-auto">
-          <TabsList className="mb-8 grid grid-cols-3 w-full">
+      <main className="container max-w-4xl py-8">
+        <Tabs defaultValue="profile" className="max-w-3xl mx-auto">
+          <TabsList className="mb-8 grid grid-cols-3 w-full max-w-md mx-auto">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Mon profil
