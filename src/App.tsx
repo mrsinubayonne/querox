@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -15,15 +16,17 @@ import Abonnement from './pages/Abonnement';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
-import { QueryClient } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RestaurantProvider } from './contexts/RestaurantContext';
 import Services from './pages/Services';
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RestaurantProvider>
+        <RestaurantProvider restaurantUserId={null}>
           <Router>
             <div className="min-h-screen bg-background">
               <Toaster />
@@ -54,7 +57,7 @@ function App() {
           </Router>
         </RestaurantProvider>
       </AuthProvider>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 

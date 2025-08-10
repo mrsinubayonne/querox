@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   BarChart3,
@@ -37,14 +38,14 @@ interface ModernSidebarProps {
 
 const ModernSidebar: React.FC<ModernSidebarProps> = ({ collapsed, setCollapsed }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { logout } = useAuth();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut();
       navigate('/login');
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error);
