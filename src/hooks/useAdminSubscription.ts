@@ -1,152 +1,250 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-interface GrantSubscriptionParams {
+interface AdminSubscription {
+  id: string;
+  user_id: string | null;
   email: string;
-  tier: 'starter' | 'premium' | 'pro';
-  durationDays: number;
+  subscribed: boolean;
+  subscription_tier: string | null;
+  subscription_end: string | null;
+  stripe_customer_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export const useAdminSubscription = () => {
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [subscriptions, setSubscriptions] = useState<AdminSubscription[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const grantSubscription = async ({ email, tier, durationDays }: GrantSubscriptionParams) => {
-    setLoading(true);
+  // Check if current user is admin using the new role system
+  const checkAdminStatus = async () => {
+    if (!user) {
+      setIsAdmin(false);
+      return false;
+    }
+
     try {
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + durationDays);
-
-      // Chercher d'abord l'utilisateur par email
-      const { data: user, error: userError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
         .maybeSingle();
 
-      if (userError && userError.code !== 'PGRST116') {
-        throw userError;
+      if (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+        return false;
       }
 
-      // Créer ou mettre à jour l'abonnement
-      const { error } = await supabase
-        .from('subscribers')
-        .upsert({
-          user_id: user?.id || null,
-          email: email,
-          subscription_tier: tier,
-          subscribed: true,
-          subscription_end: endDate.toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Succès",
-        description: `Abonnement ${tier} accordé à ${email} pour ${durationDays} jours`,
-      });
-
-      return { success: true };
+      const adminStatus = !!data;
+      setIsAdmin(adminStatus);
+      return adminStatus;
     } catch (error) {
-      console.error('Erreur lors de l\'attribution de l\'abonnement:', error);
+      console.error('Error in checkAdminStatus:', error);
+      setIsAdmin(false);
+      return false;
+    }
+  };
+
+  const fetchSubscriptions = async () => {
+    const adminStatus = await checkAdminStatus();
+    
+    if (!adminStatus) {
+      setSubscriptions([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('subscribers')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching subscriptions:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les abonnements",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSubscriptions(data || []);
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
       toast({
         title: "Erreur",
-        description: "Impossible d'accorder l'abonnement",
+        description: "Une erreur est survenue lors du chargement",
         variant: "destructive",
       });
-      return { success: false, error };
     } finally {
       setLoading(false);
     }
   };
 
-  const revokeSubscription = async (email: string) => {
-    setLoading(true);
+  const updateSubscription = async (id: string, updates: Partial<AdminSubscription>) => {
+    if (!isAdmin) {
+      toast({
+        title: "Erreur",
+        description: "Accès non autorisé",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     try {
       const { error } = await supabase
         .from('subscribers')
         .update({
-          subscribed: false,
-          updated_at: new Date().toISOString()
+          ...updates,
+          updated_at: new Date().toISOString(),
         })
-        .eq('email', email);
+        .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating subscription:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de mettre à jour l'abonnement",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Update local state
+      setSubscriptions(prev => 
+        prev.map(sub => 
+          sub.id === id ? { ...sub, ...updates } : sub
+        )
+      );
 
       toast({
         title: "Succès",
-        description: `Abonnement révoqué pour ${email}`,
+        description: "Abonnement mis à jour avec succès",
       });
 
-      return { success: true };
+      return true;
     } catch (error) {
-      console.error('Erreur lors de la révocation:', error);
+      console.error('Error updating subscription:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de révoquer l'abonnement",
+        description: "Une erreur est survenue",
         variant: "destructive",
       });
-      return { success: false, error };
-    } finally {
-      setLoading(false);
+      return false;
     }
   };
 
-  const extendSubscription = async (email: string, additionalDays: number) => {
-    setLoading(true);
+  const createSubscription = async (subscriptionData: Omit<AdminSubscription, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!isAdmin) {
+      toast({
+        title: "Erreur",
+        description: "Accès non autorisé",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     try {
-      // Récupérer l'abonnement actuel
-      const { data: subscription, error: fetchError } = await supabase
+      const { data, error } = await supabase
         .from('subscribers')
-        .select('subscription_end')
-        .eq('email', email)
+        .insert(subscriptionData)
+        .select()
         .single();
 
-      if (fetchError) throw fetchError;
+      if (error) {
+        console.error('Error creating subscription:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer l'abonnement",
+          variant: "destructive",
+        });
+        return false;
+      }
 
-      const currentEnd = subscription.subscription_end 
-        ? new Date(subscription.subscription_end)
-        : new Date();
-      
-      currentEnd.setDate(currentEnd.getDate() + additionalDays);
-
-      const { error } = await supabase
-        .from('subscribers')
-        .update({
-          subscription_end: currentEnd.toISOString(),
-          subscribed: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('email', email);
-
-      if (error) throw error;
-
+      setSubscriptions(prev => [data, ...prev]);
       toast({
         title: "Succès",
-        description: `Abonnement prolongé de ${additionalDays} jours pour ${email}`,
+        description: "Abonnement créé avec succès",
       });
 
-      return { success: true };
+      return true;
     } catch (error) {
-      console.error('Erreur lors de la prolongation:', error);
+      console.error('Error creating subscription:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de prolonger l'abonnement",
+        description: "Une erreur est survenue",
         variant: "destructive",
       });
-      return { success: false, error };
-    } finally {
-      setLoading(false);
+      return false;
     }
   };
 
+  const deleteSubscription = async (id: string) => {
+    if (!isAdmin) {
+      toast({
+        title: "Erreur",
+        description: "Accès non autorisé",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('subscribers')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting subscription:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer l'abonnement",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      setSubscriptions(prev => prev.filter(sub => sub.id !== id));
+      toast({
+        title: "Succès",
+        description: "Abonnement supprimé avec succès",
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting subscription:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    fetchSubscriptions();
+  }, [user]);
+
   return {
-    grantSubscription,
-    revokeSubscription,
-    extendSubscription,
-    loading
+    subscriptions,
+    loading,
+    isAdmin,
+    updateSubscription,
+    createSubscription,
+    deleteSubscription,
+    refetch: fetchSubscriptions,
   };
 };

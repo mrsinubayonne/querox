@@ -16,27 +16,67 @@ interface Subscription {
   updated_at: string;
 }
 
-const ADMIN_EMAILS = [
-  'emmanuelhussinbayonne@gmail.com',
-  'bayonnecastadorkhloe@gmail.com', 
-  'mrsinulion@gmail.com'
-];
+interface UserRole {
+  id: string;
+  user_id: string;
+  role: 'admin' | 'user';
+  created_at: string;
+  updated_at: string;
+}
 
 export const useSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Vérifier immédiatement si l'utilisateur est admin
-  const isAdminUser = useCallback(() => {
-    const isAdmin = user && ADMIN_EMAILS.includes(user.email || '');
-    console.log('🔍 Vérification admin immédiate:', {
-      email: user?.email,
-      isAdmin,
-      adminEmails: ADMIN_EMAILS
-    });
-    return isAdmin;
+  // Check if current user is admin using the new role system
+  const isAdminUser = useCallback(async () => {
+    if (!user) return false;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking admin role:', error);
+        return false;
+      }
+
+      return !!data;
+    } catch (error) {
+      console.error('Error in isAdminUser:', error);
+      return false;
+    }
+  }, [user]);
+
+  const fetchUserRole = useCallback(async () => {
+    if (!user) {
+      setUserRole(null);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user role:', error);
+        return;
+      }
+
+      setUserRole(data);
+    } catch (error) {
+      console.error('Error in fetchUserRole:', error);
+    }
   }, [user]);
 
   const createTrialSubscription = async (userEmail: string, userId: string) => {
@@ -78,8 +118,10 @@ export const useSubscription = () => {
       return;
     }
 
-    // Si l'utilisateur est admin, on peut définir immédiatement un état valide
-    if (isAdminUser()) {
+    // Check if user is admin first
+    const isAdmin = await isAdminUser();
+    
+    if (isAdmin) {
       console.log('✅ Utilisateur admin détecté - configuration immédiate');
       setSubscription({
         id: 'admin-override',
@@ -201,14 +243,15 @@ export const useSubscription = () => {
   }, [user, isAdminUser]);
 
   useEffect(() => {
+    fetchUserRole();
     fetchSubscription();
     
-    if (user && !isAdminUser()) {
+    if (user && userRole?.role !== 'admin') {
       // Rafraîchir les données toutes les 30 secondes seulement pour les non-admins
       const interval = setInterval(fetchSubscription, 30000);
       return () => clearInterval(interval);
     }
-  }, [fetchSubscription, user, isAdminUser]);
+  }, [fetchSubscription, fetchUserRole, user, userRole]);
 
   const createPayment = async (tier: string, amount: number = 1000) => {
     if (!user) {
@@ -283,7 +326,7 @@ export const useSubscription = () => {
 
   const isSubscriptionActive = useCallback(() => {
     // Les administrateurs ont TOUJOURS accès
-    if (isAdminUser()) {
+    if (userRole?.role === 'admin') {
       console.log('✅ Accès admin accordé immédiatement');
       return true;
     }
@@ -323,7 +366,7 @@ export const useSubscription = () => {
     });
     
     return isActive;
-  }, [subscription, isAdminUser]);
+  }, [subscription, userRole]);
 
   const getDaysRemaining = () => {
     if (!subscription?.subscription_end) return null;
@@ -344,6 +387,6 @@ export const useSubscription = () => {
     isSubscriptionActive: isSubscriptionActive(),
     daysRemaining: getDaysRemaining(),
     refetch: fetchSubscription,
-    isAdmin: isAdminUser(),
+    isAdmin: userRole?.role === 'admin',
   };
 };
