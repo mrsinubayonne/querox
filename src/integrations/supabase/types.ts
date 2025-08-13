@@ -629,6 +629,13 @@ export type Database = {
             foreignKeyName: "website_gallery_website_id_fkey"
             columns: ["website_id"]
             isOneToOne: false
+            referencedRelation: "public_websites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "website_gallery_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
             referencedRelation: "websites"
             referencedColumns: ["id"]
           },
@@ -669,6 +676,13 @@ export type Database = {
           website_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "website_pages_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "public_websites"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "website_pages_website_id_fkey"
             columns: ["website_id"]
@@ -830,9 +844,186 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_websites: {
+        Row: {
+          contact_subtitle: string | null
+          contact_title: string | null
+          created_at: string | null
+          custom_css: string | null
+          description: string | null
+          dish1_image_url: string | null
+          dish1_name: string | null
+          dish1_price: string | null
+          dish1_rating: string | null
+          dish2_image_url: string | null
+          dish2_name: string | null
+          dish2_price: string | null
+          dish2_rating: string | null
+          dish3_image_url: string | null
+          dish3_name: string | null
+          dish3_price: string | null
+          dish3_rating: string | null
+          header_image_url: string | null
+          hero_button_primary: string | null
+          hero_button_secondary: string | null
+          hero_image_url: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          opening_hours: Json | null
+          primary_color: string | null
+          secondary_color: string | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string | null
+          social_links: Json | null
+          specialities_subtitle: string | null
+          specialities_title: string | null
+          stats_clients: string | null
+          stats_dishes: string | null
+          stats_experience: string | null
+          stats_rating: string | null
+          template_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          contact_subtitle?: string | null
+          contact_title?: string | null
+          created_at?: string | null
+          custom_css?: string | null
+          description?: string | null
+          dish1_image_url?: string | null
+          dish1_name?: string | null
+          dish1_price?: string | null
+          dish1_rating?: string | null
+          dish2_image_url?: string | null
+          dish2_name?: string | null
+          dish2_price?: string | null
+          dish2_rating?: string | null
+          dish3_image_url?: string | null
+          dish3_name?: string | null
+          dish3_price?: string | null
+          dish3_rating?: string | null
+          header_image_url?: string | null
+          hero_button_primary?: string | null
+          hero_button_secondary?: string | null
+          hero_image_url?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          opening_hours?: Json | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string | null
+          social_links?: Json | null
+          specialities_subtitle?: string | null
+          specialities_title?: string | null
+          stats_clients?: string | null
+          stats_dishes?: string | null
+          stats_experience?: string | null
+          stats_rating?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          contact_subtitle?: string | null
+          contact_title?: string | null
+          created_at?: string | null
+          custom_css?: string | null
+          description?: string | null
+          dish1_image_url?: string | null
+          dish1_name?: string | null
+          dish1_price?: string | null
+          dish1_rating?: string | null
+          dish2_image_url?: string | null
+          dish2_name?: string | null
+          dish2_price?: string | null
+          dish2_rating?: string | null
+          dish3_image_url?: string | null
+          dish3_name?: string | null
+          dish3_price?: string | null
+          dish3_rating?: string | null
+          header_image_url?: string | null
+          hero_button_primary?: string | null
+          hero_button_secondary?: string | null
+          hero_image_url?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          opening_hours?: Json | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string | null
+          social_links?: Json | null
+          specialities_subtitle?: string | null
+          specialities_title?: string | null
+          stats_clients?: string | null
+          stats_dishes?: string | null
+          stats_experience?: string | null
+          stats_rating?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_public_website_by_slug: {
+        Args: { website_slug: string }
+        Returns: {
+          id: string
+          name: string
+          description: string
+          logo_url: string
+          header_image_url: string
+          hero_title: string
+          hero_subtitle: string
+          hero_image_url: string
+          hero_button_primary: string
+          hero_button_secondary: string
+          stats_experience: string
+          stats_clients: string
+          stats_dishes: string
+          stats_rating: string
+          specialities_title: string
+          specialities_subtitle: string
+          dish1_name: string
+          dish1_price: string
+          dish1_rating: string
+          dish1_image_url: string
+          dish2_name: string
+          dish2_price: string
+          dish2_rating: string
+          dish2_image_url: string
+          dish3_name: string
+          dish3_price: string
+          dish3_rating: string
+          dish3_image_url: string
+          contact_title: string
+          contact_subtitle: string
+          primary_color: string
+          secondary_color: string
+          template_id: string
+          custom_css: string
+          seo_title: string
+          seo_description: string
+          slug: string
+          opening_hours: Json
+          social_links: Json
+          created_at: string
+          updated_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string
