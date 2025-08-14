@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
+
 interface ModernSidebarProps {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
 }
+
 const ModernSidebar: React.FC<ModernSidebarProps> = ({
   collapsed,
   setCollapsed
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const {
-    signOut
-  } = useAuth();
+  const { signOut } = useAuth();
+  const { isAdmin } = useSubscription();
+  
   const [servicesExpanded, setServicesExpanded] = useState(location.pathname.includes('/service'));
   const [marketingExpanded, setMarketingExpanded] = useState(location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook'));
+
   const menuItems = [{
     icon: Home,
     label: 'Dashboard',
@@ -46,6 +50,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: 'Site Web',
     path: '/site-web'
   }];
+
   const marketingItems = [{
     icon: TrendingUp,
     label: 'Aperçu Marketing',
@@ -63,6 +68,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: 'Publicité Facebook',
     path: '/publicite-facebook'
   }];
+
   const servicesItems = [{
     icon: Headphones,
     label: 'Aperçu Services',
@@ -76,19 +82,33 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: 'Consulting',
     path: '/consulting'
   }];
-  const bottomMenuItems = [{
-    icon: BarChart3,
-    label: 'Statistiques',
-    path: '/statistiques'
-  }, {
-    icon: Settings,
-    label: 'Paramètres',
-    path: '/parametres'
-  }, {
-    icon: CreditCard,
-    label: 'Abonnement',
-    path: '/abonnement'
-  }];
+
+  const bottomMenuItems = [
+    {
+      icon: BarChart3,
+      label: 'Statistiques',
+      path: '/statistiques'
+    },
+    {
+      icon: Settings,
+      label: 'Paramètres',
+      path: '/parametres'
+    },
+    {
+      icon: CreditCard,
+      label: 'Abonnement',
+      path: '/abonnement'
+    }
+  ];
+
+  const adminMenuItems = [
+    {
+      icon: Shield,
+      label: 'Admin Abonnements',
+      path: '/admin/subscriptions'
+    }
+  ];
+
   const handleNavigation = (path: string) => {
     navigate(path);
     if (path.includes('/service')) {
@@ -98,15 +118,20 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       setMarketingExpanded(true);
     }
   };
+
   const toggleServicesExpanded = () => {
     setServicesExpanded(!servicesExpanded);
   };
+
   const toggleMarketingExpanded = () => {
     setMarketingExpanded(!marketingExpanded);
   };
+
   const isActive = (path: string) => location.pathname === path;
+
   const isServicesSection = location.pathname.includes('/service');
   const isMarketingSection = location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook');
+
   return <div className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col ${collapsed ? 'w-16' : 'w-64'}`}>
       {/* Header */}
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
@@ -164,13 +189,38 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
       {/* Bottom Navigation */}
       <div className="border-t border-gray-200 px-2 py-4 space-y-2">
-        {bottomMenuItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+        {bottomMenuItems.map(item => (
+          <button 
+            key={item.path} 
+            onClick={() => handleNavigation(item.path)} 
+            className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
+              isActive(item.path) 
+                ? 'bg-blue-100 text-blue-700 font-medium' 
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
             <item.icon size={20} className="flex-shrink-0" />
             {!collapsed && <span className="ml-3">{item.label}</span>}
-          </button>)}
-        
-        
+          </button>
+        ))}
+
+        {/* Admin Menu Items - Only visible to admins */}
+        {isAdmin && adminMenuItems.map(item => (
+          <button 
+            key={item.path} 
+            onClick={() => handleNavigation(item.path)} 
+            className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
+              isActive(item.path) 
+                ? 'bg-red-100 text-red-700 font-medium' 
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <item.icon size={20} className="flex-shrink-0" />
+            {!collapsed && <span className="ml-3">{item.label}</span>}
+          </button>
+        ))}
       </div>
     </div>;
 };
+
 export default ModernSidebar;
