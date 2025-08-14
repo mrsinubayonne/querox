@@ -45,7 +45,7 @@ import AdminRoles from '@/pages/AdminRoles';
 
 function App() {
   return (
-    <RestaurantProvider>
+    <RestaurantProvider restaurantUserId={null}>
       <Router>
         <div className="min-h-screen bg-background">
           <Routes>
