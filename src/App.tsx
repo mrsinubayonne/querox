@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
@@ -17,7 +18,6 @@ import Clients from '@/pages/Clients';
 import QRCodes from '@/pages/QRCodes';
 import SiteWebContainer from '@/pages/SiteWebContainer';
 import SiteWebBenefits from '@/pages/SiteWebBenefits';
-import SiteWebRequestForm from '@/pages/SiteWebRequestForm';
 import MarketingHub from '@/pages/MarketingHub';
 import ConceptionGraphique from '@/pages/ConceptionGraphique';
 import ReseauxSociaux from '@/pages/ReseauxSociaux';
@@ -71,7 +71,6 @@ function App() {
           <Route path="/qr-codes" element={<ProtectedRoute><QRCodes /></ProtectedRoute>} />
           <Route path="/site-web" element={<ProtectedRoute><SiteWebContainer /></ProtectedRoute>} />
           <Route path="/site-web-benefits" element={<ProtectedRoute><SiteWebBenefits /></ProtectedRoute>} />
-          <Route path="/site-web-request" element={<ProtectedRoute><SiteWebRequestForm /></ProtectedRoute>} />
           <Route path="/marketing" element={<ProtectedRoute><MarketingHub /></ProtectedRoute>} />
           <Route path="/conception-graphique" element={<ProtectedRoute><ConceptionGraphique /></ProtectedRoute>} />
           <Route path="/reseaux-sociaux" element={<ProtectedRoute><ReseauxSociaux /></ProtectedRoute>} />
