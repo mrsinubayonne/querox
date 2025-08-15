@@ -14,6 +14,10 @@ interface Subscription {
   stripe_customer_id: string | null;
   created_at: string;
   updated_at: string;
+  subscription_start: string | null;
+  monthly_revenue: number;
+  last_payment_date: string | null;
+  subscription_status: string;
 }
 
 interface UserRole {
@@ -94,6 +98,9 @@ export const useSubscription = () => {
           subscribed: true,
           subscription_tier: 'trial',
           subscription_end: trialEndDate.toISOString(),
+          subscription_start: new Date().toISOString(),
+          monthly_revenue: 0,
+          subscription_status: 'active'
         })
         .select()
         .single();
@@ -132,7 +139,11 @@ export const useSubscription = () => {
         subscription_end: null,
         stripe_customer_id: null,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        subscription_start: new Date().toISOString(),
+        monthly_revenue: 0,
+        last_payment_date: null,
+        subscription_status: 'active'
       });
       setLoading(false);
       return;
@@ -192,7 +203,11 @@ export const useSubscription = () => {
             subscription_end: trialEndDate.toISOString(),
             stripe_customer_id: null,
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            subscription_start: new Date().toISOString(),
+            monthly_revenue: 0,
+            last_payment_date: null,
+            subscription_status: 'active'
           };
         }
       }
@@ -213,7 +228,11 @@ export const useSubscription = () => {
           subscription_end: trialEndDate.toISOString(),
           stripe_customer_id: null,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          subscription_start: new Date().toISOString(),
+          monthly_revenue: 0,
+          last_payment_date: null,
+          subscription_status: 'active'
         };
       }
 
@@ -235,7 +254,11 @@ export const useSubscription = () => {
         subscription_end: trialEndDate.toISOString(),
         stripe_customer_id: null,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        subscription_start: new Date().toISOString(),
+        monthly_revenue: 0,
+        last_payment_date: null,
+        subscription_status: 'active'
       });
     } finally {
       setLoading(false);
