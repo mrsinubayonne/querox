@@ -27,16 +27,22 @@ export const useAdminRevenue = () => {
 
   const fetchRevenueStats = async () => {
     try {
-      console.log('📊 Récupération des statistiques de revenus...');
+      console.log('📊 Récupération des statistiques de revenus sécurisées...');
       
+      // Use the secure function instead of direct table access
       const { data, error } = await supabase
-        .from('admin_revenue_stats')
-        .select('*')
-        .order('month', { ascending: false })
-        .limit(12);
+        .rpc('get_admin_revenue_stats');
 
       if (error) {
         console.error('❌ Erreur lors de la récupération des statistiques:', error);
+        if (error.message.includes('permission denied') || error.message.includes('access denied')) {
+          toast({
+            title: "Accès refusé",
+            description: "Vous n'avez pas les permissions d'accéder aux statistiques de revenus",
+            variant: "destructive",
+          });
+          return;
+        }
         throw error;
       }
 
@@ -61,6 +67,14 @@ export const useAdminRevenue = () => {
 
       if (error) {
         console.error('❌ Erreur lors du calcul du churn rate:', error);
+        if (error.message.includes('permission denied') || error.message.includes('access denied')) {
+          toast({
+            title: "Accès refusé", 
+            description: "Vous n'avez pas les permissions d'accéder aux données d'attrition",
+            variant: "destructive",
+          });
+          return;
+        }
         throw error;
       }
 
