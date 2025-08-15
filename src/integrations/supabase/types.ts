@@ -1000,6 +1000,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_revenue_stats_policy: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       calculate_churn_rate: {
         Args: { period_months?: number }
         Returns: {
@@ -1008,6 +1012,16 @@ export type Database = {
           churned: number
           period_end: string
           period_start: string
+        }[]
+      }
+      get_admin_revenue_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active_subscribers: number
+          churned_subscribers: number
+          month: string
+          monthly_revenue: number
+          new_subscribers: number
         }[]
       }
       get_public_website_by_slug: {
