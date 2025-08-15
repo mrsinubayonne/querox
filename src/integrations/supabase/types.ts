@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -499,9 +499,13 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          last_payment_date: string | null
+          monthly_revenue: number | null
           stripe_customer_id: string | null
           subscribed: boolean
           subscription_end: string | null
+          subscription_start: string | null
+          subscription_status: string | null
           subscription_tier: string | null
           updated_at: string
           user_id: string | null
@@ -510,9 +514,13 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          last_payment_date?: string | null
+          monthly_revenue?: number | null
           stripe_customer_id?: string | null
           subscribed?: boolean
           subscription_end?: string | null
+          subscription_start?: string | null
+          subscription_status?: string | null
           subscription_tier?: string | null
           updated_at?: string
           user_id?: string | null
@@ -521,9 +529,13 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          last_payment_date?: string | null
+          monthly_revenue?: number | null
           stripe_customer_id?: string | null
           subscribed?: boolean
           subscription_end?: string | null
+          subscription_start?: string | null
+          subscription_status?: string | null
           subscription_tier?: string | null
           updated_at?: string
           user_id?: string | null
@@ -844,6 +856,16 @@ export type Database = {
       }
     }
     Views: {
+      admin_revenue_stats: {
+        Row: {
+          active_subscribers: number | null
+          churned_subscribers: number | null
+          month: string | null
+          monthly_revenue: number | null
+          new_subscribers: number | null
+        }
+        Relationships: []
+      }
       public_websites: {
         Row: {
           contact_subtitle: string | null
@@ -978,56 +1000,66 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_churn_rate: {
+        Args: { period_months?: number }
+        Returns: {
+          active_start: number
+          churn_rate: number
+          churned: number
+          period_end: string
+          period_start: string
+        }[]
+      }
       get_public_website_by_slug: {
         Args: { website_slug: string }
         Returns: {
-          id: string
-          name: string
+          contact_subtitle: string
+          contact_title: string
+          created_at: string
+          custom_css: string
           description: string
-          logo_url: string
-          header_image_url: string
-          hero_title: string
-          hero_subtitle: string
-          hero_image_url: string
-          hero_button_primary: string
-          hero_button_secondary: string
-          stats_experience: string
-          stats_clients: string
-          stats_dishes: string
-          stats_rating: string
-          specialities_title: string
-          specialities_subtitle: string
+          dish1_image_url: string
           dish1_name: string
           dish1_price: string
           dish1_rating: string
-          dish1_image_url: string
+          dish2_image_url: string
           dish2_name: string
           dish2_price: string
           dish2_rating: string
-          dish2_image_url: string
+          dish3_image_url: string
           dish3_name: string
           dish3_price: string
           dish3_rating: string
-          dish3_image_url: string
-          contact_title: string
-          contact_subtitle: string
+          header_image_url: string
+          hero_button_primary: string
+          hero_button_secondary: string
+          hero_image_url: string
+          hero_subtitle: string
+          hero_title: string
+          id: string
+          logo_url: string
+          name: string
+          opening_hours: Json
           primary_color: string
           secondary_color: string
-          template_id: string
-          custom_css: string
-          seo_title: string
           seo_description: string
+          seo_title: string
           slug: string
-          opening_hours: Json
           social_links: Json
-          created_at: string
+          specialities_subtitle: string
+          specialities_title: string
+          stats_clients: string
+          stats_dishes: string
+          stats_experience: string
+          stats_rating: string
+          template_id: string
           updated_at: string
         }[]
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["user_role"]
+          _user_id: string
         }
         Returns: boolean
       }

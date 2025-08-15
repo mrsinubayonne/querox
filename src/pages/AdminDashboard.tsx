@@ -4,17 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminRevenue } from '@/hooks/useAdminRevenue';
 import ModernSidebar from '@/components/ModernSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import UnauthorizedAccess from '@/components/admin/UnauthorizedAccess';
 import ModernStatCard from '@/components/ModernStatCard';
+import RevenueChart from '@/components/admin/RevenueChart';
+import ChurnRateCard from '@/components/admin/ChurnRateCard';
+import PeriodSelector from '@/components/admin/PeriodSelector';
 import { 
   DollarSign, 
   Users, 
   ChefHat, 
   ShoppingCart, 
   CreditCard,
-  TrendingUp
+  TrendingUp,
+  Building2,
+  Target
 } from 'lucide-react';
 
 const ADMIN_EMAILS = [
@@ -24,11 +30,9 @@ const ADMIN_EMAILS = [
 ];
 
 interface DashboardStats {
-  totalRevenue: number;
   totalUsers: number;
   totalDishes: number;
   totalOrders: number;
-  activeSubscriptions: number;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -36,14 +40,23 @@ const AdminDashboard: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [stats, setStats] = useState<DashboardStats>({
-    totalRevenue: 0,
     totalUsers: 0,
     totalDishes: 0,
-    totalOrders: 0,
-    activeSubscriptions: 0
+    totalOrders: 0
   });
   const { toast } = useToast();
+
+  const {
+    revenueStats,
+    churnData,
+    loading: revenueLoading,
+    processDataByPeriod,
+    getTotalRevenue,
+    getActiveRestaurants,
+    getGrowthRate
+  } = useAdminRevenue();
 
   useEffect(() => {
     checkAuthorization();
@@ -98,35 +111,16 @@ const AdminDashboard: React.FC = () => {
         .from('orders')
         .select('*', { count: 'exact', head: true });
 
-      // Calcul du chiffre d'affaires total (commandes terminées)
-      const { data: completedOrders } = await supabase
-        .from('orders')
-        .select('total_amount')
-        .eq('status', 'completed');
-
-      const totalRevenue = completedOrders?.reduce((sum, order) => 
-        sum + Number(order.total_amount), 0) || 0;
-
-      // Nombre d'abonnements actifs
-      const { count: activeSubsCount } = await supabase
-        .from('subscribers')
-        .select('*', { count: 'exact', head: true })
-        .eq('subscribed', true);
-
       setStats({
-        totalRevenue,
         totalUsers: usersCount || 0,
         totalDishes: dishesCount || 0,
-        totalOrders: ordersCount || 0,
-        activeSubscriptions: activeSubsCount || 0
+        totalOrders: ordersCount || 0
       });
 
       console.log('✅ Statistiques chargées:', {
-        totalRevenue,
         totalUsers: usersCount,
         totalDishes: dishesCount,
-        totalOrders: ordersCount,
-        activeSubscriptions: activeSubsCount
+        totalOrders: ordersCount
       });
 
     } catch (error: any) {
@@ -139,14 +133,14 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading || revenueLoading) {
     return (
       <div className="flex h-screen bg-gray-50">
         <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-600">Vérification des autorisations...</p>
+            <p className="mt-2 text-sm text-gray-600">Chargement du tableau de bord...</p>
           </div>
         </div>
       </div>
@@ -162,36 +156,44 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
+  const chartData = processDataByPeriod(selectedPeriod);
+  const totalRevenue = getTotalRevenue();
+  const activeRestaurants = getActiveRestaurants();
+  const growthRate = getGrowthRate();
+
   return (
     <div className="flex h-screen bg-gray-50">
       <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       
       <div className="flex-1 overflow-auto">
         <div className="p-8">
-          <AdminHeader userEmail={user?.email} />
+          <div className="flex justify-between items-center mb-8">
+            <AdminHeader userEmail={user?.email} />
+            <PeriodSelector value={selectedPeriod} onChange={setSelectedPeriod} />
+          </div>
           
-          {/* Statistiques globales QUEROX */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {/* Statistiques principales */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <ModernStatCard
               title="Chiffre d'affaires total"
-              value={`${stats.totalRevenue.toFixed(2)} €`}
+              value={`${totalRevenue.toFixed(2)} €`}
               icon={<DollarSign className="w-6 h-6" />}
               color="green"
               change={{
-                value: "Toutes commandes terminées",
-                label: "Revenue global QUEROX",
-                isPositive: true
+                value: `${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}%`,
+                label: "vs mois précédent",
+                isPositive: growthRate >= 0
               }}
-              trend="up"
+              trend={growthRate >= 0 ? "up" : "down"}
             />
 
             <ModernStatCard
-              title="Utilisateurs inscrits"
-              value={stats.totalUsers.toLocaleString()}
-              icon={<Users className="w-6 h-6" />}
+              title="Restaurants actifs"
+              value={activeRestaurants.toLocaleString()}
+              icon={<Building2 className="w-6 h-6" />}
               color="blue"
               change={{
-                value: "Total des comptes",
+                value: "Abonnements payants",
                 label: "Utilisateurs QUEROX",
                 isPositive: true
               }}
@@ -199,13 +201,52 @@ const AdminDashboard: React.FC = () => {
             />
 
             <ModernStatCard
+              title="Utilisateurs totaux"
+              value={stats.totalUsers.toLocaleString()}
+              icon={<Users className="w-6 h-6" />}
+              color="purple"
+              change={{
+                value: "Total des comptes",
+                label: "Base utilisateurs",
+                isPositive: true
+              }}
+              trend="up"
+            />
+
+            <ModernStatCard
+              title="Taux de conversion"
+              value={`${stats.totalUsers > 0 ? ((activeRestaurants / stats.totalUsers) * 100).toFixed(1) : 0}%`}
+              icon={<Target className="w-6 h-6" />}
+              color="orange"
+              change={{
+                value: "Abonnés/Inscrits",
+                label: "Performance commerciale",
+                isPositive: true
+              }}
+              trend="up"
+            />
+          </div>
+
+          {/* Graphiques et analyse */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="lg:col-span-2">
+              <RevenueChart data={chartData} period={selectedPeriod} />
+            </div>
+            <div>
+              <ChurnRateCard data={churnData} period={selectedPeriod} />
+            </div>
+          </div>
+
+          {/* Statistiques complémentaires */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <ModernStatCard
               title="Plats créés"
               value={stats.totalDishes.toLocaleString()}
               icon={<ChefHat className="w-6 h-6" />}
               color="orange"
               change={{
                 value: "Dans tous les menus",
-                label: "Plats sur la plateforme",
+                label: "Contenu plateforme",
                 isPositive: true
               }}
               trend="neutral"
@@ -217,34 +258,21 @@ const AdminDashboard: React.FC = () => {
               icon={<ShoppingCart className="w-6 h-6" />}
               color="purple"
               change={{
-                value: "Toutes commandes",
-                label: "Volume d'activité",
+                value: "Volume d'activité",
+                label: "Utilisation plateforme",
                 isPositive: true
               }}
               trend="up"
             />
 
             <ModernStatCard
-              title="Abonnements actifs"
-              value={stats.activeSubscriptions.toLocaleString()}
-              icon={<CreditCard className="w-6 h-6" />}
+              title="Revenus moyens/restaurant"
+              value={`${activeRestaurants > 0 ? (totalRevenue / activeRestaurants).toFixed(2) : 0} €`}
+              icon={<TrendingUp className="w-6 h-6" />}
               color="green"
               change={{
-                value: "Abonnements payants",
-                label: "Revenus récurrents",
-                isPositive: true
-              }}
-              trend="up"
-            />
-
-            <ModernStatCard
-              title="Taux de conversion"
-              value={`${stats.totalOrders > 0 ? ((stats.activeSubscriptions / stats.totalUsers) * 100).toFixed(1) : 0}%`}
-              icon={<TrendingUp className="w-6 h-6" />}
-              color="blue"
-              change={{
-                value: "Abonnés/Utilisateurs",
-                label: "Performance commerciale",
+                value: "ARPU mensuel",
+                label: "Revenue par utilisateur",
                 isPositive: true
               }}
               trend="up"
@@ -288,21 +316,27 @@ const AdminDashboard: React.FC = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Activité récente</CardTitle>
+                <CardTitle>Analyse de croissance</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">Nouvelles commandes aujourd'hui</span>
-                    <span className="font-medium">En développement</span>
+                    <span className="text-sm">Croissance mensuelle</span>
+                    <span className={`font-medium ${growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {growthRate > 0 ? '+' : ''}{growthRate.toFixed(1)}%
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">Nouveaux utilisateurs cette semaine</span>
-                    <span className="font-medium">En développement</span>
+                    <span className="text-sm">Taux d'attrition actuel</span>
+                    <span className="font-medium text-orange-600">
+                      {churnData[0]?.churn_rate?.toFixed(1) || 0}%
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">Abonnements expirés</span>
-                    <span className="font-medium">En développement</span>
+                    <span className="text-sm">Revenus moyens par utilisateur</span>
+                    <span className="font-medium text-blue-600">
+                      {activeRestaurants > 0 ? (totalRevenue / activeRestaurants).toFixed(2) : 0} €
+                    </span>
                   </div>
                 </div>
               </CardContent>
