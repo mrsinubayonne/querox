@@ -34,7 +34,7 @@ const AdminRoles: React.FC = () => {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<string>('all');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -178,7 +178,7 @@ const AdminRoles: React.FC = () => {
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (user.full_name && user.full_name.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesRole = selectedRole === '' || user.role === selectedRole || 
+    const matchesRole = selectedRole === 'all' || user.role === selectedRole || 
                        (selectedRole === 'none' && user.role === null);
     return matchesSearch && matchesRole;
   });
@@ -251,7 +251,7 @@ const AdminRoles: React.FC = () => {
                       <SelectValue placeholder="Filtrer par rôle" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tous les rôles</SelectItem>
+                      <SelectItem value="all">Tous les rôles</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="user">Utilisateur</SelectItem>
                       <SelectItem value="none">Aucun rôle</SelectItem>
@@ -332,7 +332,7 @@ const AdminRoles: React.FC = () => {
                     <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun utilisateur trouvé</h3>
                     <p className="text-gray-600">
-                      {searchTerm || selectedRole ? 'Essayez de modifier vos filtres' : 'Aucun utilisateur dans la base de données'}
+                      {searchTerm || selectedRole !== 'all' ? 'Essayez de modifier vos filtres' : 'Aucun utilisateur dans la base de données'}
                     </p>
                   </div>
                 )}
