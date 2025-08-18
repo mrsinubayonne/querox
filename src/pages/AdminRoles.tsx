@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import AdminHeader from '@/components/admin/AdminHeader';
+import RolesManager from '@/components/admin/RolesManager';
 import UnauthorizedAccess from '@/components/admin/UnauthorizedAccess';
-import { Users, Shield, Edit, Search, Plus } from 'lucide-react';
+import { Users, Shield, Edit, Search } from 'lucide-react';
 
 const ADMIN_EMAILS = [
   'emmanuelhussinbayonne@gmail.com',
@@ -23,8 +24,15 @@ interface UserWithRole {
   id: string;
   email: string;
   full_name: string | null;
-  role: 'admin' | 'user' | null;
+  role: string | null;
   created_at: string;
+}
+
+interface Role {
+  id: string;
+  name: string;
+  description: string | null;
+  is_system_role: boolean;
 }
 
 const AdminRoles: React.FC = () => {
@@ -33,6 +41,7 @@ const AdminRoles: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const { toast } = useToast();
@@ -44,6 +53,7 @@ const AdminRoles: React.FC = () => {
   useEffect(() => {
     if (isAuthorized) {
       fetchUsersWithRoles();
+      fetchRoles();
     }
   }, [isAuthorized]);
 
@@ -71,6 +81,20 @@ const AdminRoles: React.FC = () => {
     setLoading(false);
   };
 
+  const fetchRoles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setRoles(data || []);
+    } catch (error: any) {
+      console.error('Erreur lors du chargement des rôles:', error);
+    }
+  };
+
   const fetchUsersWithRoles = async () => {
     console.log('👥 Récupération des utilisateurs et leurs rôles...');
     
@@ -87,7 +111,7 @@ const AdminRoles: React.FC = () => {
       }
 
       // Récupérer tous les rôles
-      const { data: roles, error: rolesError } = await supabase
+      const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*');
 
@@ -98,7 +122,7 @@ const AdminRoles: React.FC = () => {
 
       // Combiner les données
       const usersWithRoles: UserWithRole[] = profiles?.map(profile => {
-        const userRole = roles?.find(role => role.user_id === profile.id);
+        const userRole = userRoles?.find(role => role.user_id === profile.id);
         return {
           id: profile.id,
           email: profile.email || '',
@@ -121,7 +145,7 @@ const AdminRoles: React.FC = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: 'admin' | 'user' | null) => {
+  const updateUserRole = async (userId: string, newRole: string | null) => {
     console.log('🔄 Modification du rôle utilisateur:', { userId, newRole });
     
     try {
@@ -165,12 +189,15 @@ const AdminRoles: React.FC = () => {
     }
   };
 
-  const getRoleBadge = (role: 'admin' | 'user' | null) => {
+  const getRoleBadge = (role: string | null) => {
     if (role === 'admin') {
       return <Badge variant="destructive" className="bg-red-100 text-red-800">Admin</Badge>;
     }
     if (role === 'user') {
       return <Badge variant="secondary">Utilisateur</Badge>;
+    }
+    if (role) {
+      return <Badge variant="outline">{role}</Badge>;
     }
     return <Badge variant="outline">Aucun rôle</Badge>;
   };
@@ -182,6 +209,11 @@ const AdminRoles: React.FC = () => {
                        (selectedRole === 'none' && user.role === null);
     return matchesSearch && matchesRole;
   });
+
+  const handleRoleChange = () => {
+    fetchRoles();
+    fetchUsersWithRoles();
+  };
 
   if (loading) {
     return (
@@ -220,125 +252,140 @@ const AdminRoles: React.FC = () => {
               Gestion des Rôles QUEROX
             </h1>
             <p className="text-gray-600 mt-2">
-              Assignez des rôles administrateur et éditeur aux membres de l'équipe QUEROX
+              Gérez les rôles et assignez-les aux membres de l'équipe QUEROX
             </p>
             <div className="mt-2 text-sm text-green-600 font-medium">
               ✓ Connecté en tant qu'administrateur: {user?.email}
             </div>
           </div>
 
-          {/* Filtres */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Search className="w-5 h-5" />
-                Filtres
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Input
-                    placeholder="Rechercher par email ou nom..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <div className="w-48">
-                  <Select value={selectedRole} onValueChange={setSelectedRole}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Filtrer par rôle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les rôles</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="user">Utilisateur</SelectItem>
-                      <SelectItem value="none">Aucun rôle</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <Tabs defaultValue="users" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Attribution des Rôles
+              </TabsTrigger>
+              <TabsTrigger value="roles" className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Gestion des Rôles
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Liste des utilisateurs */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Utilisateurs QUEROX ({filteredUsers.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {filteredUsers.map((userItem) => (
-                  <div key={userItem.id} className="flex items-center justify-between p-4 border rounded-lg">
+            <TabsContent value="users" className="space-y-6">
+              {/* Filtres */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Search className="w-5 h-5" />
+                    Filtres
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          <Users className="w-5 h-5 text-gray-600" />
+                      <Input
+                        placeholder="Rechercher par email ou nom..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="w-48">
+                      <Select value={selectedRole} onValueChange={setSelectedRole}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Filtrer par rôle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tous les rôles</SelectItem>
+                          {roles.map(role => (
+                            <SelectItem key={role.id} value={role.name}>
+                              {role.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="none">Aucun rôle</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Liste des utilisateurs */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Utilisateurs QUEROX ({filteredUsers.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {filteredUsers.map((userItem) => (
+                      <div key={userItem.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                              <Users className="w-5 h-5 text-gray-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium">{userItem.full_name || 'Nom non défini'}</h3>
+                              <p className="text-sm text-gray-600">{userItem.email}</p>
+                              <p className="text-xs text-gray-500">
+                                Inscrit le {new Date(userItem.created_at).toLocaleDateString('fr-FR')}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium">{userItem.full_name || 'Nom non défini'}</h3>
-                          <p className="text-sm text-gray-600">{userItem.email}</p>
-                          <p className="text-xs text-gray-500">
-                            Inscrit le {new Date(userItem.created_at).toLocaleDateString('fr-FR')}
-                          </p>
+                        
+                        <div className="flex items-center gap-4">
+                          {getRoleBadge(userItem.role)}
+                          
+                          <div className="flex gap-2 flex-wrap">
+                            {roles.map(role => (
+                              <Button
+                                key={role.id}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateUserRole(userItem.id, role.name)}
+                                disabled={userItem.role === role.name}
+                                className={role.name === 'admin' ? 'text-red-600 hover:text-red-700' : ''}
+                              >
+                                <Shield className="w-4 h-4 mr-1" />
+                                {role.name}
+                              </Button>
+                            ))}
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateUserRole(userItem.id, null)}
+                              disabled={userItem.role === null}
+                            >
+                              Retirer
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
                     
-                    <div className="flex items-center gap-4">
-                      {getRoleBadge(userItem.role)}
-                      
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateUserRole(userItem.id, 'admin')}
-                          disabled={userItem.role === 'admin'}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Shield className="w-4 h-4 mr-1" />
-                          Admin
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateUserRole(userItem.id, 'user')}
-                          disabled={userItem.role === 'user'}
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Utilisateur
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateUserRole(userItem.id, null)}
-                          disabled={userItem.role === null}
-                        >
-                          Retirer
-                        </Button>
+                    {filteredUsers.length === 0 && (
+                      <div className="text-center py-8">
+                        <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun utilisateur trouvé</h3>
+                        <p className="text-gray-600">
+                          {searchTerm || selectedRole !== 'all' ? 'Essayez de modifier vos filtres' : 'Aucun utilisateur dans la base de données'}
+                        </p>
                       </div>
-                    </div>
+                    )}
                   </div>
-                ))}
-                
-                {filteredUsers.length === 0 && (
-                  <div className="text-center py-8">
-                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun utilisateur trouvé</h3>
-                    <p className="text-gray-600">
-                      {searchTerm || selectedRole !== 'all' ? 'Essayez de modifier vos filtres' : 'Aucun utilisateur dans la base de données'}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="roles">
+              <RolesManager onRoleChange={handleRoleChange} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
