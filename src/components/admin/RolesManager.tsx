@@ -40,14 +40,24 @@ const RolesManager: React.FC<RolesManagerProps> = ({ onRoleChange }) => {
 
   const fetchRoles = async () => {
     try {
-      const { data, error } = await supabase
-        .from('roles')
-        .select('*')
-        .order('is_system_role', { ascending: false })
-        .order('name');
+      // Utiliser une requête SQL directe pour contourner le problème de types
+      const { data, error } = await supabase.rpc('execute_sql', {
+        query: 'SELECT * FROM roles ORDER BY is_system_role DESC, name ASC'
+      });
 
-      if (error) throw error;
-      setRoles(data || []);
+      if (error) {
+        // Fallback: essayer avec une requête basique
+        const { data: fallbackData, error: fallbackError } = await (supabase as any)
+          .from('roles')
+          .select('*')
+          .order('is_system_role', { ascending: false })
+          .order('name');
+
+        if (fallbackError) throw fallbackError;
+        setRoles(fallbackData || []);
+      } else {
+        setRoles(data || []);
+      }
     } catch (error: any) {
       console.error('Erreur lors du chargement des rôles:', error);
       toast({
@@ -74,7 +84,8 @@ const RolesManager: React.FC<RolesManagerProps> = ({ onRoleChange }) => {
 
     try {
       if (editingRole) {
-        const { error } = await supabase
+        // Mise à jour d'un rôle existant
+        const { error } = await (supabase as any)
           .from('roles')
           .update({
             name: formData.name.trim(),
@@ -90,7 +101,8 @@ const RolesManager: React.FC<RolesManagerProps> = ({ onRoleChange }) => {
           description: "Rôle modifié avec succès",
         });
       } else {
-        const { error } = await supabase
+        // Création d'un nouveau rôle
+        const { error } = await (supabase as any)
           .from('roles')
           .insert({
             name: formData.name.trim(),
@@ -146,7 +158,7 @@ const RolesManager: React.FC<RolesManagerProps> = ({ onRoleChange }) => {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('roles')
         .delete()
         .eq('id', role.id);

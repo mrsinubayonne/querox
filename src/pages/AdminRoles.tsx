@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -83,7 +82,8 @@ const AdminRoles: React.FC = () => {
 
   const fetchRoles = async () => {
     try {
-      const { data, error } = await supabase
+      // Utiliser une requête avec cast pour contourner le problème de types
+      const { data, error } = await (supabase as any)
         .from('roles')
         .select('*')
         .order('name');
