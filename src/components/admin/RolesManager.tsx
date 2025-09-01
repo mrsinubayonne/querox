@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,10 +40,11 @@ const RolesManager: React.FC = () => {
   const loadRoles = async () => {
     try {
       setLoading(true);
-      // Utiliser une requête SQL directe pour éviter les problèmes de types
-      const { data, error } = await supabase.rpc('execute_sql', {
-        query: 'SELECT * FROM roles ORDER BY created_at DESC'
-      });
+      
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Erreur lors du chargement des rôles:', error);
@@ -50,7 +52,7 @@ const RolesManager: React.FC = () => {
         return;
       }
 
-      if (Array.isArray(data)) {
+      if (data) {
         setRoles(data as Role[]);
       }
     } catch (error) {
@@ -63,7 +65,7 @@ const RolesManager: React.FC = () => {
 
   const createRole = async () => {
     try {
-      const permissionsArray = newRole.permissions.split(',').map(p => p.trim());
+      const permissionsArray = newRole.permissions.split(',').map(p => p.trim()).filter(p => p);
 
       const { error } = await supabase
         .from('roles')
@@ -92,14 +94,12 @@ const RolesManager: React.FC = () => {
     if (!editingRole) return;
 
     try {
-      const permissionsArray = editingRole.permissions;
-
       const { error } = await supabase
         .from('roles')
         .update({
           name: editingRole.name,
           description: editingRole.description,
-          permissions: permissionsArray,
+          permissions: editingRole.permissions,
         })
         .eq('id', editingRole.id);
 
@@ -311,7 +311,7 @@ const RolesManager: React.FC = () => {
                   id="permissions"
                   value={editingRole.permissions.join(', ')}
                   onChange={(e) => {
-                    const permissionsArray = e.target.value.split(',').map(p => p.trim());
+                    const permissionsArray = e.target.value.split(',').map(p => p.trim()).filter(p => p);
                     setEditingRole({ ...editingRole, permissions: permissionsArray });
                   }}
                   className="col-span-3"
