@@ -30,7 +30,7 @@ const LandingNavigation: React.FC = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-200/60 shadow-sm">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 lg:h-20">
           {/* Logo */}
@@ -41,7 +41,7 @@ const LandingNavigation: React.FC = () => {
                 alt="QUEROX Logo" 
                 className="h-8 w-auto"
               />
-              <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
                 QUEROX
               </h1>
             </div>
@@ -54,10 +54,10 @@ const LandingNavigation: React.FC = () => {
                 <button
                   key={item.label}
                   onClick={() => scrollToSection(item.href)}
-                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200 relative group"
+                  className="text-muted-foreground hover:text-primary font-medium transition-colors duration-200 relative group"
                 >
                   {item.label}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
                 </button>
               ))}
             </div>
@@ -67,13 +67,13 @@ const LandingNavigation: React.FC = () => {
           <div className="flex items-center space-x-4">
             {user ? (
               <div className="hidden sm:flex items-center space-x-4">
-                <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-full">
-                  <User className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700 max-w-32 truncate">
+                <div className="flex items-center space-x-2 px-3 py-2 bg-muted rounded-full">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground max-w-32 truncate">
                     {user.user_metadata?.full_name || user.email}
                   </span>
                 </div>
-                <Button onClick={() => navigate('/dashboard')} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={() => navigate('/dashboard')} size="sm" className="bg-primary hover:bg-primary/90">
                   Dashboard
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleSignOut} className="hidden md:flex">
@@ -86,7 +86,7 @@ const LandingNavigation: React.FC = () => {
                 <Button variant="ghost" size="sm" onClick={() => navigate('/auth')} className="font-medium">
                   Connexion
                 </Button>
-                <Button size="sm" onClick={() => navigate('/auth')} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 font-semibold">
+                <Button size="sm" onClick={() => navigate('/auth')} className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 font-semibold">
                   Essai Gratuit 7 Jours
                 </Button>
               </div>
@@ -95,7 +95,7 @@ const LandingNavigation: React.FC = () => {
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              className="lg:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -104,26 +104,26 @@ const LandingNavigation: React.FC = () => {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-xl border-b border-gray-200 shadow-lg">
+          <div className="lg:hidden absolute top-full left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-border shadow-lg">
             <div className="px-4 py-6 space-y-4">
               {navigationItems.map((item) => (
                 <button
                   key={item.label}
                   onClick={() => scrollToSection(item.href)}
-                  className="block w-full text-left text-gray-700 hover:text-blue-600 font-medium py-2 transition-colors"
+                  className="block w-full text-left text-muted-foreground hover:text-primary font-medium py-2 transition-colors"
                 >
                   {item.label}
                 </button>
               ))}
               
-              <div className="pt-4 border-t border-gray-200 space-y-3">
+              <div className="pt-4 border-t border-border space-y-3">
                 {user ? (
                   <>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                       <User className="h-4 w-4" />
                       <span>{user.user_metadata?.full_name || user.email}</span>
                     </div>
-                    <Button onClick={() => navigate('/dashboard')} size="sm" className="w-full bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={() => navigate('/dashboard')} size="sm" className="w-full bg-primary hover:bg-primary/90">
                       Dashboard
                     </Button>
                     <Button variant="outline" size="sm" onClick={handleSignOut} className="w-full">
@@ -136,7 +136,7 @@ const LandingNavigation: React.FC = () => {
                     <Button variant="outline" onClick={() => navigate('/auth')} className="w-full">
                       Connexion
                     </Button>
-                    <Button onClick={() => navigate('/auth')} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    <Button onClick={() => navigate('/auth')} className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700">
                       Essai Gratuit 7 Jours
                     </Button>
                   </>

@@ -17,7 +17,8 @@ import {
   ChefHat,
   Clock,
   Shield,
-  Zap
+  Zap,
+  ArrowRight
 } from "lucide-react";
 
 const mainFeatures = [
@@ -129,18 +130,18 @@ const LandingFeatures: React.FC = () => {
   return (
     <>
       {/* Section Principales Fonctionnalités */}
-      <section id="features" className="py-20 lg:py-32 bg-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(59,130,246,0.03),transparent)]"></div>
+      <section id="features" className="py-20 lg:py-32 bg-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,hsl(var(--primary))_0.03,transparent)]"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
-            <div className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-lg font-semibold mb-4">
+            <div className="inline-block bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent text-lg font-semibold mb-4">
               FONCTIONNALITÉS PRINCIPALES
             </div>
-            <h2 className="text-4xl lg:text-5xl font-black text-gray-900 mb-6 leading-tight">
+            <h2 className="text-4xl lg:text-5xl font-black text-foreground mb-6 leading-tight">
               Tout ce dont vous avez besoin
             </h2>
-            <p className="max-w-3xl mx-auto text-xl text-gray-600 leading-relaxed">
+            <p className="max-w-3xl mx-auto text-xl text-muted-foreground leading-relaxed">
               Une plateforme complète et intuitive pour gérer tous les aspects de votre restaurant,
               de la cuisine au service client.
             </p>
@@ -148,15 +149,15 @@ const LandingFeatures: React.FC = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
             {mainFeatures.map((feature, index) => (
-              <Card key={index} className="group border-0 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 rounded-2xl overflow-hidden">
+              <Card key={index} className="group border-border bg-card/80 backdrop-blur-sm shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 rounded-2xl overflow-hidden">
                 <CardContent className="p-8">
                   <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                     <feature.icon className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-gray-700 transition-colors">
+                  <h3 className="text-xl font-bold text-card-foreground mb-3 group-hover:text-muted-foreground transition-colors">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600 leading-relaxed">
+                  <p className="text-muted-foreground leading-relaxed">
                     {feature.description}
                   </p>
                 </CardContent>
@@ -165,15 +166,15 @@ const LandingFeatures: React.FC = () => {
           </div>
 
           {/* Section Highlights */}
-          <div className="bg-gradient-to-r from-gray-50 via-blue-50/30 to-purple-50/30 rounded-3xl p-8 lg:p-12">
+          <div className="bg-gradient-to-r from-muted/50 via-primary/5 to-purple-50/30 rounded-3xl p-8 lg:p-12">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
               {highlights.map((highlight, index) => (
                 <div key={index} className="text-center">
                   <div className={`w-12 h-12 mx-auto mb-4 ${highlight.color}`}>
                     <highlight.icon className="w-full h-full" />
                   </div>
-                  <h4 className="font-bold text-gray-900 mb-2">{highlight.title}</h4>
-                  <p className="text-sm text-gray-600">{highlight.description}</p>
+                  <h4 className="font-bold text-foreground mb-2">{highlight.title}</h4>
+                  <p className="text-sm text-muted-foreground">{highlight.description}</p>
                 </div>
               ))}
             </div>
@@ -182,18 +183,18 @@ const LandingFeatures: React.FC = () => {
       </section>
 
       {/* Section Services Premium */}
-      <section className="py-20 lg:py-32 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(139,92,246,0.03),transparent)]"></div>
+      <section className="py-20 lg:py-32 bg-gradient-to-b from-muted/30 to-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,hsl(var(--primary))_0.03,transparent)]"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <div className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent text-lg font-semibold mb-4">
               SERVICES PREMIUM
             </div>
-            <h2 className="text-4xl lg:text-5xl font-black text-gray-900 mb-6 leading-tight">
+            <h2 className="text-4xl lg:text-5xl font-black text-foreground mb-6 leading-tight">
               Allez plus loin avec nos experts
             </h2>
-            <p className="max-w-3xl mx-auto text-xl text-gray-600 leading-relaxed">
+            <p className="max-w-3xl mx-auto text-xl text-muted-foreground leading-relaxed">
               Nos services professionnels vous accompagnent pour développer votre restaurant
               et maximiser votre succès.
             </p>
@@ -201,20 +202,20 @@ const LandingFeatures: React.FC = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {premiumServices.map((service, index) => (
-              <Card key={index} className="group border-0 bg-white shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 rounded-2xl overflow-hidden relative">
+              <Card key={index} className="group border-border bg-card shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 rounded-2xl overflow-hidden relative">
                 <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${service.gradient} opacity-10 rounded-bl-2xl`}></div>
                 <CardContent className="p-8 relative">
                   <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${service.gradient} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                     <service.icon className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-gray-700 transition-colors">
+                  <h3 className="text-xl font-bold text-card-foreground mb-3 group-hover:text-muted-foreground transition-colors">
                     {service.title}
                   </h3>
-                  <p className="text-gray-600 leading-relaxed">
+                  <p className="text-muted-foreground leading-relaxed">
                     {service.description}
                   </p>
                   <div className="mt-6">
-                    <div className="inline-flex items-center text-sm font-semibold text-purple-600 group-hover:text-purple-700">
+                    <div className="inline-flex items-center text-sm font-semibold text-primary group-hover:text-primary/80">
                       En savoir plus
                       <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </div>
