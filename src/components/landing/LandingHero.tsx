@@ -42,18 +42,18 @@ const LandingHero: React.FC = () => {
 
           {/* Titre principal */}
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-foreground mb-6 sm:mb-8 leading-[1.1]">
-            <span className="block mb-2">Gérez votre</span>
+            <span className="block mb-2">Révolutionnez</span>
             <span className="block bg-gradient-to-r from-primary via-purple-600 to-primary bg-clip-text text-transparent mb-2">
-              restaurant
+              votre restaurant
             </span>
             <span className="block text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-muted-foreground">
-              en toute simplicité
+              avec QUEROX
             </span>
           </h1>
           
           <p className="max-w-3xl mx-auto text-base sm:text-xl md:text-2xl text-muted-foreground mb-8 sm:mb-12 font-light leading-relaxed px-4">
-            QUEROX révolutionne la gestion de votre restaurant avec une plateforme tout-en-un : 
-            menus, réservations, inventaire, comptabilité, marketing et bien plus.
+            La plateforme de gestion tout-en-un pour restaurants modernes : menus digitaux, 
+            commandes, inventaire, comptabilité et marketing. Transformez votre façon de travailler.
           </p>
           
           {/* CTA Buttons */}
@@ -63,7 +63,7 @@ const LandingHero: React.FC = () => {
               className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 py-3 sm:py-4 h-12 sm:h-14 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 shadow-xl shadow-primary/25 border-0 rounded-full font-semibold"
               onClick={handleGetStarted}
             >
-              {user ? 'Accéder au dashboard' : 'Essai Gratuit 7 Jours'}
+              {user ? 'Accéder au dashboard' : 'Commencer maintenant'}
               <ArrowRight className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
             <Button 
@@ -81,15 +81,15 @@ const LandingHero: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-muted-foreground px-4">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>7 jours d'essai gratuit</span>
+              <span>Configuration en 5 minutes</span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>Aucune carte bancaire requise</span>
+              <span>Support client inclus</span>
             </div>
             <div className="flex items-center space-x-2 hidden sm:flex">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>Annulation à tout moment</span>
+              <span>Paiement sécurisé</span>
             </div>
           </div>
         </div>

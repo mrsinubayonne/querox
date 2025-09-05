@@ -76,17 +76,11 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
   const onSubmit = async (data: SignUpFormData) => {
     try {
       setLoading(true);
-      await signUp(data.email, data.password, {
-        full_name: data.fullName,
-        restaurant_name: data.restaurantName,
-        restaurant_type: data.restaurantType,
-        address: data.address,
-        city: data.city,
-        postal_code: data.postalCode,
-        phone: data.phone,
-        description: data.description,
-        number_of_seats: parseInt(data.numberOfSeats),
-      });
+      const { error } = await signUp(data.email, data.password, data.fullName);
+      
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: "Inscription réussie !",

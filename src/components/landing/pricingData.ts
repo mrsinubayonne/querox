@@ -2,13 +2,12 @@
 export const plans = [
   {
     name: "Starter",
-    price: "20 000",
+    price: "35 000",
     period: "FCFA/mois",
-    annualPrice: "200 000",
+    annualPrice: "350 000",
     annualPeriod: "FCFA/an",
     description: "Parfait pour débuter avec les fonctionnalités essentielles",
     features: [
-      "✨ 7 jours d'essai gratuit",
       "Menu numérique interactif",
       "QR Code personnalisé",
       "Gestion des commandes",
@@ -16,18 +15,17 @@ export const plans = [
       "Support email"
     ],
     popular: false,
-    cta: "Commencer l'essai gratuit",
+    cta: "Commencer maintenant",
     tier: "starter"
   },
   {
     name: "Professionnel",
-    price: "35 000",
+    price: "60 000",
     period: "FCFA/mois",
-    annualPrice: "350 000",
+    annualPrice: "600 000",
     annualPeriod: "FCFA/an",
     description: "Idéal pour les restaurants en croissance",
     features: [
-      "✨ 7 jours d'essai gratuit",
       "Toutes les fonctionnalités Starter",
       "Catégories illimitées",
       "Gestion des stocks",
@@ -36,18 +34,17 @@ export const plans = [
       "Support prioritaire"
     ],
     popular: true,
-    cta: "Commencer l'essai gratuit",
+    cta: "Commencer maintenant",
     tier: "premium"
   },
   {
     name: "Entreprise",
-    price: "40 000",
+    price: "75 000",
     period: "FCFA/mois",
-    annualPrice: "400 000",
+    annualPrice: "750 000",
     annualPeriod: "FCFA/an",
     description: "Pour les chaînes et grandes structures",
     features: [
-      "✨ 7 jours d'essai gratuit",
       "Toutes les fonctionnalités Pro",
       "Multi-établissements",
       "API personnalisée",
@@ -56,7 +53,7 @@ export const plans = [
       "Support dédié 24/7"
     ],
     popular: false,
-    cta: "Commencer l'essai gratuit",
+    cta: "Commencer maintenant",
     tier: "pro"
   },
   {
@@ -81,13 +78,6 @@ export const plans = [
 ];
 
 export const featureComparison = [
-  {
-    feature: "Essai gratuit",
-    starter: "7 jours",
-    pro: "7 jours",
-    enterprise: "7 jours",
-    licence: "Démo sur demande"
-  },
   {
     feature: "Menu numérique interactif",
     starter: true,

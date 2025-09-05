@@ -14,10 +14,10 @@ const LandingPricing: React.FC = () => {
           <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-600">
             Des tarifs transparents qui s'adaptent à la taille de votre restaurant
           </p>
-          <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
-            <p className="text-green-800 font-semibold">🎉 Offre spéciale de lancement</p>
-            <p className="text-green-700 text-sm mt-1">
-              7 jours d'essai gratuit sur tous nos plans • Aucun engagement
+          <div className="mt-6 bg-primary/5 border border-primary/20 rounded-lg p-4 max-w-md mx-auto">
+            <p className="text-primary font-semibold">🚀 Commencez dès maintenant</p>
+            <p className="text-muted-foreground text-sm mt-1">
+              Paiement sécurisé • Configuration rapide • Support inclus
             </p>
           </div>
         </div>
@@ -31,11 +31,11 @@ const LandingPricing: React.FC = () => {
         <ComparisonTable />
         
         <div className="mt-12 text-center">
-          <p className="text-gray-600">
-            Tous nos plans incluent 7 jours d'essai gratuit
+          <p className="text-muted-foreground">
+            Commencez immédiatement avec votre plan choisi
           </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Paiement sécurisé • Annulation à tout moment • Support client inclus
+          <p className="text-sm text-muted-foreground/80 mt-2">
+            Paiement sécurisé • Configuration en 5 minutes • Support client inclus
           </p>
         </div>
       </div>
