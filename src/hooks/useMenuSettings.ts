@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useMenusList } from './useMenusList';
+import { useMenus } from './useMenus';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -14,7 +14,7 @@ interface MenuSettings {
 }
 
 export const useMenuSettings = () => {
-  const { menus: menuList, loading: loadingMenus } = useMenusList();
+  const { menus: menuList, loading: loadingMenus } = useMenus();
   const { toast } = useToast();
   
   const [menu, setMenu] = useState<MenuSettings | null>(null);

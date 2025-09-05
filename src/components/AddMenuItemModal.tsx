@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useMenuItems } from '@/hooks/useMenuItems';
-import { useMenuCategories } from '@/hooks/useMenuCategories';
+import { useMenus } from '@/hooks/useMenus';
 import ImageUpload from '@/components/ImageUpload';
 import { PREDEFINED_CATEGORIES } from '@/data/menuCategories';
 
@@ -24,7 +24,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
   onSuccess 
 }) => {
   const { addMenuItem, loading } = useMenuItems();
-  const { categories } = useMenuCategories();
+  const { categories } = useMenus();
   
   const [formData, setFormData] = useState({
     name: '',

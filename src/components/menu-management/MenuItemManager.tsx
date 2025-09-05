@@ -1,31 +1,36 @@
-
 import React, { useState } from 'react';
 import EmptyState from '@/components/EmptyState';
 import AddMenuItemModal from '@/components/AddMenuItemModal';
 import EditMenuItemModal from '@/components/EditMenuItemModal';
 import GeneralSettingsTab from '@/components/menu-management/GeneralSettingsTab';
-import { useOptimizedMenus } from '@/hooks/useOptimizedMenus';
-import { useOptimizedMenuItems } from '@/hooks/useOptimizedMenuItems';
+import { useMenus } from '@/hooks/useMenus';
+import { useMenuItems } from '@/hooks/useMenuItems';
 import { Menu, Edit, Trash2, Eye, EyeOff, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-// Utiliser le type global MenuItem au lieu d'un type local
-import { MenuItem } from '@/types/menu';
+import { MenuItem } from '@/hooks/useMenus';
 
-interface LocalMenuItem extends Omit<MenuItem, 'category_name'> {
+// Interface pour le modal d'édition (compatible avec l'ancien format)
+interface EditableMenuItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  image_url?: string;
   category: string;
   isActive: boolean;
+  is_available: boolean;
 }
 
 const MenuItemManager: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<LocalMenuItem | null>(null);
+  const [editingItem, setEditingItem] = useState<EditableMenuItem | null>(null);
   
-  const { items, loading, refetch } = useOptimizedMenus();
-  const { toggleAvailability, deleteMenuItem } = useOptimizedMenuItems();
+  const { items, loading, refetch } = useMenus();
+  const { toggleAvailability, deleteMenuItem } = useMenuItems();
 
   const handleAddItem = () => {
     setShowAddModal(true);
@@ -57,19 +62,19 @@ const MenuItemManager: React.FC = () => {
     }
   };
 
-  const handleEditItem = (item: any) => {
-    // Transform the item to match LocalMenuItem interface
-    const localMenuItem: LocalMenuItem = {
+  const handleEditItem = (item: MenuItem) => {
+    // Transform the item to match EditableMenuItem interface
+    const editableItem: EditableMenuItem = {
       id: item.id,
       name: item.name,
       description: item.description,
       price: item.price,
-      image_url: item.image,
-      category: item.category,
-      isActive: item.isActive,
-      is_available: item.isActive
+      image_url: item.image_url,
+      category: item.category_name,
+      isActive: item.is_available,
+      is_available: item.is_available
     };
-    setEditingItem(localMenuItem);
+    setEditingItem(editableItem);
   };
 
   if (loading) {
@@ -122,7 +127,7 @@ const MenuItemManager: React.FC = () => {
               <Card key={item.id} className="overflow-hidden">
                 <div className="aspect-video bg-gray-100 overflow-hidden">
                   <img
-                    src={item.image || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"}
+                    src={item.image_url || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"}
                     alt={item.name}
                     className="w-full h-full object-cover"
                   />
@@ -131,11 +136,11 @@ const MenuItemManager: React.FC = () => {
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg line-clamp-1">{item.name}</CardTitle>
-                    <Badge variant={item.isActive ? "default" : "secondary"}>
-                      {item.isActive ? "Disponible" : "Indisponible"}
+                    <Badge variant={item.is_available ? "default" : "secondary"}>
+                      {item.is_available ? "Disponible" : "Indisponible"}
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-600">{item.category}</p>
+                  <p className="text-sm text-gray-600">{item.category_name}</p>
                 </CardHeader>
                 
                 <CardContent className="pt-0">
@@ -163,9 +168,9 @@ const MenuItemManager: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleToggleAvailability(item.id, item.isActive)}
+                      onClick={() => handleToggleAvailability(item.id, item.is_available)}
                     >
-                      {item.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {item.is_available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
                     
                     <Button
