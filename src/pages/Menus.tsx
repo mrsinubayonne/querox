@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import EmptyState from '@/components/EmptyState';
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
+import CreateMenuModal from '@/components/CreateMenuModal';
 import { Menu, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,6 +24,7 @@ const Menus: React.FC = () => {
   const [menus, setMenus] = useState<MenuType[]>([]);
   const [activeMenu, setActiveMenu] = useState<MenuType | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -64,6 +66,15 @@ const Menus: React.FC = () => {
   const handleMenuChange = (menuId: string) => {
     const selectedMenu = menus.find(menu => menu.id === menuId);
     setActiveMenu(selectedMenu || null);
+  };
+
+  const handleCreateMenuSuccess = () => {
+    setShowCreateModal(false);
+    fetchMenus(); // Recharger les menus après création
+  };
+
+  const handleCreateMenu = () => {
+    setShowCreateModal(true);
   };
 
   const handleViewPublicMenu = useCallback(() => {
@@ -145,12 +156,19 @@ const Menus: React.FC = () => {
         ) : (
           <EmptyState
             icon={Menu}
-            title="Aucun menu sélectionné"
-            description="Créez votre premier menu ou sélectionnez un menu existant pour commencer"
+            title="Aucun menu disponible"
+            description="Créez votre premier menu pour commencer à gérer vos plats et boissons"
             actionLabel="Créer un menu"
-            onAction={() => {}}
+            onAction={handleCreateMenu}
           />
         )}
+
+        {/* Modal de création de menu */}
+        <CreateMenuModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={handleCreateMenuSuccess}
+        />
       </div>
     </PageWithSidebar>
   );
