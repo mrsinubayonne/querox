@@ -150,7 +150,7 @@ const MenuItemManager: React.FC = () => {
                   
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-bold text-green-600">
-                      {item.price.toLocaleString()} FCFA
+                      {item.price.toLocaleString()} €
                     </span>
                   </div>
 
