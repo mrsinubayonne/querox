@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { useMenuData } from './useMenuData';
 import { useMenuFilter } from './useMenuFilter';
 import { useShoppingCart } from './useShoppingCart';
@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const usePublicMenu = () => {
   const location = useLocation();
+  const { menuId: routeMenuId } = useParams();
   const { toast } = useToast();
   const { user, signIn } = useAuth();
   
@@ -20,7 +21,9 @@ export const usePublicMenu = () => {
   useEffect(() => {
     const processUrl = async () => {
       const params = new URLSearchParams(location.search);
-      const id = params.get('menu_id');
+      const idFromQuery = params.get('menu_id');
+      const idFromRoute = (routeMenuId as string | undefined) || null;
+      const resolvedId = idFromRoute || idFromQuery;
       const autoToken = params.get('auto_token');
       
       // Traitement du token d'auto-connexion
@@ -55,8 +58,8 @@ export const usePublicMenu = () => {
         }
       }
       
-      if (id) {
-        setMenuId(id);
+      if (resolvedId) {
+        setMenuId(resolvedId);
         setMenuError(null);
       } else {
         const errorMsg = "Aucun menu n'est spécifié dans l'URL";
@@ -65,7 +68,7 @@ export const usePublicMenu = () => {
         if (!autoToken) {
           toast({
             title: "Menu non spécifié",
-            description: "L'URL doit contenir un paramètre menu_id valide",
+            description: "Utilisez le chemin /menu/:menuId ou le paramètre ?menu_id=...",
             variant: "destructive",
           });
         }
@@ -73,7 +76,7 @@ export const usePublicMenu = () => {
     };
 
     processUrl();
-  }, [location.search, toast, autoLoginProcessed, user]);
+  }, [location.search, routeMenuId, toast, autoLoginProcessed, user]);
 
   const { menuItems, loading, error: dataError, restaurantUserId, menuData } = useMenuData(menuId);
   

@@ -25,12 +25,19 @@ interface EditableMenuItem {
   is_available: boolean;
 }
 
-const MenuItemManager: React.FC = () => {
+const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState<EditableMenuItem | null>(null);
   
-  const { items, loading, refetch } = useMenus();
+  const { items, categories, loading, refetch } = useMenus();
   const { toggleAvailability, deleteMenuItem } = useMenuItems();
+
+  const itemsToShow = activeMenuId
+    ? items.filter((it) => {
+        const cat = categories.find((c) => c.id === it.category_id);
+        return cat?.menu_id === activeMenuId;
+      })
+    : items;
 
   const handleAddItem = () => {
     setShowAddModal(true);
@@ -89,7 +96,7 @@ const MenuItemManager: React.FC = () => {
   }
 
   const MenuItemsContent = () => {
-    if (items.length === 0) {
+    if (itemsToShow.length === 0) {
       return (
         <>
           <div className="mt-6">
@@ -115,7 +122,7 @@ const MenuItemManager: React.FC = () => {
       <>
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Mes Plats ({items.length})</h2>
+            <h2 className="text-2xl font-bold">Mes Plats ({itemsToShow.length})</h2>
             <Button onClick={handleAddItem} className="bg-green-600 hover:bg-green-700">
               <Menu className="w-4 h-4 mr-2" />
               Ajouter un plat
@@ -123,7 +130,7 @@ const MenuItemManager: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.map((item) => (
+            {itemsToShow.map((item) => (
               <Card key={item.id} className="overflow-hidden">
                 <div className="aspect-video bg-gray-100 overflow-hidden">
                   <img
@@ -150,7 +157,7 @@ const MenuItemManager: React.FC = () => {
                   
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-bold text-green-600">
-                      {item.price.toLocaleString()} €
+                      {item.price.toLocaleString()} FCFA
                     </span>
                   </div>
 

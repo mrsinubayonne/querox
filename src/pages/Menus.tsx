@@ -87,7 +87,7 @@ const Menus: React.FC = () => {
       return;
     }
     
-    const publicUrl = `${window.location.origin}/menu-public?menu_id=${activeMenu.id}`;
+    const publicUrl = `${window.location.origin}/menu/${activeMenu.id}`;
     
     // Ouvrir dans un nouvel onglet
     window.open(publicUrl, '_blank');
@@ -152,7 +152,7 @@ const Menus: React.FC = () => {
 
         {/* Main Content */}
         {activeMenu ? (
-          <MenuItemManager />
+          <MenuItemManager activeMenuId={activeMenu.id} />
         ) : (
           <EmptyState
             icon={Menu}
