@@ -26,6 +26,7 @@ const signUpSchema = z.object({
   phone: z.string().min(8, 'Le numéro de téléphone est requis'),
   description: z.string().optional(),
   numberOfSeats: z.string().min(1, 'Le nombre de places est requis'),
+  promoCode: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"],
@@ -70,6 +71,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
       phone: '',
       description: '',
       numberOfSeats: '',
+      promoCode: '',
     },
   });
 
@@ -328,6 +330,23 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
                   )}
                 />
               </div>
+            </div>
+
+            {/* Code promo */}
+            <div className="space-y-4 pt-6 border-t border-border">
+              <FormField
+                control={form.control}
+                name="promoCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Code promo (optionnel)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Entrez votre code promo" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <Button 

@@ -75,6 +75,14 @@ const LandingHero: React.FC = () => {
               <Play className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5" />
               Voir la démo
             </Button>
+            <Button 
+              variant="secondary" 
+              size="lg" 
+              className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 py-3 sm:py-4 h-12 sm:h-14 border-2 border-orange-500 bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 hover:text-orange-700 rounded-full font-semibold"
+              onClick={() => navigate('/partner-signup')}
+            >
+              PARTENAIRE
+            </Button>
           </div>
           
           {/* Garanties */}
