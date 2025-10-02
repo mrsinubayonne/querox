@@ -37,7 +37,7 @@ const LandingNavigation: React.FC = () => {
           <div className="flex items-center">
             <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer" onClick={() => navigate('/')}>
               <img 
-                src="/lovable-uploads/a2262c2b-4c9e-4359-bc71-081861dfbd12.png" 
+                src="/lovable-uploads/logo-querox.png" 
                 alt="QUEROX Logo" 
                 className="h-6 sm:h-8 w-auto"
               />
@@ -86,9 +86,9 @@ const LandingNavigation: React.FC = () => {
                 <Button variant="ghost" size="sm" onClick={() => navigate('/auth')} className="font-medium text-xs sm:text-sm">
                   Connexion
                 </Button>
-                <Button size="sm" onClick={() => navigate('/auth')} className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 font-semibold text-xs sm:text-sm px-3 sm:px-4">
-                  <span className="hidden sm:inline">Essai Gratuit 7 Jours</span>
-                  <span className="sm:hidden">Essai Gratuit</span>
+                <Button size="sm" onClick={() => scrollToSection('#pricing')} className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 font-semibold text-xs sm:text-sm px-3 sm:px-4">
+                  <span className="hidden sm:inline">S'inscrire</span>
+                  <span className="sm:hidden">S'inscrire</span>
                 </Button>
               </div>
             )}
@@ -137,8 +137,8 @@ const LandingNavigation: React.FC = () => {
                     <Button variant="outline" onClick={() => navigate('/auth')} className="w-full">
                       Connexion
                     </Button>
-                    <Button onClick={() => navigate('/auth')} className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700">
-                      Essai Gratuit 7 Jours
+                    <Button onClick={() => { scrollToSection('#pricing'); setMobileMenuOpen(false); }} className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700">
+                      S'inscrire
                     </Button>
                   </>
                 )}

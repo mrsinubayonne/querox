@@ -60,7 +60,7 @@ const LandingFooter: React.FC = () => {
           <div className="space-y-6 sm:space-y-8">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <img 
-                src="/lovable-uploads/a2262c2b-4c9e-4359-bc71-081861dfbd12.png" 
+                src="/lovable-uploads/logo-querox.png" 
                 alt="QUEROX Logo" 
                 className="h-8 sm:h-10 w-auto"
               />

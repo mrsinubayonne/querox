@@ -13,7 +13,8 @@ const LandingHero: React.FC = () => {
     if (user) {
       navigate('/dashboard');
     } else {
-      navigate('/auth');
+      // Redirect to pricing section
+      document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 

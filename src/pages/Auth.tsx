@@ -40,7 +40,7 @@ const Auth: React.FC = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-3 mb-6">
             <img 
-              src="/lovable-uploads/a2262c2b-4c9e-4359-bc71-081861dfbd12.png" 
+              src="/lovable-uploads/logo-querox.png" 
               alt="QUEROX Logo" 
               className="h-12 w-auto"
             />
