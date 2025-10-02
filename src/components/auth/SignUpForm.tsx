@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, User, Mail, Lock, MapPin, Phone, Utensils, Users } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-
 const signUpSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
@@ -26,36 +24,26 @@ const signUpSchema = z.object({
   phone: z.string().min(8, 'Le numéro de téléphone est requis'),
   description: z.string().optional(),
   numberOfSeats: z.string().min(1, 'Le nombre de places est requis'),
-  promoCode: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
+  promoCode: z.string().optional()
+}).refine(data => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
-  path: ["confirmPassword"],
+  path: ["confirmPassword"]
 });
-
 type SignUpFormData = z.infer<typeof signUpSchema>;
-
-const restaurantTypes = [
-  'Restaurant traditionnel',
-  'Fast-food',
-  'Bistrot',
-  'Brasserie',
-  'Pizzeria',
-  'Restaurant gastronomique',
-  'Café-restaurant',
-  'Bar à tapas',
-  'Restaurant ethnique',
-  'Autre'
-];
-
+const restaurantTypes = ['Restaurant traditionnel', 'Fast-food', 'Bistrot', 'Brasserie', 'Pizzeria', 'Restaurant gastronomique', 'Café-restaurant', 'Bar à tapas', 'Restaurant ethnique', 'Autre'];
 interface SignUpFormProps {
   onSwitchToLogin: () => void;
 }
-
-const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
+const SignUpForm: React.FC<SignUpFormProps> = ({
+  onSwitchToLogin
+}) => {
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
-  const { toast } = useToast();
-
+  const {
+    signUp
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -71,36 +59,33 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
       phone: '',
       description: '',
       numberOfSeats: '',
-      promoCode: '',
-    },
+      promoCode: ''
+    }
   });
-
   const onSubmit = async (data: SignUpFormData) => {
     try {
       setLoading(true);
-      const { error } = await signUp(data.email, data.password, data.fullName);
-      
+      const {
+        error
+      } = await signUp(data.email, data.password, data.fullName);
       if (error) {
         throw error;
       }
-      
       toast({
         title: "Inscription réussie !",
-        description: "Un email de confirmation vous a été envoyé. Veuillez vérifier votre boîte mail.",
+        description: "Un email de confirmation vous a été envoyé. Veuillez vérifier votre boîte mail."
       });
     } catch (error: any) {
       toast({
         title: "Erreur lors de l'inscription",
         description: error.message || "Une erreur est survenue",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
-  return (
-    <Card className="w-full max-w-2xl mx-auto bg-card border-border shadow-xl">
+  return <Card className="w-full max-w-2xl mx-auto bg-card border-border shadow-xl">
       <CardHeader className="space-y-1 text-center pb-8">
         <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
           Créer votre compte QUEROX
@@ -121,77 +106,57 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="fullName" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Nom complet</FormLabel>
                       <FormControl>
                         <Input placeholder="Votre nom complet" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="phone" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Téléphone</FormLabel>
                       <FormControl>
                         <Input placeholder="+241 XX XX XX XX" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
               </div>
 
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="email" render={({
+              field
+            }) => <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="votre@email.com" {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="password" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Mot de passe</FormLabel>
                       <FormControl>
                         <Input type="password" placeholder="••••••••" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="confirmPassword" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Confirmer le mot de passe</FormLabel>
                       <FormControl>
                         <Input type="password" placeholder="••••••••" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
               </div>
             </div>
 
@@ -203,25 +168,19 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="restaurantName"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="restaurantName" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Nom du restaurant</FormLabel>
                       <FormControl>
                         <Input placeholder="Le nom de votre restaurant" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={form.control}
-                  name="restaurantType"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="restaurantType" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Type de restaurant</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
@@ -230,24 +189,18 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {restaurantTypes.map((type) => (
-                            <SelectItem key={type} value={type}>
+                          {restaurantTypes.map(type => <SelectItem key={type} value={type}>
                               {type}
-                            </SelectItem>
-                          ))}
+                            </SelectItem>)}
                         </SelectContent>
                       </Select>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
               </div>
 
-              <FormField
-                control={form.control}
-                name="numberOfSeats"
-                render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="numberOfSeats" render={({
+              field
+            }) => <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
                       Nombre de places
@@ -256,28 +209,17 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
                       <Input type="number" placeholder="Ex: 50" {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="description" render={({
+              field
+            }) => <FormItem>
                     <FormLabel>Description (optionnel)</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Décrivez brièvement votre restaurant, sa spécialité..."
-                        className="resize-none"
-                        rows={3}
-                        {...field}
-                      />
+                      <Textarea placeholder="Décrivez brièvement votre restaurant, sa spécialité..." className="resize-none" rows={3} {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
             </div>
 
             {/* Adresse */}
@@ -287,81 +229,51 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
                 Localisation
               </h3>
               
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="address" render={({
+              field
+            }) => <FormItem>
                     <FormLabel>Adresse complète</FormLabel>
                     <FormControl>
                       <Input placeholder="123 Rue de la République" {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="city" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Ville</FormLabel>
                       <FormControl>
                         <Input placeholder="Libreville" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={form.control}
-                  name="postalCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Code postal</FormLabel>
-                      <FormControl>
-                        <Input placeholder="BP 1234" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormField control={form.control} name="postalCode" render={({
+                field
+              }) => {}} />
               </div>
             </div>
 
             {/* Code promo */}
             <div className="space-y-4 pt-6 border-t border-border">
-              <FormField
-                control={form.control}
-                name="promoCode"
-                render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="promoCode" render={({
+              field
+            }) => <FormItem>
                     <FormLabel>Code promo (optionnel)</FormLabel>
                     <FormControl>
                       <Input placeholder="Entrez votre code promo" {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full h-12 text-lg bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 font-semibold"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
+            <Button type="submit" className="w-full h-12 text-lg bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 font-semibold" disabled={loading}>
+              {loading ? <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Création en cours...
-                </>
-              ) : (
-                'Créer mon compte'
-              )}
+                </> : 'Créer mon compte'}
             </Button>
           </form>
         </Form>
@@ -369,17 +281,12 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
         <div className="text-center pt-6 border-t border-border">
           <p className="text-muted-foreground">
             Vous avez déjà un compte ?{' '}
-            <button
-              onClick={onSwitchToLogin}
-              className="text-primary hover:text-primary/80 font-semibold transition-colors"
-            >
+            <button onClick={onSwitchToLogin} className="text-primary hover:text-primary/80 font-semibold transition-colors">
               Se connecter
             </button>
           </p>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default SignUpForm;
