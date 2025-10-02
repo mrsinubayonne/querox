@@ -63,15 +63,7 @@ const Auth: React.FC = () => {
         </div>
 
         {/* Benefits */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <div className="w-2 h-2 bg-white rounded-full"></div>
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">7 jours gratuits</h3>
-            <p className="text-sm text-muted-foreground">Testez toutes les fonctionnalités sans engagement</p>
-          </div>
-          
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
           <div className="text-center">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <div className="w-2 h-2 bg-white rounded-full"></div>

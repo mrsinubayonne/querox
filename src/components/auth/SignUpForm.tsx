@@ -360,7 +360,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
                   Création en cours...
                 </>
               ) : (
-                'Créer mon compte gratuitement'
+                'Créer mon compte'
               )}
             </Button>
           </form>
