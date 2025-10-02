@@ -38,15 +38,12 @@ const Auth: React.FC = () => {
       <div className="relative w-full max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-3 mb-6">
+          <div className="flex items-center justify-center mb-6">
             <img 
               src="/lovable-uploads/logo-querox.png" 
               alt="QUEROX Logo" 
-              className="h-12 w-auto"
+              className="h-20 w-auto"
             />
-            <h1 className="text-4xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              QUEROX
-            </h1>
           </div>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             La solution complète pour gérer votre restaurant avec simplicité et efficacité

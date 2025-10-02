@@ -39,11 +39,8 @@ const LandingNavigation: React.FC = () => {
               <img 
                 src="/lovable-uploads/logo-querox.png" 
                 alt="QUEROX Logo" 
-                className="h-6 sm:h-8 w-auto"
+                className="h-10 sm:h-12 w-auto"
               />
-              <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                QUEROX
-              </h1>
             </div>
           </div>
 

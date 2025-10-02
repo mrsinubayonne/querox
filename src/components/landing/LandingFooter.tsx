@@ -62,11 +62,8 @@ const LandingFooter: React.FC = () => {
               <img 
                 src="/lovable-uploads/logo-querox.png" 
                 alt="QUEROX Logo" 
-                className="h-8 sm:h-10 w-auto"
+                className="h-16 sm:h-20 w-auto"
               />
-              <h3 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                QUEROX
-              </h3>
             </div>
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-lg">
               La solution complète nouvelle génération pour révolutionner la gestion de votre restaurant.
