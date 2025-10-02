@@ -43,6 +43,10 @@ import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AdminRoles from '@/pages/AdminRoles';
 
+// Partner pages
+import PartnerSignup from '@/pages/PartnerSignup';
+import PartnerDashboard from '@/pages/PartnerDashboard';
+
 function App() {
   return (
     <RestaurantProvider restaurantUserId={null}>
@@ -55,6 +59,7 @@ function App() {
             <Route path="/menu/:menuId" element={<PublicMenu />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-failure" element={<PaymentFailure />} />
+            <Route path="/partner-signup" element={<PartnerSignup />} />
 
             {/* Routes protégées */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -88,6 +93,9 @@ function App() {
             <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
             <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
+
+            {/* Routes Partner */}
+            <Route path="/partner-dashboard" element={<ProtectedRoute><PartnerDashboard /></ProtectedRoute>} />
 
             {/* Redirection par défaut */}
             <Route path="*" element={<NotFound />} />

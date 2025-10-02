@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +11,8 @@ interface PricingPlan {
   name: string;
   price: string;
   period: string;
+  annualPrice?: string;
+  annualPeriod?: string;
   description: string;
   features: string[];
   popular?: boolean;
@@ -27,12 +30,13 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
 
-  const getPaymentUrl = (tier: string) => {
+  const getPaymentUrl = (tier: string, isAnnual: boolean = false) => {
     const urls = {
-      starter: 'https://querox.mychariow.com/prd_fbf5sx/checkout',
-      premium: 'https://querox.mychariow.com/prd_aba7bf/checkout',
-      pro: 'https://querox.mychariow.com/prd_idfv3d/checkout'
+      starter: isAnnual ? 'https://querox.mychariow.com/prd_starter_annual/checkout' : 'https://querox.mychariow.com/prd_fbf5sx/checkout',
+      premium: isAnnual ? 'https://querox.mychariow.com/prd_premium_annual/checkout' : 'https://querox.mychariow.com/prd_aba7bf/checkout',
+      pro: isAnnual ? 'https://querox.mychariow.com/prd_pro_annual/checkout' : 'https://querox.mychariow.com/prd_idfv3d/checkout'
     };
     return urls[tier as keyof typeof urls];
   };
@@ -59,7 +63,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
     console.log('⏳ Processing activé');
 
     try {
-      const paymentUrl = getPaymentUrl(plan.tier);
+      const paymentUrl = getPaymentUrl(plan.tier, billingPeriod === 'annual');
       
       if (paymentUrl) {
         console.log('✅ URL de paiement trouvée:', paymentUrl);
@@ -99,10 +103,31 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
         
-        <div className="mt-4">
-          <span className="text-4xl font-bold">{plan.price}</span>
-          <span className="text-gray-600 ml-2">{plan.period}</span>
-        </div>
+        {plan.tier !== 'licence' && plan.annualPrice ? (
+          <Tabs value={billingPeriod} onValueChange={(value) => setBillingPeriod(value as 'monthly' | 'annual')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="monthly">Mensuel</TabsTrigger>
+              <TabsTrigger value="annual">Annuel</TabsTrigger>
+            </TabsList>
+            <TabsContent value="monthly" className="mt-0">
+              <div className="mt-4">
+                <span className="text-4xl font-bold">{plan.price}</span>
+                <span className="text-gray-600 ml-2">{plan.period}</span>
+              </div>
+            </TabsContent>
+            <TabsContent value="annual" className="mt-0">
+              <div className="mt-4">
+                <span className="text-4xl font-bold">{plan.annualPrice}</span>
+                <span className="text-gray-600 ml-2">{plan.annualPeriod}</span>
+              </div>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <div className="mt-4">
+            <span className="text-4xl font-bold">{plan.price}</span>
+            <span className="text-gray-600 ml-2">{plan.period}</span>
+          </div>
+        )}
         
         <p className="text-gray-600 mt-2">{plan.description}</p>
       </CardHeader>

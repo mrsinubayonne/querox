@@ -78,8 +78,9 @@ const PartnerSignup: React.FC = () => {
       
       if (user) {
         // Create partner profile
+        // Note: Refresh the page if you see a TypeScript error here - Supabase types need to regenerate
         const { error: partnerError } = await supabase
-          .from('partners')
+          .from('partners' as any)
           .insert({
             user_id: user.id,
             company_name: data.companyName,

@@ -357,6 +357,57 @@ export type Database = {
         }
         Relationships: []
       }
+      partners: {
+        Row: {
+          commission_rate: number
+          company_name: string
+          company_type: string
+          created_at: string
+          description: string
+          id: string
+          phone: string
+          referral_code: string
+          status: string
+          total_commissions: number
+          total_referrals: number
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          commission_rate?: number
+          company_name: string
+          company_type: string
+          created_at?: string
+          description: string
+          id?: string
+          phone: string
+          referral_code?: string
+          status?: string
+          total_commissions?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          commission_rate?: number
+          company_name?: string
+          company_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          phone?: string
+          referral_code?: string
+          status?: string
+          total_commissions?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -383,6 +434,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      referrals: {
+        Row: {
+          commission_amount: number
+          created_at: string
+          customer_id: string
+          first_payment_at: string | null
+          id: string
+          partner_id: string
+          referred_at: string
+          status: string
+          subscription_tier: string
+        }
+        Insert: {
+          commission_amount: number
+          created_at?: string
+          customer_id: string
+          first_payment_at?: string | null
+          id?: string
+          partner_id: string
+          referred_at?: string
+          status?: string
+          subscription_tier: string
+        }
+        Update: {
+          commission_amount?: number
+          created_at?: string
+          customer_id?: string
+          first_payment_at?: string | null
+          id?: string
+          partner_id?: string
+          referred_at?: string
+          status?: string
+          subscription_tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reservations: {
         Row: {
