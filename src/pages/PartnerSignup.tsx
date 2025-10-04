@@ -13,7 +13,6 @@ import { Loader2, User, Mail, Building, Percent } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-
 const partnerSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
@@ -23,30 +22,22 @@ const partnerSchema = z.object({
   companyType: z.string().min(1, 'Le type d\'entreprise est requis'),
   phone: z.string().min(8, 'Le numéro de téléphone est requis'),
   description: z.string().min(10, 'Description de votre activité requise'),
-  website: z.string().url('URL invalide').optional().or(z.literal('')),
-}).refine((data) => data.password === data.confirmPassword, {
+  website: z.string().url('URL invalide').optional().or(z.literal(''))
+}).refine(data => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
-  path: ["confirmPassword"],
+  path: ["confirmPassword"]
 });
-
 type PartnerFormData = z.infer<typeof partnerSchema>;
-
-const companyTypes = [
-  'Agence de marketing',
-  'Consultant indépendant',
-  'Développeur web',
-  'Agence digitale',
-  'Freelance',
-  'Société de services',
-  'Autre'
-];
-
+const companyTypes = ['Agence de marketing', 'Consultant indépendant', 'Développeur web', 'Agence digitale', 'Freelance', 'Société de services', 'Autre'];
 const PartnerSignup: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
-  const { toast } = useToast();
+  const {
+    signUp
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
-
   const form = useForm<PartnerFormData>({
     resolver: zodResolver(partnerSchema),
     defaultValues: {
@@ -58,64 +49,63 @@ const PartnerSignup: React.FC = () => {
       companyType: '',
       phone: '',
       description: '',
-      website: '',
-    },
+      website: ''
+    }
   });
-
   const onSubmit = async (data: PartnerFormData) => {
     try {
       setLoading(true);
-      
+
       // Create the user account
-      const { error: signUpError } = await signUp(data.email, data.password, data.fullName);
-      
+      const {
+        error: signUpError
+      } = await signUp(data.email, data.password, data.fullName);
       if (signUpError) {
         throw signUpError;
       }
 
       // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (user) {
         // Create partner profile
         // Note: Refresh the page if you see a TypeScript error here - Supabase types need to regenerate
-        const { error: partnerError } = await supabase
-          .from('partners' as any)
-          .insert({
-            user_id: user.id,
-            company_name: data.companyName,
-            company_type: data.companyType,
-            phone: data.phone,
-            description: data.description,
-            website: data.website || null,
-            commission_rate: 0.10, // 10% commission
-            status: 'pending'
-          });
-
+        const {
+          error: partnerError
+        } = await supabase.from('partners' as any).insert({
+          user_id: user.id,
+          company_name: data.companyName,
+          company_type: data.companyType,
+          phone: data.phone,
+          description: data.description,
+          website: data.website || null,
+          commission_rate: 0.10,
+          // 10% commission
+          status: 'pending'
+        });
         if (partnerError) {
           console.error('Error creating partner profile:', partnerError);
         }
       }
-      
       toast({
         title: "Demande de partenariat envoyée !",
-        description: "Votre demande sera examinée et vous recevrez une réponse sous 48h.",
+        description: "Votre demande sera examinée et vous recevrez une réponse sous 48h."
       });
-
       navigate('/partner-dashboard');
     } catch (error: any) {
       toast({
         title: "Erreur lors de l'inscription",
         description: error.message || "Une erreur est survenue",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl mx-auto bg-card border-border shadow-xl">
         <CardHeader className="space-y-1 text-center pb-8">
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent">
@@ -137,161 +127,62 @@ const PartnerSignup: React.FC = () => {
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="fullName"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="fullName" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Nom complet</FormLabel>
                         <FormControl>
                           <Input placeholder="Votre nom complet" {...field} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                   
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="phone" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Téléphone</FormLabel>
                         <FormControl>
                           <Input placeholder="+241 XX XX XX XX" {...field} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="email" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input type="email" placeholder="votre@email.com" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="password" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Mot de passe</FormLabel>
                         <FormControl>
                           <Input type="password" placeholder="••••••••" {...field} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                   
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="confirmPassword" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Confirmer le mot de passe</FormLabel>
                         <FormControl>
                           <Input type="password" placeholder="••••••••" {...field} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                 </div>
               </div>
 
               {/* Informations entreprise */}
-              <div className="space-y-4 pt-6 border-t border-border">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  Informations entreprise
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="companyName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nom de l'entreprise</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nom de votre entreprise" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="companyType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type d'entreprise</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez le type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {companyTypes.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {type}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Site web (optionnel)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://votre-site.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description de votre activité</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Décrivez votre entreprise et comment vous comptez promouvoir QUEROX..."
-                          className="resize-none"
-                          rows={3}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              
 
               {/* Commission info */}
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
@@ -305,19 +196,11 @@ const PartnerSignup: React.FC = () => {
                 </p>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-12 text-lg bg-gradient-to-r from-primary to-orange-600 hover:from-primary/90 hover:to-orange-700 font-semibold"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
+              <Button type="submit" className="w-full h-12 text-lg bg-gradient-to-r from-primary to-orange-600 hover:from-primary/90 hover:to-orange-700 font-semibold" disabled={loading}>
+                {loading ? <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Envoi en cours...
-                  </>
-                ) : (
-                  'Devenir partenaire'
-                )}
+                  </> : 'Devenir partenaire'}
               </Button>
             </form>
           </Form>
@@ -325,18 +208,13 @@ const PartnerSignup: React.FC = () => {
           <div className="text-center pt-6 border-t border-border">
             <p className="text-muted-foreground">
               Déjà partenaire ?{' '}
-              <button
-                onClick={() => navigate('/auth')}
-                className="text-primary hover:text-primary/80 font-semibold transition-colors"
-              >
+              <button onClick={() => navigate('/auth')} className="text-primary hover:text-primary/80 font-semibold transition-colors">
                 Se connecter
               </button>
             </p>
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default PartnerSignup;
