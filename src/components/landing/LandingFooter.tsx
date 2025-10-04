@@ -13,16 +13,11 @@ const LandingFooter: React.FC = () => {
       { label: 'Démo', href: '#demo' }
     ],
     company: [
-      { label: 'À propos', href: '#about' },
-      { label: 'Blog', href: '#blog' },
-      { label: 'Carrières', href: '#careers' },
-      { label: 'Presse', href: '#press' }
+      { label: 'Blog', href: '/blog' },
+      { label: 'Partenaires', href: '/partner-signup' }
     ],
     support: [
-      { label: 'Centre d\'aide', href: '#help' },
-      { label: 'Contact', href: '#contact' },
-      { label: 'Status', href: '#status' },
-      { label: 'Documentation', href: '#docs' }
+      { label: 'Contact', href: 'mailto:contact@querox.me' }
     ]
   };
 

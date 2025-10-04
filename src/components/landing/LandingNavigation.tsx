@@ -18,13 +18,19 @@ const LandingNavigation: React.FC = () => {
     { label: 'Fonctionnalités', href: '#features' },
     { label: 'Services', href: '#services' },
     { label: 'Tarifs', href: '#pricing' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'Partenaires', href: '/partner-signup' },
     { label: 'Contact', href: '#contact' }
   ];
 
-  const scrollToSection = (href: string) => {
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+  const handleNavClick = (href: string) => {
+    if (href.startsWith('#')) {
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      navigate(href);
     }
     setMobileMenuOpen(false);
   };
@@ -50,7 +56,7 @@ const LandingNavigation: React.FC = () => {
               {navigationItems.map((item) => (
                 <button
                   key={item.label}
-                  onClick={() => scrollToSection(item.href)}
+                  onClick={() => handleNavClick(item.href)}
                   className="text-muted-foreground hover:text-primary font-medium transition-colors duration-200 relative group"
                 >
                   {item.label}
@@ -95,7 +101,7 @@ const LandingNavigation: React.FC = () => {
                 <Button variant="ghost" size="sm" onClick={() => navigate('/auth')} className="font-medium text-xs sm:text-sm">
                   Connexion
                 </Button>
-                <Button size="sm" onClick={() => scrollToSection('#pricing')} className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 font-semibold text-xs sm:text-sm px-3 sm:px-4">
+                <Button size="sm" onClick={() => handleNavClick('#pricing')} className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 font-semibold text-xs sm:text-sm px-3 sm:px-4">
                   <span className="hidden sm:inline">S'inscrire</span>
                   <span className="sm:hidden">S'inscrire</span>
                 </Button>
@@ -119,7 +125,7 @@ const LandingNavigation: React.FC = () => {
               {navigationItems.map((item) => (
                 <button
                   key={item.label}
-                  onClick={() => scrollToSection(item.href)}
+                  onClick={() => handleNavClick(item.href)}
                   className="block w-full text-left text-muted-foreground hover:text-primary font-medium py-2 transition-colors"
                 >
                   {item.label}
@@ -158,7 +164,7 @@ const LandingNavigation: React.FC = () => {
                     <Button variant="outline" onClick={() => navigate('/auth')} className="w-full">
                       Connexion
                     </Button>
-                    <Button onClick={() => { scrollToSection('#pricing'); setMobileMenuOpen(false); }} className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700">
+                    <Button onClick={() => handleNavClick('#pricing')} className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700">
                       S'inscrire
                     </Button>
                   </>

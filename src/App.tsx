@@ -7,6 +7,7 @@ import { RestaurantProvider } from '@/contexts/RestaurantContext';
 // Import des pages
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
+import Blog from '@/pages/Blog';
 import Dashboard from '@/pages/Dashboard';
 import Menus from '@/pages/Menus';
 import AllMenus from '@/pages/AllMenus';
@@ -56,6 +57,7 @@ function App() {
             {/* Routes publiques */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/blog" element={<Blog />} />
             <Route path="/menu/:menuId" element={<PublicMenu />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-failure" element={<PaymentFailure />} />

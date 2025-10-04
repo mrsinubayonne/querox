@@ -6,6 +6,8 @@ import LandingNavigation from '../components/landing/LandingNavigation';
 import LandingHero from '../components/landing/LandingHero';
 import LandingFeatures from '../components/landing/LandingFeatures';
 import LandingPricing from '../components/landing/LandingPricing';
+import ReservationSection from '../components/landing/ReservationSection';
+import SupportSection from '../components/landing/SupportSection';
 import LandingFooter from '../components/landing/LandingFooter';
 
 const Index: React.FC = () => {
@@ -13,9 +15,9 @@ const Index: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Si l'utilisateur est connecté et qu'on a fini de charger, rediriger vers le dashboard
-    if (!loading && user) {
-      navigate('/dashboard');
+    // Si l'utilisateur est connecté, rediriger vers le dashboard (optimisé pour éviter les flash)
+    if (user && !loading) {
+      navigate('/dashboard', { replace: true });
     }
   }, [user, loading, navigate]);
 
@@ -45,6 +47,8 @@ const Index: React.FC = () => {
           <LandingHero />
           <LandingFeatures />
           <LandingPricing />
+          <ReservationSection />
+          <SupportSection />
         </main>
         <LandingFooter />
       </div>
