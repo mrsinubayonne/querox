@@ -252,7 +252,13 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
                 
                 <FormField control={form.control} name="postalCode" render={({
                 field
-              }) => {}} />
+              }) => <FormItem>
+                      <FormLabel>Code postal</FormLabel>
+                      <FormControl>
+                        <Input placeholder="00000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>} />
               </div>
             </div>
 
