@@ -8,11 +8,12 @@ export const plans = [
     annualPeriod: "€/an",
     description: "Parfait pour débuter avec les fonctionnalités essentielles",
     features: [
-      "Menu numérique interactif",
-      "QR Code personnalisé",
-      "Gestion des commandes",
-      "5 catégories de plats",
-      "Support email"
+      "Site web basique (vitrine + menu)",
+      "Menu digital QR code (commandes sur place)",
+      "Gestion des réservations simple",
+      "Statistiques basiques (commandes + plats les plus vendus)",
+      "Comptabilité automatisée (entrées/sorties simples)",
+      "1 compte administrateur + 2 employés"
     ],
     popular: false,
     cta: "Commencer maintenant",
@@ -26,12 +27,16 @@ export const plans = [
     annualPeriod: "€/an",
     description: "Idéal pour les restaurants en croissance",
     features: [
-      "Toutes les fonctionnalités Starter",
-      "Catégories illimitées",
-      "Gestion des stocks",
-      "Statistiques avancées",
-      "Site web personnalisé",
-      "Support prioritaire"
+      "Site web avancé (design pro + SEO basique)",
+      "Menu digital QR code (commandes en salle ET en ligne, livraison & click&collect)",
+      "Fidélisation clients (CRM + base de données clients)",
+      "Statistiques avancées (ventes par période, plats rentables, suivi tendances)",
+      "Gestion avancée des stocks (historique, pertes, marges)",
+      "Contrôle multi-utilisateurs (gérants, managers, employés)",
+      "Programme de fidélité clients (points, coupons)",
+      "Support prioritaire",
+      "3 affiches & flyers promotionnels gratuits par mois",
+      "Accès aux services marketing avec 30% de réduction"
     ],
     popular: true,
     cta: "Commencer maintenant",
@@ -45,12 +50,16 @@ export const plans = [
     annualPeriod: "€/an",
     description: "Pour les chaînes et grandes structures",
     features: [
-      "Toutes les fonctionnalités Pro",
-      "Multi-établissements",
-      "API personnalisée",
-      "Intégrations avancées",
-      "Formations personnalisées",
-      "Support dédié 24/7"
+      "Tout le Plan Pro",
+      "Notifications temps réel sur mobile (vols, pertes, ruptures, pics de commandes)",
+      "Reporting financier complet (profit net, marges, comparatifs mensuels)",
+      "Gestion RH (pointages, performances du personnel)",
+      "Système de réservation en ligne intégré",
+      "Tableau de bord analytique (plats rentables, pics horaires, etc.)",
+      "Accès aux experts avec 60% de réduction",
+      "Consulting personnalisé mensuel avec nos experts SaaS",
+      "Accès VIP à la communauté Querox (workshops, événements privés)",
+      "Sécurité renforcée + sauvegarde cloud illimitée"
     ],
     popular: false,
     cta: "Commencer maintenant",
