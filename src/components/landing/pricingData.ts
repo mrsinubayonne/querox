@@ -2,9 +2,9 @@
 export const plans = [
   {
     name: "Starter",
-    price: "59",
+    price: "52",
     period: "€/mois",
-    annualPrice: "708",
+    annualPrice: "624",
     annualPeriod: "€/an",
     description: "Parfait pour débuter avec les fonctionnalités essentielles",
     features: [
@@ -21,9 +21,9 @@ export const plans = [
   },
   {
     name: "Professionnel",
-    price: "99",
+    price: "87",
     period: "€/mois",
-    annualPrice: "1188",
+    annualPrice: "1044",
     annualPeriod: "€/an",
     description: "Idéal pour les restaurants en croissance",
     features: [
@@ -44,9 +44,9 @@ export const plans = [
   },
   {
     name: "Entreprise",
-    price: "129",
+    price: "113",
     period: "€/mois",
-    annualPrice: "1548",
+    annualPrice: "1356",
     annualPeriod: "€/an",
     description: "Pour les chaînes et grandes structures",
     features: [

@@ -82,8 +82,8 @@ const PartnerSignup: React.FC = () => {
           phone: data.phone,
           description: data.description,
           website: data.website || null,
-          commission_rate: 0.10,
-          // 10% commission
+          commission_rate: 0.35,
+          // 35% commission
           status: 'pending'
         });
         if (partnerError) {
@@ -112,7 +112,7 @@ const PartnerSignup: React.FC = () => {
             Devenir Partenaire QUEROX
           </CardTitle>
           <CardDescription className="text-muted-foreground text-lg">
-            Rejoignez notre programme d'affiliation et gagnez 10% de commission
+            Rejoignez notre programme d'affiliation et gagnez 35% de commission
           </CardDescription>
         </CardHeader>
         
@@ -191,7 +191,7 @@ const PartnerSignup: React.FC = () => {
                   <h4 className="font-semibold text-orange-800">Commission</h4>
                 </div>
                 <p className="text-orange-700 text-sm">
-                  Gagnez 10% de commission sur chaque nouveau client que vous nous amenez. 
+                  Gagnez 35% de commission sur chaque nouveau client que vous nous amenez. 
                   Paiement mensuel automatique.
                 </p>
               </div>

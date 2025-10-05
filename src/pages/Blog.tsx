@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Calendar, Clock, User } from 'lucide-react';
 import LandingNavigation from '@/components/landing/LandingNavigation';
 import LandingFooter from '@/components/landing/LandingFooter';
@@ -61,6 +62,7 @@ const blogPosts: BlogPost[] = [
 
 const Blog: React.FC = () => {
   const navigate = useNavigate();
+  const [selectedPost, setSelectedPost] = React.useState<BlogPost | null>(null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -137,7 +139,11 @@ const Blog: React.FC = () => {
                     ))}
                   </div>
                   
-                  <Button variant="outline" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setSelectedPost(post)}
+                  >
                     Lire l'article
                   </Button>
                 </CardContent>
@@ -146,6 +152,56 @@ const Blog: React.FC = () => {
           </div>
         </div>
       </main>
+      
+      <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          {selectedPost && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl mb-4">{selectedPost.title}</DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <User className="h-4 w-4" />
+                    {selectedPost.author}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    {new Date(selectedPost.date).toLocaleDateString('fr-FR')}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    {selectedPost.readTime}
+                  </span>
+                </div>
+                
+                <div className="aspect-video bg-gradient-to-br from-primary/10 to-purple-600/10 flex items-center justify-center rounded-lg">
+                  <img
+                    src={selectedPost.image}
+                    alt={selectedPost.title}
+                    className="h-24 w-auto object-contain"
+                  />
+                </div>
+                
+                <div className="prose prose-lg max-w-none">
+                  <p className="text-lg text-muted-foreground mb-4">{selectedPost.excerpt}</p>
+                  <p className="whitespace-pre-line">{selectedPost.content}</p>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 pt-4 border-t">
+                  {selectedPost.tags.map((tag) => (
+                    <Badge key={tag} variant="outline">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
       
       <LandingFooter />
     </div>
