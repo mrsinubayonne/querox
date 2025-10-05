@@ -115,16 +115,7 @@ const LandingFooter: React.FC = () => {
         </div>
         
         {/* Bottom Bar */}
-        <div className="border-t border-border pt-6 sm:pt-8 flex flex-col lg:flex-row items-center justify-between gap-4">
-          <p className="text-sm sm:text-base text-muted-foreground text-center lg:text-left">
-            © 2025 QUEROX. Tous droits réservés. Conçu avec ❤️ au Gabon.
-          </p>
-          <div className="flex items-center space-x-4 sm:space-x-8 text-xs sm:text-sm text-muted-foreground">
-            <a href="#privacy" className="hover:text-foreground transition-colors">Confidentialité</a>
-            <a href="#terms" className="hover:text-foreground transition-colors">Conditions</a>
-            <a href="#cookies" className="hover:text-foreground transition-colors">Cookies</a>
-          </div>
-        </div>
+        
       </div>
     </footer>;
 };
