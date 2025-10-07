@@ -376,10 +376,10 @@ export type Database = {
         }
         Insert: {
           commission_rate?: number
-          company_name: string
-          company_type: string
+          company_name?: string
+          company_type?: string
           created_at?: string
-          description: string
+          description?: string
           id?: string
           phone: string
           referral_code?: string
