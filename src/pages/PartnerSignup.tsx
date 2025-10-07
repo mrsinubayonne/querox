@@ -182,8 +182,81 @@ const PartnerSignup: React.FC = () => {
               </div>
 
               {/* Informations entreprise */}
-              
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  Informations entreprise
+                </h3>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="companyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nom de l'entreprise</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Votre raison sociale" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="companyType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type d'entreprise</FormLabel>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionnez un type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {companyTypes.map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {type}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description de votre activité</FormLabel>
+                      <FormControl>
+                        <Textarea rows={4} placeholder="Décrivez brièvement votre activité et votre audience" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="website"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Site web (optionnel)</FormLabel>
+                      <FormControl>
+                        <Input type="url" placeholder="https://votre-site.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               {/* Commission info */}
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
