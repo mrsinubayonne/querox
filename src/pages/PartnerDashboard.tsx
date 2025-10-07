@@ -1,34 +1,36 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Euro, TrendingUp, Share2, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { Users, Euro, TrendingUp, Share2, Copy, Check, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { usePartnerData } from "@/hooks/usePartnerData";
+import { usePartnerReferrals } from "@/hooks/usePartnerReferrals";
 
 const PartnerDashboard: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  
+  const { data: partnerData, isLoading: isLoadingPartner } = usePartnerData();
+  const { data: referralsData, isLoading: isLoadingReferrals } = usePartnerReferrals();
 
-  // Données simulées pour l'exemple
-  const partnerData = {
-    status: 'active', // pending, active, suspended
-    totalCommissions: 1247.50,
-    pendingCommissions: 324.80,
-    totalReferrals: 8,
-    activeReferrals: 6,
-    referralLink: 'https://querox.com/ref/PART123',
-    commissionRate: 10
+  const isLoading = isLoadingPartner || isLoadingReferrals;
+
+  // Calculate stats from real data
+  const stats = {
+    status: partnerData?.status || 'pending',
+    totalCommissions: Number(partnerData?.total_commissions || 0),
+    pendingCommissions: referralsData
+      ?.filter(r => r.status === 'pending')
+      .reduce((sum, r) => sum + Number(r.commission_amount), 0) || 0,
+    totalReferrals: partnerData?.total_referrals || 0,
+    activeReferrals: referralsData?.filter(r => r.status === 'active').length || 0,
+    referralLink: `${window.location.origin}/partner-signup?ref=${partnerData?.referral_code || ''}`,
+    commissionRate: Number(partnerData?.commission_rate || 0) * 100
   };
 
-  const recentReferrals = [
-    { id: 1, customerName: 'Restaurant Le Soleil', date: '2024-01-15', status: 'active', commission: 159.90 },
-    { id: 2, customerName: 'Bistro Central', date: '2024-01-10', status: 'active', commission: 129.90 },
-    { id: 3, customerName: 'Café des Arts', date: '2024-01-05', status: 'pending', commission: 89.90 },
-  ];
-
   const copyReferralLink = () => {
-    navigator.clipboard.writeText(partnerData.referralLink);
+    navigator.clipboard.writeText(stats.referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast({
@@ -50,6 +52,14 @@ const PartnerDashboard: React.FC = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 p-4">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -59,7 +69,7 @@ const PartnerDashboard: React.FC = () => {
             <h1 className="text-3xl font-bold text-foreground">Dashboard Partenaire</h1>
             <p className="text-muted-foreground">Gérez vos parrainages et suivez vos commissions</p>
           </div>
-          {getStatusBadge(partnerData.status)}
+          {getStatusBadge(stats.status)}
         </div>
 
         {/* Stats Cards */}
@@ -70,9 +80,9 @@ const PartnerDashboard: React.FC = () => {
               <Euro className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{partnerData.totalCommissions.toFixed(2)}€</div>
+              <div className="text-2xl font-bold">{stats.totalCommissions.toFixed(2)}€</div>
               <p className="text-xs text-muted-foreground">
-                +12% par rapport au mois dernier
+                Cumulées depuis le début
               </p>
             </CardContent>
           </Card>
@@ -83,7 +93,7 @@ const PartnerDashboard: React.FC = () => {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{partnerData.pendingCommissions.toFixed(2)}€</div>
+              <div className="text-2xl font-bold">{stats.pendingCommissions.toFixed(2)}€</div>
               <p className="text-xs text-muted-foreground">
                 Paiement le 1er du mois
               </p>
@@ -96,9 +106,9 @@ const PartnerDashboard: React.FC = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{partnerData.totalReferrals}</div>
+              <div className="text-2xl font-bold">{stats.totalReferrals}</div>
               <p className="text-xs text-muted-foreground">
-                {partnerData.activeReferrals} actifs
+                {stats.activeReferrals} actifs
               </p>
             </CardContent>
           </Card>
@@ -109,7 +119,7 @@ const PartnerDashboard: React.FC = () => {
               <Share2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{partnerData.commissionRate}%</div>
+              <div className="text-2xl font-bold">{stats.commissionRate}%</div>
               <p className="text-xs text-muted-foreground">
                 Sur chaque abonnement
               </p>
@@ -128,8 +138,8 @@ const PartnerDashboard: React.FC = () => {
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
-                <div className="p-3 bg-muted rounded-lg border font-mono text-sm">
-                  {partnerData.referralLink}
+                <div className="p-3 bg-muted rounded-lg border font-mono text-sm break-all">
+                  {stats.referralLink}
                 </div>
               </div>
               <Button onClick={copyReferralLink} className="w-full sm:w-auto">
@@ -159,23 +169,34 @@ const PartnerDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentReferrals.map((referral) => (
-                <div key={referral.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <h4 className="font-semibold">{referral.customerName}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Inscrit le {new Date(referral.date).toLocaleDateString('fr-FR')}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    {getStatusBadge(referral.status)}
-                    <div className="text-right">
-                      <div className="font-semibold">{referral.commission.toFixed(2)}€</div>
-                      <div className="text-xs text-muted-foreground">Commission</div>
+              {referralsData && referralsData.length > 0 ? (
+                referralsData.map((referral) => (
+                  <div key={referral.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <h4 className="font-semibold">
+                        {referral.customer?.full_name || referral.customer?.email || 'Client'}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Inscrit le {new Date(referral.referred_at).toLocaleDateString('fr-FR')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {referral.subscription_tier}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {getStatusBadge(referral.status)}
+                      <div className="text-right">
+                        <div className="font-semibold">{Number(referral.commission_amount).toFixed(2)}€</div>
+                        <div className="text-xs text-muted-foreground">Commission</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  Aucun parrainage pour le moment. Partagez votre lien pour commencer !
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
