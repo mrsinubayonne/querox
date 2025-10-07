@@ -18,11 +18,7 @@ const partnerSchema = z.object({
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
   confirmPassword: z.string(),
   fullName: z.string().min(2, 'Le nom complet est requis'),
-  companyName: z.string().min(2, 'Le nom de l\'entreprise est requis'),
-  companyType: z.string().min(1, 'Le type d\'entreprise est requis'),
-  phone: z.string().min(8, 'Le numéro de téléphone est requis'),
-  description: z.string().min(10, 'Description de votre activité requise'),
-  website: z.string().url('URL invalide').optional().or(z.literal(''))
+  phone: z.string().min(8, 'Le numéro de téléphone est requis')
 }).refine(data => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"]
@@ -45,11 +41,7 @@ const PartnerSignup: React.FC = () => {
       password: '',
       confirmPassword: '',
       fullName: '',
-      companyName: '',
-      companyType: '',
-      phone: '',
-      description: '',
-      website: ''
+      phone: ''
     }
   });
   const onSubmit = async (data: PartnerFormData) => {
@@ -72,18 +64,15 @@ const PartnerSignup: React.FC = () => {
       } = await supabase.auth.getUser();
       if (user) {
         // Create partner profile
-        // Note: Refresh the page if you see a TypeScript error here - Supabase types need to regenerate
         const {
           error: partnerError
         } = await supabase.from('partners' as any).insert({
           user_id: user.id,
-          company_name: data.companyName,
-          company_type: data.companyType,
+          company_name: data.fullName,
+          company_type: 'Partenaire',
           phone: data.phone,
-          description: data.description,
-          website: data.website || null,
+          description: 'Nouveau partenaire',
           commission_rate: 0.35,
-          // 35% commission
           status: 'pending'
         });
         if (partnerError) {
@@ -181,82 +170,6 @@ const PartnerSignup: React.FC = () => {
                 </div>
               </div>
 
-              {/* Informations entreprise */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  Informations entreprise
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="companyName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nom de l'entreprise</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Votre raison sociale" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="companyType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type d'entreprise</FormLabel>
-                        <FormControl>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez un type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {companyTypes.map((type) => (
-                                <SelectItem key={type} value={type}>
-                                  {type}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description de votre activité</FormLabel>
-                      <FormControl>
-                        <Textarea rows={4} placeholder="Décrivez brièvement votre activité et votre audience" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Site web (optionnel)</FormLabel>
-                      <FormControl>
-                        <Input type="url" placeholder="https://votre-site.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
               {/* Commission info */}
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
