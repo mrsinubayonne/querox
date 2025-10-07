@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Instagram, Mail, MapPin, ArrowRight } from "lucide-react";
 const LandingFooter: React.FC = () => {
+  const navigate = useNavigate();
   const footerLinks = {
     product: [{
       label: 'Fonctionnalités',
@@ -28,6 +30,19 @@ const LandingFooter: React.FC = () => {
       label: 'Contact',
       href: 'mailto:contact@querox.me'
     }]
+  };
+
+  const handleLinkClick = (href: string) => {
+    if (href.startsWith('#')) {
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else if (href.startsWith('mailto:')) {
+      window.location.href = href;
+    } else {
+      navigate(href);
+    }
   };
   return <footer id="contact" className="bg-gradient-to-b from-muted via-muted to-background text-foreground relative overflow-hidden">
       {/* Éléments décoratifs */}
@@ -83,9 +98,9 @@ const LandingFooter: React.FC = () => {
               <h4 className="text-base sm:text-lg font-bold text-foreground mb-4 sm:mb-6">Produit</h4>
               <ul className="space-y-3 sm:space-y-4">
                 {footerLinks.product.map((link, index) => <li key={index}>
-                    <a href={link.href} className="text-sm sm:text-base text-muted-foreground hover:text-foreground transition-colors duration-200">
+                    <button onClick={() => handleLinkClick(link.href)} className="text-sm sm:text-base text-muted-foreground hover:text-foreground transition-colors duration-200">
                       {link.label}
-                    </a>
+                    </button>
                   </li>)}
               </ul>
             </div>
@@ -94,9 +109,9 @@ const LandingFooter: React.FC = () => {
               <h4 className="text-base sm:text-lg font-bold text-foreground mb-4 sm:mb-6">Entreprise</h4>
               <ul className="space-y-3 sm:space-y-4">
                 {footerLinks.company.map((link, index) => <li key={index}>
-                    <a href={link.href} className="text-sm sm:text-base text-muted-foreground hover:text-foreground transition-colors duration-200">
+                    <button onClick={() => handleLinkClick(link.href)} className="text-sm sm:text-base text-muted-foreground hover:text-foreground transition-colors duration-200">
                       {link.label}
-                    </a>
+                    </button>
                   </li>)}
               </ul>
             </div>
@@ -105,9 +120,9 @@ const LandingFooter: React.FC = () => {
               <h4 className="text-base sm:text-lg font-bold text-foreground mb-4 sm:mb-6">Support</h4>
               <ul className="space-y-3 sm:space-y-4">
                 {footerLinks.support.map((link, index) => <li key={index}>
-                    <a href={link.href} className="text-sm sm:text-base text-muted-foreground hover:text-foreground transition-colors duration-200">
+                    <button onClick={() => handleLinkClick(link.href)} className="text-sm sm:text-base text-muted-foreground hover:text-foreground transition-colors duration-200">
                       {link.label}
-                    </a>
+                    </button>
                   </li>)}
               </ul>
             </div>
