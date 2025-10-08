@@ -2,10 +2,14 @@
 import React, { useState } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
 import EmptyState from '@/components/EmptyState';
-import { Users } from 'lucide-react';
+import StaffRequestModal from '@/components/StaffRequestModal';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Users, UserPlus } from 'lucide-react';
 
 const Clients: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showStaffRequestModal, setShowStaffRequestModal] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -20,6 +24,24 @@ const Clients: React.FC = () => {
             </div>
           </div>
 
+          {/* Staff Request Section */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                Recherche de Personnel
+              </CardTitle>
+              <CardDescription>
+                Vous avez besoin de personnel pour votre restaurant ? Nous pouvons vous aider à trouver la personne idéale.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => setShowStaffRequestModal(true)}>
+                Faire une demande de personnel
+              </Button>
+            </CardContent>
+          </Card>
+
           <EmptyState
             icon={Users}
             title="Aucun client enregistré"
@@ -29,6 +51,11 @@ const Clients: React.FC = () => {
           />
         </div>
       </div>
+
+      <StaffRequestModal 
+        isOpen={showStaffRequestModal} 
+        onClose={() => setShowStaffRequestModal(false)} 
+      />
     </div>
   );
 };

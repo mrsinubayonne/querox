@@ -25,17 +25,17 @@ const PartnerDashboard: React.FC = () => {
       .reduce((sum, r) => sum + Number(r.commission_amount), 0) || 0,
     totalReferrals: partnerData?.total_referrals || 0,
     activeReferrals: referralsData?.filter(r => r.status === 'active').length || 0,
-    referralLink: `${window.location.origin}/partner-signup?ref=${partnerData?.referral_code || ''}`,
+    promoCode: partnerData?.referral_code || '',
     commissionRate: Number(partnerData?.commission_rate || 0) * 100
   };
 
-  const copyReferralLink = () => {
-    navigator.clipboard.writeText(stats.referralLink);
+  const copyPromoCode = () => {
+    navigator.clipboard.writeText(stats.promoCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast({
-      title: "Lien copié !",
-      description: "Votre lien de parrainage a été copié dans le presse-papier.",
+      title: "Code copié !",
+      description: "Votre code promo a été copié dans le presse-papier.",
     });
   };
 
@@ -127,22 +127,22 @@ const PartnerDashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* Referral Link */}
+        {/* Promo Code */}
         <Card>
           <CardHeader>
-            <CardTitle>Votre lien de parrainage</CardTitle>
+            <CardTitle>Votre code promo</CardTitle>
             <CardDescription>
-              Partagez ce lien pour gagner des commissions sur chaque nouveau client
+              Partagez ce code promo pour gagner des commissions sur chaque nouveau client
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
-                <div className="p-3 bg-muted rounded-lg border font-mono text-sm break-all">
-                  {stats.referralLink}
+                <div className="p-4 bg-muted rounded-lg border font-mono text-2xl font-bold text-center tracking-wider">
+                  {stats.promoCode}
                 </div>
               </div>
-              <Button onClick={copyReferralLink} className="w-full sm:w-auto">
+              <Button onClick={copyPromoCode} className="w-full sm:w-auto">
                 {copied ? (
                   <>
                     <Check className="mr-2 h-4 w-4" />
@@ -212,7 +212,7 @@ const PartnerDashboard: React.FC = () => {
                 </div>
                 <h3 className="font-semibold mb-2">1. Partagez</h3>
                 <p className="text-sm text-muted-foreground">
-                  Partagez votre lien de parrainage avec vos contacts
+                  Partagez votre code promo avec vos contacts
                 </p>
               </div>
               <div className="text-center">
@@ -221,7 +221,7 @@ const PartnerDashboard: React.FC = () => {
                 </div>
                 <h3 className="font-semibold mb-2">2. Ils s'inscrivent</h3>
                 <p className="text-sm text-muted-foreground">
-                  Vos contacts utilisent votre lien pour s'abonner
+                  Vos contacts utilisent votre code promo lors de l'inscription
                 </p>
               </div>
               <div className="text-center">
