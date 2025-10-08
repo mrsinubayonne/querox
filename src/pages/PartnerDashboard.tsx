@@ -173,9 +173,7 @@ const PartnerDashboard: React.FC = () => {
                 referralsData.map((referral) => (
                   <div key={referral.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 border rounded-lg">
                     <div className="flex-1">
-                      <h4 className="font-semibold">
-                        {referral.customer?.full_name || referral.customer?.email || 'Client'}
-                      </h4>
+                      <h4 className="font-semibold">Client #{referral.customer_id?.slice(0, 8)}</h4>
                       <p className="text-sm text-muted-foreground">
                         Inscrit le {new Date(referral.referred_at).toLocaleDateString('fr-FR')}
                       </p>

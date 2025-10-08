@@ -8,7 +8,7 @@ export const usePartnerData = () => {
   return useQuery({
     queryKey: ["partner", user?.id],
     queryFn: async () => {
-      if (!user?.id) throw new Error("User not authenticated");
+      if (!user?.id) return null;
 
       const { data, error } = await supabase
         .from("partners")
