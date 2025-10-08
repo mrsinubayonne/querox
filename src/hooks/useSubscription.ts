@@ -83,40 +83,6 @@ export const useSubscription = () => {
     }
   }, [user]);
 
-  const createTrialSubscription = async (userEmail: string, userId: string) => {
-    try {
-      console.log('🆕 Création d\'un abonnement d\'essai de 7 jours pour:', userEmail);
-      
-      const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 jours d'essai
-
-      const { data, error } = await supabase
-        .from('subscribers')
-        .insert({
-          user_id: userId,
-          email: userEmail,
-          subscribed: true,
-          subscription_tier: 'trial',
-          subscription_end: trialEndDate.toISOString(),
-          subscription_start: new Date().toISOString(),
-          monthly_revenue: 0,
-          subscription_status: 'active'
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Erreur lors de la création de l\'abonnement d\'essai:', error);
-        return null;
-      }
-
-      console.log('✅ Abonnement d\'essai créé avec succès:', data);
-      return data;
-    } catch (error) {
-      console.error('💥 Erreur dans createTrialSubscription:', error);
-      return null;
-    }
-  };
 
   const fetchSubscription = useCallback(async () => {
     if (!user) {
@@ -183,83 +149,15 @@ export const useSubscription = () => {
         }
       }
 
-      // Si aucun abonnement trouvé, créer un essai gratuit de 7 jours
-      if (!data && !error) {
-        console.log('🎁 Aucun abonnement trouvé - création d\'un essai gratuit de 7 jours');
-        data = await createTrialSubscription(user.email || '', user.id);
-        
-        // Si la création d'essai a échoué, créer un état d'essai local temporaire
-        if (!data) {
-          console.log('⚠️ Échec de création d\'essai en base - création d\'un état temporaire');
-          const trialEndDate = new Date();
-          trialEndDate.setDate(trialEndDate.getDate() + 7);
-          
-          data = {
-            id: 'temp-trial-' + user.id,
-            user_id: user.id,
-            email: user.email || '',
-            subscribed: true,
-            subscription_tier: 'trial',
-            subscription_end: trialEndDate.toISOString(),
-            stripe_customer_id: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            subscription_start: new Date().toISOString(),
-            monthly_revenue: 0,
-            last_payment_date: null,
-            subscription_status: 'active'
-          };
-        }
-      }
-
       if (error && error.code !== 'PGRST116') {
         console.error('❌ Erreur lors de la récupération de l\'abonnement:', error);
-        // En cas d'erreur, créer quand même un essai temporaire
-        console.log('🆘 Création d\'un essai temporaire en cas d\'erreur');
-        const trialEndDate = new Date();
-        trialEndDate.setDate(trialEndDate.getDate() + 7);
-        
-        data = {
-          id: 'temp-trial-error-' + user.id,
-          user_id: user.id,
-          email: user.email || '',
-          subscribed: true,
-          subscription_tier: 'trial',
-          subscription_end: trialEndDate.toISOString(),
-          stripe_customer_id: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          subscription_start: new Date().toISOString(),
-          monthly_revenue: 0,
-          last_payment_date: null,
-          subscription_status: 'active'
-        };
       }
 
       console.log('✅ Données d\'abonnement final:', data);
       setSubscription(data);
     } catch (error) {
       console.error('💥 Erreur dans fetchSubscription:', error);
-      // En cas d'erreur critique, créer un essai temporaire
-      console.log('🚨 Création d\'un essai d\'urgence après erreur critique');
-      const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + 7);
-      
-      setSubscription({
-        id: 'emergency-trial-' + user.id,
-        user_id: user.id,
-        email: user.email || '',
-        subscribed: true,
-        subscription_tier: 'trial',
-        subscription_end: trialEndDate.toISOString(),
-        stripe_customer_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        subscription_start: new Date().toISOString(),
-        monthly_revenue: 0,
-        last_payment_date: null,
-        subscription_status: 'active'
-      });
+      setSubscription(null);
     } finally {
       setLoading(false);
     }

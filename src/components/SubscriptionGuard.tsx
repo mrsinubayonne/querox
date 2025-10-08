@@ -5,7 +5,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lock, Crown, RefreshCw, Shield, Gift } from 'lucide-react';
+import { Lock, Crown, RefreshCw, Shield } from 'lucide-react';
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
@@ -66,26 +66,10 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     );
   }
 
-  // Si l'abonnement est actif, afficher le contenu avec indicateur d'essai si applicable
+  // Si l'abonnement est actif, afficher le contenu
   if (isSubscriptionActive) {
     console.log('✅ Affichage du contenu pour utilisateur avec abonnement actif');
-    
-    // Afficher un indicateur d'essai si c'est une période d'essai
-    const isTrialUser = subscription?.subscription_tier === 'trial';
-    
-    return (
-      <div className="relative">
-        {isTrialUser && daysRemaining && daysRemaining > 0 && (
-          <div className="fixed top-4 right-4 z-50">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 shadow-lg">
-              <Gift className="w-3 h-3" />
-              <span>Essai gratuit - {daysRemaining} jour{daysRemaining > 1 ? 's' : ''} restant{daysRemaining > 1 ? 's' : ''}</span>
-            </div>
-          </div>
-        )}
-        {children}
-      </div>
-    );
+    return <>{children}</>;
   }
 
   // Afficher la page de demande d'abonnement
