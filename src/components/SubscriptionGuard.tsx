@@ -90,28 +90,6 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
             Pour accéder à {feature}, vous devez avoir un abonnement QUEROX actif.
           </p>
           
-          {/* Informations de débogage détaillées pour l'utilisateur */}
-          <div className="bg-gray-100 p-3 rounded-lg text-xs text-left space-y-2">
-            <p><strong>🔍 Informations de diagnostic :</strong></p>
-            <p><strong>Email:</strong> {user?.email || 'Non défini'}</p>
-            <p><strong>User ID:</strong> {user?.id || 'Non défini'}</p>
-            <p><strong>Est Admin:</strong> {isAdmin ? '✅ Oui' : '❌ Non'}</p>
-            <p><strong>Abonnement Actif:</strong> {isSubscriptionActive ? '✅ Oui' : '❌ Non'}</p>
-            <p><strong>Jours restants:</strong> {daysRemaining || 'N/A'}</p>
-            {subscription ? (
-              <>
-                <p><strong>Abonnement trouvé:</strong> ✅</p>
-                <p><strong>Email abonnement:</strong> {subscription.email}</p>
-                <p><strong>Abonné:</strong> {subscription.subscribed ? '✅ Oui' : '❌ Non'}</p>
-                <p><strong>Tier:</strong> {subscription.subscription_tier || 'Aucun'}</p>
-                <p><strong>Fin:</strong> {subscription.subscription_end ? new Date(subscription.subscription_end).toLocaleDateString('fr-FR') : 'Permanent'}</p>
-                <p><strong>Dernière MAJ:</strong> {new Date(subscription.updated_at).toLocaleString('fr-FR')}</p>
-              </>
-            ) : (
-              <p><strong>Abonnement trouvé:</strong> ❌ Aucun</p>
-            )}
-          </div>
-          
           <div className="space-y-2">
             <Button 
               onClick={handleRefresh}
