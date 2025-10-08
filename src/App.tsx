@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from "@/components/ui/toaster";
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { RestaurantProvider } from '@/contexts/RestaurantContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Import des pages
 import Index from '@/pages/Index';
@@ -48,65 +49,70 @@ import AdminRoles from '@/pages/AdminRoles';
 import PartnerSignup from '@/pages/PartnerSignup';
 import PartnerDashboard from '@/pages/PartnerDashboard';
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <RestaurantProvider restaurantUserId={null}>
-      <Router>
-        <div className="min-h-screen bg-background">
-          <Routes>
-            {/* Routes publiques */}
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/menu/:menuId" element={<PublicMenu />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/payment-failure" element={<PaymentFailure />} />
-            <Route path="/partner-signup" element={<PartnerSignup />} />
+    <QueryClientProvider client={queryClient}>
+      <RestaurantProvider restaurantUserId={null}>
+        <Router>
+          <div className="min-h-screen bg-background">
+            <Routes>
+              {/* Routes publiques */}
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/menu/:menuId" element={<PublicMenu />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+              <Route path="/payment-failure" element={<PaymentFailure />} />
+              <Route path="/partner-signup" element={<PartnerSignup />} />
 
-            {/* Routes protégées */}
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/menus" element={<ProtectedRoute><Menus /></ProtectedRoute>} />
-            <Route path="/all-menus" element={<ProtectedRoute><AllMenus /></ProtectedRoute>} />
-            <Route path="/commandes" element={<ProtectedRoute><Commandes /></ProtectedRoute>} />
-            <Route path="/inventaire" element={<ProtectedRoute><Inventaire /></ProtectedRoute>} />
-            <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
-            <Route path="/qr-codes" element={<ProtectedRoute><QRCodes /></ProtectedRoute>} />
-            <Route path="/site-web" element={<ProtectedRoute><SiteWeb /></ProtectedRoute>} />
-            <Route path="/site-web-container" element={<ProtectedRoute><SiteWebContainer /></ProtectedRoute>} />
-            <Route path="/site-web-benefits" element={<ProtectedRoute><SiteWebBenefits /></ProtectedRoute>} />
-            <Route path="/statistiques" element={<ProtectedRoute><Statistiques /></ProtectedRoute>} />
-            <Route path="/parametres" element={<ProtectedRoute><Parametres /></ProtectedRoute>} />
-            <Route path="/abonnement" element={<ProtectedRoute><Abonnement /></ProtectedRoute>} />
-            <Route path="/comptabilite" element={<ProtectedRoute><Comptabilite /></ProtectedRoute>} />
+              {/* Routes protégées */}
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/menus" element={<ProtectedRoute><Menus /></ProtectedRoute>} />
+              <Route path="/all-menus" element={<ProtectedRoute><AllMenus /></ProtectedRoute>} />
+              <Route path="/commandes" element={<ProtectedRoute><Commandes /></ProtectedRoute>} />
+              <Route path="/inventaire" element={<ProtectedRoute><Inventaire /></ProtectedRoute>} />
+              <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+              <Route path="/qr-codes" element={<ProtectedRoute><QRCodes /></ProtectedRoute>} />
+              <Route path="/site-web" element={<ProtectedRoute><SiteWeb /></ProtectedRoute>} />
+              <Route path="/site-web-container" element={<ProtectedRoute><SiteWebContainer /></ProtectedRoute>} />
+              <Route path="/site-web-benefits" element={<ProtectedRoute><SiteWebBenefits /></ProtectedRoute>} />
+              <Route path="/statistiques" element={<ProtectedRoute><Statistiques /></ProtectedRoute>} />
+              <Route path="/parametres" element={<ProtectedRoute><Parametres /></ProtectedRoute>} />
+              <Route path="/abonnement" element={<ProtectedRoute><Abonnement /></ProtectedRoute>} />
+              <Route path="/comptabilite" element={<ProtectedRoute><Comptabilite /></ProtectedRoute>} />
 
-            {/* Routes Marketing */}
-            <Route path="/marketing-hub" element={<ProtectedRoute><MarketingHub /></ProtectedRoute>} />
-            <Route path="/marketing" element={<ProtectedRoute><Marketing /></ProtectedRoute>} />
-            <Route path="/conception-graphique" element={<ProtectedRoute><ConceptionGraphique /></ProtectedRoute>} />
-            <Route path="/reseaux-sociaux" element={<ProtectedRoute><ReseauxSociaux /></ProtectedRoute>} />
-            <Route path="/publicite-facebook" element={<ProtectedRoute><PubliciteFacebook /></ProtectedRoute>} />
+              {/* Routes Marketing */}
+              <Route path="/marketing-hub" element={<ProtectedRoute><MarketingHub /></ProtectedRoute>} />
+              <Route path="/marketing" element={<ProtectedRoute><Marketing /></ProtectedRoute>} />
+              <Route path="/conception-graphique" element={<ProtectedRoute><ConceptionGraphique /></ProtectedRoute>} />
+              <Route path="/reseaux-sociaux" element={<ProtectedRoute><ReseauxSociaux /></ProtectedRoute>} />
+              <Route path="/publicite-facebook" element={<ProtectedRoute><PubliciteFacebook /></ProtectedRoute>} />
 
-            {/* Routes Services */}
-            <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
-            <Route path="/service-appel" element={<ProtectedRoute><ServiceAppel /></ProtectedRoute>} />
-            <Route path="/consulting" element={<ProtectedRoute><Consulting /></ProtectedRoute>} />
+              {/* Routes Services */}
+              <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
+              <Route path="/service-appel" element={<ProtectedRoute><ServiceAppel /></ProtectedRoute>} />
+              <Route path="/consulting" element={<ProtectedRoute><Consulting /></ProtectedRoute>} />
 
-            {/* Routes Admin */}
-            <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
-            <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
+              {/* Routes Admin */}
+              <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
+              <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
 
-            {/* Routes Partner */}
-            <Route path="/partner-dashboard" element={<ProtectedRoute><PartnerDashboard /></ProtectedRoute>} />
+              {/* Routes Partner */}
+              <Route path="/partner-dashboard" element={<ProtectedRoute><PartnerDashboard /></ProtectedRoute>} />
 
-            {/* Redirection par défaut */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-        <Toaster />
-      </Router>
-    </RestaurantProvider>
+              {/* Redirection par défaut */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+          <Toaster />
+        </Router>
+      </RestaurantProvider>
+    </QueryClientProvider>
   );
 }
+
 
 export default App;
