@@ -1,6 +1,5 @@
 
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import LandingNavigation from '../components/landing/LandingNavigation';
 import LandingHero from '../components/landing/LandingHero';
@@ -11,15 +10,9 @@ import SupportSection from '../components/landing/SupportSection';
 import LandingFooter from '../components/landing/LandingFooter';
 
 const Index: React.FC = () => {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
+  const { loading } = useAuth();
 
-  useEffect(() => {
-    // Si l'utilisateur est connecté, rediriger vers le dashboard (optimisé pour éviter les flash)
-    if (user && !loading) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [user, loading, navigate]);
+  // Removed automatic redirect - users can now return to landing page even when logged in
 
   // Afficher le loader pendant la vérification de l'authentification
   if (loading) {
@@ -38,25 +31,20 @@ const Index: React.FC = () => {
     );
   }
 
-  // Afficher la landing page seulement si l'utilisateur n'est pas connecté
-  if (!user) {
-    return (
-      <div className="min-h-screen w-full bg-white">
-        <LandingNavigation />
-        <main className="pt-16 lg:pt-20">
-          <LandingHero />
-          <LandingFeatures />
-          <LandingPricing />
-          <ReservationSection />
-          <SupportSection />
-        </main>
-        <LandingFooter />
-      </div>
-    );
-  }
-
-  // Ceci ne devrait pas arriver grâce au useEffect redirect, mais au cas où
-  return null;
+  // Afficher la landing page pour tous les utilisateurs
+  return (
+    <div className="min-h-screen w-full bg-white">
+      <LandingNavigation />
+      <main className="pt-16 lg:pt-20">
+        <LandingHero />
+        <LandingFeatures />
+        <LandingPricing />
+        <ReservationSection />
+        <SupportSection />
+      </main>
+      <LandingFooter />
+    </div>
+  );
 };
 
 export default Index;
