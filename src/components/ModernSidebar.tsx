@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -51,6 +51,14 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     icon: Globe,
     label: 'Site Web',
     path: '/site-web'
+  }, {
+    icon: Calendar,
+    label: 'Réservations',
+    path: '/reservations'
+  }, {
+    icon: LifeBuoy,
+    label: 'Support',
+    path: '/support'
   }];
 
   const marketingItems = [{

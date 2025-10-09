@@ -49,6 +49,10 @@ import AdminRoles from '@/pages/AdminRoles';
 import PartnerSignup from '@/pages/PartnerSignup';
 import PartnerDashboard from '@/pages/PartnerDashboard';
 
+// Support & Reservations pages
+import Reservations from '@/pages/Reservations';
+import Support from '@/pages/Support';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -102,6 +106,10 @@ function App() {
 
               {/* Routes Partner */}
               <Route path="/partner-dashboard" element={<ProtectedRoute><PartnerDashboard /></ProtectedRoute>} />
+
+              {/* Routes Support & Reservations */}
+              <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
+              <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
 
               {/* Redirection par défaut */}
               <Route path="*" element={<NotFound />} />
