@@ -2,106 +2,62 @@ import React, { useState } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import SubscriptionPopup from '@/components/SubscriptionPopup';
-import { MessageSquare, Phone, Mail, Clock, Send, HelpCircle, Book, Video, FileText } from 'lucide-react';
+import { MessageCircle, HelpCircle, Video } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const Support: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [formData, setFormData] = useState({
-    subject: '',
-    category: '',
-    priority: '',
-    message: ''
-  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Ticket créé",
-      description: "Votre demande a été envoyée. Notre équipe vous répondra dans les plus brefs délais.",
-    });
-    setFormData({ subject: '', category: '', priority: '', message: '' });
+  const handleWhatsAppClick = () => {
+    window.open('https://wa.me/242064563021', '_blank');
   };
 
-  const contactMethods = [
-    {
-      icon: MessageSquare,
-      title: 'Chat en direct',
-      description: 'Discutez avec notre équipe',
-      action: 'Démarrer le chat',
-      color: 'blue',
-      available: 'Disponible maintenant'
-    },
-    {
-      icon: Phone,
-      title: 'Téléphone',
-      description: '+33 1 23 45 67 89',
-      action: 'Appeler',
-      color: 'green',
-      available: 'Lun-Ven 9h-18h'
-    },
-    {
-      icon: Mail,
-      title: 'Email',
-      description: 'support@querox.com',
-      action: 'Envoyer un email',
-      color: 'purple',
-      available: 'Réponse sous 24h'
-    }
-  ];
-
-  const resources = [
-    {
-      icon: Book,
-      title: 'Documentation',
-      description: 'Guides et tutoriels complets',
-      color: 'from-blue-500 to-cyan-500'
-    },
-    {
-      icon: Video,
-      title: 'Vidéos tutorielles',
-      description: 'Apprenez en vidéo',
-      color: 'from-purple-500 to-pink-500'
-    },
-    {
-      icon: FileText,
-      title: 'Base de connaissances',
-      description: 'Réponses aux questions fréquentes',
-      color: 'from-green-500 to-emerald-500'
-    }
-  ];
+  const handleYouTubeClick = () => {
+    window.open('https://www.youtube.com/@querox', '_blank');
+  };
 
   const faqs = [
     {
       question: 'Comment créer un nouveau menu ?',
-      answer: 'Allez dans la section "Menus" depuis le menu principal, puis cliquez sur "Créer un menu". Remplissez les informations de base comme le nom du menu, puis ajoutez vos catégories et articles.'
+      answer: 'Allez dans la section "Menus" depuis le menu principal, puis cliquez sur "Créer un menu". Remplissez les informations de base comme le nom du menu (ex: Menu du Jour, Menu Végétarien), puis ajoutez vos catégories (Entrées, Plats, Desserts) et les articles avec leurs prix, descriptions et photos.'
     },
     {
       question: 'Comment générer un QR code pour mon menu ?',
-      answer: 'Dans la section "QR Codes", sélectionnez le menu pour lequel vous souhaitez créer un QR code, puis cliquez sur "Générer QR Code". Vous pourrez ensuite le télécharger et l\'imprimer.'
+      answer: 'Rendez-vous dans la section "QR Codes" du menu principal. Sélectionnez le menu que vous souhaitez partager, puis cliquez sur "Générer QR Code". Le QR code sera créé instantanément. Vous pouvez le télécharger en haute résolution, l\'imprimer et le placer sur vos tables, vitrines ou supports marketing. Vos clients pourront scanner le code avec leur smartphone pour accéder directement à votre menu en ligne.'
     },
     {
       question: 'Comment gérer les réservations ?',
-      answer: 'Accédez à la section "Réservations" où vous pourrez voir toutes vos réservations, en créer de nouvelles, modifier les existantes et envoyer des confirmations aux clients.'
+      answer: 'Accédez à la section "Réservations" où vous trouverez un tableau de bord complet. Vous pouvez voir toutes les réservations à venir et passées, créer de nouvelles réservations manuellement, modifier les détails (date, heure, nombre de personnes), confirmer ou annuler des réservations, et envoyer des notifications automatiques aux clients par email ou SMS.'
     },
     {
       question: 'Comment suivre mon inventaire ?',
-      answer: 'La section "Inventaire" vous permet de gérer vos stocks, d\'ajouter des produits, de suivre les mouvements et de recevoir des alertes pour les stocks faibles.'
+      answer: 'La section "Inventaire" vous offre une gestion complète de vos stocks. Vous pouvez ajouter des produits avec leurs quantités, unités et seuils d\'alerte, suivre les mouvements d\'entrée et sortie, recevoir des alertes automatiques lorsque les stocks sont faibles, générer des rapports d\'inventaire, et gérer vos fournisseurs. Le système met à jour automatiquement les quantités lors des ventes.'
     },
     {
       question: 'Puis-je personnaliser mon site web ?',
-      answer: 'Oui, dans la section "Site Web", vous pouvez personnaliser le design, les couleurs, ajouter vos images et modifier le contenu de votre site vitrine.'
+      answer: 'Absolument ! Dans la section "Site Web", vous disposez d\'un éditeur complet pour personnaliser votre site vitrine. Vous pouvez modifier le design et les couleurs pour correspondre à votre charte graphique, ajouter vos propres photos et logo, éditer tous les textes et contenus, créer plusieurs pages (accueil, menu, contact, à propos), intégrer votre menu en ligne avec QR code, et publier votre site sur votre propre nom de domaine.'
     },
     {
-      question: 'Comment contacter le support en urgence ?',
-      answer: 'Pour les urgences, appelez directement notre ligne support au +33 1 23 45 67 89 (disponible 24/7 pour les abonnements Premium) ou utilisez le chat en direct.'
+      question: 'Comment fonctionne le système de commandes en ligne ?',
+      answer: 'Vos clients peuvent passer commande directement depuis votre menu en ligne accessible via QR code ou votre site web. Ils sélectionnent leurs plats, ajoutent des instructions spéciales si nécessaire, et valident leur commande. Vous recevez une notification sonore et visuelle instantanément dans votre tableau de bord "Commandes". Vous pouvez alors accepter, préparer et suivre chaque commande en temps réel.'
+    },
+    {
+      question: 'Comment gérer la comptabilité de mon restaurant ?',
+      answer: 'La section "Comptabilité" vous permet de gérer toutes vos finances en un seul endroit. Enregistrez vos revenus et dépenses, catégorisez vos transactions, générez des rapports financiers (journaliers, mensuels, annuels), suivez votre trésorerie en temps réel, exportez vos données pour votre comptable, et analysez la rentabilité de votre établissement avec des graphiques détaillés.'
+    },
+    {
+      question: 'Quels sont les différents forfaits d\'abonnement disponibles ?',
+      answer: 'Querox propose plusieurs forfaits adaptés à vos besoins : un forfait Starter pour débuter avec les fonctionnalités essentielles, un forfait Pro avec toutes les fonctionnalités avancées (site web, réservations, inventaire complet), et un forfait Enterprise pour les chaînes de restaurants avec support prioritaire. Consultez la section "Abonnement" pour voir tous les détails et choisir le forfait qui vous convient.'
+    },
+    {
+      question: 'Comment contacter le support ?',
+      answer: 'Pour toute question ou problème, contactez-nous directement via WhatsApp au +242 06 456 3021. Notre équipe est disponible pour vous répondre rapidement. Vous pouvez également consulter nos tutoriels vidéo sur YouTube pour apprendre à utiliser toutes les fonctionnalités de la plateforme.'
+    },
+    {
+      question: 'Puis-je essayer Querox gratuitement ?',
+      answer: 'Oui ! Querox propose une période d\'essai gratuite qui vous permet de tester toutes les fonctionnalités de la plateforme sans engagement. Vous pourrez créer vos menus, générer vos QR codes, configurer votre site web et découvrir tous les outils disponibles. Aucune carte bancaire n\'est requise pour l\'essai.'
     }
   ];
 
@@ -121,132 +77,55 @@ const Support: React.FC = () => {
 
           {/* Main Content */}
           <div className="flex-1 overflow-auto p-8">
-            {/* Contact Methods */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {contactMethods.map((method, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col items-center text-center space-y-4">
-                      <div className={`p-4 rounded-full bg-${method.color}-100`}>
-                        <method.icon className={`h-8 w-8 text-${method.color}-600`} />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">{method.title}</h3>
-                        <p className="text-sm text-gray-600 mb-1">{method.description}</p>
-                        <div className="flex items-center justify-center gap-1 text-xs text-gray-500 mb-3">
-                          <Clock className="h-3 w-3" />
-                          <span>{method.available}</span>
-                        </div>
-                      </div>
-                      <Button className="w-full" variant="outline">
-                        {method.action}
-                      </Button>
+            {/* Contact WhatsApp */}
+            <div className="mb-8">
+              <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+                <CardContent className="p-8">
+                  <div className="flex flex-col items-center text-center space-y-6">
+                    <div className="p-6 rounded-full bg-green-500">
+                      <MessageCircle className="h-12 w-12 text-white" />
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Contactez-nous sur WhatsApp</h2>
+                      <p className="text-gray-600 mb-4">Notre équipe est disponible pour répondre à toutes vos questions</p>
+                      <p className="text-xl font-semibold text-green-600">+242 06 456 3021</p>
+                    </div>
+                    <Button 
+                      onClick={handleWhatsAppClick}
+                      className="bg-green-500 hover:bg-green-600 text-white px-8 py-6 text-lg"
+                      size="lg"
+                    >
+                      <MessageCircle className="mr-2 h-5 w-5" />
+                      Ouvrir WhatsApp
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Support Ticket Form */}
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>Créer un ticket de support</CardTitle>
-                <CardDescription>Décrivez votre problème et nous vous répondrons rapidement</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="subject">Sujet</Label>
-                      <Input
-                        id="subject"
-                        placeholder="Décrivez brièvement votre problème"
-                        value={formData.subject}
-                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Catégorie</Label>
-                      <Select
-                        value={formData.category}
-                        onValueChange={(value) => setFormData({ ...formData, category: value })}
-                        required
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner une catégorie" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="technique">Problème technique</SelectItem>
-                          <SelectItem value="facturation">Facturation</SelectItem>
-                          <SelectItem value="fonctionnalite">Demande de fonctionnalité</SelectItem>
-                          <SelectItem value="formation">Formation</SelectItem>
-                          <SelectItem value="autre">Autre</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="priority">Priorité</Label>
-                    <Select
-                      value={formData.priority}
-                      onValueChange={(value) => setFormData({ ...formData, priority: value })}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner une priorité" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Basse - Peut attendre</SelectItem>
-                        <SelectItem value="medium">Moyenne - Important</SelectItem>
-                        <SelectItem value="high">Haute - Urgent</SelectItem>
-                        <SelectItem value="critical">Critique - Bloquant</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Description détaillée</Label>
-                    <Textarea
-                      id="message"
-                      placeholder="Décrivez votre problème en détail..."
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      rows={6}
-                      required
-                    />
-                  </div>
-
-                  <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                    <Send className="mr-2 h-4 w-4" />
-                    Envoyer le ticket
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            {/* Resources */}
+            {/* YouTube Tutorials */}
             <div className="mb-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Ressources utiles</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {resources.map((resource, index) => (
-                  <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-lg bg-gradient-to-br ${resource.color}`}>
-                          <resource.icon className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{resource.title}</h3>
-                          <p className="text-sm text-gray-600">{resource.description}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <Card className="border-red-200 bg-gradient-to-br from-red-50 to-pink-50">
+                <CardContent className="p-8">
+                  <div className="flex flex-col items-center text-center space-y-6">
+                    <div className="p-6 rounded-full bg-red-500">
+                      <Video className="h-12 w-12 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Tutoriels Vidéo</h2>
+                      <p className="text-gray-600 mb-4">Apprenez à utiliser Querox avec nos tutoriels détaillés</p>
+                    </div>
+                    <Button 
+                      onClick={handleYouTubeClick}
+                      className="bg-red-500 hover:bg-red-600 text-white px-8 py-6 text-lg"
+                      size="lg"
+                    >
+                      <Video className="mr-2 h-5 w-5" />
+                      Voir les tutoriels YouTube
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* FAQ */}
