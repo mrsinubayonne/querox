@@ -1225,6 +1225,10 @@ export type Database = {
           period_start: string
         }[]
       }
+      generate_invoice_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_admin_revenue_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
