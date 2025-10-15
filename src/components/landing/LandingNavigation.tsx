@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
-import { User, LogOut, Menu, X, LifeBuoy } from 'lucide-react';
+import { User, LogOut, Menu, X } from 'lucide-react';
 
 const LandingNavigation: React.FC = () => {
   const navigate = useNavigate();
@@ -68,18 +68,6 @@ const LandingNavigation: React.FC = () => {
 
           {/* User Actions */}
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              asChild
-              className="hidden sm:flex text-xs sm:text-sm"
-            >
-              <a href="mailto:contact@querox.me" className="flex items-center">
-                <LifeBuoy className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden md:inline">Support</span>
-              </a>
-            </Button>
-            
             {user ? (
               <div className="hidden sm:flex items-center space-x-2 sm:space-x-4">
                 <div className="hidden md:flex items-center space-x-2 px-3 py-2 bg-muted rounded-full">
@@ -133,18 +121,6 @@ const LandingNavigation: React.FC = () => {
               ))}
               
               <div className="pt-4 border-t border-border space-y-3">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  asChild
-                  className="w-full"
-                >
-                  <a href="mailto:contact@querox.me" className="flex items-center justify-center">
-                    <LifeBuoy className="h-4 w-4 mr-2" />
-                    Support
-                  </a>
-                </Button>
-                
                 {user ? (
                   <>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">

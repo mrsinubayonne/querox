@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, UsersIcon } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -32,6 +32,10 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: 'Commandes',
     path: '/commandes'
   }, {
+    icon: FileText,
+    label: 'Factures',
+    path: '/factures'
+  }, {
     icon: Menu,
     label: 'Menus',
     path: '/menus'
@@ -59,6 +63,10 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     icon: Calculator,
     label: 'Comptabilité',
     path: '/comptabilite'
+  }, {
+    icon: UsersIcon,
+    label: 'Équipe',
+    path: '/equipe'
   }, {
     icon: LifeBuoy,
     label: 'Support',

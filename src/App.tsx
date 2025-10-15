@@ -1,6 +1,5 @@
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from "@/components/ui/toaster";
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { RestaurantProvider } from '@/contexts/RestaurantContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -52,6 +51,10 @@ import PartnerDashboard from '@/pages/PartnerDashboard';
 // Support & Reservations pages
 import Reservations from '@/pages/Reservations';
 import Support from '@/pages/Support';
+import Factures from '@/pages/Factures';
+import Equipe from '@/pages/Equipe';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 
 const queryClient = new QueryClient();
 
@@ -110,12 +113,15 @@ function App() {
               {/* Routes Support & Reservations */}
               <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+              <Route path="/factures" element={<ProtectedRoute><Factures /></ProtectedRoute>} />
+              <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
 
               {/* Redirection par défaut */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
           <Toaster />
+          <Sonner />
         </Router>
       </RestaurantProvider>
     </QueryClientProvider>
