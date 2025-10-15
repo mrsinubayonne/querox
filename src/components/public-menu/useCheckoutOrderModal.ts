@@ -72,39 +72,9 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
         table_number: orderType === "sur_place" ? tableNumber : null,
         delivery_address: orderType === "livrer" ? deliveryAddress : null,
       };
-      // Créer la commande
-      const { data: orderData, error } = await supabase.from("orders").insert([payload]).select().single();
+      const { error } = await supabase.from("orders").insert([payload]);
 
       if (error) throw error;
-
-      // Créer automatiquement la facture
-      const generateInvoiceNumber = () => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
-        return `INV-${year}${month}-${random}`;
-      };
-
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 30);
-
-      const { error: invoiceError } = await supabase.from("invoices").insert([
-        {
-          user_id: restaurantUserId,
-          order_id: orderData.id,
-          invoice_number: generateInvoiceNumber(),
-          total_amount: totalPrice,
-          status: "unpaid",
-          due_date: dueDate.toISOString().split('T')[0],
-          notes: "Facture générée automatiquement pour la commande"
-        }
-      ]);
-
-      if (invoiceError) {
-        console.error("Invoice creation error:", invoiceError);
-        // Don't throw, just log - we don't want to fail the order if invoice fails
-      }
 
       toast({
         title: "Commande envoyée !",
