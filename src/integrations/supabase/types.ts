@@ -149,6 +149,7 @@ export type Database = {
           min_stock: number | null
           name: string
           supplier: string | null
+          supplier_id: string | null
           unit: string
           unit_price: number | null
           updated_at: string
@@ -162,6 +163,7 @@ export type Database = {
           min_stock?: number | null
           name: string
           supplier?: string | null
+          supplier_id?: string | null
           unit?: string
           unit_price?: number | null
           updated_at?: string
@@ -175,12 +177,21 @@ export type Database = {
           min_stock?: number | null
           name?: string
           supplier?: string | null
+          supplier_id?: string | null
           unit?: string
           unit_price?: number | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
@@ -534,13 +545,14 @@ export type Database = {
           created_at: string
           customer_email: string | null
           customer_name: string
-          customer_phone: string | null
-          date: string
+          customer_phone: string
           id: string
-          notes: string | null
           party_size: number
-          status: string | null
-          time: string
+          reservation_date: string
+          reservation_time: string
+          special_requests: string | null
+          status: string
+          table_number: string | null
           updated_at: string
           user_id: string
         }
@@ -548,13 +560,14 @@ export type Database = {
           created_at?: string
           customer_email?: string | null
           customer_name: string
-          customer_phone?: string | null
-          date: string
+          customer_phone: string
           id?: string
-          notes?: string | null
           party_size: number
-          status?: string | null
-          time: string
+          reservation_date: string
+          reservation_time: string
+          special_requests?: string | null
+          status?: string
+          table_number?: string | null
           updated_at?: string
           user_id: string
         }
@@ -562,13 +575,14 @@ export type Database = {
           created_at?: string
           customer_email?: string | null
           customer_name?: string
-          customer_phone?: string | null
-          date?: string
+          customer_phone?: string
           id?: string
-          notes?: string | null
           party_size?: number
-          status?: string | null
-          time?: string
+          reservation_date?: string
+          reservation_time?: string
+          special_requests?: string | null
+          status?: string
+          table_number?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -714,6 +728,45 @@ export type Database = {
           subscription_tier?: string | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

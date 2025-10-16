@@ -7,11 +7,13 @@ import {
   ArrowLeft, 
   User, 
   Bell, 
-  Shield
+  Shield,
+  Users
 } from "lucide-react";
 import ProfileTab from "@/components/ProfileTab";
 import { NotificationsTab } from "@/components/NotificationsTab";
 import { SecurityTab } from "@/components/SecurityTab";
+import { EquipeTab } from "@/components/EquipeTab";
 
 const Parametres = () => {
   const [notifications, setNotifications] = useState(true);
@@ -40,7 +42,7 @@ const Parametres = () => {
       
       <main className="container max-w-4xl py-8">
         <Tabs defaultValue="profile" className="max-w-3xl mx-auto">
-          <TabsList className="mb-8 grid grid-cols-3 w-full max-w-md mx-auto">
+          <TabsList className="mb-8 grid grid-cols-4 w-full mx-auto">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Mon profil
@@ -52,6 +54,10 @@ const Parametres = () => {
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Sécurité
+            </TabsTrigger>
+            <TabsTrigger value="equipe" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Équipe
             </TabsTrigger>
           </TabsList>
           
@@ -70,6 +76,10 @@ const Parametres = () => {
 
           <TabsContent value="security" className="space-y-6">
             <SecurityTab />
+          </TabsContent>
+
+          <TabsContent value="equipe" className="space-y-6">
+            <EquipeTab />
           </TabsContent>
         </Tabs>
       </main>

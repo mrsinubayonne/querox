@@ -12,6 +12,7 @@ interface InventoryItem {
   min_stock: number;
   unit: string;
   supplier?: string;
+  supplier_id?: string;
   unit_price?: number;
   created_at: string;
   updated_at: string;
