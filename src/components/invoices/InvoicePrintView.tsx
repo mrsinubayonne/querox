@@ -1,11 +1,16 @@
 import React from 'react';
 import { Invoice } from '@/hooks/useInvoices';
+import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
+import { useProfile } from '@/hooks/useProfile';
 
 interface InvoicePrintViewProps {
   invoice: Invoice;
 }
 
 const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
+  const { website } = useRestaurantSettings();
+  const { profile } = useProfile();
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -45,10 +50,16 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
       {/* En-tête */}
       <div className="flex justify-between items-start mb-12 pb-6 border-b-2 border-gray-300">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">QUEROX</h1>
-          <p className="text-gray-600">Système de gestion restaurant</p>
-          <p className="text-sm text-gray-500 mt-2">contact@querox.com</p>
-          <p className="text-sm text-gray-500">+242 06 456 30 21</p>
+          {website?.logo_url && (
+            <img src={website.logo_url} alt="Logo" className="h-16 mb-3" />
+          )}
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            {website?.name || 'Mon Restaurant'}
+          </h1>
+          <p className="text-gray-600">{website?.description || 'Restaurant'}</p>
+          {profile?.email && (
+            <p className="text-sm text-gray-500 mt-2">{profile.email}</p>
+          )}
         </div>
         <div className="text-right">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">FACTURE</h2>
@@ -60,7 +71,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
       {/* Informations client */}
       <div className="mb-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Facturé à:</h3>
-        <p className="text-gray-700">Client QUEROX</p>
+        <p className="text-gray-700">Client</p>
       </div>
 
       {/* Détails de la facture */}
@@ -75,7 +86,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
           <tbody>
             <tr>
               <td className="border border-gray-300 px-4 py-3">
-                <p className="font-medium">Services QUEROX</p>
+                <p className="font-medium">Services et produits</p>
                 {invoice.notes && (
                   <p className="text-sm text-gray-600 mt-1">{invoice.notes}</p>
                 )}
@@ -132,7 +143,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
           En cas de retard, des pénalités pourront être appliquées conformément à la loi.
         </p>
         <p className="text-xs text-gray-500 text-center mt-8">
-          QUEROX - Système de gestion pour restaurants
+          {website?.name || 'Mon Restaurant'}
         </p>
       </div>
     </div>
