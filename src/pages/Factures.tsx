@@ -5,13 +5,14 @@ import { useInvoices, Invoice } from '@/hooks/useInvoices';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, Check, X, Clock, Plus, Eye, Edit, Trash2 } from 'lucide-react';
+import { FileText, Download, Check, X, Clock, Plus, Eye, Edit, Trash2, Printer } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import AddInvoiceModal from '@/components/AddInvoiceModal';
 import InvoiceDetailsModal from '@/components/invoices/InvoiceDetailsModal';
 import EditInvoiceModal from '@/components/invoices/EditInvoiceModal';
 import InvoiceFilters from '@/components/invoices/InvoiceFilters';
+import InvoicePrintView from '@/components/invoices/InvoicePrintView';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -33,6 +34,7 @@ const Factures: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -67,6 +69,14 @@ const Factures: React.FC = () => {
   const handleEdit = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setIsEditModalOpen(true);
+  };
+
+  const handlePrint = (invoice: Invoice) => {
+    setPrintInvoice(invoice);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => setPrintInvoice(null), 100);
+    }, 100);
   };
 
   const handleDeleteClick = (invoice: Invoice) => {
@@ -238,13 +248,23 @@ const Factures: React.FC = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleViewDetails(invoice)}
+                          title="Voir les détails"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => handlePrint(invoice)}
+                          title="Imprimer"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => handleEdit(invoice)}
+                          title="Modifier"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -252,6 +272,7 @@ const Factures: React.FC = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleDeleteClick(invoice)}
+                          title="Supprimer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -300,6 +321,8 @@ const Factures: React.FC = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {printInvoice && <InvoicePrintView invoice={printInvoice} />}
       </PageWithSidebar>
     </SubscriptionGuard>
   );
