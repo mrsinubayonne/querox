@@ -59,7 +59,7 @@ export const useInvoices = () => {
     return `INV-${year}${month}-${random}`;
   };
 
-  const createInvoice = async (orderId: string, totalAmount: number, notes?: string) => {
+  const createInvoice = async (orderId: string | null, totalAmount: number, notes?: string) => {
     if (!user) return;
 
     try {

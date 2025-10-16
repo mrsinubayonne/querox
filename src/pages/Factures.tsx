@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { useInvoices } from '@/hooks/useInvoices';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, Check, X, Clock } from 'lucide-react';
+import { FileText, Download, Check, X, Clock, Plus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
+import AddInvoiceModal from '@/components/AddInvoiceModal';
 
 const Factures: React.FC = () => {
   const { invoices, loading, updateInvoiceStatus } = useInvoices();
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -35,14 +37,20 @@ const Factures: React.FC = () => {
       <PageWithSidebar>
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-              <FileText className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Factures</h1>
+                <p className="text-gray-600">Gérez toutes vos factures</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Factures</h1>
-              <p className="text-gray-600">Gérez toutes vos factures</p>
-            </div>
+            <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Créer une facture
+            </Button>
           </div>
 
           {/* Stats */}
@@ -142,6 +150,11 @@ const Factures: React.FC = () => {
             </div>
           )}
         </div>
+
+        <AddInvoiceModal
+          open={isAddModalOpen}
+          onOpenChange={setIsAddModalOpen}
+        />
       </PageWithSidebar>
     </SubscriptionGuard>
   );

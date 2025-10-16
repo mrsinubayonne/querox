@@ -34,9 +34,9 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
 
   const getPaymentUrl = (tier: string, isAnnual: boolean = false) => {
     const urls = {
-      starter: isAnnual ? 'https://querox.mychariow.com/prd_starter_annual/checkout' : 'https://querox.mychariow.com/prd_fbf5sx/checkout',
-      premium: isAnnual ? 'https://querox.mychariow.com/prd_premium_annual/checkout' : 'https://querox.mychariow.com/prd_aba7bf/checkout',
-      pro: isAnnual ? 'https://querox.mychariow.com/prd_pro_annual/checkout' : 'https://querox.mychariow.com/prd_idfv3d/checkout'
+      starter: 'https://querox.maketou.com/products/plan-starter-querox/checkout',
+      premium: 'https://querox.maketou.com/products/plan-starter-querox-6/checkout',
+      pro: 'https://querox.maketou.com/products/plan-starter-querox-6-1/checkout'
     };
     return urls[tier as keyof typeof urls];
   };
