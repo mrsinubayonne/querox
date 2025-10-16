@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download, Check, X, Clock, Building2, Calendar, CreditCard } from 'lucide-react';
+import { Download, Check, X, Clock, Building2, Calendar, CreditCard, Printer } from 'lucide-react';
 import { Invoice } from '@/hooks/useInvoices';
+import InvoicePrintView from './InvoicePrintView';
 
 interface InvoiceDetailsModalProps {
   invoice: Invoice | null;
@@ -19,6 +20,8 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   onOpenChange,
   onMarkAsPaid
 }) => {
+  const [isPrinting, setIsPrinting] = useState(false);
+
   if (!invoice) return null;
 
   const getStatusBadge = (status: string) => {
@@ -44,7 +47,11 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   };
 
   const handlePrint = () => {
-    window.print();
+    setIsPrinting(true);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => setIsPrinting(false), 100);
+    }, 100);
   };
 
   return (
@@ -139,11 +146,13 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
               </Button>
             )}
             <Button variant="outline" onClick={handlePrint}>
-              <Download className="w-4 h-4 mr-2" />
+              <Printer className="w-4 h-4 mr-2" />
               Imprimer
             </Button>
           </div>
         </div>
+
+        {isPrinting && <InvoicePrintView invoice={invoice} />}
       </DialogContent>
     </Dialog>
   );
