@@ -50,14 +50,14 @@ const DomainTab: React.FC = () => {
     try {
       const { error } = await supabase
         .from('websites')
-        .update({ slug })
+        .update({ slug, is_published: true })
         .eq('id', website.id);
 
       if (error) throw error;
 
       toast({
-        title: "Sous-domaine enregistré",
-        description: `Votre site est accessible sur ${slug}.querox.me`,
+        title: "Site publié",
+        description: `Votre site est maintenant accessible sur /w/${slug}`,
       });
     } catch (error: any) {
       toast({
@@ -157,17 +157,41 @@ const DomainTab: React.FC = () => {
 
           <Alert>
             <Globe className="h-4 w-4" />
-            <AlertDescription>
-              Votre site sera accessible sur: <strong>{queroxDomain}</strong>
+            <AlertDescription className="flex items-center justify-between">
+              <span>
+                Votre site sera accessible sur: <strong>{window.location.origin}/w/{slug || 'votre-slug'}</strong>
+              </span>
+              {slug && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => {
+                    copyToClipboard(`${window.location.origin}/w/${slug}`);
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              )}
             </AlertDescription>
           </Alert>
+
+          {slug && (
+            <Button 
+              variant="outline"
+              onClick={() => window.open(`/w/${slug}`, '_blank')}
+              className="w-full"
+            >
+              <Globe className="h-4 w-4 mr-2" />
+              Voir le site en ligne
+            </Button>
+          )}
 
           <Button 
             onClick={handleSaveSlug} 
             disabled={isSaving || !slug || slugAvailable === false}
             className="w-full"
           >
-            {isSaving ? "Enregistrement..." : "Enregistrer le sous-domaine"}
+            {isSaving ? "Publication..." : "Publier le site"}
           </Button>
         </CardContent>
       </Card>

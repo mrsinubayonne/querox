@@ -22,6 +22,7 @@ import Statistiques from '@/pages/Statistiques';
 import Parametres from '@/pages/Parametres';
 import Abonnement from '@/pages/Abonnement';
 import PublicMenu from '@/pages/PublicMenu';
+import PublicWebsite from '@/pages/PublicWebsite';
 import NotFound from '@/pages/NotFound';
 import PaymentSuccess from '@/pages/PaymentSuccess';
 import PaymentFailure from '@/pages/PaymentFailure';
@@ -70,6 +71,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/menu/:menuId" element={<PublicMenu />} />
+              <Route path="/w/:slug" element={<PublicWebsite />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-failure" element={<PaymentFailure />} />
               <Route path="/partner-signup" element={<PartnerSignup />} />
