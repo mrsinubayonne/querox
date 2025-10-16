@@ -1,18 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
-import { useInvoices } from '@/hooks/useInvoices';
+import { useInvoices, Invoice } from '@/hooks/useInvoices';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, Check, X, Clock, Plus } from 'lucide-react';
+import { FileText, Download, Check, X, Clock, Plus, Eye, Edit, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import AddInvoiceModal from '@/components/AddInvoiceModal';
+import InvoiceDetailsModal from '@/components/invoices/InvoiceDetailsModal';
+import EditInvoiceModal from '@/components/invoices/EditInvoiceModal';
+import InvoiceFilters from '@/components/invoices/InvoiceFilters';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const Factures: React.FC = () => {
-  const { invoices, loading, updateInvoiceStatus } = useInvoices();
+  const { invoices, loading, updateInvoiceStatus, refetch } = useInvoices();
+  const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -31,6 +53,69 @@ const Factures: React.FC = () => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('fr-FR');
   };
+
+  const handleMarkAsPaid = async (id: string) => {
+    await updateInvoiceStatus(id, 'paid');
+    refetch();
+  };
+
+  const handleViewDetails = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleEdit = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedInvoice) return;
+
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', selectedInvoice.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: "Facture supprimée avec succès"
+      });
+
+      refetch();
+      setIsDeleteDialogOpen(false);
+      setSelectedInvoice(null);
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la facture",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+  };
+
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter(invoice => {
+      const matchesSearch = invoice.invoice_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           (invoice.notes && invoice.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [invoices, searchQuery, statusFilter]);
 
   return (
     <SubscriptionGuard feature="la gestion des factures">
@@ -54,7 +139,7 @@ const Factures: React.FC = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-3">
                 <CardDescription>Total des factures</CardDescription>
@@ -77,7 +162,24 @@ const Factures: React.FC = () => {
                 </CardTitle>
               </CardHeader>
             </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardDescription>Montant total</CardDescription>
+                <CardTitle className="text-3xl text-blue-600">
+                  {invoices.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('fr-FR')} FCFA
+                </CardTitle>
+              </CardHeader>
+            </Card>
           </div>
+
+          {/* Filters */}
+          <InvoiceFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            onReset={handleResetFilters}
+          />
 
           {/* Invoices List */}
           {loading ? (
@@ -86,16 +188,20 @@ const Factures: React.FC = () => {
                 <Skeleton key={i} className="h-32 w-full" />
               ))}
             </div>
-          ) : invoices.length === 0 ? (
+          ) : filteredInvoices.length === 0 ? (
             <EmptyState
               icon={FileText}
-              title="Aucune facture"
-              description="Les factures seront générées automatiquement pour chaque commande"
+              title={invoices.length === 0 ? "Aucune facture" : "Aucun résultat"}
+              description={
+                invoices.length === 0
+                  ? "Les factures seront générées automatiquement pour chaque commande"
+                  : "Aucune facture ne correspond à vos critères de recherche"
+              }
             />
           ) : (
             <div className="space-y-4">
-              {invoices.map((invoice) => (
-                <Card key={invoice.id}>
+              {filteredInvoices.map((invoice) => (
+                <Card key={invoice.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -124,23 +230,30 @@ const Factures: React.FC = () => {
                           </div>
                         </div>
                         {invoice.notes && (
-                          <p className="mt-3 text-sm text-gray-600">{invoice.notes}</p>
+                          <p className="mt-3 text-sm text-gray-600 line-clamp-2">{invoice.notes}</p>
                         )}
                       </div>
-                      <div className="flex flex-col gap-2 ml-4">
-                        {invoice.status === 'unpaid' && (
-                          <Button
-                            size="sm"
-                            onClick={() => updateInvoiceStatus(invoice.id, 'paid')}
-                            className="bg-emerald-600 hover:bg-emerald-700"
-                          >
-                            <Check className="w-4 h-4 mr-2" />
-                            Marquer comme payée
-                          </Button>
-                        )}
-                        <Button size="sm" variant="outline">
-                          <Download className="w-4 h-4 mr-2" />
-                          Télécharger
+                      <div className="flex gap-2 ml-4">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewDetails(invoice)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(invoice)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteClick(invoice)}
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
@@ -155,6 +268,38 @@ const Factures: React.FC = () => {
           open={isAddModalOpen}
           onOpenChange={setIsAddModalOpen}
         />
+
+        <InvoiceDetailsModal
+          invoice={selectedInvoice}
+          open={isDetailsModalOpen}
+          onOpenChange={setIsDetailsModalOpen}
+          onMarkAsPaid={handleMarkAsPaid}
+        />
+
+        <EditInvoiceModal
+          invoice={selectedInvoice}
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSuccess={refetch}
+        />
+
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+              <AlertDialogDescription>
+                Êtes-vous sûr de vouloir supprimer la facture {selectedInvoice?.invoice_number} ?
+                Cette action est irréversible.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </PageWithSidebar>
     </SubscriptionGuard>
   );
