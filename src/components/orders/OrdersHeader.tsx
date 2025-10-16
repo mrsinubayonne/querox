@@ -4,7 +4,11 @@ import { Package, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AddOrderModal from './AddOrderModal';
 
-export const OrdersHeader: React.FC = () => {
+interface OrdersHeaderProps {
+  onOrderCreated: () => Promise<void>;
+}
+
+export const OrdersHeader: React.FC<OrdersHeaderProps> = ({ onOrderCreated }) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -22,7 +26,7 @@ export const OrdersHeader: React.FC = () => {
         <Plus className="w-4 h-4 mr-2" />
         Nouvelle commande
       </Button>
-      <AddOrderModal open={open} onOpenChange={setOpen} />
+      <AddOrderModal open={open} onOpenChange={setOpen} onOrderCreated={onOrderCreated} />
     </div>
   );
 };

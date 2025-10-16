@@ -13,22 +13,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useOrders } from "@/hooks/useOrders";
 
 type AddOrderModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onOrderCreated: () => Promise<void>;
 };
 
 const AddOrderModal: React.FC<AddOrderModalProps> = ({
   open,
   onOpenChange,
+  onOrderCreated,
 }) => {
   const [customerName, setCustomerName] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { refetch } = useOrders();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +65,7 @@ const AddOrderModal: React.FC<AddOrderModalProps> = ({
       setCustomerName("");
       setTotalAmount("");
       onOpenChange(false);
-      refetch();
+      await onOrderCreated();
     } catch (err: any) {
       toast({
         title: "Erreur",

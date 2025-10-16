@@ -1,13 +1,18 @@
 
 import React from 'react';
-import { useOrders } from '@/hooks/useOrders';
+import { Order } from '@/hooks/useOrders';
 import { OrderCard } from './OrderCard';
 import EmptyState from '@/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package } from 'lucide-react';
 
-export const OrdersList: React.FC = () => {
-  const { orders, loading, refetch } = useOrders();
+interface OrdersListProps {
+  orders: Order[];
+  loading: boolean;
+  refetch: () => Promise<void>;
+}
+
+export const OrdersList: React.FC<OrdersListProps> = ({ orders, loading, refetch }) => {
 
   if (loading) {
     return (
