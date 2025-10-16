@@ -57,7 +57,7 @@ const DomainTab: React.FC = () => {
 
       toast({
         title: "Site publié",
-        description: `Votre site est maintenant accessible sur /w/${slug}`,
+        description: `Votre site est maintenant accessible sur https://querox.me/w/${slug}`,
       });
     } catch (error: any) {
       toast({
@@ -159,14 +159,14 @@ const DomainTab: React.FC = () => {
             <Globe className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <span>
-                Votre site sera accessible sur: <strong>{window.location.origin}/w/{slug || 'votre-slug'}</strong>
+                Votre site sera accessible sur: <strong>https://querox.me/w/{slug || 'votre-slug'}</strong>
               </span>
               {slug && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={() => {
-                    copyToClipboard(`${window.location.origin}/w/${slug}`);
+                    copyToClipboard(`https://querox.me/w/${slug}`);
                   }}
                 >
                   <Copy className="h-4 w-4" />

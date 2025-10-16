@@ -56,8 +56,7 @@ const QRCodes: React.FC = () => {
 
   const getMenuUrl = () => {
     if (!activeMenu) return '';
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/menu-public?menu_id=${activeMenu.id}`;
+    return `https://querox.me/menu-public?menu_id=${activeMenu.id}`;
   };
 
   return (

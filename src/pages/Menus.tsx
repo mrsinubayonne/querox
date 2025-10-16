@@ -87,7 +87,7 @@ const Menus: React.FC = () => {
       return;
     }
     
-    const publicUrl = `${window.location.origin}/menu/${activeMenu.id}`;
+    const publicUrl = `https://querox.me/menu/${activeMenu.id}`;
     
     // Ouvrir dans un nouvel onglet
     window.open(publicUrl, '_blank');
