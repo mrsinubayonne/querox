@@ -9,6 +9,8 @@ interface WebsiteSettings {
   description: string | null;
   logo_url: string | null;
   header_image_url: string | null;
+  slug: string | null;
+  domain: string | null;
 }
 
 export function useRestaurantSettings() {
@@ -23,7 +25,7 @@ export function useRestaurantSettings() {
       try {
         const { data, error } = await supabase
           .from('websites')
-          .select('id, name, description, logo_url, header_image_url')
+          .select('id, name, description, logo_url, header_image_url, slug, domain')
           .order('created_at', { ascending: true })
           .limit(1)
           .single();
@@ -66,7 +68,7 @@ export function useRestaurantSettings() {
         .from('websites')
         .update(update)
         .eq('id', website.id)
-        .select('id, name, description, logo_url, header_image_url')
+        .select('id, name, description, logo_url, header_image_url, slug, domain')
         .single();
       if (error) throw error;
       setWebsite(data);
