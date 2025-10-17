@@ -15,7 +15,7 @@ const Support: React.FC = () => {
   };
 
   const handleYouTubeClick = () => {
-    window.open('https://www.youtube.com/@querox', '_blank');
+    window.open('https://www.youtube.com/@querox-restaurant', '_blank');
   };
 
   const faqs = [

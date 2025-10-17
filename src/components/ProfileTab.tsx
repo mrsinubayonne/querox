@@ -19,9 +19,13 @@ const ProfileTab: React.FC = () => {
   const [formData, setFormData] = useState({
     full_name: user?.user_metadata?.full_name || '',
     phone: user?.user_metadata?.phone || '',
-    company: user?.user_metadata?.company || 'Mon Restaurant',
+    company: user?.user_metadata?.restaurant_name || user?.user_metadata?.company || 'Mon Restaurant',
+    restaurant_type: user?.user_metadata?.restaurant_type || '',
     address: user?.user_metadata?.address || '',
-    bio: user?.user_metadata?.bio || ''
+    city: user?.user_metadata?.city || '',
+    postal_code: user?.user_metadata?.postal_code || '',
+    number_of_seats: user?.user_metadata?.number_of_seats || '',
+    bio: user?.user_metadata?.description || user?.user_metadata?.bio || ''
   });
 
   const handleSave = async () => {
@@ -50,9 +54,13 @@ const ProfileTab: React.FC = () => {
     setFormData({
       full_name: user?.user_metadata?.full_name || '',
       phone: user?.user_metadata?.phone || '',
-      company: user?.user_metadata?.company || 'Mon Restaurant',
+      company: user?.user_metadata?.restaurant_name || user?.user_metadata?.company || 'Mon Restaurant',
+      restaurant_type: user?.user_metadata?.restaurant_type || '',
       address: user?.user_metadata?.address || '',
-      bio: user?.user_metadata?.bio || ''
+      city: user?.user_metadata?.city || '',
+      postal_code: user?.user_metadata?.postal_code || '',
+      number_of_seats: user?.user_metadata?.number_of_seats || '',
+      bio: user?.user_metadata?.description || user?.user_metadata?.bio || ''
     });
     setIsEditing(false);
   };
@@ -194,6 +202,24 @@ const ProfileTab: React.FC = () => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="restaurant_type">Type de restaurant</Label>
+              {isEditing ? (
+                <Input
+                  id="restaurant_type"
+                  value={formData.restaurant_type}
+                  onChange={(e) => setFormData({ ...formData, restaurant_type: e.target.value })}
+                  placeholder="Type de restaurant"
+                />
+              ) : (
+                <div className="p-3 bg-gray-50 rounded-md border">
+                  {formData.restaurant_type || 'Non renseigné'}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
               <Label htmlFor="address">Adresse</Label>
               {isEditing ? (
                 <Input
@@ -209,6 +235,54 @@ const ProfileTab: React.FC = () => {
                 </div>
               )}
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="city">Ville</Label>
+              {isEditing ? (
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  placeholder="Ville"
+                />
+              ) : (
+                <div className="p-3 bg-gray-50 rounded-md border">
+                  {formData.city || 'Non renseigné'}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="postal_code">Code postal</Label>
+              {isEditing ? (
+                <Input
+                  id="postal_code"
+                  value={formData.postal_code}
+                  onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                  placeholder="Code postal"
+                />
+              ) : (
+                <div className="p-3 bg-gray-50 rounded-md border">
+                  {formData.postal_code || 'Non renseigné'}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="number_of_seats">Nombre de places</Label>
+            {isEditing ? (
+              <Input
+                id="number_of_seats"
+                value={formData.number_of_seats}
+                onChange={(e) => setFormData({ ...formData, number_of_seats: e.target.value })}
+                placeholder="Nombre de places"
+              />
+            ) : (
+              <div className="p-3 bg-gray-50 rounded-md border">
+                {formData.number_of_seats || 'Non renseigné'}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

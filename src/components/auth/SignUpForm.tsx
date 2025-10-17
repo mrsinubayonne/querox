@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, User, Mail, Lock, MapPin, Phone, Utensils, Users } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 const signUpSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
@@ -65,12 +66,39 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
   const onSubmit = async (data: SignUpFormData) => {
     try {
       setLoading(true);
-      const {
-        error
-      } = await signUp(data.email, data.password, data.fullName);
+      
+      // Préparer toutes les métadonnées
+      const metadata = {
+        phone: data.phone,
+        restaurant_name: data.restaurantName,
+        restaurant_type: data.restaurantType,
+        address: data.address,
+        city: data.city,
+        postal_code: data.postalCode,
+        number_of_seats: data.numberOfSeats,
+        description: data.description,
+        promo_code: data.promoCode
+      };
+      
+      const { error } = await signUp(data.email, data.password, data.fullName, metadata);
+      
       if (error) {
+        // Si l'utilisateur existe déjà
+        if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
+          toast({
+            title: "Compte existant",
+            description: "Un compte avec cet email existe déjà. Veuillez vous connecter.",
+            action: (
+              <ToastAction altText="Se connecter" onClick={onSwitchToLogin}>
+                Se connecter
+              </ToastAction>
+            ),
+          });
+          return;
+        }
         throw error;
       }
+      
       toast({
         title: "Inscription réussie !",
         description: "Un email de confirmation vous a été envoyé. Veuillez vérifier votre boîte mail."

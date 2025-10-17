@@ -71,7 +71,15 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
       {/* Informations client */}
       <div className="mb-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Facturé à:</h3>
-        <p className="text-gray-700">Client</p>
+        <p className="text-gray-700">
+          {invoice.order?.customer_name || 'Client'}
+        </p>
+        {invoice.order?.customer_email && (
+          <p className="text-sm text-gray-600">{invoice.order.customer_email}</p>
+        )}
+        {invoice.order?.customer_phone && (
+          <p className="text-sm text-gray-600">{invoice.order.customer_phone}</p>
+        )}
       </div>
 
       {/* Détails de la facture */}

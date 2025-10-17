@@ -15,6 +15,11 @@ export interface Invoice {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  order?: {
+    customer_name: string;
+    customer_email: string | null;
+    customer_phone: string | null;
+  };
 }
 
 export const useInvoices = () => {
@@ -34,7 +39,10 @@ export const useInvoices = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('invoices')
-        .select('*')
+        .select(`
+          *,
+          order:orders(customer_name, customer_email, customer_phone)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
