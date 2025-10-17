@@ -1,8 +1,7 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, Crown, RefreshCw, Shield } from 'lucide-react';
@@ -16,25 +15,10 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   children, 
   feature = "cette fonctionnalité" 
 }) => {
-  const { user } = useAuth();
-  const { isSubscriptionActive, loading, subscription, refetch, isAdmin, daysRemaining } = useSubscription();
+  const { isSubscriptionActive, loading, refetch, isAdmin } = useSubscription();
   const navigate = useNavigate();
 
-  // État de débogage consolidé
-  const debugInfo = {
-    user: user?.email,
-    userId: user?.id,
-    subscription,
-    isSubscriptionActive,
-    isAdmin,
-    loading,
-    daysRemaining
-  };
-
-  console.log('🔍 SubscriptionGuard - État consolidé:', debugInfo);
-
   const handleRefresh = async () => {
-    console.log('🔄 Rafraîchissement manuel des données d\'abonnement');
     await refetch();
   };
 
@@ -50,9 +34,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     );
   }
 
-  // Si l'utilisateur est admin, afficher directement le contenu avec un indicateur
   if (isAdmin) {
-    console.log('✅ Affichage du contenu pour admin');
     return (
       <div className="relative">
         <div className="fixed top-4 right-4 z-50">
@@ -66,14 +48,10 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     );
   }
 
-  // Si l'abonnement est actif, afficher le contenu
   if (isSubscriptionActive) {
-    console.log('✅ Affichage du contenu pour utilisateur avec abonnement actif');
     return <>{children}</>;
   }
 
-  // Afficher la page de demande d'abonnement
-  console.log('❌ Affichage de la demande d\'abonnement');
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="max-w-md w-full">

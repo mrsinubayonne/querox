@@ -2,7 +2,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { RestaurantProvider } from '@/contexts/RestaurantContext';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Import des pages
 import Index from '@/pages/Index';
@@ -57,12 +56,9 @@ import Equipe from '@/pages/Equipe';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 
-const queryClient = new QueryClient();
-
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RestaurantProvider restaurantUserId={null}>
+    <RestaurantProvider restaurantUserId={null}>
         <Router>
           <div className="min-h-screen bg-background">
             <Routes>
@@ -126,7 +122,6 @@ function App() {
           <Sonner />
         </Router>
       </RestaurantProvider>
-    </QueryClientProvider>
   );
 }
 

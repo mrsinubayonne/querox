@@ -43,10 +43,6 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
   };
 
   const handleSubscribe = async () => {
-    console.log('🚀 Bouton cliqué - Début du processus');
-    console.log('👤 Utilisateur connecté:', !!user);
-    console.log('📦 Plan sélectionné:', plan.tier);
-
     if (plan.isWhatsApp && plan.whatsappNumber) {
       const message = encodeURIComponent(`Bonjour, je suis intéressé par la LICENCE QUEROX. Pouvez-vous me donner plus d'informations ?`);
       const whatsappUrl = `https://wa.me/${plan.whatsappNumber.replace(/[^0-9]/g, '')}?text=${message}`;
@@ -55,23 +51,18 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
     }
 
     if (!user) {
-      console.log('❌ Utilisateur non connecté - redirection vers auth');
       window.location.href = '/auth';
       return;
     }
 
     setProcessing(true);
-    console.log('⏳ Processing activé');
 
     try {
       const paymentUrl = getPaymentUrl(plan.tier, billingPeriod === 'annual');
       
       if (paymentUrl) {
-        console.log('✅ URL de paiement trouvée:', paymentUrl);
-        console.log('🌐 Redirection vers:', paymentUrl);
         window.location.href = paymentUrl;
       } else {
-        console.log('❌ Aucune URL de paiement trouvée pour le tier:', plan.tier);
         toast({
           title: "Erreur",
           description: "URL de paiement non configurée pour ce plan",
@@ -87,7 +78,6 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
       });
     } finally {
       setProcessing(false);
-      console.log('🏁 Processing désactivé');
     }
   };
 

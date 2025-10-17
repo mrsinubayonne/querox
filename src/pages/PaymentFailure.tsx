@@ -1,22 +1,12 @@
 
-import React, { useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useSubscription } from '@/hooks/useSubscription';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 
 const PaymentFailure: React.FC = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { confirmPayment } = useSubscription();
-  const orderId = searchParams.get('order_id');
-
-  useEffect(() => {
-    if (orderId) {
-      confirmPayment(orderId, 'failure');
-    }
-  }, [orderId, confirmPayment]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

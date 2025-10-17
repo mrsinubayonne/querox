@@ -91,11 +91,9 @@ export const useSubscription = () => {
       return;
     }
 
-    // Check if user is admin first
     const isAdmin = await isAdminUser();
     
     if (isAdmin) {
-      console.log('✅ Utilisateur admin détecté - configuration immédiate');
       setSubscription({
         id: 'admin-override',
         user_id: user.id,
@@ -116,8 +114,6 @@ export const useSubscription = () => {
     }
 
     try {
-      console.log('🔄 Récupération des données d\'abonnement pour:', user.email);
-      
       // Chercher d'abord par user_id, puis par email
       let { data, error } = await supabase
         .from('subscribers')
@@ -125,9 +121,7 @@ export const useSubscription = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // Si pas trouvé par user_id, chercher par email
       if (!data && !error) {
-        console.log('📧 Recherche par email:', user.email);
         const { data: emailData, error: emailError } = await supabase
           .from('subscribers')
           .select('*')
@@ -137,9 +131,7 @@ export const useSubscription = () => {
         data = emailData;
         error = emailError;
         
-        // Si trouvé par email mais pas de user_id, mettre à jour le user_id
         if (data && !data.user_id) {
-          console.log('📝 Mise à jour du user_id pour l\'abonnement trouvé par email');
           await supabase
             .from('subscribers')
             .update({ user_id: user.id })
@@ -150,13 +142,12 @@ export const useSubscription = () => {
       }
 
       if (error && error.code !== 'PGRST116') {
-        console.error('❌ Erreur lors de la récupération de l\'abonnement:', error);
+        console.error('Erreur récupération abonnement:', error);
       }
 
-      console.log('✅ Données d\'abonnement final:', data);
       setSubscription(data);
     } catch (error) {
-      console.error('💥 Erreur dans fetchSubscription:', error);
+      console.error('Erreur fetchSubscription:', error);
       setSubscription(null);
     } finally {
       setLoading(false);
@@ -174,119 +165,27 @@ export const useSubscription = () => {
     }
   }, [fetchSubscription, fetchUserRole, user, userRole]);
 
-  const createPayment = async (tier: string, amount: number = 1000) => {
-    if (!user) {
-      console.log('❌ createPayment: Aucun utilisateur connecté');
-      return null;
-    }
-
-    console.log('🔄 createPayment: Début de la création du paiement');
-    console.log('📝 Paramètres:', { tier, amount, userId: user.id });
-
-    try {
-      setLoading(true);
-      console.log('📡 Appel de la fonction edge create-subscription-payment...');
-
-      const { data, error } = await supabase.functions.invoke('create-subscription-payment', {
-        body: { tier, amount }
-      });
-
-      console.log('📨 Réponse de la fonction edge:', { data, error });
-
-      if (error) {
-        console.error('❌ Erreur de la fonction edge:', error);
-        throw new Error(error.message);
-      }
-
-      console.log('✅ Paiement créé avec succès:', data);
-      return data;
-    } catch (error) {
-      console.error('💥 Erreur dans createPayment:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer le paiement",
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setLoading(false);
-      console.log('🏁 createPayment: Loading désactivé');
-    }
-  };
-
-  const confirmPayment = async (orderId: string, status: 'success' | 'failure') => {
-    try {
-      const { error } = await supabase.functions.invoke('confirm-payment', {
-        body: { order_id: orderId, status }
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      // Recharger les données d'abonnement
-      await fetchSubscription();
-
-      toast({
-        title: status === 'success' ? "Succès" : "Échec",
-        description: status === 'success' 
-          ? "Votre abonnement a été activé avec succès !"
-          : "Le paiement a échoué. Veuillez réessayer.",
-        variant: status === 'success' ? "default" : "destructive",
-      });
-
-    } catch (error) {
-      console.error('Error confirming payment:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de confirmer le paiement",
-        variant: "destructive",
-      });
-    }
-  };
 
   const isSubscriptionActive = useCallback(() => {
-    // Les administrateurs ont TOUJOURS accès
     if (userRole?.role === 'admin') {
-      console.log('✅ Accès admin accordé immédiatement');
       return true;
     }
     
     if (!subscription) {
-      console.log('❌ Pas d\'abonnement trouvé dans la base de données');
       return false;
     }
     
-    console.log('📊 Vérification des détails de l\'abonnement:', {
-      subscribed: subscription.subscribed,
-      subscription_tier: subscription.subscription_tier,
-      subscription_end: subscription.subscription_end,
-      email: subscription.email,
-      user_id: subscription.user_id
-    });
-    
     if (!subscription.subscribed) {
-      console.log('❌ Abonnement marqué comme inactif (subscribed=false)');
       return false;
     }
     
     if (!subscription.subscription_end) {
-      console.log('✅ Abonnement permanent actif (pas de date de fin)');
       return true;
     }
     
     const endDate = new Date(subscription.subscription_end);
     const now = new Date();
-    const isActive = endDate > now;
-    
-    console.log('📅 Vérification de la date d\'expiration:', {
-      endDate: endDate.toISOString(),
-      now: now.toISOString(),
-      isActive,
-      daysRemaining: Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    });
-    
-    return isActive;
+      return endDate > now;
   }, [subscription, userRole]);
 
   const getDaysRemaining = () => {
@@ -303,8 +202,6 @@ export const useSubscription = () => {
   return {
     subscription,
     loading,
-    createPayment,
-    confirmPayment,
     isSubscriptionActive: isSubscriptionActive(),
     daysRemaining: getDaysRemaining(),
     refetch: fetchSubscription,
