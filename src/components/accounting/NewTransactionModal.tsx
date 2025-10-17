@@ -88,7 +88,24 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="recette">Recette</SelectItem>
+                <SelectItem value="vente">Vente</SelectItem>
                 <SelectItem value="depense">Dépense</SelectItem>
+                <SelectItem value="achat">Achat</SelectItem>
+                <SelectItem value="salaire">Salaire</SelectItem>
+                <SelectItem value="loyer">Loyer</SelectItem>
+                <SelectItem value="taxes">Taxes</SelectItem>
+                <SelectItem value="charges">Charges</SelectItem>
+                <SelectItem value="fournitures">Fournitures</SelectItem>
+                <SelectItem value="marketing">Marketing</SelectItem>
+                <SelectItem value="entretien">Entretien</SelectItem>
+                <SelectItem value="assurance">Assurance</SelectItem>
+                <SelectItem value="utilities">Eau/Électricité/Gaz</SelectItem>
+                <SelectItem value="equipment">Équipement</SelectItem>
+                <SelectItem value="licence">Licences et permis</SelectItem>
+                <SelectItem value="formation">Formation</SelectItem>
+                <SelectItem value="transport">Transport</SelectItem>
+                <SelectItem value="bancaire">Frais bancaires</SelectItem>
+                <SelectItem value="autre">Autre</SelectItem>
               </SelectContent>
             </Select>
           </div>

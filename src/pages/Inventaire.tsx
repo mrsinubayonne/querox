@@ -11,8 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Package, Plus, AlertTriangle, TrendingDown, TrendingUp, Users, Trash2, Edit, Download, Upload } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { Package, Plus, AlertTriangle, TrendingDown, TrendingUp, Users, Trash2, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
@@ -108,63 +107,6 @@ const Inventaire: React.FC = () => {
               <p className="text-muted-foreground">Gérez les stocks de votre restaurant</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => document.getElementById('import-inventory')?.click()}>
-                <Upload className="mr-2 h-4 w-4" />
-                Importer
-              </Button>
-              <input
-                id="import-inventory"
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  
-                  try {
-                    const reader = new FileReader();
-                    reader.onload = async (event) => {
-                      try {
-                        const data = event.target?.result;
-                        let items: any[] = [];
-
-                        if (file.name.endsWith('.csv')) {
-                          const workbook = XLSX.read(data, { type: 'string' });
-                          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                          items = XLSX.utils.sheet_to_json(sheet);
-                        } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                          const workbook = XLSX.read(data, { type: 'binary' });
-                          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                          items = XLSX.utils.sheet_to_json(sheet);
-                        }
-
-                        for (const item of items) {
-                          await createItem({
-                            name: item.name || item.Name || item.Nom || '',
-                            category: item.category || item.Category || item.Catégorie || '',
-                            current_stock: Number(item.current_stock || item.stock || item.Stock || 0),
-                            min_stock: Number(item.min_stock || item['Stock minimum'] || 0),
-                            unit: item.unit || item.Unit || item.Unité || 'pcs',
-                            unit_price: Number(item.unit_price || item.price || item.Prix || 0),
-                            supplier_id: item.supplier_id
-                          });
-                        }
-                        alert('Import réussi !');
-                      } catch (error) {
-                        alert('Erreur lors de l\'import');
-                      }
-                    };
-
-                    if (file.name.endsWith('.csv')) {
-                      reader.readAsText(file);
-                    } else {
-                      reader.readAsBinaryString(file);
-                    }
-                  } catch (error) {
-                    alert('Erreur lors de l\'import');
-                  }
-                }}
-              />
               <Button variant="outline">
                 <Download className="mr-2 h-4 w-4" />
                 Exporter

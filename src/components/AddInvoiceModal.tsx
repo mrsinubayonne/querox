@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,6 +17,7 @@ const AddInvoiceModal: React.FC<AddInvoiceModalProps> = ({ open, onOpenChange })
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [template, setTemplate] = useState('standard');
   const [loading, setLoading] = useState(false);
   const { createInvoice } = useInvoices();
   const { toast } = useToast();
@@ -61,6 +63,22 @@ const AddInvoiceModal: React.FC<AddInvoiceModalProps> = ({ open, onOpenChange })
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="template">Modèle de facture *</Label>
+            <Select value={template} onValueChange={setTemplate}>
+              <SelectTrigger id="template">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="moderne">Moderne</SelectItem>
+                <SelectItem value="minimaliste">Minimaliste</SelectItem>
+                <SelectItem value="professionnel">Professionnel</SelectItem>
+                <SelectItem value="colore">Coloré</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="amount">Montant (FCFA) *</Label>
             <Input
