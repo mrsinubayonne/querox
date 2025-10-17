@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Mail, Lock } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -39,16 +40,31 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
     try {
       setLoading(true);
       const { error } = await signIn(data.email, data.password);
-      
+
       if (error) {
-        toast({
-          title: "Erreur de connexion",
-          description: error.message || "Email ou mot de passe incorrect",
-          variant: "destructive",
-        });
+        const isInvalidCreds = (error as any)?.code === 'invalid_credentials' ||
+          (typeof error.message === 'string' && error.message.toLowerCase().includes('invalid login credentials'));
+
+        if (isInvalidCreds) {
+          toast({
+            title: "Pas de compte trouvé",
+            description: "Nous ne reconnaissons pas ces identifiants. Inscrivez-vous pour continuer.",
+            action: (
+              <ToastAction altText="S'inscrire" onClick={onSwitchToSignUp}>
+                S'inscrire
+              </ToastAction>
+            ),
+          });
+        } else {
+          toast({
+            title: "Erreur de connexion",
+            description: error.message || "Une erreur est survenue",
+            variant: "destructive",
+          });
+        }
         return;
       }
-      
+
       toast({
         title: "Connexion réussie !",
         description: "Bienvenue sur QUEROX",
@@ -56,7 +72,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
     } catch (error: any) {
       toast({
         title: "Erreur de connexion",
-        description: error.message || "Une erreur est survenue",
+        description: error?.message || "Une erreur est survenue",
         variant: "destructive",
       });
     } finally {
