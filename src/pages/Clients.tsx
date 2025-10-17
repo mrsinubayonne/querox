@@ -12,7 +12,7 @@ import * as XLSX from 'xlsx';
 const Clients: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showStaffRequestModal, setShowStaffRequestModal] = useState(false);
-  const { createCustomer } = useCustomers();
+  const { customers, loading, createCustomer, fetchCustomers } = useCustomers();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,6 +56,9 @@ const Clients: React.FC = () => {
             title: "Import réussi",
             description: `${successCount} client(s) importé(s)`
           });
+          
+          // Rafraîchir la liste
+          await fetchCustomers();
         } catch (error) {
           console.error('Error parsing file:', error);
           toast({
@@ -124,13 +127,37 @@ const Clients: React.FC = () => {
             </CardContent>
           </Card>
 
-          <EmptyState
-            icon={Users}
-            title="Aucun client enregistré"
-            description="Vos clients apparaîtront ici une fois qu'ils auront passé leurs premières commandes"
-            actionLabel="Voir les commandes"
-            onAction={() => window.location.href = '/commandes'}
-          />
+          {loading ? (
+            <div className="text-center py-12">Chargement...</div>
+          ) : customers.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="Aucun client enregistré"
+              description="Vos clients apparaîtront ici une fois qu'ils auront passé leurs premières commandes"
+              actionLabel="Voir les commandes"
+              onAction={() => window.location.href = '/commandes'}
+            />
+          ) : (
+            <div className="grid gap-4">
+              {customers.map((customer) => (
+                <Card key={customer.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg">{customer.name}</h3>
+                        {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
+                        {customer.phone && <p className="text-sm text-muted-foreground">{customer.phone}</p>}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{customer.total_visits} visites</p>
+                        <p className="text-sm text-muted-foreground">{customer.total_spent}€ dépensés</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
