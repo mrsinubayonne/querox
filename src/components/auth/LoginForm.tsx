@@ -38,7 +38,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setLoading(true);
-      await signIn(data.email, data.password);
+      const { error } = await signIn(data.email, data.password);
+      
+      if (error) {
+        toast({
+          title: "Erreur de connexion",
+          description: error.message || "Email ou mot de passe incorrect",
+          variant: "destructive",
+        });
+        return;
+      }
       
       toast({
         title: "Connexion réussie !",
@@ -47,7 +56,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
     } catch (error: any) {
       toast({
         title: "Erreur de connexion",
-        description: error.message || "Email ou mot de passe incorrect",
+        description: error.message || "Une erreur est survenue",
         variant: "destructive",
       });
     } finally {
