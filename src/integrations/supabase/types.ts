@@ -1338,52 +1338,6 @@ export type Database = {
           updated_at: string
         }[]
       }
-      get_public_website_safe_data: {
-        Args: { website_slug: string }
-        Returns: {
-          contact_subtitle: string
-          contact_title: string
-          created_at: string
-          custom_css: string
-          description: string
-          dish1_image_url: string
-          dish1_name: string
-          dish1_price: string
-          dish1_rating: string
-          dish2_image_url: string
-          dish2_name: string
-          dish2_price: string
-          dish2_rating: string
-          dish3_image_url: string
-          dish3_name: string
-          dish3_price: string
-          dish3_rating: string
-          header_image_url: string
-          hero_button_primary: string
-          hero_button_secondary: string
-          hero_image_url: string
-          hero_subtitle: string
-          hero_title: string
-          id: string
-          logo_url: string
-          name: string
-          opening_hours: Json
-          primary_color: string
-          secondary_color: string
-          seo_description: string
-          seo_title: string
-          slug: string
-          social_links: Json
-          specialities_subtitle: string
-          specialities_title: string
-          stats_clients: string
-          stats_dishes: string
-          stats_experience: string
-          stats_rating: string
-          template_id: string
-          updated_at: string
-        }[]
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]

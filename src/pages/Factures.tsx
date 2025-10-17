@@ -5,7 +5,7 @@ import { useInvoices, Invoice } from '@/hooks/useInvoices';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, Check, X, Clock, Plus, Eye, Edit, Trash2, Printer, Settings } from 'lucide-react';
+import { FileText, Download, Check, X, Clock, Plus, Eye, Edit, Trash2, Printer } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import AddInvoiceModal from '@/components/AddInvoiceModal';
@@ -13,7 +13,6 @@ import InvoiceDetailsModal from '@/components/invoices/InvoiceDetailsModal';
 import EditInvoiceModal from '@/components/invoices/EditInvoiceModal';
 import InvoiceFilters from '@/components/invoices/InvoiceFilters';
 import InvoicePrintView from '@/components/invoices/InvoicePrintView';
-import { InvoiceSettingsModal } from '@/components/invoices/InvoiceSettingsModal';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -38,7 +37,6 @@ const Factures: React.FC = () => {
   const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -144,16 +142,10 @@ const Factures: React.FC = () => {
                 <p className="text-gray-600">Gérez toutes vos factures</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsSettingsModalOpen(true)}>
-                <Settings className="h-4 w-4 mr-2" />
-                Personnaliser
-              </Button>
-              <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Créer une facture
-              </Button>
-            </div>
+            <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Créer une facture
+            </Button>
           </div>
 
           {/* Stats */}
@@ -331,11 +323,6 @@ const Factures: React.FC = () => {
         </AlertDialog>
 
         {printInvoice && <InvoicePrintView invoice={printInvoice} />}
-        
-        <InvoiceSettingsModal 
-          open={isSettingsModalOpen} 
-          onOpenChange={setIsSettingsModalOpen} 
-        />
       </PageWithSidebar>
     </SubscriptionGuard>
   );

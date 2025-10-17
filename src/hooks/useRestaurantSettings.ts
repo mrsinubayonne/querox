@@ -12,10 +12,6 @@ interface WebsiteSettings {
   header_image_url: string | null;
   slug: string | null;
   domain: string | null;
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-  primary_color: string | null;
 }
 
 export function useRestaurantSettings() {
@@ -35,7 +31,7 @@ export function useRestaurantSettings() {
     try {
       const { data, error } = await supabase
         .from('websites')
-        .select('id, name, description, logo_url, header_image_url, slug, domain, address, phone, email, primary_color')
+        .select('id, name, description, logo_url, header_image_url, slug, domain')
         .eq('user_id', user.id)
         .order('created_at', { ascending: true })
         .limit(1)
@@ -76,7 +72,7 @@ export function useRestaurantSettings() {
         .from('websites')
         .update(update)
         .eq('id', website.id)
-        .select('id, name, description, logo_url, header_image_url, slug, domain, address, phone, email, primary_color')
+        .select('id, name, description, logo_url, header_image_url, slug, domain')
         .single();
       if (error) throw error;
       setWebsite(data);

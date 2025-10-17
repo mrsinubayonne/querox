@@ -25,8 +25,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
   onSuccess 
 }) => {
   const { addMenuItem, loading } = useMenuItems();
-  const { categories, menus, createDefaultMenu } = useMenus();
-  const [isCreatingMenu, setIsCreatingMenu] = useState(false);
+  const { categories } = useMenus();
   
   const [formData, setFormData] = useState<{
     name: string;
@@ -47,18 +46,6 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
   });
 
   const [allergenInput, setAllergenInput] = useState('');
-
-  // Auto-create default menu if none exists
-  React.useEffect(() => {
-    const initializeMenu = async () => {
-      if (isOpen && menus.length === 0 && !isCreatingMenu) {
-        setIsCreatingMenu(true);
-        await createDefaultMenu();
-        setIsCreatingMenu(false);
-      }
-    };
-    initializeMenu();
-  }, [isOpen, menus.length, createDefaultMenu, isCreatingMenu]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
