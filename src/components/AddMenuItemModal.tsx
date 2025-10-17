@@ -11,6 +11,7 @@ import { useMenuItems } from '@/hooks/useMenuItems';
 import { useMenus } from '@/hooks/useMenus';
 import ImageUpload from '@/components/ImageUpload';
 import { PREDEFINED_CATEGORIES } from '@/data/menuCategories';
+import { APP_CONFIG } from '@/config/app.config';
 
 interface AddMenuItemModalProps {
   isOpen: boolean;

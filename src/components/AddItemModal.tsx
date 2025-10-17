@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageUpload from './ImageUpload';
+import { APP_CONFIG } from '@/config/app.config';
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onAddItem 
     category: '',
     price: '',
     description: '',
-    image: '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png'
+    image: APP_CONFIG.images.defaultMenuItem
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -37,7 +38,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onAddItem 
       category: '',
       price: '',
       description: '',
-      image: '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png'
+      image: APP_CONFIG.images.defaultMenuItem
     });
     onClose();
   };

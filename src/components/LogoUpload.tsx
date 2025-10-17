@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, X } from 'lucide-react';
+import { APP_CONFIG } from '@/config/app.config';
 
 interface LogoUploadProps {
   currentLogo?: string;
