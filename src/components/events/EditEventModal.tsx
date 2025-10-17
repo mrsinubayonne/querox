@@ -3,6 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import EventForm from './EventForm';
+import { APP_CONFIG } from '@/config/app.config';
+
+interface EventFormData {
+  nom: string;
+  description: string;
+  date: string;
+  heure: string;
+  participants: number;
+  lieu: string;
+  statut: string;
+  prix: number;
+  organisateur: string;
+  image: string;
+}
 
 interface Event {
   id: number;
@@ -31,7 +45,18 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
   onSubmit, 
   event 
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    nom: string;
+    description: string;
+    date: string;
+    heure: string;
+    participants: number;
+    lieu: string;
+    statut: string;
+    prix: number;
+    organisateur: string;
+    image: string;
+  }>({
     nom: '',
     description: '',
     date: '',
@@ -74,6 +99,10 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
     onClose();
   };
 
+  const handleFormDataChange = (data: EventFormData) => {
+    setFormData(data);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -81,7 +110,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
           <DialogTitle>Modifier l'événement</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <EventForm formData={formData} setFormData={setFormData} />
+          <EventForm formData={formData} setFormData={handleFormDataChange} />
           
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>

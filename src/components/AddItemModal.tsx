@@ -16,7 +16,13 @@ interface AddItemModalProps {
 }
 
 const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onAddItem }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    category: string;
+    price: string;
+    description: string;
+    image: string;
+  }>({
     name: '',
     category: '',
     price: '',

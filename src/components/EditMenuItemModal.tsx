@@ -40,14 +40,22 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
   const { updateMenuItem, loading } = useMenuItems();
   const { categories } = useMenus();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    price: number;
+    category_id: string;
+    image_url: string;
+    is_available: boolean;
+    allergens: string[];
+  }>({
     name: '',
     description: '',
     price: 0,
     category_id: '',
     image_url: APP_CONFIG.images.defaultMenuItem,
     is_available: true,
-    allergens: [] as string[]
+    allergens: []
   });
 
   const [allergenInput, setAllergenInput] = useState('');

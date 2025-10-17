@@ -5,6 +5,8 @@ import { CartItem, MenuItem } from '@/types/menu';
 import { cn } from '@/lib/utils';
 import CheckoutOrderModal from './CheckoutOrderModal';
 import { useState } from "react";
+import SafeImage from '@/components/SafeImage';
+import { APP_CONFIG } from '@/config/app.config';
 
 interface ShoppingCartProps {
   cart: CartItem[];

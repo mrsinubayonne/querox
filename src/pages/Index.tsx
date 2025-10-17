@@ -5,8 +5,6 @@ import LandingNavigation from '../components/landing/LandingNavigation';
 import LandingHero from '../components/landing/LandingHero';
 import LandingFeatures from '../components/landing/LandingFeatures';
 import LandingPricing from '../components/landing/LandingPricing';
-import ReservationSection from '../components/landing/ReservationSection';
-import SupportSection from '../components/landing/SupportSection';
 import LandingFooter from '../components/landing/LandingFooter';
 
 const Index: React.FC = () => {
@@ -39,8 +37,6 @@ const Index: React.FC = () => {
         <LandingHero />
         <LandingFeatures />
         <LandingPricing />
-        <ReservationSection />
-        <SupportSection />
       </main>
       <LandingFooter />
     </div>
