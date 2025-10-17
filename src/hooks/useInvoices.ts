@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +28,7 @@ export const useInvoices = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     if (!user) {
       setInvoices([]);
       setLoading(false);
@@ -43,6 +43,7 @@ export const useInvoices = () => {
           *,
           order:orders(customer_name, customer_email, customer_phone)
         `)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -54,10 +55,11 @@ export const useInvoices = () => {
         description: "Impossible de charger les factures",
         variant: "destructive"
       });
+      setInvoices([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   const generateInvoiceNumber = () => {
     const date = new Date();
@@ -67,7 +69,7 @@ export const useInvoices = () => {
     return `INV-${year}${month}-${random}`;
   };
 
-  const createInvoice = async (orderId: string | null, totalAmount: number, notes?: string) => {
+  const createInvoice = useCallback(async (orderId: string | null, totalAmount: number, notes?: string) => {
     if (!user) return;
 
     try {
@@ -103,9 +105,9 @@ export const useInvoices = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [user, toast, fetchInvoices]);
 
-  const updateInvoiceStatus = async (invoiceId: string, status: 'paid' | 'unpaid' | 'overdue') => {
+  const updateInvoiceStatus = useCallback(async (invoiceId: string, status: 'paid' | 'unpaid' | 'overdue') => {
     try {
       const updateData: any = { status };
       if (status === 'paid') {
@@ -133,11 +135,11 @@ export const useInvoices = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [toast, fetchInvoices]);
 
   useEffect(() => {
     fetchInvoices();
-  }, [user]);
+  }, [fetchInvoices]);
 
   return {
     invoices,

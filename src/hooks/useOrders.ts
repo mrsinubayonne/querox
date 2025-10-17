@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -52,7 +52,7 @@ export const useOrders = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!user) {
       setOrders([]);
       setLoading(false);
@@ -100,7 +100,7 @@ export const useOrders = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   const refetch = () => {
     return fetchOrders();
@@ -108,7 +108,9 @@ export const useOrders = () => {
 
   useEffect(() => {
     fetchOrders();
+  }, [fetchOrders]);
 
+  useEffect(() => {
     // Écouter les nouvelles commandes en temps réel
     if (!user) return;
 

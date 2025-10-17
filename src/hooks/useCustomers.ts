@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +23,7 @@ export const useCustomers = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     if (!user) {
       setCustomers([]);
       setLoading(false);
@@ -55,9 +55,9 @@ export const useCustomers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
-  const createCustomer = async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
+  const createCustomer = useCallback(async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
       toast({
         title: "Erreur",
@@ -100,9 +100,9 @@ export const useCustomers = () => {
       });
       return false;
     }
-  };
+  }, [user, toast]);
 
-  const updateCustomer = async (id: string, updates: Partial<Customer>) => {
+  const updateCustomer = useCallback(async (id: string, updates: Partial<Customer>) => {
     if (!user) return false;
 
     try {
@@ -126,9 +126,9 @@ export const useCustomers = () => {
       });
       return false;
     }
-  };
+  }, [user, toast]);
 
-  const deleteCustomer = async (id: string) => {
+  const deleteCustomer = useCallback(async (id: string) => {
     if (!user) return false;
 
     try {
@@ -154,11 +154,11 @@ export const useCustomers = () => {
       });
       return false;
     }
-  };
+  }, [user, toast]);
 
   useEffect(() => {
     fetchCustomers();
-  }, [user]);
+  }, [fetchCustomers]);
 
   return {
     customers,

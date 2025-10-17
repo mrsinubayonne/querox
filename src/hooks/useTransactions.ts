@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +23,7 @@ export const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     if (!user) {
       setTransactions([]);
       setLoading(false);
@@ -31,6 +31,7 @@ export const useTransactions = () => {
     }
 
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
@@ -44,6 +45,7 @@ export const useTransactions = () => {
           description: "Impossible de charger les transactions",
           variant: "destructive",
         });
+        setTransactions([]);
       } else {
         const transformedTransactions: Transaction[] = (data || []).map(transaction => ({
           id: transaction.id,
@@ -61,12 +63,13 @@ export const useTransactions = () => {
       }
     } catch (error) {
       console.error('Error fetching transactions:', error);
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
-  const createTransaction = async (transactionData: Omit<Transaction, 'id' | 'created_at' | 'user_id'>) => {
+  const createTransaction = useCallback(async (transactionData: Omit<Transaction, 'id' | 'created_at' | 'user_id'>) => {
     if (!user) return false;
 
     try {
@@ -111,11 +114,11 @@ export const useTransactions = () => {
       console.error('Error adding transaction:', error);
       return false;
     }
-  };
+  }, [user, toast]);
 
   useEffect(() => {
     fetchTransactions();
-  }, [user]);
+  }, [fetchTransactions]);
 
   return {
     transactions,

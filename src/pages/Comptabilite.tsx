@@ -7,7 +7,7 @@ import AccountingStats from '@/components/accounting/AccountingStats';
 import AccountingTabsContainer from '@/components/accounting/AccountingTabsContainer';
 import NewTransactionModal from '@/components/accounting/NewTransactionModal';
 import ExportModal from '@/components/accounting/ExportModal';
-import * as XLSX from 'xlsx';
+
 
 const Comptabilite = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -218,68 +218,6 @@ const Comptabilite = () => {
       
       <div className="flex-1 p-4">
         <div className="max-w-7xl mx-auto space-y-4">
-          <div className="flex justify-between items-center mb-4">
-            <input
-              id="import-transactions"
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              className="hidden"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                
-                try {
-                  const reader = new FileReader();
-                  reader.onload = async (event) => {
-                    try {
-                      const data = event.target?.result;
-                      let transactions: any[] = [];
-
-                      if (file.name.endsWith('.csv')) {
-                        const workbook = XLSX.read(data, { type: 'string' });
-                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                        transactions = XLSX.utils.sheet_to_json(sheet);
-                      } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                        const workbook = XLSX.read(data, { type: 'binary' });
-                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                        transactions = XLSX.utils.sheet_to_json(sheet);
-                      }
-
-                      for (const t of transactions) {
-                        await createTransaction({
-                          title: t.title || t.Title || t.Titre || '',
-                          amount: Number(t.amount || t.Amount || t.Montant || 0),
-                          type: t.type || t.Type || 'expense',
-                          category: t.category || t.Category || t.Catégorie || '',
-                          date: t.date || t.Date || new Date().toISOString().split('T')[0],
-                          status: t.status || 'completed',
-                          description: t.description || t.Description || ''
-                        });
-                      }
-                      toast({ title: "Import réussi" });
-                    } catch (error) {
-                      toast({ title: "Erreur", description: "Format invalide", variant: "destructive" });
-                    }
-                  };
-
-                  if (file.name.endsWith('.csv')) {
-                    reader.readAsText(file);
-                  } else {
-                    reader.readAsBinaryString(file);
-                  }
-                } catch (error) {
-                  toast({ title: "Erreur", variant: "destructive" });
-                }
-              }}
-            />
-            <button 
-              onClick={() => document.getElementById('import-transactions')?.click()}
-              className="px-4 py-2 bg-primary text-white rounded-md"
-            >
-              Importer
-            </button>
-          </div>
-          
           <AccountingHeader
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
