@@ -55,26 +55,28 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     setLoading(true);
 
     try {
-      const payload: any = {
-        user_id: restaurantUserId,
-        customer_name: customerName,
-        customer_phone: customerPhone,
-        notes: notes || null,
-        items: cart.map((item) => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        total_amount: totalPrice,
-        status: "pending",
-        order_type: orderType,
-        table_number: orderType === "sur_place" ? tableNumber : null,
-        delivery_address: orderType === "livrer" ? deliveryAddress : null,
-      };
-      const { error } = await supabase.from("orders").insert([payload]);
+      // Call the validate-order edge function for server-side validation
+      const { data, error } = await supabase.functions.invoke('validate-order', {
+        body: {
+          restaurantUserId,
+          items: cart.map((item) => ({
+            id: item.id,
+            quantity: item.quantity,
+          })),
+          customerName,
+          customerPhone,
+          orderType,
+          tableNumber: orderType === "sur_place" ? tableNumber : undefined,
+          deliveryAddress: orderType === "livrer" ? deliveryAddress : undefined,
+          notes: notes || undefined,
+        },
+      });
 
       if (error) throw error;
+
+      if (!data.success) {
+        throw new Error(data.error || 'Order validation failed');
+      }
 
       toast({
         title: "Commande envoyée !",

@@ -26,12 +26,6 @@ interface Subscription {
   updated_at: string;
 }
 
-const ADMIN_EMAILS = [
-  'emmanuelhussinbayonne@gmail.com',
-  'bayonnecastadorkhloe@gmail.com', 
-  'mrsinulion@gmail.com'
-];
-
 const AdminSubscriptions: React.FC = () => {
   const { user } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -52,10 +46,9 @@ const AdminSubscriptions: React.FC = () => {
     }
   }, [isAuthorized]);
 
-  const checkAuthorization = () => {
+  const checkAuthorization = async () => {
     console.log('🔍 AdminSubscriptions - Vérification des autorisations');
     console.log('🔍 Utilisateur actuel:', user?.email);
-    console.log('🔍 Emails admin autorisés:', ADMIN_EMAILS);
     
     if (!user) {
       console.log('❌ Aucun utilisateur connecté');
@@ -63,18 +56,39 @@ const AdminSubscriptions: React.FC = () => {
       return;
     }
 
-    if (ADMIN_EMAILS.includes(user.email || '')) {
-      console.log('✅ Utilisateur autorisé comme admin');
-      setIsAuthorized(true);
-    } else {
-      console.log('❌ Utilisateur non autorisé');
+    try {
+      // Check admin role using server-side role verification
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (roleError) {
+        console.error('❌ Error checking admin role:', roleError);
+        setIsAuthorized(false);
+        setLoading(false);
+        return;
+      }
+
+      if (roleData) {
+        console.log('✅ Utilisateur autorisé comme admin');
+        setIsAuthorized(true);
+      } else {
+        console.log('❌ Utilisateur non autorisé');
+        setIsAuthorized(false);
+        toast({
+          title: "Accès refusé",
+          description: "Vous n'avez pas l'autorisation d'accéder à cette interface",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('💥 Error during authorization:', error);
       setIsAuthorized(false);
-      toast({
-        title: "Accès refusé",
-        description: "Vous n'avez pas l'autorisation d'accéder à cette interface",
-        variant: "destructive",
-      });
     }
+    
     setLoading(false);
   };
 
