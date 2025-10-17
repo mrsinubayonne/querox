@@ -1,7 +1,8 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface WebsiteSettings {
   id: string;
@@ -14,38 +15,41 @@ interface WebsiteSettings {
 }
 
 export function useRestaurantSettings() {
+  const { user } = useAuth();
   const [website, setWebsite] = useState<WebsiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
+  const fetchWebsite = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('websites')
+        .select('id, name, description, logo_url, header_image_url, slug, domain')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      setWebsite(data);
+    } catch (error: any) {
+      console.error('Error fetching website:', error);
+      setWebsite(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
-    const fetchWebsite = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('websites')
-          .select('id, name, description, logo_url, header_image_url, slug, domain')
-          .order('created_at', { ascending: true })
-          .limit(1)
-          .single();
-
-        if (error) throw error;
-        setWebsite(data);
-      } catch (error: any) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les informations du restaurant.",
-          variant: "destructive",
-        });
-        setWebsite(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchWebsite();
-  }, []);
+  }, [fetchWebsite]);
 
   const updateWebsiteInfo = async (values: {
     name: string,

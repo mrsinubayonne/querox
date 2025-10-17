@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -39,7 +39,7 @@ export const useTeamMembers = () => {
     return teamMembers.length < limit;
   };
 
-  const fetchTeamMembers = async () => {
+  const fetchTeamMembers = useCallback(async () => {
     if (!user) {
       setTeamMembers([]);
       setLoading(false);
@@ -51,21 +51,17 @@ export const useTeamMembers = () => {
       const { data, error } = await supabase
         .from('team_members')
         .select('*')
+        .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setTeamMembers((data || []) as TeamMember[]);
     } catch (error: any) {
       console.error('Error fetching team members:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les membres de l'équipe",
-        variant: "destructive"
-      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const inviteMember = async (email: string, role: string = 'member') => {
     if (!user) return;
@@ -143,7 +139,7 @@ export const useTeamMembers = () => {
 
   useEffect(() => {
     fetchTeamMembers();
-  }, [user]);
+  }, [fetchTeamMembers]);
 
   return {
     teamMembers,

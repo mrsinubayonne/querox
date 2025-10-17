@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ const DomainTab: React.FC = () => {
   const [customDomain, setCustomDomain] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
+  const debounceTimer = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     if (website) {
@@ -25,23 +26,32 @@ const DomainTab: React.FC = () => {
     }
   }, [website]);
 
-  const checkSlugAvailability = async (newSlug: string) => {
+  const checkSlugAvailability = useCallback(async (newSlug: string) => {
     if (!newSlug || !website) return;
     
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('websites')
       .select('id')
       .eq('slug', newSlug)
       .neq('id', website.id)
+      .limit(1)
       .maybeSingle();
 
     setSlugAvailable(!data);
-  };
+  }, [website]);
 
   const handleSlugChange = (value: string) => {
     const sanitized = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
     setSlug(sanitized);
-    checkSlugAvailability(sanitized);
+    setSlugAvailable(null);
+    
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    debounceTimer.current = setTimeout(() => {
+      checkSlugAvailability(sanitized);
+    }, 500);
   };
 
   const handleSaveSlug = async () => {

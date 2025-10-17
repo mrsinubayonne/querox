@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -80,7 +80,7 @@ export const useWebsites = () => {
   const [websites, setWebsites] = useState<Website[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchWebsites = async () => {
+  const fetchWebsites = useCallback(async () => {
     if (!user) {
       setWebsites([]);
       setLoading(false);
@@ -88,28 +88,21 @@ export const useWebsites = () => {
     }
 
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('websites')
-        .select('*')
+        .select('id,name,slug,domain,is_published,primary_color,secondary_color,logo_url,template_id,created_at,updated_at,user_id')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching websites:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les sites web",
-          variant: "destructive",
-        });
-      } else {
-        setWebsites(data || []);
-      }
-    } catch (error) {
+      if (error) throw error;
+      setWebsites(data || []);
+    } catch (error: any) {
       console.error('Error fetching websites:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const createWebsite = async (websiteData: WebsiteFormData) => {
     if (!user) return false;
@@ -225,7 +218,7 @@ export const useWebsites = () => {
 
   useEffect(() => {
     fetchWebsites();
-  }, [user]);
+  }, [fetchWebsites]);
 
   return {
     websites,
