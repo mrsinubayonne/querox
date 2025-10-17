@@ -111,12 +111,18 @@ const LandingHero: React.FC = () => {
                 <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                   <iframe
                     className="absolute top-0 left-0 w-full h-full"
-                    src="https://www.youtube.com/embed/0aQ0z3w58os?controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&playsinline=1"
+                    src="https://www.youtube.com/embed/0aQ0z3w58os?controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&disablekb=1&iv_load_policy=3&cc_load_policy=0&playsinline=1&autohide=1"
                     title="Présentation QUEROX"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    style={{ border: 'none' }}
+                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    style={{ border: 'none', pointerEvents: 'none' }}
                   />
-                  <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(transparent 85%, rgba(0,0,0,0.3) 100%)' }} />
+                  <div 
+                    className="absolute inset-0" 
+                    style={{ 
+                      background: 'linear-gradient(transparent 92%, rgba(0,0,0,0.5) 100%)',
+                      pointerEvents: 'auto'
+                    }} 
+                  />
                 </div>
               </div>
             </div>
