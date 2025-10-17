@@ -18,7 +18,7 @@ export interface TeamMember {
 
 const TEAM_LIMITS = {
   'starter': 3,
-  'pro': 5,
+  'pro': 10,
   'entreprise': 10
 };
 

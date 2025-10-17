@@ -28,6 +28,7 @@ export const OrderStatusSelect: React.FC<OrderStatusSelectProps> = ({
 
   const handleStatusChange = async (newStatus: string) => {
     try {
+      // Update order status
       const { error } = await supabase
         .from('orders')
         .update({ 
@@ -40,9 +41,44 @@ export const OrderStatusSelect: React.FC<OrderStatusSelectProps> = ({
         throw error;
       }
 
+      // If status changed to "delivered", create transaction and update invoice
+      if (newStatus === 'delivered') {
+        // Get order details
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
+
+        if (!orderError && order) {
+          // Create transaction in accounting
+          await supabase
+            .from('transactions')
+            .insert({
+              user_id: order.user_id,
+              title: `Commande livrée - ${order.customer_name}`,
+              amount: order.total_amount,
+              type: 'income',
+              category: 'ventes',
+              date: new Date().toISOString().split('T')[0],
+              status: 'completed',
+              description: `Commande #${orderId.substring(0, 8)} livrée`
+            });
+
+          // Update invoice status to paid if exists
+          await supabase
+            .from('invoices')
+            .update({ 
+              status: 'paid',
+              paid_date: new Date().toISOString().split('T')[0]
+            })
+            .eq('order_id', orderId);
+        }
+      }
+
       toast({
         title: "Statut mis à jour",
-        description: `Le statut de la commande a été changé vers "${ORDER_STATUSES.find(s => s.value === newStatus)?.label}"`,
+        description: `Le statut de la commande a été changé vers "${ORDER_STATUSES.find(s => s.value === newStatus)?.label}"${newStatus === 'delivered' ? ' et la transaction a été enregistrée' : ''}`,
       });
 
       onStatusChange();
