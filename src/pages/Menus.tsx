@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,7 @@ import MenuItemManager from '@/components/menu-management/MenuItemManager';
 import CreateMenuModal from '@/components/CreateMenuModal';
 import { Menu, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import * as XLSX from 'xlsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { APP_CONFIG } from '@/config/app.config';
@@ -29,6 +30,57 @@ const Menus: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const data = event.target?.result;
+          let items: any[] = [];
+
+          if (file.name.endsWith('.csv')) {
+            const workbook = XLSX.read(data, { type: 'string' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            items = XLSX.utils.sheet_to_json(sheet);
+          } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+            const workbook = XLSX.read(data, { type: 'binary' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            items = XLSX.utils.sheet_to_json(sheet);
+          }
+
+          toast({
+            title: "Format détecté",
+            description: `${items.length} élément(s) trouvé(s)`,
+          });
+        } catch (error) {
+          toast({
+            title: "Erreur",
+            description: "Format de fichier invalide",
+            variant: "destructive"
+          });
+        }
+      };
+
+      if (file.name.endsWith('.csv')) {
+        reader.readAsText(file);
+      } else {
+        reader.readAsBinaryString(file);
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de lire le fichier",
+        variant: "destructive"
+      });
+    }
+  };
 
   const fetchMenus = useCallback(async () => {
     if (!user) {
@@ -104,14 +156,15 @@ const Menus: React.FC = () => {
           
           <div className="flex gap-2">
             <input
-              id="import-menus"
+              ref={fileInputRef}
               type="file"
-              accept=".json"
+              accept=".csv,.xlsx,.xls"
+              onChange={handleFileChange}
               className="hidden"
             />
             <Button 
               variant="outline"
-              onClick={() => document.getElementById('import-menus')?.click()}
+              onClick={handleImport}
             >
               Importer
             </Button>

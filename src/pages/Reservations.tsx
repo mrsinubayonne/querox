@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
+import * as XLSX from 'xlsx';
 
 const Reservations: React.FC = () => {
   const { reservations, loading, createReservation, updateReservation, deleteReservation, getReservationStats } = useReservations();
@@ -92,31 +93,52 @@ const Reservations: React.FC = () => {
               <input
                 id="import-reservations"
                 type="file"
-                accept=".json"
+                accept=".csv,.xlsx,.xls"
                 className="hidden"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
                   
                   try {
-                    const text = await file.text();
-                    const data = JSON.parse(text);
-                    
-                    if (data.reservations?.length > 0) {
-                      for (const r of data.reservations) {
-                        await createReservation({
-                          customer_name: r.customer_name,
-                          customer_phone: r.customer_phone,
-                          customer_email: r.customer_email,
-                          reservation_date: r.reservation_date,
-                          reservation_time: r.reservation_time,
-                          party_size: r.party_size,
-                          special_requests: r.special_requests,
-                          status: r.status || 'pending',
-                          table_number: r.table_number
-                        });
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                      try {
+                        const data = event.target?.result;
+                        let reservations: any[] = [];
+
+                        if (file.name.endsWith('.csv')) {
+                          const workbook = XLSX.read(data, { type: 'string' });
+                          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                          reservations = XLSX.utils.sheet_to_json(sheet);
+                        } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                          const workbook = XLSX.read(data, { type: 'binary' });
+                          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                          reservations = XLSX.utils.sheet_to_json(sheet);
+                        }
+
+                        for (const r of reservations) {
+                          await createReservation({
+                            customer_name: r.customer_name || r['Nom client'] || '',
+                            customer_phone: r.customer_phone || r.Téléphone || r.Phone || '',
+                            customer_email: r.customer_email || r.Email || '',
+                            reservation_date: r.reservation_date || r.Date || '',
+                            reservation_time: r.reservation_time || r.Heure || r.Time || '',
+                            party_size: Number(r.party_size || r['Nombre de personnes'] || 2),
+                            table_number: r.table_number || r.Table || '',
+                            special_requests: r.special_requests || r.Notes || '',
+                            status: r.status || 'pending'
+                          });
+                        }
+                        alert('Import réussi !');
+                      } catch (error) {
+                        alert('Erreur lors de l\'import');
                       }
-                      alert('Import réussi !');
+                    };
+
+                    if (file.name.endsWith('.csv')) {
+                      reader.readAsText(file);
+                    } else {
+                      reader.readAsBinaryString(file);
                     }
                   } catch (error) {
                     alert('Erreur lors de l\'import');
