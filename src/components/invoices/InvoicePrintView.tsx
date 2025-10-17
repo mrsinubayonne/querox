@@ -57,13 +57,19 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
             {website?.name || 'Mon Restaurant'}
           </h1>
           <p className="text-gray-600">{website?.description || 'Restaurant'}</p>
-          {profile?.email && (
-            <p className="text-sm text-gray-500 mt-2">{profile.email}</p>
+          {website?.address && (
+            <p className="text-sm text-gray-600 mt-2">{website.address}</p>
           )}
+          <div className="flex gap-3 mt-2 text-sm text-gray-600">
+            {website?.phone && <span>{website.phone}</span>}
+            {website?.email && <span>{website.email}</span>}
+          </div>
         </div>
         <div className="text-right">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">FACTURE</h2>
-          <p className="text-lg font-semibold text-blue-600">{invoice.invoice_number}</p>
+          <p className="text-lg font-semibold" style={{ color: website?.primary_color || '#3B82F6' }}>
+            {invoice.invoice_number}
+          </p>
           <p className="text-sm text-gray-600 mt-2">Date: {formatDate(invoice.created_at)}</p>
         </div>
       </div>
@@ -112,7 +118,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
         <div className="w-64">
           <div className="flex justify-between py-2 border-t-2 border-gray-300">
             <span className="font-semibold text-gray-900">TOTAL:</span>
-            <span className="font-bold text-xl text-blue-600">
+            <span className="font-bold text-xl" style={{ color: website?.primary_color || '#3B82F6' }}>
               {invoice.total_amount.toLocaleString('fr-FR')} FCFA
             </span>
           </div>
