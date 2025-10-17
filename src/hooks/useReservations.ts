@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -25,7 +25,7 @@ export const useReservations = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchReservations = async () => {
+  const fetchReservations = useCallback(async () => {
     if (!user) {
       setReservations([]);
       setLoading(false);
@@ -36,9 +36,11 @@ export const useReservations = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('reservations')
-        .select('*')
+        .select('id, user_id, customer_name, customer_email, customer_phone, reservation_date, reservation_time, party_size, status, table_number, special_requests, created_at, updated_at')
+        .eq('user_id', user.id)
         .order('reservation_date', { ascending: true })
-        .order('reservation_time', { ascending: true });
+        .order('reservation_time', { ascending: true })
+        .limit(200);
 
       if (error) throw error;
       setReservations((data || []) as Reservation[]);
@@ -53,7 +55,7 @@ export const useReservations = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   const createReservation = async (reservationData: Omit<Reservation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return false;
@@ -175,10 +177,12 @@ export const useReservations = () => {
   useEffect(() => {
     fetchReservations();
 
+    if (!user) return;
+
     const channel = supabase
       .channel('reservations-changes')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'reservations' },
+        { event: '*', schema: 'public', table: 'reservations', filter: `user_id=eq.${user.id}` },
         () => fetchReservations()
       )
       .subscribe();
@@ -186,7 +190,7 @@ export const useReservations = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [fetchReservations, user?.id]);
 
   return {
     reservations,

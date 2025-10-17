@@ -64,6 +64,10 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: 'Comptabilité',
     path: '/comptabilite'
   }, {
+    icon: BarChart3,
+    label: 'Statistiques',
+    path: '/statistiques'
+  }, {
     icon: LifeBuoy,
     label: 'Support',
     path: '/support'
@@ -116,11 +120,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   }];
 
   const bottomMenuItems = [
-    {
-      icon: BarChart3,
-      label: 'Statistiques',
-      path: '/statistiques'
-    },
     {
       icon: Settings,
       label: 'Paramètres',

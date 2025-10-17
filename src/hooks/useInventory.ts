@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +24,7 @@ export const useInventory = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     if (!user) {
       setItems([]);
       setLoading(false);
@@ -35,15 +35,17 @@ export const useInventory = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('inventory_items')
-        .select('*')
-        .order('name');
+        .select('id, name, category, current_stock, min_stock, unit, supplier, supplier_id, unit_price, created_at, updated_at, user_id')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(200);
 
       if (error) {
         console.error('Error fetching inventory:', error);
         throw error;
       }
 
-      setItems(data || []);
+      setItems((data || []) as InventoryItem[]);
     } catch (error: any) {
       console.error('Inventory fetch error:', error);
       toast({
@@ -55,7 +57,7 @@ export const useInventory = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   const createItem = async (itemData: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
@@ -163,7 +165,7 @@ export const useInventory = () => {
 
   useEffect(() => {
     fetchItems();
-  }, [user]);
+  }, [fetchItems]);
 
   return {
     items,

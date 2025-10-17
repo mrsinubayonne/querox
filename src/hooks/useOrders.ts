@@ -64,8 +64,10 @@ export const useOrders = () => {
       
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('id, customer_name, customer_email, customer_phone, items, total_amount, status, notes, delivery_address, delivery_time, created_at, table_number, order_type, user_id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(100);
 
       if (error) {
         console.error('Error fetching orders:', error);

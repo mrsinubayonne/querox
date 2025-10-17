@@ -34,9 +34,10 @@ export const useCustomers = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select('id, name, email, phone, total_visits, total_spent, last_visit, status, created_at, updated_at, user_id')
         .eq('user_id', user.id)
-        .order('name');
+        .order('name')
+        .limit(200);
 
       if (error) {
         console.error('Error fetching customers:', error);

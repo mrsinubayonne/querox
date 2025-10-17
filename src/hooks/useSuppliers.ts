@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +22,7 @@ export const useSuppliers = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchSuppliers = async () => {
+  const fetchSuppliers = useCallback(async () => {
     if (!user) {
       setSuppliers([]);
       setLoading(false);
@@ -33,11 +33,12 @@ export const useSuppliers = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('suppliers')
-        .select('*')
+        .select('id, user_id, name, contact_person, email, phone, address, notes, created_at, updated_at')
+        .eq('user_id', user.id)
         .order('name');
 
       if (error) throw error;
-      setSuppliers(data || []);
+      setSuppliers((data || []) as Supplier[]);
     } catch (error: any) {
       console.error('Suppliers fetch error:', error);
       toast({
@@ -49,7 +50,7 @@ export const useSuppliers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   const createSupplier = async (supplierData: Omit<Supplier, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return false;
@@ -141,7 +142,7 @@ export const useSuppliers = () => {
 
   useEffect(() => {
     fetchSuppliers();
-  }, [user]);
+  }, [fetchSuppliers]);
 
   return {
     suppliers,

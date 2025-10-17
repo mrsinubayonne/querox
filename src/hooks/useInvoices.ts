@@ -40,11 +40,12 @@ export const useInvoices = () => {
       const { data, error } = await supabase
         .from('invoices')
         .select(`
-          *,
+          id, user_id, order_id, invoice_number, total_amount, status, due_date, paid_date, notes, created_at, updated_at,
           order:orders(customer_name, customer_email, customer_phone)
         `)
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(100);
 
       if (error) throw error;
       setInvoices((data || []) as Invoice[]);
