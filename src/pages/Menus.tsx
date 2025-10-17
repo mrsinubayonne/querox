@@ -12,6 +12,7 @@ import { Menu, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { APP_CONFIG } from '@/config/app.config';
 
 interface MenuType {
   id: string;
@@ -87,9 +88,7 @@ const Menus: React.FC = () => {
       return;
     }
     
-    const publicUrl = `https://querox.me/menu/${activeMenu.id}`;
-    
-    // Ouvrir dans un nouvel onglet
+    const publicUrl = APP_CONFIG.urls.getPublicMenuUrl(activeMenu.id);
     window.open(publicUrl, '_blank');
   }, [activeMenu, toast]);
 

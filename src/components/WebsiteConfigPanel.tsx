@@ -7,6 +7,7 @@ import { Textarea } from "./ui/textarea";
 import LogoUpload from "./LogoUpload";
 import SimpleImageUploader from "./SimpleImageUploader";
 import { debounce } from "lodash";
+import { APP_CONFIG } from "@/config/app.config";
 
 interface WebsiteConfigPanelProps {
   tab: string;
@@ -212,7 +213,7 @@ const WebsiteConfigPanel: React.FC<WebsiteConfigPanelProps> = ({
                   required
                   disabled={!website}
                 />
-                <span className="text-gray-400">.querox.me</span>
+                <span className="text-gray-400">.{APP_CONFIG.domains.main}</span>
                 {slugChecking && (
                   <span className="text-xs text-gray-400 animate-pulse ml-2">Vérif...</span>
                 )}
@@ -221,7 +222,7 @@ const WebsiteConfigPanel: React.FC<WebsiteConfigPanelProps> = ({
                 {!slugMsg
                   ? (
                     <span className="text-green-600">
-                      Lien de prévisualisation : <span className="font-mono">https://{slug || "slug"}.querox.me</span>
+                      Lien de prévisualisation : <span className="font-mono">{APP_CONFIG.urls.getSubdomain(slug || "slug")}</span>
                     </span>
                   )
                   : (

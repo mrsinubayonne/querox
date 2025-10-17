@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Mail, Phone, MessageSquare, Headphones, Clock, MapPin } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { APP_CONFIG } from '@/config/app.config';
 
 const SupportSection: React.FC = () => {
   const { toast } = useToast();
@@ -33,7 +34,7 @@ const SupportSection: React.FC = () => {
     {
       icon: Mail,
       title: 'Email',
-      description: 'contact@querox.me',
+      description: APP_CONFIG.contact.email,
       action: 'Envoyer un email'
     },
     {

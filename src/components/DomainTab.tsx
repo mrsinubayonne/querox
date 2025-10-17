@@ -8,6 +8,7 @@ import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Globe, CheckCircle2, AlertCircle, Copy } from "lucide-react";
+import { APP_CONFIG } from "@/config/app.config";
 
 const DomainTab: React.FC = () => {
   const { website, loading } = useRestaurantSettings();
@@ -57,7 +58,7 @@ const DomainTab: React.FC = () => {
 
       toast({
         title: "Site publié",
-        description: `Votre site est maintenant accessible sur https://querox.me/w/${slug}`,
+        description: `Votre site est maintenant accessible sur ${APP_CONFIG.urls.getPublicWebsiteUrl(slug)}`,
       });
     } catch (error: any) {
       toast({
@@ -111,7 +112,7 @@ const DomainTab: React.FC = () => {
     return <div>Chargement...</div>;
   }
 
-  const queroxDomain = slug ? `${slug}.querox.me` : 'votre-restaurant.querox.me';
+  const queroxDomain = slug ? APP_CONFIG.urls.getSubdomain(slug) : APP_CONFIG.urls.getSubdomain('votre-restaurant');
 
   return (
     <div className="space-y-6">
@@ -138,7 +139,7 @@ const DomainTab: React.FC = () => {
                   placeholder="mon-restaurant"
                   className="flex-1"
                 />
-                <span className="text-muted-foreground whitespace-nowrap">.querox.me</span>
+                <span className="text-muted-foreground whitespace-nowrap">.{APP_CONFIG.domains.main}</span>
               </div>
             </div>
             {slugAvailable === false && (
@@ -159,14 +160,14 @@ const DomainTab: React.FC = () => {
             <Globe className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <span>
-                Votre site sera accessible sur: <strong>https://querox.me/w/{slug || 'votre-slug'}</strong>
+                Votre site sera accessible sur: <strong>{APP_CONFIG.urls.getPublicWebsiteUrl(slug || 'votre-slug')}</strong>
               </span>
               {slug && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={() => {
-                    copyToClipboard(`https://querox.me/w/${slug}`);
+                    copyToClipboard(APP_CONFIG.urls.getPublicWebsiteUrl(slug));
                   }}
                 >
                   <Copy className="h-4 w-4" />

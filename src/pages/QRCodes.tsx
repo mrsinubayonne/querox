@@ -10,6 +10,7 @@ import { QrCode as QrCodeIcon, Menu, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { APP_CONFIG } from '@/config/app.config';
 
 interface MenuType {
   id: string;
@@ -41,7 +42,6 @@ const QRCodes: React.FC = () => {
         .eq('is_active', true);
 
       if (error) {
-        console.error('Erreur récupération menus:', error);
         return;
       }
 
@@ -50,13 +50,13 @@ const QRCodes: React.FC = () => {
         setActiveMenu(data[0]);
       }
     } catch (error) {
-      console.error('Erreur:', error);
+      // Error handled silently
     }
   };
 
   const getMenuUrl = () => {
     if (!activeMenu) return '';
-    return `https://querox.me/menu-public?menu_id=${activeMenu.id}`;
+    return APP_CONFIG.urls.getPublicMenuUrl(activeMenu.id);
   };
 
   return (

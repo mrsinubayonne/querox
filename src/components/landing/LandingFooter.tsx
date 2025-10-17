@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Instagram, Mail, MapPin, ArrowRight } from "lucide-react";
+import { APP_CONFIG } from '@/config/app.config';
 const LandingFooter: React.FC = () => {
   const navigate = useNavigate();
   const footerLinks = {
@@ -28,7 +29,7 @@ const LandingFooter: React.FC = () => {
     }],
     support: [{
       label: 'Contact',
-      href: 'mailto:contact@querox.me'
+      href: `mailto:${APP_CONFIG.contact.email}`
     }]
   };
 
@@ -82,7 +83,7 @@ const LandingFooter: React.FC = () => {
               
               <div className="flex items-center space-x-2 text-muted-foreground">
                 <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="text-sm sm:text-base">contact@querox.me</span>
+                <span className="text-sm sm:text-base">{APP_CONFIG.contact.email}</span>
               </div>
             </div>
             <div className="flex space-x-4 sm:space-x-6">
