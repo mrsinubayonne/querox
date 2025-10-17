@@ -31,7 +31,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
     description: '',
     price: 0,
     category_id: '',
-    image_url: '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png',
+    image_url: APP_CONFIG.images.defaultMenuItem,
     is_available: true,
     allergens: [] as string[]
   });
@@ -56,7 +56,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
         description: '',
         price: 0,
         category_id: '',
-        image_url: '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png',
+        image_url: APP_CONFIG.images.defaultMenuItem,
         is_available: true,
         allergens: []
       });

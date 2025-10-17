@@ -96,7 +96,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
         
         {plan.spotsLeft && plan.tier !== 'licence' && (
           <div className="mt-2 inline-flex items-center justify-center bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-semibold">
-            🔥 Plus que {plan.spotsLeft} places disponibles
+            ⚡ Plus que {plan.spotsLeft} places disponibles
           </div>
         )}
         

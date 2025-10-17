@@ -44,7 +44,7 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
         <>
           <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2 -mr-2">
             {cart.map(item => <div key={item.id} className="flex items-center gap-4">
-                <img src={item.image_url || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"} alt={item.name} className="w-16 h-16 object-cover rounded-lg" />
+                <SafeImage src={item.image_url || APP_CONFIG.images.defaultMenuItem} alt={item.name} className="w-16 h-16 object-cover rounded-lg" />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-gray-800 truncate">{item.name}</h4>
                   <p className="text-sm text-gray-500">

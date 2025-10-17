@@ -11,6 +11,7 @@ import CategoryFilter from '@/components/CategoryFilter';
 import MenuSearch from '@/components/public-menu/MenuSearch';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { AlertTriangle } from 'lucide-react';
+import SafeImage from '@/components/SafeImage';
 
 const PublicMenu: React.FC = () => {
   const [showCart, setShowCart] = useState(false);
@@ -50,7 +51,7 @@ const PublicMenu: React.FC = () => {
             Pour afficher un menu, l'adresse de la page doit inclure l'identifiant du menu, comme ceci :
             <br />
             <code className="bg-gray-200 text-gray-700 rounded-md px-2 py-1 mt-2 inline-block">
-              /menu-public?menu_id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+              /menu/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
             </code>
           </p>
           <p className="mt-8 text-sm text-gray-400">Si vous êtes le propriétaire du restaurant, vous pouvez trouver ce lien dans votre panneau d'administration des menus.</p>
@@ -77,7 +78,7 @@ const PublicMenu: React.FC = () => {
                 <div className="text-center mb-10">
                   {menuData.header_image_url && (
                     <div className="mb-8 rounded-2xl overflow-hidden shadow-lg">
-                      <img
+                      <SafeImage
                         src={menuData.header_image_url}
                         alt={menuData.name}
                         className="w-full h-64 md:h-80 object-cover"

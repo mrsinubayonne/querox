@@ -41,7 +41,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
     statut: 'planifié',
     prix: 0,
     organisateur: '',
-    image: '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png'
+    image: APP_CONFIG.images.defaultMenuItem
   });
 
   useEffect(() => {
@@ -56,7 +56,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
         statut: event.statut,
         prix: event.prix,
         organisateur: event.organisateur,
-        image: event.image || '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png'
+        image: event.image || APP_CONFIG.images.defaultMenuItem
       });
     }
   }, [event]);

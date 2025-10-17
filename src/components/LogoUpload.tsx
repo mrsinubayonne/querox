@@ -44,15 +44,14 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ currentLogo, onLogoChange }) =>
   };
 
   const removeLogo = () => {
-    console.log('Removing logo');
-    onLogoChange('/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png');
+    onLogoChange(APP_CONFIG.images.defaultMenuItem);
   };
 
   return (
     <div>
       <label className="block mb-2 font-medium text-sm">Logo du restaurant</label>
       <div className="border rounded-lg p-2 space-y-2">
-        {currentLogo && currentLogo !== '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png' ? (
+        {currentLogo && currentLogo !== APP_CONFIG.images.defaultMenuItem ? (
           <div className="relative">
             <img src={currentLogo} alt="Logo" className="w-full h-40 object-contain rounded-md bg-gray-50" />
             <Button

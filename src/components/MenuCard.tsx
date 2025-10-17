@@ -8,6 +8,7 @@ import {
   Edit, 
   Trash
 } from 'lucide-react';
+import SafeImage from './SafeImage';
 
 interface MenuItem {
   id: string | number;
@@ -38,12 +39,12 @@ const MenuCard: React.FC<MenuCardProps> = ({
   return (
     <Card className="overflow-hidden shadow-sm border border-gray-200">
       <div className="relative">
-        <img 
+        <SafeImage 
           src={item.image} 
           alt={item.name}
           className="w-full h-48 object-cover"
         />
-        <Badge 
+        <Badge
           className={`absolute top-3 right-3 ${
             item.status === "Disponible" 
               ? "bg-green-500 text-white" 

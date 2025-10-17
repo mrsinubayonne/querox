@@ -51,14 +51,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ currentImage, onImageChange }
   };
 
   const removeImage = () => {
-    onImageChange('/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png');
+    onImageChange(APP_CONFIG.images.defaultMenuItem);
   };
 
   return (
     <div className="space-y-2">
       <Label>Image du plat</Label>
       
-      {currentImage && currentImage !== '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png' ? (
+      {currentImage && currentImage !== APP_CONFIG.images.defaultMenuItem ? (
         <div className="relative">
           <img 
             src={currentImage} 

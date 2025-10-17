@@ -43,9 +43,9 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEdit, onDelete, formatCu
     <div className="p-6 border border-gray-100 rounded-2xl bg-white/50 hover:bg-white/80 transition-colors">
       <div className="flex items-start gap-6 mb-4">
         <div className="flex-shrink-0">
-          {event.image && event.image !== '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png' ? (
-            <img 
-              src={event.image} 
+          {event.image && event.image !== APP_CONFIG.images.defaultMenuItem ? (
+            <SafeImage 
+              src={event.image}
               alt={event.nom}
               className="w-20 h-20 rounded-lg object-cover border border-gray-200"
             />

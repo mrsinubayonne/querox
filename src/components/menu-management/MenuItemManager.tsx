@@ -133,8 +133,8 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
             {itemsToShow.map((item) => (
               <Card key={item.id} className="overflow-hidden">
                 <div className="aspect-video bg-gray-100 overflow-hidden">
-                  <img
-                    src={item.image_url || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"}
+                  <SafeImage
+                    src={item.image_url || APP_CONFIG.images.defaultMenuItem}
                     alt={item.name}
                     className="w-full h-full object-cover"
                   />

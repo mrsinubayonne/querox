@@ -3,6 +3,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { MenuItem } from '@/types/menu';
+import SafeImage from '@/components/SafeImage';
+import { APP_CONFIG } from '@/config/app.config';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -13,8 +15,8 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, onAddToCart }) => {
   return (
     <article className="bg-white rounded-xl shadow-sm overflow-hidden group transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border flex flex-col">
       <div className="relative aspect-[4/3] overflow-hidden">
-        <img
-          src={item.image_url || "/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png"}
+        <SafeImage
+          src={item.image_url || APP_CONFIG.images.defaultMenuItem}
           alt={item.name}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
