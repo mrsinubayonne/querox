@@ -217,6 +217,47 @@ const Comptabilite = () => {
       
       <div className="flex-1 p-4">
         <div className="max-w-7xl mx-auto space-y-4">
+          <div className="flex justify-between items-center mb-4">
+            <input
+              id="import-transactions"
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                
+                try {
+                  const text = await file.text();
+                  const data = JSON.parse(text);
+                  
+                  if (data.transactions?.length > 0) {
+                    for (const t of data.transactions) {
+                      await createTransaction({
+                        title: t.title,
+                        amount: t.amount,
+                        type: t.type,
+                        category: t.category,
+                        date: t.date,
+                        status: t.status || 'completed',
+                        description: t.description
+                      });
+                    }
+                    toast({ title: "Import réussi", description: "Les transactions ont été importées" });
+                  }
+                } catch (error) {
+                  toast({ title: "Erreur", description: "Erreur lors de l'import", variant: "destructive" });
+                }
+              }}
+            />
+            <button 
+              onClick={() => document.getElementById('import-transactions')?.click()}
+              className="px-4 py-2 bg-primary text-white rounded-md"
+            >
+              Importer
+            </button>
+          </div>
+          
           <AccountingHeader
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}

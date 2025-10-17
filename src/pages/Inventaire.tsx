@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Package, Plus, AlertTriangle, TrendingDown, TrendingUp, Users, Trash2, Edit, Download } from 'lucide-react';
+import { Package, Plus, AlertTriangle, TrendingDown, TrendingUp, Users, Trash2, Edit, Download, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
@@ -107,6 +107,42 @@ const Inventaire: React.FC = () => {
               <p className="text-muted-foreground">Gérez les stocks de votre restaurant</p>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" onClick={() => document.getElementById('import-inventory')?.click()}>
+                <Upload className="mr-2 h-4 w-4" />
+                Importer
+              </Button>
+              <input
+                id="import-inventory"
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  
+                  try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    
+                    if (data.inventory?.length > 0) {
+                      for (const item of data.inventory) {
+                        await createItem({
+                          name: item.name,
+                          category: item.category,
+                          current_stock: item.current_stock || 0,
+                          min_stock: item.min_stock || 0,
+                          unit: item.unit,
+                          unit_price: item.unit_price || 0,
+                          supplier_id: item.supplier_id
+                        });
+                      }
+                      alert('Import réussi !');
+                    }
+                  } catch (error) {
+                    alert('Erreur lors de l\'import');
+                  }
+                }}
+              />
               <Button variant="outline">
                 <Download className="mr-2 h-4 w-4" />
                 Exporter

@@ -22,6 +22,17 @@ const Clients: React.FC = () => {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Clients</h1>
               <p className="text-gray-600">Gérez votre base de données clients</p>
             </div>
+            <div>
+              <input
+                id="import-clients"
+                type="file"
+                accept=".json"
+                className="hidden"
+              />
+              <Button variant="outline" onClick={() => document.getElementById('import-clients')?.click()}>
+                Importer des clients
+              </Button>
+            </div>
           </div>
 
           {/* Staff Request Section */}

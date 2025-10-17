@@ -88,77 +88,116 @@ const Reservations: React.FC = () => {
               <h1 className="text-2xl font-bold">Réservations</h1>
               <p className="text-muted-foreground">Gérez vos réservations de tables</p>
             </div>
-            <Dialog open={showNewReservation} onOpenChange={setShowNewReservation}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nouvelle réservation
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Nouvelle réservation</DialogTitle>
-                  <DialogDescription>Créez une nouvelle réservation pour un client</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleNewReservation} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Nom du client *</Label>
-                      <Input id="name" name="name" placeholder="Jean Dupont" required />
+            <div className="flex gap-2">
+              <input
+                id="import-reservations"
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  
+                  try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    
+                    if (data.reservations?.length > 0) {
+                      for (const r of data.reservations) {
+                        await createReservation({
+                          customer_name: r.customer_name,
+                          customer_phone: r.customer_phone,
+                          customer_email: r.customer_email,
+                          reservation_date: r.reservation_date,
+                          reservation_time: r.reservation_time,
+                          party_size: r.party_size,
+                          special_requests: r.special_requests,
+                          status: r.status || 'pending',
+                          table_number: r.table_number
+                        });
+                      }
+                      alert('Import réussi !');
+                    }
+                  } catch (error) {
+                    alert('Erreur lors de l\'import');
+                  }
+                }}
+              />
+              <Button variant="outline" onClick={() => document.getElementById('import-reservations')?.click()}>
+                Importer
+              </Button>
+              <Dialog open={showNewReservation} onOpenChange={setShowNewReservation}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nouvelle réservation
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Nouvelle réservation</DialogTitle>
+                    <DialogDescription>Créez une nouvelle réservation pour un client</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleNewReservation} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Nom du client *</Label>
+                        <Input id="name" name="name" placeholder="Jean Dupont" required />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Téléphone *</Label>
+                        <Input id="phone" name="phone" type="tel" placeholder="+33 6 12 34 56 78" required />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" name="email" type="email" placeholder="jean.dupont@example.com" />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="guests">Nombre de personnes *</Label>
+                        <Select name="guests" required>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                              <SelectItem key={num} value={num.toString()}>{num} {num === 1 ? 'personne' : 'personnes'}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="date">Date *</Label>
+                        <Input id="date" name="date" type="date" required />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="time">Heure *</Label>
+                        <Input id="time" name="time" type="time" required />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="table">Numéro de table</Label>
+                        <Input id="table" name="table" placeholder="Table 5" />
+                      </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Téléphone *</Label>
-                      <Input id="phone" name="phone" type="tel" placeholder="+33 6 12 34 56 78" required />
+                      <Label htmlFor="notes">Notes</Label>
+                      <Textarea id="notes" name="notes" placeholder="Informations supplémentaires..." rows={3} />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input id="email" name="email" type="email" placeholder="jean.dupont@example.com" />
+                    <div className="flex gap-3">
+                      <Button type="submit">Créer la réservation</Button>
+                      <Button type="button" variant="outline" onClick={() => setShowNewReservation(false)}>Annuler</Button>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="guests">Nombre de personnes *</Label>
-                      <Select name="guests" required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                            <SelectItem key={num} value={num.toString()}>{num} {num === 1 ? 'personne' : 'personnes'}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="date">Date *</Label>
-                      <Input id="date" name="date" type="date" required />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="time">Heure *</Label>
-                      <Input id="time" name="time" type="time" required />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="table">Numéro de table</Label>
-                      <Input id="table" name="table" placeholder="Table 5" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Notes</Label>
-                    <Textarea id="notes" name="notes" placeholder="Informations supplémentaires..." rows={3} />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button type="submit">Créer la réservation</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowNewReservation(false)}>Annuler</Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           {/* Stats Cards */}

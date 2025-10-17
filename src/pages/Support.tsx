@@ -28,36 +28,12 @@ const Support: React.FC = () => {
       answer: 'Rendez-vous dans la section "QR Codes" du menu principal. Sélectionnez le menu que vous souhaitez partager, puis cliquez sur "Générer QR Code". Le QR code sera créé instantanément. Vous pouvez le télécharger en haute résolution, l\'imprimer et le placer sur vos tables, vitrines ou supports marketing. Vos clients pourront scanner le code avec leur smartphone pour accéder directement à votre menu en ligne.'
     },
     {
-      question: 'Comment gérer les réservations ?',
-      answer: 'Accédez à la section "Réservations" où vous trouverez un tableau de bord complet. Vous pouvez voir toutes les réservations à venir et passées, créer de nouvelles réservations manuellement, modifier les détails (date, heure, nombre de personnes), confirmer ou annuler des réservations, et envoyer des notifications automatiques aux clients par email ou SMS.'
-    },
-    {
       question: 'Comment suivre mon inventaire ?',
       answer: 'La section "Inventaire" vous offre une gestion complète de vos stocks. Vous pouvez ajouter des produits avec leurs quantités, unités et seuils d\'alerte, suivre les mouvements d\'entrée et sortie, recevoir des alertes automatiques lorsque les stocks sont faibles, générer des rapports d\'inventaire, et gérer vos fournisseurs. Le système met à jour automatiquement les quantités lors des ventes.'
     },
     {
-      question: 'Puis-je personnaliser mon site web ?',
-      answer: 'Absolument ! Dans la section "Site Web", vous disposez d\'un éditeur complet pour personnaliser votre site vitrine. Vous pouvez modifier le design et les couleurs pour correspondre à votre charte graphique, ajouter vos propres photos et logo, éditer tous les textes et contenus, créer plusieurs pages (accueil, menu, contact, à propos), intégrer votre menu en ligne avec QR code, et publier votre site sur votre propre nom de domaine.'
-    },
-    {
-      question: 'Comment fonctionne le système de commandes en ligne ?',
-      answer: 'Vos clients peuvent passer commande directement depuis votre menu en ligne accessible via QR code ou votre site web. Ils sélectionnent leurs plats, ajoutent des instructions spéciales si nécessaire, et valident leur commande. Vous recevez une notification sonore et visuelle instantanément dans votre tableau de bord "Commandes". Vous pouvez alors accepter, préparer et suivre chaque commande en temps réel.'
-    },
-    {
-      question: 'Comment gérer la comptabilité de mon restaurant ?',
-      answer: 'La section "Comptabilité" vous permet de gérer toutes vos finances en un seul endroit. Enregistrez vos revenus et dépenses, catégorisez vos transactions, générez des rapports financiers (journaliers, mensuels, annuels), suivez votre trésorerie en temps réel, exportez vos données pour votre comptable, et analysez la rentabilité de votre établissement avec des graphiques détaillés.'
-    },
-    {
-      question: 'Quels sont les différents forfaits d\'abonnement disponibles ?',
-      answer: 'Querox propose plusieurs forfaits adaptés à vos besoins : un forfait Starter pour débuter avec les fonctionnalités essentielles, un forfait Pro avec toutes les fonctionnalités avancées (site web, réservations, inventaire complet), et un forfait Enterprise pour les chaînes de restaurants avec support prioritaire. Consultez la section "Abonnement" pour voir tous les détails et choisir le forfait qui vous convient.'
-    },
-    {
       question: 'Comment contacter le support ?',
       answer: 'Pour toute question ou problème, contactez-nous directement via WhatsApp au +242 05 010 3710. Notre équipe est disponible pour vous répondre rapidement. Vous pouvez également consulter nos tutoriels vidéo sur YouTube pour apprendre à utiliser toutes les fonctionnalités de la plateforme.'
-    },
-    {
-      question: 'Puis-je essayer Querox gratuitement ?',
-      answer: 'Oui ! Querox propose une période d\'essai gratuite qui vous permet de tester toutes les fonctionnalités de la plateforme sans engagement. Vous pourrez créer vos menus, générer vos QR codes, configurer votre site web et découvrir tous les outils disponibles. Aucune carte bancaire n\'est requise pour l\'essai.'
     }
   ];
 

@@ -102,7 +102,19 @@ const Menus: React.FC = () => {
             <p className="text-gray-600 mt-2">Gérez vos menus et vos plats</p>
           </div>
           
-          <div>
+          <div className="flex gap-2">
+            <input
+              id="import-menus"
+              type="file"
+              accept=".json"
+              className="hidden"
+            />
+            <Button 
+              variant="outline"
+              onClick={() => document.getElementById('import-menus')?.click()}
+            >
+              Importer
+            </Button>
             <Button 
               onClick={handleViewPublicMenu}
               variant="outline" 
