@@ -7,6 +7,7 @@ export const plans = [
     annualPrice: "620",
     annualPeriod: "€/an",
     description: "Parfait pour débuter avec les fonctionnalités essentielles",
+    spotsLeft: 12,
     features: [
       "Site web basique (vitrine + menu)",
       "Menu digital QR code (commandes sur place)",
@@ -26,6 +27,7 @@ export const plans = [
     annualPrice: "1040",
     annualPeriod: "€/an",
     description: "Idéal pour les restaurants en croissance",
+    spotsLeft: 4,
     features: [
       "Site web avancé (design pro + SEO basique)",
       "Menu digital QR code (commandes en salle ET en ligne, livraison & click&collect)",
@@ -49,6 +51,7 @@ export const plans = [
     annualPrice: "1355",
     annualPeriod: "€/an",
     description: "Pour les chaînes et grandes structures",
+    spotsLeft: 7,
     features: [
       "Tout le Plan Pro",
       "Notifications temps réel sur mobile (vols, pertes, ruptures, pics de commandes)",

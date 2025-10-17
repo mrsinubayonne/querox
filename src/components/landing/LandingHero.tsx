@@ -103,16 +103,20 @@ const LandingHero: React.FC = () => {
           </div>
         </div>
 
-        {/* Image/Mockup Section - Hidden on small screens */}
+        {/* Video/Mockup Section - Hidden on small screens */}
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-24 sm:translate-y-32 w-full max-w-5xl px-4 hidden md:block">
           <div className="relative">
             <div className="bg-card/10 backdrop-blur-xl border border-border rounded-2xl sm:rounded-3xl p-1 sm:p-2 shadow-2xl">
               <div className="bg-gradient-to-br from-card via-muted to-card rounded-xl sm:rounded-2xl overflow-hidden">
-                <img
-                  className="w-full h-[300px] sm:h-[400px] lg:h-[600px] object-cover opacity-90"
-                  src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
-                  alt="Interface QUEROX - Tableau de bord moderne"
-                />
+                <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                  <iframe
+                    className="absolute top-0 left-0 w-full h-full"
+                    src="https://www.youtube.com/embed/0aQ0z3w58os?rel=0&modestbranding=1"
+                    title="Présentation QUEROX"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
               </div>
             </div>
           </div>

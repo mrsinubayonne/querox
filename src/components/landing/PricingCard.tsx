@@ -20,6 +20,7 @@ interface PricingPlan {
   tier: string;
   isWhatsApp?: boolean;
   whatsappNumber?: string;
+  spotsLeft?: number;
 }
 
 interface PricingCardProps {
@@ -102,6 +103,12 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
       
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+        
+        {plan.spotsLeft && plan.tier !== 'licence' && (
+          <div className="mt-2 inline-flex items-center justify-center bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-semibold">
+            🔥 Plus que {plan.spotsLeft} places disponibles
+          </div>
+        )}
         
         {plan.tier !== 'licence' && plan.annualPrice ? (
           <Tabs value={billingPeriod} onValueChange={(value) => setBillingPeriod(value as 'monthly' | 'annual')} className="w-full">
