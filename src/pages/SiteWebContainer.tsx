@@ -27,14 +27,7 @@ const generateWhatsAppMessage = (data: SiteWebRequestFields) => {
     (typeof data.color === "string" && data.color
       ? `Couleur souhaitée : ${data.color}\n`
       : "") +
-    (typeof data.maintenanceManagement === "string"
-      ? `Maintenance + gestion : ${
-          data.maintenanceManagement === "yes"
-            ? "Oui"
-            : "Non"
-        }\n`
-      : "") +
-    (data.notes ? `Infos complémentaires : ${data.notes}\n` : "")
+    (data.notes ? `Infos complémentaires : ${data.notes}\n` : "")
   );
 };
 

@@ -14,7 +14,6 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Palette } from "lucide-react";
 
 // Objectifs proposés
@@ -36,14 +35,10 @@ const FONCTIONNALITES = [
   "Carte Google Maps",
 ];
 
-// Nouveau schéma : ajout champ "color"
 const formSchema = z.object({
   restaurantName: z.string().min(2, "Nom requis"),
   address: z.string().min(5, "Adresse requise"),
-  maintenanceManagement: z.enum(["yes", "no"], {
-    required_error: "Merci de choisir si vous souhaitez la maintenance.",
-  }),
-  color: z.string().min(2, "Merci d’indiquer une couleur souhaitée"), // nouveau champ couleur
+  color: z.string().min(2, "Merci d'indiquer une couleur souhaitée"),
   notes: z.string().optional(),
 });
 
@@ -63,7 +58,6 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
     defaultValues: {
       restaurantName: "",
       address: "",
-      maintenanceManagement: undefined,
       color: "",
       notes: "",
     },
@@ -84,7 +78,7 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Quel est le nom de votre restaurant ?
+                  Quel est le nom de votre restaurant ?
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -103,7 +97,7 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Où est-il situé ? <span className="font-normal">(Adresse complète)</span>
+                  Où est-il situé ? <span className="font-normal">(Adresse complète)</span>
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -134,40 +128,6 @@ const SiteWebRequestForm: React.FC<SiteWebRequestFormProps> = ({
                   placeholder="Ex: Violet, rouge, couleurs du logo..."
                   {...field}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Maintenance + Gestion */}
-        <FormField
-          control={form.control}
-          name="maintenanceManagement"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Souhaitez-vous inclure la maintenance de votre site + gestion ?
-              </FormLabel>
-              <FormControl>
-                <RadioGroup
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  className="flex flex-col gap-2 mt-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="yes" id="maintenance-yes" />
-                    <label htmlFor="maintenance-yes" className="text-sm">
-                      Oui <span className="text-green-600 font-semibold">(seulement 2000f supplémentaire)</span>
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="no" id="maintenance-no" />
-                    <label htmlFor="maintenance-no" className="text-sm">
-                      Non merci
-                    </label>
-                  </div>
-                </RadioGroup>
               </FormControl>
               <FormMessage />
             </FormItem>
