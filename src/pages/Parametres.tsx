@@ -9,14 +9,12 @@ import {
   Bell, 
   Shield,
   Users,
-  Globe,
   Database
 } from "lucide-react";
 import ProfileTab from "@/components/ProfileTab";
 import { NotificationsTab } from "@/components/NotificationsTab";
 import { SecurityTab } from "@/components/SecurityTab";
 import { EquipeTab } from "@/components/EquipeTab";
-import DomainTab from "@/components/DomainTab";
 import { DataTab } from "@/components/DataTab";
 
 const Parametres = () => {
@@ -46,7 +44,7 @@ const Parametres = () => {
       
       <main className="container max-w-4xl py-8">
         <Tabs defaultValue="profile" className="max-w-3xl mx-auto">
-          <TabsList className="mb-8 grid grid-cols-6 w-full mx-auto">
+          <TabsList className="mb-8 grid grid-cols-5 w-full mx-auto">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Mon profil
@@ -62,10 +60,6 @@ const Parametres = () => {
             <TabsTrigger value="equipe" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Équipe
-            </TabsTrigger>
-            <TabsTrigger value="domain" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              Domaine
             </TabsTrigger>
             <TabsTrigger value="data" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
@@ -92,10 +86,6 @@ const Parametres = () => {
 
           <TabsContent value="equipe" className="space-y-6">
             <EquipeTab />
-          </TabsContent>
-
-          <TabsContent value="domain" className="space-y-6">
-            <DomainTab />
           </TabsContent>
 
           <TabsContent value="data" className="space-y-6">
