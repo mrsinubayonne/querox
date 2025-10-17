@@ -34,7 +34,8 @@ export const APP_CONFIG = {
   // Contact
   contact: {
     email: 'contact@querox.me',
-    phone: '+33 1 23 45 67 89',
+    phone: '+242 05 010 3710',
+    whatsapp: '+242 05 010 3710',
   },
   
   // Limites

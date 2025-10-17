@@ -53,7 +53,7 @@ const Support: React.FC = () => {
     },
     {
       question: 'Comment contacter le support ?',
-      answer: 'Pour toute question ou problème, contactez-nous directement via WhatsApp au +242 06 456 3021. Notre équipe est disponible pour vous répondre rapidement. Vous pouvez également consulter nos tutoriels vidéo sur YouTube pour apprendre à utiliser toutes les fonctionnalités de la plateforme.'
+      answer: 'Pour toute question ou problème, contactez-nous directement via WhatsApp au +242 05 010 3710. Notre équipe est disponible pour vous répondre rapidement. Vous pouvez également consulter nos tutoriels vidéo sur YouTube pour apprendre à utiliser toutes les fonctionnalités de la plateforme.'
     },
     {
       question: 'Puis-je essayer Querox gratuitement ?',
@@ -88,7 +88,7 @@ const Support: React.FC = () => {
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 mb-2">Contactez-nous sur WhatsApp</h2>
                       <p className="text-gray-600 mb-4">Notre équipe est disponible pour répondre à toutes vos questions</p>
-                      <p className="text-xl font-semibold text-green-600">+242 06 456 3021</p>
+                      <p className="text-xl font-semibold text-green-600">+242 05 010 3710</p>
                     </div>
                     <Button 
                       onClick={handleWhatsAppClick}

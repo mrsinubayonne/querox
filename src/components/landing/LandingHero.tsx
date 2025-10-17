@@ -110,12 +110,13 @@ const LandingHero: React.FC = () => {
               <div className="bg-gradient-to-br from-card via-muted to-card rounded-xl sm:rounded-2xl overflow-hidden">
                 <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                   <iframe
-                    className="absolute top-0 left-0 w-full h-full"
-                    src="https://www.youtube.com/embed/0aQ0z3w58os?controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&disablekb=1&iv_load_policy=3&cc_load_policy=0&playsinline=1"
+                    className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                    src="https://www.youtube.com/embed/0aQ0z3w58os?autoplay=1&mute=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&disablekb=1&iv_load_policy=3&cc_load_policy=0&playsinline=1&playlist=0aQ0z3w58os"
                     title="Présentation QUEROX"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                    style={{ border: 'none' }}
                   />
+                  <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(transparent 85%, rgba(0,0,0,0.3) 100%)' }} />
                 </div>
               </div>
             </div>
