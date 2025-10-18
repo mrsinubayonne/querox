@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Mail, Lock } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import { supabase } from '@/integrations/supabase/client';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -27,6 +29,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -39,36 +42,86 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setLoading(true);
-      const { error } = await signIn(data.email, data.password);
-
-      if (error) {
-        const isInvalidCreds = (error as any)?.code === 'invalid_credentials' ||
-          (typeof error.message === 'string' && error.message.toLowerCase().includes('invalid login credentials'));
-
-        if (isInvalidCreds) {
-          toast({
-            title: "Pas de compte trouvé",
-            description: "Nous ne reconnaissons pas ces identifiants. Inscrivez-vous pour continuer.",
-            action: (
-              <ToastAction altText="S'inscrire" onClick={onSwitchToSignUp}>
-                S'inscrire
-              </ToastAction>
-            ),
+      
+      // Check if password looks like an access code (6 alphanumeric characters)
+      const isAccessCode = /^[A-Z0-9]{6}$/i.test(data.password.trim());
+      
+      if (isAccessCode) {
+        // Team member login with access code
+        const { data: memberData, error: verifyError } = await supabase
+          .rpc('verify_team_access', {
+            _email: data.email,
+            _access_code: data.password.toUpperCase()
           });
-        } else {
+
+        if (verifyError) {
           toast({
             title: "Erreur de connexion",
-            description: error.message || "Une erreur est survenue",
-            variant: "destructive",
+            description: "Une erreur est survenue lors de la vérification",
+            variant: "destructive"
           });
+          return;
         }
-        return;
-      }
 
-      toast({
-        title: "Connexion réussie !",
-        description: "Bienvenue sur QUEROX",
-      });
+        if (!memberData || memberData.length === 0) {
+          toast({
+            title: "Accès refusé",
+            description: "Email ou code d'accès incorrect",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const member = memberData[0];
+
+        // Store team member session
+        localStorage.setItem('team_member_session', JSON.stringify({
+          memberId: member.member_id,
+          ownerId: member.owner_id,
+          role: member.role,
+          email: data.email,
+          loginTime: new Date().toISOString()
+        }));
+
+        toast({
+          title: "Connexion réussie",
+          description: `Bienvenue ! Vous êtes connecté en tant que ${member.role}`
+        });
+
+        navigate('/dashboard');
+      } else {
+        // Normal owner login with password
+        const { error } = await signIn(data.email, data.password);
+
+        if (error) {
+          const isInvalidCreds = (error as any)?.code === 'invalid_credentials' ||
+            (typeof error.message === 'string' && error.message.toLowerCase().includes('invalid login credentials'));
+
+          if (isInvalidCreds) {
+            toast({
+              title: "Pas de compte trouvé",
+              description: "Nous ne reconnaissons pas ces identifiants. Inscrivez-vous pour continuer.",
+              action: (
+                <ToastAction altText="S'inscrire" onClick={onSwitchToSignUp}>
+                  S'inscrire
+                </ToastAction>
+              ),
+            });
+          } else {
+            toast({
+              title: "Erreur de connexion",
+              description: error.message || "Une erreur est survenue",
+              variant: "destructive",
+            });
+          }
+          return;
+        }
+
+        toast({
+          title: "Connexion réussie !",
+          description: "Bienvenue sur QUEROX",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Erreur de connexion",
@@ -118,10 +171,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
                     <Lock className="h-4 w-4" />
-                    Mot de passe
+                    Mot de passe ou Code d'accès
                   </FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input 
+                      type="password" 
+                      placeholder="Mot de passe ou code 6 caractères" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

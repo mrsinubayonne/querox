@@ -52,7 +52,6 @@ import Support from '@/pages/Support';
 import Factures from '@/pages/Factures';
 import Equipe from '@/pages/Equipe';
 import StaffRequest from '@/pages/StaffRequest';
-import TeamMemberAuth from '@/pages/TeamMemberAuth';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 
@@ -65,7 +64,6 @@ function App() {
               {/* Routes publiques */}
               <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/team-auth" element={<TeamMemberAuth />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/menu/:menuId" element={<PublicMenu />} />
               <Route path="/w/:slug" element={<PublicWebsite />} />

@@ -94,7 +94,7 @@ const Equipe: React.FC = () => {
                 <DialogHeader>
                   <DialogTitle>Ajouter un membre d'équipe</DialogTitle>
                   <DialogDescription>
-                    Un code d'accès unique sera généré pour ce membre
+                    Un code d'accès unique sera généré pour ce membre. Il pourra se connecter sur la page de connexion principale avec son email et ce code.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
@@ -195,19 +195,24 @@ const Equipe: React.FC = () => {
                             </span>
                             <span>Ajouté le {formatDate(member.invited_at)}</span>
                           </div>
-                          {(member as any).access_code && (
-                            <div className="flex items-center gap-2 bg-gray-100 p-2 rounded">
-                              <Key className="w-4 h-4 text-gray-600" />
-                              <code className="font-mono font-bold text-sm">{(member as any).access_code}</code>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => copyAccessCode((member as any).access_code)}
-                              >
-                                <Copy className="w-3 h-3" />
-                              </Button>
+                           {(member as any).access_code && (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 bg-gray-100 p-2 rounded">
+                                <Key className="w-4 h-4 text-gray-600" />
+                                <code className="font-mono font-bold text-sm">{(member as any).access_code}</code>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => copyAccessCode((member as any).access_code)}
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </Button>
+                              </div>
+                              <p className="text-xs text-gray-500 ml-6">
+                                Ce code permet la connexion sur /auth
+                              </p>
                             </div>
-                          )}
+                           )}
                         </div>
                       </div>
                       <Button
