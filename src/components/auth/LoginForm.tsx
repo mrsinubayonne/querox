@@ -88,7 +88,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
           description: `Bienvenue ! Vous êtes connecté en tant que ${member.role}`
         });
 
-        navigate('/dashboard');
+        // Redirect to dashboard after successful team member login
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 100);
       } else {
         // Normal owner login with password
         const { error } = await signIn(data.email, data.password);

@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 const ROLES = [
   { value: 'admin', label: 'Administrateur', description: 'Accès complet' },
   { value: 'manager', label: 'Gestionnaire', description: 'Gestion des menus et commandes' },
+  { value: 'cashier', label: 'Caissier', description: 'Commandes et paiements' },
   { value: 'staff', label: 'Personnel', description: 'Consultation uniquement' }
 ];
 
