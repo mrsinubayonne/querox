@@ -135,7 +135,7 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Palette className="h-5 w-5 text-purple-600" />
-            <span>Conception Graphique - 7 000 FCFA</span>
+            <span>Conception Graphique</span>
           </DialogTitle>
         </DialogHeader>
 
