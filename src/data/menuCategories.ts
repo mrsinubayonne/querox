@@ -1,33 +1,153 @@
-
 export const PREDEFINED_CATEGORIES = [
+  // Entrées et Apéritifs
   'Entrées',
+  'Entrées chaudes',
+  'Entrées froides',
+  'Apéritifs',
+  'Amuse-bouches',
+  'Tapas',
+  'Mezzés',
+  'Antipasti',
+  
+  // Plats principaux
   'Plats principaux',
+  'Plats du jour',
+  'Spécialités maison',
+  'Grillades',
   'Viandes',
-  'Poissons et fruits de mer',
+  'Viandes rouges',
+  'Viandes blanches',
   'Volailles',
+  'Gibier',
+  'Poissons',
+  'Fruits de mer',
+  'Poissons et fruits de mer',
+  'Sushis et sashimis',
+  
+  // Pâtes et Pizzas
   'Pâtes',
+  'Pâtes fraîches',
+  'Risottos',
   'Pizzas',
-  'Salades',
+  'Pizzas classiques',
+  'Pizzas spéciales',
+  'Calzones',
+  
+  // Plats spécialisés
+  'Burgers',
+  'Sandwichs',
   'Sandwichs et burgers',
+  'Wraps',
+  'Hot-dogs',
+  'Tacos',
+  'Quesadillas',
+  'Fajitas',
+  
+  // Soupes et Salades
   'Soupes',
+  'Potages',
+  'Bouillons',
+  'Salades',
+  'Salades composées',
+  'Bowls',
+  'Poke bowls',
+  
+  // Spécialités par type
   'Végétarien',
   'Végan',
+  'Sans gluten',
+  'Bio',
+  'Halal',
+  'Casher',
+  
+  // Accompagnements
+  'Accompagnements',
+  'Garnitures',
+  'Légumes',
+  'Féculents',
+  'Frites',
+  'Riz',
+  'Sauces',
+  'Condiments',
+  
+  // Fromages
+  'Fromages',
+  'Plateau de fromages',
+  'Fondues',
+  'Raclettes',
+  
+  // Desserts
   'Desserts',
+  'Pâtisseries',
+  'Gâteaux',
+  'Tartes',
+  'Crêpes',
+  'Gaufres',
   'Glaces',
+  'Sorbets',
+  'Mousses et crèmes',
+  'Fruits frais',
+  'Desserts glacés',
+  
+  // Boissons chaudes
   'Boissons chaudes',
+  'Cafés',
+  'Thés',
+  'Infusions',
+  'Chocolats chauds',
+  
+  // Boissons froides
   'Boissons froides',
+  'Jus de fruits',
+  'Smoothies',
+  'Milkshakes',
+  'Sodas',
+  'Eaux',
+  'Boissons énergisantes',
+  
+  // Boissons alcoolisées
   'Boissons alcoolisées',
   'Vins',
+  'Vins rouges',
+  'Vins blancs',
+  'Vins rosés',
+  'Champagnes',
   'Bières',
+  'Bières pression',
+  'Bières bouteilles',
   'Cocktails',
-  'Accompagnements',
-  'Sauces',
-  'Fromages',
+  'Cocktails avec alcool',
+  'Cocktails sans alcool',
+  'Mocktails',
+  'Spiritueux',
+  'Whiskys',
+  'Rhums',
+  'Vodkas',
+  'Gins',
+  'Digestifs',
+  'Apéritifs alcoolisés',
+  
+  // Repas par moment
   'Petit-déjeuner',
   'Brunch',
-  'Apéritifs',
-  'Tapas',
+  'Goûter',
+  'Menu enfant',
+  'Menu étudiant',
+  
+  // Cuisine du monde
   'Cuisine du monde',
+  'Cuisine française',
+  'Cuisine italienne',
+  'Cuisine japonaise',
+  'Cuisine chinoise',
+  'Cuisine thaï',
+  'Cuisine indienne',
+  'Cuisine mexicaine',
+  'Cuisine américaine',
+  'Cuisine libanaise',
+  'Cuisine marocaine',
+  'Cuisine africaine',
+  'Cuisine espagnole',
   'Spécialités locales',
-  'Menu enfant'
+  'Spécialités régionales'
 ];
