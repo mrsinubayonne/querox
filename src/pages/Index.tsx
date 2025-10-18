@@ -2,9 +2,14 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import LandingNavigation from '../components/landing/LandingNavigation';
-import LandingHero from '../components/landing/LandingHero';
+import SalesFunnelHero from '../components/landing/SalesFunnelHero';
+import ProblemSolution from '../components/landing/ProblemSolution';
+import SocialProof from '../components/landing/SocialProof';
+import HowItWorks from '../components/landing/HowItWorks';
 import LandingFeatures from '../components/landing/LandingFeatures';
 import LandingPricing from '../components/landing/LandingPricing';
+import FAQ from '../components/landing/FAQ';
+import FinalCTA from '../components/landing/FinalCTA';
 import LandingFooter from '../components/landing/LandingFooter';
 
 const Index: React.FC = () => {
@@ -34,9 +39,14 @@ const Index: React.FC = () => {
     <div className="min-h-screen w-full bg-white">
       <LandingNavigation />
       <main className="pt-16 lg:pt-20">
-        <LandingHero />
+        <SalesFunnelHero />
+        <ProblemSolution />
+        <SocialProof />
+        <HowItWorks />
         <LandingFeatures />
         <LandingPricing />
+        <FAQ />
+        <FinalCTA />
       </main>
       <LandingFooter />
     </div>
