@@ -7,24 +7,44 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Users, Mail, UserPlus, Trash2, Shield } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Users, Mail, UserPlus, Trash2, Shield, Link as LinkIcon, Copy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useToast } from '@/hooks/use-toast';
+
+const ROLES = [
+  { value: 'admin', label: 'Administrateur', description: 'Accès complet' },
+  { value: 'manager', label: 'Gestionnaire', description: 'Gestion des menus et commandes' },
+  { value: 'staff', label: 'Personnel', description: 'Consultation uniquement' }
+];
 
 const Equipe: React.FC = () => {
   const { teamMembers, loading, inviteMember, removeMember, canAddMoreMembers, getTeamLimit } = useTeamMembers();
   const { subscription } = useSubscription();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
+  const [selectedRole, setSelectedRole] = useState('manager');
   const [open, setOpen] = useState(false);
 
   const handleInvite = async () => {
     if (email) {
-      await inviteMember(email);
+      await inviteMember(email, selectedRole);
       setEmail('');
+      setSelectedRole('manager');
       setOpen(false);
     }
+  };
+
+  const copyInviteLink = () => {
+    const inviteLink = `${window.location.origin}/equipe?invite=true`;
+    navigator.clipboard.writeText(inviteLink);
+    toast({
+      title: "Lien copié",
+      description: "Le lien d'invitation a été copié dans le presse-papier"
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -84,7 +104,7 @@ const Equipe: React.FC = () => {
                 <DialogHeader>
                   <DialogTitle>Inviter un membre</DialogTitle>
                   <DialogDescription>
-                    Envoyez une invitation pour rejoindre votre équipe
+                    Envoyez une invitation pour rejoindre votre équipe avec un rôle défini
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
@@ -98,13 +118,44 @@ const Equipe: React.FC = () => {
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
+                  
+                  <div>
+                    <Label htmlFor="role">Rôle</Label>
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((role) => (
+                          <SelectItem key={role.value} value={role.value}>
+                            <div>
+                              <div className="font-medium">{role.label}</div>
+                              <div className="text-xs text-gray-500">{role.description}</div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <Button 
+                      onClick={copyInviteLink} 
+                      variant="outline"
+                      className="w-full mb-2"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copier le lien d'invitation
+                    </Button>
+                  </div>
+                  
                   <Button 
                     onClick={handleInvite} 
                     className="w-full bg-purple-600 hover:bg-purple-700"
                     disabled={!email}
                   >
                     <Mail className="w-4 h-4 mr-2" />
-                    Envoyer l'invitation
+                    Envoyer l'invitation par email
                   </Button>
                 </div>
               </DialogContent>
@@ -161,7 +212,7 @@ const Equipe: React.FC = () => {
                           <div className="flex items-center gap-4 text-sm text-gray-600">
                             <span className="flex items-center gap-1">
                               <Shield className="w-4 h-4" />
-                              {member.role}
+                              {ROLES.find(r => r.value === member.role)?.label || member.role}
                             </span>
                             <span>Invité le {formatDate(member.invited_at)}</span>
                             {member.accepted_at && (

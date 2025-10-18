@@ -45,7 +45,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/inventaire'
   }, {
     icon: Users,
-    label: 'Recherche Personnel',
+    label: 'Gestion Équipe',
     path: '/equipe'
   }, {
     icon: QrCode,

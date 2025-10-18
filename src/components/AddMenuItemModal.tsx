@@ -18,12 +18,14 @@ interface AddMenuItemModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  activeMenuId?: string;
 }
 
 const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ 
   isOpen, 
   onClose, 
-  onSuccess 
+  onSuccess,
+  activeMenuId
 }) => {
   const { addMenuItem, loading } = useMenuItems();
   const { categories, menus, refetch } = useMenus();
@@ -61,16 +63,18 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
     // Si c'est une catégorie prédéfinie, la créer d'abord
     if (categoryId.startsWith('predefined-')) {
       const categoryName = categoryId.replace('predefined-', '');
-      const firstMenu = menus[0];
       
-      if (!firstMenu) {
+      // Utiliser le menu actif ou le premier menu disponible
+      const targetMenuId = activeMenuId || menus[0]?.id;
+      
+      if (!targetMenuId) {
         console.error('Aucun menu trouvé');
         return;
       }
 
       const newCategory = await addCategory({
         name: categoryName,
-        menu_id: firstMenu.id,
+        menu_id: targetMenuId,
         description: `Catégorie ${categoryName}`
       });
 
@@ -161,16 +165,18 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
                 <SelectValue placeholder="Sélectionner une catégorie" />
               </SelectTrigger>
               <SelectContent>
-                {categories.length > 0 && (
+                {categories.filter(cat => !activeMenuId || cat.menu_id === activeMenuId).length > 0 && (
                   <>
                     <SelectItem value="header-existing" disabled className="font-semibold text-gray-500">
                       Vos catégories existantes
                     </SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
+                    {categories
+                      .filter(cat => !activeMenuId || cat.menu_id === activeMenuId)
+                      .map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
                   </>
                 )}
                 <SelectItem value="header-suggested" disabled className="font-semibold text-gray-500 border-t pt-2 mt-2">

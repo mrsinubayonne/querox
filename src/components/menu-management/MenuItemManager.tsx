@@ -30,7 +30,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState<EditableMenuItem | null>(null);
   
-  const { items, categories, loading, refetch } = useMenus();
+  const { items, categories, menus, loading, refetch } = useMenus();
   const { toggleAvailability, deleteMenuItem } = useMenuItems();
 
   const itemsToShow = activeMenuId
@@ -114,6 +114,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
             isOpen={showAddModal}
             onClose={() => setShowAddModal(false)}
             onSuccess={handleModalSuccess}
+            activeMenuId={activeMenuId}
           />
         </>
       );
@@ -200,6 +201,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
           isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
           onSuccess={handleModalSuccess}
+          activeMenuId={activeMenuId}
         />
 
         <EditMenuItemModal
