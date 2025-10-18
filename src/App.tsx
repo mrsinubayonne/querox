@@ -77,7 +77,6 @@ function App() {
               <Route path="/all-menus" element={<ProtectedRoute><AllMenus /></ProtectedRoute>} />
               <Route path="/commandes" element={<ProtectedRoute><Commandes /></ProtectedRoute>} />
               <Route path="/inventaire" element={<ProtectedRoute><Inventaire /></ProtectedRoute>} />
-              <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
               <Route path="/qr-codes" element={<ProtectedRoute><QRCodes /></ProtectedRoute>} />
               <Route path="/site-web" element={<ProtectedRoute><SiteWeb /></ProtectedRoute>} />
               <Route path="/site-web-container" element={<ProtectedRoute><SiteWebContainer /></ProtectedRoute>} />

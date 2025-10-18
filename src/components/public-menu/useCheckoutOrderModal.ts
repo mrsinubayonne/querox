@@ -6,9 +6,7 @@ import type { CartItem } from "@/types/menu";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 
 export const ORDER_TYPE_OPTIONS = [
-  { value: "sur_place", label: "À manger sur place" },
-  { value: "emporter", label: "À emporter" },
-  { value: "livrer", label: "À livrer" },
+  { value: "sur_place", label: "À manger sur place" }
 ];
 
 export const TABLE_NUMBERS = Array.from({ length: 20 }, (_, i) => (i + 1).toString());
