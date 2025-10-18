@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Mail, UserPlus, Trash2, Shield, Link as LinkIcon, Copy } from 'lucide-react';
+import { Users, Mail, UserPlus, Trash2, Shield, Copy, Key } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -38,26 +38,16 @@ const Equipe: React.FC = () => {
     }
   };
 
-  const copyInviteLink = () => {
-    const inviteLink = `${window.location.origin}/equipe?invite=true`;
-    navigator.clipboard.writeText(inviteLink);
+  const copyAccessCode = (code: string) => {
+    navigator.clipboard.writeText(code);
     toast({
-      title: "Lien copié",
-      description: "Le lien d'invitation a été copié dans le presse-papier"
+      title: "Code copié",
+      description: "Le code d'accès a été copié dans le presse-papier"
     });
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'accepted':
-        return <Badge className="bg-emerald-500">Actif</Badge>;
-      case 'pending':
-        return <Badge variant="secondary">En attente</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Refusé</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
+    return <Badge className="bg-emerald-500">Actif</Badge>;
   };
 
   const formatDate = (dateString: string | null) => {
@@ -97,14 +87,14 @@ const Equipe: React.FC = () => {
                   disabled={!canAdd}
                 >
                   <UserPlus className="w-4 h-4 mr-2" />
-                  Inviter un membre
+                  Ajouter un membre
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Inviter un membre</DialogTitle>
+                  <DialogTitle>Ajouter un membre d'équipe</DialogTitle>
                   <DialogDescription>
-                    Envoyez une invitation pour rejoindre votre équipe avec un rôle défini
+                    Un code d'accès unique sera généré pour ce membre
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
@@ -137,25 +127,14 @@ const Equipe: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-
-                  <div className="border-t pt-4">
-                    <Button 
-                      onClick={copyInviteLink} 
-                      variant="outline"
-                      className="w-full mb-2"
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copier le lien d'invitation
-                    </Button>
-                  </div>
                   
                   <Button 
                     onClick={handleInvite} 
                     className="w-full bg-purple-600 hover:bg-purple-700"
                     disabled={!email}
                   >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Envoyer l'invitation par email
+                    <Key className="w-4 h-4 mr-2" />
+                    Générer le code d'accès
                   </Button>
                 </div>
               </DialogContent>
@@ -209,16 +188,26 @@ const Equipe: React.FC = () => {
                             <h3 className="text-lg font-semibold">{member.member_email}</h3>
                             {getStatusBadge(member.status)}
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
                             <span className="flex items-center gap-1">
                               <Shield className="w-4 h-4" />
                               {ROLES.find(r => r.value === member.role)?.label || member.role}
                             </span>
-                            <span>Invité le {formatDate(member.invited_at)}</span>
-                            {member.accepted_at && (
-                              <span>Accepté le {formatDate(member.accepted_at)}</span>
-                            )}
+                            <span>Ajouté le {formatDate(member.invited_at)}</span>
                           </div>
+                          {(member as any).access_code && (
+                            <div className="flex items-center gap-2 bg-gray-100 p-2 rounded">
+                              <Key className="w-4 h-4 text-gray-600" />
+                              <code className="font-mono font-bold text-sm">{(member as any).access_code}</code>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => copyAccessCode((member as any).access_code)}
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <Button

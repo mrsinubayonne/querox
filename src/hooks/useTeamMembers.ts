@@ -14,6 +14,7 @@ export interface TeamMember {
   invited_at: string;
   accepted_at: string | null;
   created_at: string;
+  access_code?: string;
 }
 
 const TEAM_LIMITS = {
@@ -77,20 +78,30 @@ export const useTeamMembers = () => {
     }
 
     try {
+      // Generate access code via database function
+      const { data: codeData, error: codeError } = await supabase
+        .rpc('generate_team_access_code');
+
+      if (codeError) throw codeError;
+
+      const accessCode = codeData as string;
+
       const { error } = await supabase
         .from('team_members')
         .insert({
           owner_id: user.id,
           member_email: email,
           role,
-          status: 'pending'
+          status: 'accepted',
+          access_code: accessCode,
+          accepted_at: new Date().toISOString()
         });
 
       if (error) throw error;
 
       toast({
-        title: "Invitation envoyée",
-        description: `Une invitation a été envoyée à ${email}`,
+        title: "Membre ajouté",
+        description: `Code d'accès généré : ${accessCode}`,
       });
 
       await fetchTeamMembers();
@@ -105,7 +116,7 @@ export const useTeamMembers = () => {
       } else {
         toast({
           title: "Erreur",
-          description: "Impossible d'envoyer l'invitation",
+          description: "Impossible d'ajouter le membre",
           variant: "destructive"
         });
       }

@@ -12,7 +12,6 @@ import Menus from '@/pages/Menus';
 import AllMenus from '@/pages/AllMenus';
 import Commandes from '@/pages/Commandes';
 import Inventaire from '@/pages/Inventaire';
-import Clients from '@/pages/Clients';
 import QRCodes from '@/pages/QRCodes';
 import SiteWeb from '@/pages/SiteWeb';
 import SiteWebContainer from '@/pages/SiteWebContainer';
@@ -52,6 +51,8 @@ import Reservations from '@/pages/Reservations';
 import Support from '@/pages/Support';
 import Factures from '@/pages/Factures';
 import Equipe from '@/pages/Equipe';
+import StaffRequest from '@/pages/StaffRequest';
+import TeamMemberAuth from '@/pages/TeamMemberAuth';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 
@@ -63,7 +64,8 @@ function App() {
             <Routes>
               {/* Routes publiques */}
               <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/team-auth" element={<TeamMemberAuth />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/menu/:menuId" element={<PublicMenu />} />
               <Route path="/w/:slug" element={<PublicWebsite />} />
@@ -109,7 +111,8 @@ function App() {
               <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
               <Route path="/factures" element={<ProtectedRoute><Factures /></ProtectedRoute>} />
-              <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
+          <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
+          <Route path="/staff-request" element={<ProtectedRoute><StaffRequest /></ProtectedRoute>} />
 
               {/* Redirection par défaut */}
               <Route path="*" element={<NotFound />} />

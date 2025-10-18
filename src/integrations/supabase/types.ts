@@ -773,6 +773,7 @@ export type Database = {
       team_members: {
         Row: {
           accepted_at: string | null
+          access_code: string | null
           created_at: string
           id: string
           invited_at: string
@@ -784,6 +785,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          access_code?: string | null
           created_at?: string
           id?: string
           invited_at?: string
@@ -795,6 +797,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          access_code?: string | null
           created_at?: string
           id?: string
           invited_at?: string
@@ -1282,6 +1285,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_team_access_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_admin_revenue_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1293,6 +1300,52 @@ export type Database = {
         }[]
       }
       get_public_website_by_slug: {
+        Args: { website_slug: string }
+        Returns: {
+          contact_subtitle: string
+          contact_title: string
+          created_at: string
+          custom_css: string
+          description: string
+          dish1_image_url: string
+          dish1_name: string
+          dish1_price: string
+          dish1_rating: string
+          dish2_image_url: string
+          dish2_name: string
+          dish2_price: string
+          dish2_rating: string
+          dish3_image_url: string
+          dish3_name: string
+          dish3_price: string
+          dish3_rating: string
+          header_image_url: string
+          hero_button_primary: string
+          hero_button_secondary: string
+          hero_image_url: string
+          hero_subtitle: string
+          hero_title: string
+          id: string
+          logo_url: string
+          name: string
+          opening_hours: Json
+          primary_color: string
+          secondary_color: string
+          seo_description: string
+          seo_title: string
+          slug: string
+          social_links: Json
+          specialities_subtitle: string
+          specialities_title: string
+          stats_clients: string
+          stats_dishes: string
+          stats_experience: string
+          stats_rating: string
+          template_id: string
+          updated_at: string
+        }[]
+      }
+      get_public_website_safe_data: {
         Args: { website_slug: string }
         Returns: {
           contact_subtitle: string
@@ -1352,6 +1405,15 @@ export type Database = {
       is_current_user_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      verify_team_access: {
+        Args: { _access_code: string; _email: string }
+        Returns: {
+          member_id: string
+          owner_id: string
+          role: string
+          status: string
+        }[]
       }
     }
     Enums: {
