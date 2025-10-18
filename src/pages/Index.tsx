@@ -5,6 +5,7 @@ import LandingNavigation from '../components/landing/LandingNavigation';
 import SalesFunnelHero from '../components/landing/SalesFunnelHero';
 import ProblemSolution from '../components/landing/ProblemSolution';
 import SocialProof from '../components/landing/SocialProof';
+import VideoDemo from '../components/landing/VideoDemo';
 import HowItWorks from '../components/landing/HowItWorks';
 import LandingFeatures from '../components/landing/LandingFeatures';
 import LandingPricing from '../components/landing/LandingPricing';
@@ -41,9 +42,10 @@ const Index: React.FC = () => {
       <main className="pt-16 lg:pt-20">
         <SalesFunnelHero />
         <ProblemSolution />
-        <SocialProof />
-        <HowItWorks />
-        <LandingFeatures />
+      <SocialProof />
+      <VideoDemo />
+      <HowItWorks />
+      <LandingFeatures />
         <LandingPricing />
         <FAQ />
         <FinalCTA />
