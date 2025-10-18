@@ -149,7 +149,7 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
           ) : (
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
               <p className="text-orange-800 font-medium">⚠️ Plan insuffisant</p>
-              <p className="text-orange-700 text-sm">Pour accéder à ce service, vous devez avoir un plan Professionnel pour bénéficier de 1 design gratuit ou Entreprise 5 designs gratuits par mois.</p>
+              <p className="text-orange-700 text-sm">Pour accéder à ce service, vous devez avoir un plan Professionnel (1 design gratuit/mois) ou Entreprise (5 designs gratuits/mois).</p>
               <p className="text-sm font-semibold mt-2">Si vous n'avez pas accès à ces plans mais désirez ce service, vous pouvez contacter le support pour soumettre votre requête. Prix : 7 000 FCFA par design</p>
             </div>
           )}
