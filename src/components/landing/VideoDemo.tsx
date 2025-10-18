@@ -23,33 +23,13 @@ const VideoDemo: React.FC = () => {
         <Card className="overflow-hidden border-border shadow-2xl max-w-5xl mx-auto">
           <CardContent className="p-0">
             <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-purple-600/20">
-              {/* Placeholder - Replace with actual video embed */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center space-y-6">
-                  <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform cursor-pointer">
-                    <Play className="h-10 w-10 text-white ml-1" fill="white" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-2xl font-bold text-foreground">
-                      Vidéo de démonstration
-                    </p>
-                    <p className="text-muted-foreground">
-                      Cliquez pour voir comment Querox révolutionne votre restaurant
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Uncomment and replace with your actual video URL */}
-              {/* 
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
+                src="https://www.youtube.com/embed/0aQ0z3w58os"
                 title="Démonstration Querox"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
-              */}
             </div>
           </CardContent>
         </Card>
