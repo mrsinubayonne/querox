@@ -27,23 +27,38 @@ interface Order {
   order_type?: string | null;
 }
 
-// Fonction pour jouer un son de notification
+// Fonction pour jouer un son de notification agréable
 const playNotificationSound = () => {
-  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-  
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-  
-  oscillator.frequency.value = 800;
-  oscillator.type = 'sine';
-  
-  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-  
-  oscillator.start(audioContext.currentTime);
-  oscillator.stop(audioContext.currentTime + 0.5);
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Créer un son plus agréable avec deux tonalités
+    const playTone = (frequency: number, startTime: number, duration: number) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0.4, startTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    };
+
+    // Jouer deux tons ascendants pour une notification agréable
+    const now = audioContext.currentTime;
+    playTone(587.33, now, 0.15); // D5
+    playTone(783.99, now + 0.15, 0.2); // G5
+    
+    console.log('🔔 Son de notification joué');
+  } catch (error) {
+    console.error('Erreur lors de la lecture du son:', error);
+  }
 };
 
 export const useOrders = () => {
@@ -126,8 +141,8 @@ export const useOrders = () => {
           table: 'orders',
           filter: `user_id=eq.${user.id}`
         },
-        (payload) => {
-          console.log('Nouvelle commande reçue:', payload);
+        async (payload) => {
+          console.log('🆕 Nouvelle commande reçue:', payload);
           
           const newOrder = payload.new as any;
           const transformedOrder: Order = {
@@ -158,6 +173,28 @@ export const useOrders = () => {
             description: `Commande de ${newOrder.customer_name} - ${Number(newOrder.total_amount).toFixed(2)}€`,
             duration: 5000,
           });
+
+          // Envoyer une notification par email
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('email')
+              .eq('id', user.id)
+              .single();
+
+            if (profile?.email) {
+              console.log('📧 Envoi de la notification par email...');
+              await supabase.functions.invoke('send-order-notification', {
+                body: { 
+                  order: transformedOrder,
+                  restaurantEmail: profile.email
+                },
+              });
+              console.log('✅ Notification email envoyée');
+            }
+          } catch (emailError) {
+            console.error('❌ Échec de l\'envoi de l\'email:', emailError);
+          }
         }
       )
       .subscribe();
