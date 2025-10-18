@@ -140,13 +140,12 @@ const AddInventoryModal: React.FC<AddInventoryModalProps> = ({ isOpen, onClose, 
             </div>
             
             <div>
-              <Label htmlFor="supplier">Fournisseur</Label>
+              <Label htmlFor="supplier">Fournisseur (optionnel)</Label>
               <Input
                 id="supplier"
                 value={formData.supplier}
                 onChange={(e) => handleChange('supplier', e.target.value)}
                 placeholder="ex: Marché Central"
-                required
               />
             </div>
           </div>

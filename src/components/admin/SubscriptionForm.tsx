@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserPlus } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface SubscriptionFormProps {
   onSubscriptionCreated: () => void;
@@ -16,6 +18,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
   const [searchEmail, setSearchEmail] = useState('');
   const [selectedTier, setSelectedTier] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('30');
+  const [isLifetime, setIsLifetime] = useState(false);
   const { toast } = useToast();
 
   const createOrUpdateSubscription = async () => {
@@ -29,8 +32,17 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
     }
 
     try {
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + parseInt(selectedDuration));
+      let endDate = null;
+      
+      if (isLifetime) {
+        // Abonnement à vie - date dans 100 ans
+        endDate = new Date();
+        endDate.setFullYear(endDate.getFullYear() + 100);
+      } else {
+        // Abonnement temporaire
+        endDate = new Date();
+        endDate.setDate(endDate.getDate() + parseInt(selectedDuration));
+      }
 
       const { error } = await supabase
         .from('subscribers')
@@ -46,11 +58,14 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
 
       toast({
         title: "Succès",
-        description: `Abonnement ${selectedTier} accordé pour ${selectedDuration} jours`,
+        description: isLifetime 
+          ? `Abonnement ${selectedTier} à vie accordé`
+          : `Abonnement ${selectedTier} accordé pour ${selectedDuration} jours`,
       });
 
       setSearchEmail('');
       setSelectedTier('');
+      setIsLifetime(false);
       onSubscriptionCreated();
     } catch (error) {
       console.error('Erreur:', error);
@@ -71,7 +86,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Email utilisateur</label>
             <Input
@@ -95,7 +110,11 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Durée (jours)</label>
-            <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+            <Select 
+              value={selectedDuration} 
+              onValueChange={setSelectedDuration}
+              disabled={isLifetime}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -106,6 +125,18 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
                 <SelectItem value="365">365 jours</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex items-end">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="lifetime" 
+                checked={isLifetime}
+                onCheckedChange={(checked) => setIsLifetime(checked as boolean)}
+              />
+              <Label htmlFor="lifetime" className="text-sm font-medium cursor-pointer">
+                Abonnement à vie
+              </Label>
+            </div>
           </div>
           <div className="flex items-end">
             <Button onClick={createOrUpdateSubscription} className="w-full">

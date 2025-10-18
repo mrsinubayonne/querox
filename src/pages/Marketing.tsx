@@ -25,8 +25,8 @@ const Marketing: React.FC = () => {
     description: 'Création d\'affiches, flyers et supports visuels professionnels pour attirer vos clients',
     icon: Palette,
     color: 'from-violet-600 via-purple-600 to-fuchsia-600',
-    deliveryTime: '3 jours',
-    price: '7 000 FCFA'
+    deliveryTime: '48h',
+    price: 'Sur devis'
   }];
   const socialMediaServices = [{
     id: 'gestion-reseaux',
@@ -42,7 +42,7 @@ const Marketing: React.FC = () => {
     description: 'Photos, vidéos et visuels attractifs pour vos réseaux sociaux',
     icon: Camera,
     color: 'from-pink-500 to-rose-500',
-    deliveryTime: '5 jours',
+    deliveryTime: '48h',
     price: 'Sur devis'
   }, {
     id: 'analyse-performance',
@@ -50,7 +50,7 @@ const Marketing: React.FC = () => {
     description: 'Rapports détaillés sur les performances de vos réseaux sociaux',
     icon: BarChart2,
     color: 'from-orange-500 to-yellow-500',
-    deliveryTime: 'Mensuel',
+    deliveryTime: '48h',
     price: 'Sur devis'
   }];
   const facebookAdvertisingServices = [{
@@ -59,7 +59,7 @@ const Marketing: React.FC = () => {
     description: 'Stratégie publicitaire complète sur Facebook et Instagram pour maximiser votre visibilité',
     icon: Facebook,
     color: 'from-blue-600 via-indigo-600 to-purple-600',
-    deliveryTime: '10 jours',
+    deliveryTime: '48h',
     price: 'Sur devis'
   }];
   const communicationServices = [{
@@ -68,7 +68,7 @@ const Marketing: React.FC = () => {
     description: 'Campagnes d\'emails personnalisées et automatisées pour fidéliser et convertir',
     icon: Mail,
     color: 'from-cyan-500 via-blue-500 to-indigo-600',
-    deliveryTime: '5 jours',
+    deliveryTime: '48h',
     price: 'Sur devis'
   }, {
     id: 'programme-fidelite',
@@ -76,7 +76,7 @@ const Marketing: React.FC = () => {
     description: 'Système complet de fidélisation avec récompenses et suivi client automatique',
     icon: Users,
     color: 'from-emerald-500 via-green-500 to-teal-600',
-    deliveryTime: '7 jours',
+    deliveryTime: '48h',
     price: 'Sur devis'
   }];
   const openModal = (serviceId: string) => {

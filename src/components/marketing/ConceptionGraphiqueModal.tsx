@@ -115,7 +115,7 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
 
       toast({
         title: "Demande envoyée !",
-        description: `Votre demande a été envoyée. Prix: 7 000 FCFA. Livraison sous 3 jours.`,
+        description: `Votre demande a été envoyée. Livraison sous 48h.`,
       });
 
       onClose();
@@ -287,7 +287,7 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
                 disabled={!canUseService}
                 className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500"
               >
-                {canUseService ? 'Commander (7 000 FCFA)' : 'Plan insuffisant'}
+                {canUseService ? 'Commander' : 'Plan insuffisant'}
               </Button>
             </div>
           </form>

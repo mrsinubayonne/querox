@@ -64,9 +64,31 @@ const Clients: React.FC = () => {
                         {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
                         {customer.phone && <p className="text-sm text-muted-foreground">{customer.phone}</p>}
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{customer.total_visits} visites</p>
-                        <p className="text-sm text-muted-foreground">{customer.total_spent}€ dépensés</p>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right mr-4">
+                          <p className="text-sm font-medium">{customer.total_visits} visites</p>
+                          <p className="text-sm text-muted-foreground">{customer.total_spent} FCFA dépensés</p>
+                        </div>
+                        {customer.phone && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(`tel:${customer.phone}`, '_self')}
+                              className="flex items-center gap-2"
+                            >
+                              📞 Appeler
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, '')}`, '_blank')}
+                              className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                            >
+                              💬 WhatsApp
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </CardContent>

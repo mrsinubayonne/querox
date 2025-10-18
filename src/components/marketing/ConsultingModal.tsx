@@ -291,7 +291,7 @@ const ConsultingModal: React.FC<ConsultingModalProps> = ({ onClose }) => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <Phone className="h-4 w-4 text-green-600" />
-                <span className="text-sm">+242 06 456 30 21</span>
+                <span className="text-sm">+242 05 010 3710</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-blue-600" />

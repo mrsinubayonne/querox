@@ -96,10 +96,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: 'Aperçu Services',
     path: '/services'
   }, {
-    icon: Phone,
-    label: 'Service d\'Appel',
-    path: '/service-appel'
-  }, {
     icon: UserCheck,
     label: 'Consulting',
     path: '/consulting'
