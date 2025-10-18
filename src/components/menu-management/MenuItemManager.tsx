@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import EmptyState from '@/components/EmptyState';
 import AddMenuItemModal from '@/components/AddMenuItemModal';
 import EditMenuItemModal from '@/components/EditMenuItemModal';
-import GeneralSettingsTab from '@/components/menu-management/GeneralSettingsTab';
+
 import { useMenus } from '@/hooks/useMenus';
 import { useMenuItems } from '@/hooks/useMenuItems';
-import { Menu, Edit, Trash2, Eye, EyeOff, Settings } from 'lucide-react';
+import { Menu, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SafeImage from '@/components/SafeImage';
 import { APP_CONFIG } from '@/config/app.config';
 
@@ -214,26 +213,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   };
 
   return (
-    <Tabs defaultValue="items" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="items" className="flex items-center gap-2">
-          <Menu className="w-4 h-4" />
-          Plats
-        </TabsTrigger>
-        <TabsTrigger value="general" className="flex items-center gap-2">
-          <Settings className="w-4 h-4" />
-          Général
-        </TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="items">
-        <MenuItemsContent />
-      </TabsContent>
-      
-      <TabsContent value="general">
-        <GeneralSettingsTab />
-      </TabsContent>
-    </Tabs>
+    <MenuItemsContent />
   );
 };
 

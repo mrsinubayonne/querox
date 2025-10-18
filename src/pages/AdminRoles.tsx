@@ -147,7 +147,11 @@ const AdminRoles: React.FC = () => {
         </Button>
       </div>
 
-      {activeTab === 'users' ? (
+      {activeTab === 'roles' && (
+        <RolesManager />
+      )}
+
+      {activeTab === 'users' && (
         <div className="space-y-6">
           {/* Barre de recherche */}
           <div className="relative">
@@ -179,8 +183,8 @@ const AdminRoles: React.FC = () => {
                     </div>
                     
                     <div className="flex items-center space-x-4">
-                      <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                        {user.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                      <Badge variant={user.role === 'admin' ? 'default' : user.role === 'moderator' ? 'outline' : 'secondary'}>
+                        {user.role === 'admin' ? 'Administrateur' : user.role === 'moderator' ? 'Modérateur' : 'Utilisateur'}
                       </Badge>
                       
                       <Select
@@ -193,6 +197,7 @@ const AdminRoles: React.FC = () => {
                         <SelectContent>
                           <SelectItem value="user">Utilisateur</SelectItem>
                           <SelectItem value="admin">Administrateur</SelectItem>
+                          <SelectItem value="moderator">Modérateur</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -210,8 +215,6 @@ const AdminRoles: React.FC = () => {
             </Card>
           )}
         </div>
-      ) : (
-        <RolesManager />
       )}
     </div>
   );
