@@ -57,7 +57,7 @@ export const useOutlets = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('selected_outlet_id')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .maybeSingle();
 
       if (error) {
@@ -146,7 +146,7 @@ export const useOutlets = () => {
       const { error } = await supabase
         .from('profiles')
         .update({ selected_outlet_id: outletId })
-        .eq('user_id', user.id);
+        .eq('id', user.id);
 
       if (error) throw error;
       

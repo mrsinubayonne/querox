@@ -47,10 +47,28 @@ const AddOrderModal: React.FC<AddOrderModalProps> = ({
         return;
       }
 
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        toast({
+          title: "Erreur",
+          description: "Aucun point de vente sélectionné",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Créer la commande
       const { error: orderError } = await supabase.from("orders").insert([
         {
           user_id: user.id,
+          outlet_id: outletId,
           customer_name: customerName,
           customer_phone: customerPhone || null,
           customer_email: customerEmail || null,
