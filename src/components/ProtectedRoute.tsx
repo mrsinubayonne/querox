@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,10 +16,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
+  const { isSubscriptionActive, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const loading = authLoading || profileLoading;
+  const loading = authLoading || profileLoading || subscriptionLoading;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -26,12 +28,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return;
     }
 
-    // Si l'utilisateur est connecté mais n'a pas de selected_outlet_id
+    // Si l'utilisateur est connecté mais n'a pas d'abonnement actif
+    // et qu'il n'est pas déjà sur la page abonnement
+    if (!subscriptionLoading && user && !isSubscriptionActive && location.pathname !== '/abonnement') {
+      navigate('/abonnement');
+      return;
+    }
+
+    // Si l'utilisateur est connecté, a un abonnement actif mais n'a pas de selected_outlet_id
     // et qu'il n'est pas déjà sur la page select-outlet
-    if (!profileLoading && user && !profile?.selected_outlet_id && location.pathname !== '/select-outlet') {
+    if (!profileLoading && !subscriptionLoading && user && isSubscriptionActive && !profile?.selected_outlet_id && location.pathname !== '/select-outlet') {
       navigate('/select-outlet');
     }
-  }, [user, authLoading, profile, profileLoading, navigate, location.pathname]);
+  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, navigate, location.pathname]);
 
   // Show loading state while checking authentication
   if (loading) {
