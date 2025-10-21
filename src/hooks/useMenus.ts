@@ -83,9 +83,9 @@ export const useMenus = () => {
         .select('*')
         .eq('user_id', user.id);
 
-      // Filter by outlet if one is selected
+      // Filter by outlet if one is selected (include NULL for backward compatibility)
       if (outletId) {
-        query = query.eq('outlet_id', outletId);
+        query = query.or(`outlet_id.eq.${outletId},outlet_id.is.null`);
       }
 
       const { data: menusData, error: menusError } = await query
