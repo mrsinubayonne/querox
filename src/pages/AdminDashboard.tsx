@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminRevenue } from '@/hooks/useAdminRevenue';
+import { useSubscription } from '@/hooks/useSubscription';
 import ModernSidebar from '@/components/ModernSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import UnauthorizedAccess from '@/components/admin/UnauthorizedAccess';
@@ -23,12 +24,6 @@ import {
   Target
 } from 'lucide-react';
 
-const ADMIN_EMAILS = [
-  'emmanuelhussinbayonne@gmail.com',
-  'bayonnecastadorkhloe@gmail.com', 
-  'mrsinulion@gmail.com'
-];
-
 interface DashboardStats {
   totalUsers: number;
   totalDishes: number;
@@ -37,9 +32,8 @@ interface DashboardStats {
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { isAdmin, loading: authLoading } = useSubscription();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -59,54 +53,21 @@ const AdminDashboard: React.FC = () => {
   } = useAdminRevenue();
 
   useEffect(() => {
-    checkAuthorization();
-  }, [user]);
-
-  useEffect(() => {
-    if (isAuthorized) {
+    if (isAdmin) {
       fetchDashboardStats();
     }
-  }, [isAuthorized]);
-
-  const checkAuthorization = () => {
-    console.log('🔍 AdminDashboard - Vérification des autorisations');
-    
-    if (!user) {
-      console.log('❌ Aucun utilisateur connecté');
-      setLoading(false);
-      return;
-    }
-
-    if (ADMIN_EMAILS.includes(user.email || '')) {
-      console.log('✅ Utilisateur autorisé comme admin QUEROX');
-      setIsAuthorized(true);
-    } else {
-      console.log('❌ Utilisateur non autorisé');
-      setIsAuthorized(false);
-      toast({
-        title: "Accès refusé",
-        description: "Vous n'avez pas l'autorisation d'accéder à l'interface administrateur QUEROX",
-        variant: "destructive",
-      });
-    }
-    setLoading(false);
-  };
+  }, [isAdmin]);
 
   const fetchDashboardStats = async () => {
-    console.log('📊 Récupération des statistiques globales QUEROX...');
-    
     try {
-      // Nombre total d'utilisateurs (profiles)
       const { count: usersCount } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true });
 
-      // Nombre total de plats créés
       const { count: dishesCount } = await supabase
         .from('menu_items')
         .select('*', { count: 'exact', head: true });
 
-      // Nombre total de commandes
       const { count: ordersCount } = await supabase
         .from('orders')
         .select('*', { count: 'exact', head: true });
@@ -117,14 +78,7 @@ const AdminDashboard: React.FC = () => {
         totalOrders: ordersCount || 0
       });
 
-      console.log('✅ Statistiques chargées:', {
-        totalUsers: usersCount,
-        totalDishes: dishesCount,
-        totalOrders: ordersCount
-      });
-
     } catch (error: any) {
-      console.error('💥 Erreur lors du chargement des statistiques:', error);
       toast({
         title: "Erreur",
         description: "Impossible de charger les statistiques",
@@ -133,7 +87,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  if (loading || revenueLoading) {
+  if (authLoading || revenueLoading) {
     return (
       <div className="flex h-screen bg-gray-50">
         <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
@@ -147,7 +101,7 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
-  if (!isAuthorized) {
+  if (!isAdmin) {
     return (
       <div className="flex h-screen bg-gray-50">
         <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />

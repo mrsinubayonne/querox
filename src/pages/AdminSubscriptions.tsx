@@ -1,15 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, Calendar, Crown, AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import ModernSidebar from '@/components/ModernSidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import AdminHeader from '@/components/admin/AdminHeader';
 import SubscriptionForm from '@/components/admin/SubscriptionForm';
 import SubscriptionsList from '@/components/admin/SubscriptionsList';
@@ -26,92 +24,38 @@ interface Subscription {
   updated_at: string;
 }
 
-const ADMIN_EMAILS = [
-  'emmanuelhussinbayonne@gmail.com',
-  'bayonnecastadorkhloe@gmail.com', 
-  'mrsinulion@gmail.com'
-];
-
 const AdminSubscriptions: React.FC = () => {
   const { user } = useAuth();
+  const { isAdmin, loading: authLoading } = useSubscription();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [loading, setLoading] = useState(true);
   const [fetchingSubscriptions, setFetchingSubscriptions] = useState(false);
-  const [isAuthorized, setIsAuthorized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    checkAuthorization();
-  }, [user]);
-
-  useEffect(() => {
-    if (isAuthorized) {
+    if (isAdmin) {
       fetchSubscriptions();
     }
-  }, [isAuthorized]);
-
-  const checkAuthorization = () => {
-    console.log('🔍 AdminSubscriptions - Vérification des autorisations');
-    console.log('🔍 Utilisateur actuel:', user?.email);
-    console.log('🔍 Emails admin autorisés:', ADMIN_EMAILS);
-    
-    if (!user) {
-      console.log('❌ Aucun utilisateur connecté');
-      setLoading(false);
-      return;
-    }
-
-    if (ADMIN_EMAILS.includes(user.email || '')) {
-      console.log('✅ Utilisateur autorisé comme admin');
-      setIsAuthorized(true);
-    } else {
-      console.log('❌ Utilisateur non autorisé');
-      setIsAuthorized(false);
-      toast({
-        title: "Accès refusé",
-        description: "Vous n'avez pas l'autorisation d'accéder à cette interface",
-        variant: "destructive",
-      });
-    }
-    setLoading(false);
-  };
+  }, [isAdmin]);
 
   const fetchSubscriptions = async () => {
-    console.log('🔄 AdminSubscriptions - Début du chargement des abonnements');
     setFetchingSubscriptions(true);
     setError(null);
     
     try {
-      console.log('📡 Requête vers la table subscribers...');
-      
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from('subscribers')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
 
-      console.log('📊 Résultat de la requête:', {
-        data: data,
-        error: error,
-        count: count,
-        dataLength: data?.length
-      });
-
       if (error) {
-        console.error('❌ Erreur Supabase:', error);
         throw error;
       }
 
-      console.log('✅ Abonnements récupérés avec succès:', data?.length || 0);
       setSubscriptions(data || []);
       
-      if (data && data.length === 0) {
-        console.log('ℹ️ Aucun abonnement trouvé dans la base de données');
-      }
-      
     } catch (error: any) {
-      console.error('💥 Erreur lors du chargement des abonnements:', error);
       setError(error.message || 'Erreur inconnue');
       toast({
         title: "Erreur",
@@ -119,17 +63,15 @@ const AdminSubscriptions: React.FC = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
       setFetchingSubscriptions(false);
     }
   };
 
   const handleRefreshSubscriptions = () => {
-    console.log('🔄 Rafraîchissement manuel des abonnements');
     fetchSubscriptions();
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="flex h-screen bg-gray-50">
         <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
@@ -143,7 +85,7 @@ const AdminSubscriptions: React.FC = () => {
     );
   }
 
-  if (!isAuthorized) {
+  if (!isAdmin) {
     return (
       <div className="flex h-screen bg-gray-50">
         <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
