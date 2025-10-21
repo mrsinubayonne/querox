@@ -1,9 +1,17 @@
 
 import React, { useState } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useOutlets } from '@/hooks/useOutlets';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface ModernSidebarProps {
   collapsed: boolean;
@@ -18,10 +26,18 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { isAdmin } = useSubscription();
+  const { outlets, selectedOutletId, selectOutlet } = useOutlets();
   
   const [servicesExpanded, setServicesExpanded] = useState(location.pathname.includes('/service'));
   const [marketingExpanded, setMarketingExpanded] = useState(location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook'));
   const [adminExpanded, setAdminExpanded] = useState(location.pathname.includes('/admin'));
+
+  const selectedOutlet = outlets.find(o => o.id === selectedOutletId);
+
+  const handleOutletChange = async (outletId: string) => {
+    await selectOutlet(outletId);
+    window.location.reload(); // Recharger la page pour rafraîchir toutes les données
+  };
 
   const menuItems = [{
     icon: Home,
@@ -167,6 +183,41 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
           {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
       </div>
+
+      {/* Outlet Selector */}
+      {outlets.length > 0 && (
+        <div className={`p-3 border-b border-gray-200 ${collapsed ? 'flex justify-center' : ''}`}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className={`w-full justify-start ${collapsed ? 'w-10 h-10 p-0' : ''}`}>
+                <Building2 size={18} className={collapsed ? '' : 'mr-2'} />
+                {!collapsed && (
+                  <span className="truncate text-sm">
+                    {selectedOutlet?.name || 'Sélectionner...'}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {outlets.map((outlet) => (
+                <DropdownMenuItem
+                  key={outlet.id}
+                  onClick={() => handleOutletChange(outlet.id)}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center">
+                    <Building2 size={16} className="mr-2" />
+                    <span>{outlet.name}</span>
+                  </div>
+                  {outlet.id === selectedOutletId && (
+                    <Check size={16} className="text-primary" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-2">
