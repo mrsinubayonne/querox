@@ -32,10 +32,26 @@ export const useTransactions = () => {
 
     try {
       setLoading(true);
+      
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        setTransactions([]);
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
         .order('date', { ascending: false });
 
       if (error) {
@@ -73,11 +89,29 @@ export const useTransactions = () => {
     if (!user) return false;
 
     try {
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        toast({
+          title: "Erreur",
+          description: "Aucun point de vente sélectionné",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
       const { data, error } = await supabase
         .from('transactions')
         .insert({
           ...transactionData,
           user_id: user.id,
+          outlet_id: outletId,
         })
         .select()
         .single();

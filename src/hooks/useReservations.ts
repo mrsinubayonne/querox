@@ -34,10 +34,26 @@ export const useReservations = () => {
 
     try {
       setLoading(true);
+      
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        setReservations([]);
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('reservations')
         .select('id, user_id, customer_name, customer_email, customer_phone, reservation_date, reservation_time, party_size, status, table_number, special_requests, created_at, updated_at')
         .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
         .order('reservation_date', { ascending: true })
         .order('reservation_time', { ascending: true })
         .limit(200);
@@ -61,9 +77,26 @@ export const useReservations = () => {
     if (!user) return false;
 
     try {
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        toast({
+          title: "Erreur",
+          description: "Aucun point de vente sélectionné",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
       const { data, error } = await supabase
         .from('reservations')
-        .insert({ ...reservationData, user_id: user.id })
+        .insert({ ...reservationData, user_id: user.id, outlet_id: outletId })
         .select()
         .single();
 

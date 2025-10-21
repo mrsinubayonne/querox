@@ -60,6 +60,7 @@ export type Database = {
           id: string
           last_visit: string | null
           name: string
+          outlet_id: string | null
           phone: string | null
           status: string | null
           total_spent: number | null
@@ -73,6 +74,7 @@ export type Database = {
           id?: string
           last_visit?: string | null
           name: string
+          outlet_id?: string | null
           phone?: string | null
           status?: string | null
           total_spent?: number | null
@@ -86,6 +88,7 @@ export type Database = {
           id?: string
           last_visit?: string | null
           name?: string
+          outlet_id?: string | null
           phone?: string | null
           status?: string | null
           total_spent?: number | null
@@ -93,7 +96,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       events: {
         Row: {
@@ -148,6 +159,7 @@ export type Database = {
           id: string
           min_stock: number | null
           name: string
+          outlet_id: string | null
           supplier: string | null
           supplier_id: string | null
           unit: string
@@ -162,6 +174,7 @@ export type Database = {
           id?: string
           min_stock?: number | null
           name: string
+          outlet_id?: string | null
           supplier?: string | null
           supplier_id?: string | null
           unit?: string
@@ -176,6 +189,7 @@ export type Database = {
           id?: string
           min_stock?: number | null
           name?: string
+          outlet_id?: string | null
           supplier?: string | null
           supplier_id?: string | null
           unit?: string
@@ -184,6 +198,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "inventory_items_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inventory_items_supplier_id_fkey"
             columns: ["supplier_id"]
@@ -201,6 +222,7 @@ export type Database = {
           invoice_number: string
           notes: string | null
           order_id: string | null
+          outlet_id: string | null
           paid_date: string | null
           status: string
           total_amount: number
@@ -214,6 +236,7 @@ export type Database = {
           invoice_number: string
           notes?: string | null
           order_id?: string | null
+          outlet_id?: string | null
           paid_date?: string | null
           status?: string
           total_amount?: number
@@ -227,6 +250,7 @@ export type Database = {
           invoice_number?: string
           notes?: string | null
           order_id?: string | null
+          outlet_id?: string | null
           paid_date?: string | null
           status?: string
           total_amount?: number
@@ -239,6 +263,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
             referencedColumns: ["id"]
           },
         ]
@@ -376,6 +407,7 @@ export type Database = {
           items: Json
           notes: string | null
           order_type: string | null
+          outlet_id: string | null
           status: string
           table_number: string | null
           total_amount: number
@@ -393,6 +425,7 @@ export type Database = {
           items?: Json
           notes?: string | null
           order_type?: string | null
+          outlet_id?: string | null
           status?: string
           table_number?: string | null
           total_amount?: number
@@ -410,13 +443,22 @@ export type Database = {
           items?: Json
           notes?: string | null
           order_type?: string | null
+          outlet_id?: string | null
           status?: string
           table_number?: string | null
           total_amount?: number
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       outlets: {
         Row: {
@@ -588,6 +630,7 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id: string
+          outlet_id: string | null
           party_size: number
           reservation_date: string
           reservation_time: string
@@ -603,6 +646,7 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id?: string
+          outlet_id?: string | null
           party_size: number
           reservation_date: string
           reservation_time: string
@@ -618,6 +662,7 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           id?: string
+          outlet_id?: string | null
           party_size?: number
           reservation_date?: string
           reservation_time?: string
@@ -627,7 +672,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reservations_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       roles: {
         Row: {
@@ -858,6 +911,7 @@ export type Database = {
           date: string
           description: string | null
           id: string
+          outlet_id: string | null
           status: string | null
           title: string
           type: string
@@ -870,6 +924,7 @@ export type Database = {
           date: string
           description?: string | null
           id?: string
+          outlet_id?: string | null
           status?: string | null
           title: string
           type: string
@@ -882,12 +937,21 @@ export type Database = {
           date?: string
           description?: string | null
           id?: string
+          outlet_id?: string | null
           status?: string | null
           title?: string
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "transactions_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

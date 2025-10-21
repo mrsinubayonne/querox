@@ -58,7 +58,7 @@ export const useOutlets = () => {
         .from('profiles')
         .select('selected_outlet_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching selected outlet:', error);

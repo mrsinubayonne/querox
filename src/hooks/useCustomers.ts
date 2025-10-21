@@ -32,10 +32,26 @@ export const useCustomers = () => {
 
     try {
       setLoading(true);
+      
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        setCustomers([]);
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('customers')
         .select('id, name, email, phone, total_visits, total_spent, last_visit, status, created_at, updated_at, user_id')
         .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
         .order('name')
         .limit(200);
 
@@ -69,11 +85,29 @@ export const useCustomers = () => {
     }
 
     try {
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        toast({
+          title: "Erreur",
+          description: "Aucun point de vente sélectionné",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
       const { data, error } = await supabase
         .from('customers')
         .insert({ 
           ...customerData, 
           user_id: user.id,
+          outlet_id: outletId,
           total_visits: customerData.total_visits || 0,
           total_spent: customerData.total_spent || 0
         })

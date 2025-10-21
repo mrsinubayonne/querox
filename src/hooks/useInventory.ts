@@ -33,10 +33,26 @@ export const useInventory = () => {
 
     try {
       setLoading(true);
+      
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('inventory_items')
         .select('id, name, category, current_stock, min_stock, unit, supplier, supplier_id, unit_price, created_at, updated_at, user_id')
         .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
         .order('updated_at', { ascending: false })
         .limit(200);
 
@@ -70,11 +86,29 @@ export const useInventory = () => {
     }
 
     try {
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        toast({
+          title: "Erreur",
+          description: "Aucun point de vente sélectionné",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
       const { data, error } = await supabase
         .from('inventory_items')
         .insert({ 
           ...itemData, 
           user_id: user.id,
+          outlet_id: outletId,
           current_stock: itemData.current_stock || 0,
           min_stock: itemData.min_stock || 0,
           unit: itemData.unit || 'pcs'

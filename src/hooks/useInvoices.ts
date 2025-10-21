@@ -37,6 +37,21 @@ export const useInvoices = () => {
 
     try {
       setLoading(true);
+      
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        setInvoices([]);
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('invoices')
         .select(`
@@ -44,6 +59,7 @@ export const useInvoices = () => {
           order:orders(customer_name, customer_email, customer_phone)
         `)
         .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -74,6 +90,23 @@ export const useInvoices = () => {
     if (!user) return;
 
     try {
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        toast({
+          title: "Erreur",
+          description: "Aucun point de vente sélectionné",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       const invoiceNumber = generateInvoiceNumber();
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 30); // 30 jours pour payer
@@ -82,6 +115,7 @@ export const useInvoices = () => {
         .from('invoices')
         .insert({
           user_id: user.id,
+          outlet_id: outletId,
           order_id: orderId,
           invoice_number: invoiceNumber,
           total_amount: totalAmount,

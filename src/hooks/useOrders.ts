@@ -77,10 +77,25 @@ export const useOrders = () => {
     try {
       setLoading(true);
       
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('orders')
         .select('id, customer_name, customer_email, customer_phone, items, total_amount, status, notes, delivery_address, delivery_time, created_at, table_number, order_type, user_id')
         .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
         .order('created_at', { ascending: false })
         .limit(100);
 
