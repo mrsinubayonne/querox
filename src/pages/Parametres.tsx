@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -22,8 +22,17 @@ import { DataTab } from "@/components/DataTab";
 import { InvoiceSettingsTab } from "@/components/InvoiceSettingsTab";
 
 const Parametres = () => {
+  const [searchParams] = useSearchParams();
   const [notifications, setNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -47,7 +56,7 @@ const Parametres = () => {
       </header>
       
       <main className="container max-w-4xl py-8">
-        <Tabs defaultValue="profile" className="max-w-3xl mx-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-3xl mx-auto">
           <TabsList className="mb-8 grid grid-cols-7 w-full mx-auto">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />

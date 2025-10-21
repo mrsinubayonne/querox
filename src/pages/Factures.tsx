@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { useInvoices, Invoice } from '@/hooks/useInvoices';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, Check, X, Clock, Plus, Eye, Edit, Trash2, Printer } from 'lucide-react';
+import { FileText, Download, Check, X, Clock, Plus, Eye, Edit, Trash2, Printer, Settings } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import AddInvoiceModal from '@/components/AddInvoiceModal';
@@ -27,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const Factures: React.FC = () => {
+  const navigate = useNavigate();
   const { invoices, loading, updateInvoiceStatus, refetch } = useInvoices();
   const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -142,10 +144,20 @@ const Factures: React.FC = () => {
                 <p className="text-gray-600">Gérez toutes vos factures</p>
               </div>
             </div>
-            <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Créer une facture
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/parametres?tab=invoices')} 
+                className="gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Personnaliser les factures
+              </Button>
+              <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Créer une facture
+              </Button>
+            </div>
           </div>
 
           {/* Stats */}
