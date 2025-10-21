@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
 import { useToast } from '@/hooks/use-toast';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -19,8 +19,18 @@ const Comptabilite = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const { toast } = useToast();
   
-  const { transactions, loading, createTransaction } = useTransactions();
-  const { invoices, loading: invoicesLoading } = useInvoices();
+  const { transactions, loading, createTransaction, refetch: refetchTransactions } = useTransactions();
+  const { invoices, loading: invoicesLoading, refetch: refetchInvoices } = useInvoices();
+
+  // Rafraîchir les données régulièrement pour voir les factures payées
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchInvoices();
+      refetchTransactions();
+    }, 30000); // Toutes les 30 secondes
+
+    return () => clearInterval(interval);
+  }, [refetchInvoices, refetchTransactions]);
 
   const stats = useMemo(() => {
     const now = new Date();

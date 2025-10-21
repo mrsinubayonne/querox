@@ -18,33 +18,39 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
-    type: 'recette',
-    status: 'en_attente',
+    type: 'income',
+    category: 'vente',
+    status: 'completed',
     description: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Déterminer si c'est une dépense basé sur la catégorie
+    const expenseCategories = ['depense', 'achat', 'salaire', 'loyer', 'taxes', 'charges', 
+      'fournitures', 'marketing', 'entretien', 'assurance', 'utilities', 'equipment', 
+      'licence', 'formation', 'transport', 'bancaire'];
+    
+    const isExpense = expenseCategories.includes(formData.category);
+    
     const newTransaction = {
-      id: Date.now(),
       title: formData.title,
       date: new Date().toISOString().split('T')[0],
-      amount: formData.type === 'depense' ? -Math.abs(Number(formData.amount)) : Math.abs(Number(formData.amount)),
-      isPositive: formData.type === 'recette',
+      amount: Math.abs(Number(formData.amount)),
+      type: isExpense ? 'expense' : 'income',
+      category: formData.category,
       status: formData.status,
-      description: formData.description,
-      icon: formData.type === 'recette' 
-        ? <TrendingUp className="h-4 w-4 text-green-600" />
-        : <TrendingDown className="h-4 w-4 text-red-600" />
+      description: formData.description || null
     };
 
     onSubmit(newTransaction);
     setFormData({
       title: '',
       amount: '',
-      type: 'recette',
-      status: 'en_attente',
+      type: 'income',
+      category: 'vente',
+      status: 'completed',
       description: ''
     });
     onClose();
@@ -81,31 +87,31 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="type">Type de transaction</Label>
-            <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+            <Label htmlFor="category">Catégorie</Label>
+            <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="recette">Recette</SelectItem>
-                <SelectItem value="vente">Vente</SelectItem>
-                <SelectItem value="depense">Dépense</SelectItem>
-                <SelectItem value="achat">Achat</SelectItem>
-                <SelectItem value="salaire">Salaire</SelectItem>
-                <SelectItem value="loyer">Loyer</SelectItem>
-                <SelectItem value="taxes">Taxes</SelectItem>
-                <SelectItem value="charges">Charges</SelectItem>
-                <SelectItem value="fournitures">Fournitures</SelectItem>
-                <SelectItem value="marketing">Marketing</SelectItem>
-                <SelectItem value="entretien">Entretien</SelectItem>
-                <SelectItem value="assurance">Assurance</SelectItem>
-                <SelectItem value="utilities">Eau/Électricité/Gaz</SelectItem>
-                <SelectItem value="equipment">Équipement</SelectItem>
-                <SelectItem value="licence">Licences et permis</SelectItem>
-                <SelectItem value="formation">Formation</SelectItem>
-                <SelectItem value="transport">Transport</SelectItem>
-                <SelectItem value="bancaire">Frais bancaires</SelectItem>
-                <SelectItem value="autre">Autre</SelectItem>
+                <SelectItem value="vente">💰 Vente</SelectItem>
+                <SelectItem value="recette">💵 Recette</SelectItem>
+                <SelectItem value="depense">📤 Dépense</SelectItem>
+                <SelectItem value="achat">🛒 Achat</SelectItem>
+                <SelectItem value="salaire">👤 Salaire</SelectItem>
+                <SelectItem value="loyer">🏢 Loyer</SelectItem>
+                <SelectItem value="taxes">📋 Taxes</SelectItem>
+                <SelectItem value="charges">⚡ Charges</SelectItem>
+                <SelectItem value="fournitures">📦 Fournitures</SelectItem>
+                <SelectItem value="marketing">📣 Marketing</SelectItem>
+                <SelectItem value="entretien">🔧 Entretien</SelectItem>
+                <SelectItem value="assurance">🛡️ Assurance</SelectItem>
+                <SelectItem value="utilities">💡 Eau/Électricité/Gaz</SelectItem>
+                <SelectItem value="equipment">🖥️ Équipement</SelectItem>
+                <SelectItem value="licence">📜 Licences et permis</SelectItem>
+                <SelectItem value="formation">🎓 Formation</SelectItem>
+                <SelectItem value="transport">🚗 Transport</SelectItem>
+                <SelectItem value="bancaire">🏦 Frais bancaires</SelectItem>
+                <SelectItem value="autre">📌 Autre</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -117,8 +123,9 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en_attente">En attente</SelectItem>
-                <SelectItem value="confirmé">Confirmé</SelectItem>
+                <SelectItem value="pending">En attente</SelectItem>
+                <SelectItem value="completed">Confirmé</SelectItem>
+                <SelectItem value="cancelled">Annulé</SelectItem>
               </SelectContent>
             </Select>
           </div>
