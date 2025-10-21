@@ -32,18 +32,28 @@ const Menus: React.FC = () => {
   const navigate = useNavigate();
 
   const fetchMenus = useCallback(async () => {
-    if (!user || !profile?.selected_outlet_id) {
+    if (!user) {
       setLoading(false);
       return;
     }
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch menus for the current outlet OR menus without outlet assigned
+      let query = supabase
         .from('menus')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('outlet_id', profile.selected_outlet_id);
+        .eq('user_id', user.id);
+
+      // If outlet is selected, show menus for that outlet OR menus without outlet
+      if (profile?.selected_outlet_id) {
+        query = query.or(`outlet_id.eq.${profile.selected_outlet_id},outlet_id.is.null`);
+      } else {
+        // If no outlet selected, show all menus (for backward compatibility)
+        // No additional filter needed
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         toast({
