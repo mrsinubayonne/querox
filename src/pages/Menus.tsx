@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useProfile } from '@/hooks/useProfile';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import EmptyState from '@/components/EmptyState';
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
@@ -26,11 +27,13 @@ const Menus: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { user } = useAuth();
+  const { profile } = useProfile();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const fetchMenus = useCallback(async () => {
-    if (!user) {
+    if (!user || !profile?.selected_outlet_id) {
+      setLoading(false);
       return;
     }
 
@@ -39,7 +42,8 @@ const Menus: React.FC = () => {
       const { data, error } = await supabase
         .from('menus')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('outlet_id', profile.selected_outlet_id);
 
       if (error) {
         toast({
@@ -57,7 +61,7 @@ const Menus: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast, activeMenu]);
+  }, [user, profile?.selected_outlet_id, toast, activeMenu]);
 
   useEffect(() => {
     fetchMenus();
