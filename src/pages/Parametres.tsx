@@ -10,7 +10,8 @@ import {
   Shield,
   Users,
   Globe,
-  Database
+  Database,
+  FileText
 } from "lucide-react";
 import ProfileTab from "@/components/ProfileTab";
 import { NotificationsTab } from "@/components/NotificationsTab";
@@ -18,6 +19,7 @@ import { SecurityTab } from "@/components/SecurityTab";
 import { EquipeTab } from "@/components/EquipeTab";
 import DomainTab from "@/components/DomainTab";
 import { DataTab } from "@/components/DataTab";
+import { InvoiceSettingsTab } from "@/components/InvoiceSettingsTab";
 
 const Parametres = () => {
   const [notifications, setNotifications] = useState(true);
@@ -46,10 +48,14 @@ const Parametres = () => {
       
       <main className="container max-w-4xl py-8">
         <Tabs defaultValue="profile" className="max-w-3xl mx-auto">
-          <TabsList className="mb-8 grid grid-cols-6 w-full mx-auto">
+          <TabsList className="mb-8 grid grid-cols-7 w-full mx-auto">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              Mon profil
+              Profil
+            </TabsTrigger>
+            <TabsTrigger value="invoices" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Factures
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -75,6 +81,10 @@ const Parametres = () => {
           
           <TabsContent value="profile" className="space-y-6">
             <ProfileTab />
+          </TabsContent>
+
+          <TabsContent value="invoices" className="space-y-6">
+            <InvoiceSettingsTab />
           </TabsContent>
           
           <TabsContent value="notifications" className="space-y-6">

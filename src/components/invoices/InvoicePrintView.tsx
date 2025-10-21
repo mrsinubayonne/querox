@@ -1,5 +1,6 @@
 import React from 'react';
 import { Invoice } from '@/hooks/useInvoices';
+import { useInvoiceSettings } from '@/hooks/useInvoiceSettings';
 import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
 import { useProfile } from '@/hooks/useProfile';
 
@@ -8,6 +9,7 @@ interface InvoicePrintViewProps {
 }
 
 const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
+  const { settings } = useInvoiceSettings();
   const { website } = useRestaurantSettings();
   const { profile } = useProfile();
 
@@ -50,20 +52,42 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
       {/* En-tête */}
       <div className="flex justify-between items-start mb-12 pb-6 border-b-2 border-gray-300">
         <div>
-          {website?.logo_url && (
-            <img src={website.logo_url} alt="Logo" className="h-16 mb-3" />
+          {(settings?.logo_url || website?.logo_url) && (
+            <img 
+              src={settings?.logo_url || website?.logo_url} 
+              alt="Logo" 
+              className="h-16 mb-3" 
+            />
           )}
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            {website?.name || 'Mon Restaurant'}
+            {settings?.company_name || website?.name || 'Mon Restaurant'}
           </h1>
-          <p className="text-gray-600">{website?.description || 'Restaurant'}</p>
-          {profile?.email && (
-            <p className="text-sm text-gray-500 mt-2">{profile.email}</p>
+          {settings?.company_address && (
+            <p className="text-gray-600 whitespace-pre-line">{settings.company_address}</p>
+          )}
+          {settings?.company_phone && (
+            <p className="text-sm text-gray-500 mt-1">Tél: {settings.company_phone}</p>
+          )}
+          {settings?.company_email && (
+            <p className="text-sm text-gray-500">{settings.company_email}</p>
+          )}
+          {settings?.tax_id && (
+            <p className="text-sm text-gray-500">SIRET/TVA: {settings.tax_id}</p>
           )}
         </div>
         <div className="text-right">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">FACTURE</h2>
-          <p className="text-lg font-semibold text-blue-600">{invoice.invoice_number}</p>
+          <h2 
+            className="text-2xl font-bold text-gray-900 mb-2"
+            style={{ color: settings?.primary_color || '#3B82F6' }}
+          >
+            {settings?.invoice_title || 'FACTURE'}
+          </h2>
+          <p 
+            className="text-lg font-semibold"
+            style={{ color: settings?.primary_color || '#3B82F6' }}
+          >
+            {invoice.invoice_number}
+          </p>
           <p className="text-sm text-gray-600 mt-2">Date: {formatDate(invoice.created_at)}</p>
         </div>
       </div>
@@ -112,7 +136,10 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
         <div className="w-64">
           <div className="flex justify-between py-2 border-t-2 border-gray-300">
             <span className="font-semibold text-gray-900">TOTAL:</span>
-            <span className="font-bold text-xl text-blue-600">
+            <span 
+              className="font-bold text-xl"
+              style={{ color: settings?.primary_color || '#3B82F6' }}
+            >
               {invoice.total_amount.toLocaleString('fr-FR')} FCFA
             </span>
           </div>
@@ -146,12 +173,16 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice }) => {
       {/* Conditions */}
       <div className="border-t-2 border-gray-300 pt-6 mt-12">
         <h3 className="text-sm font-semibold text-gray-900 mb-2">Conditions de paiement:</h3>
-        <p className="text-xs text-gray-600 mb-4">
-          Paiement à effectuer sous 30 jours à compter de la date de facturation.
-          En cas de retard, des pénalités pourront être appliquées conformément à la loi.
+        <p className="text-xs text-gray-600 mb-4 whitespace-pre-line">
+          {settings?.payment_terms || 'Paiement à effectuer sous 30 jours à compter de la date de facturation.'}
         </p>
+        {settings?.footer_note && (
+          <p className="text-xs text-gray-600 mb-4 whitespace-pre-line">
+            {settings.footer_note}
+          </p>
+        )}
         <p className="text-xs text-gray-500 text-center mt-8">
-          {website?.name || 'Mon Restaurant'}
+          {settings?.company_name || website?.name || 'Mon Restaurant'}
         </p>
       </div>
     </div>

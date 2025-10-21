@@ -214,6 +214,60 @@ export type Database = {
           },
         ]
       }
+      invoice_settings: {
+        Row: {
+          company_address: string | null
+          company_email: string | null
+          company_name: string | null
+          company_phone: string | null
+          created_at: string
+          footer_note: string | null
+          id: string
+          invoice_title: string
+          logo_url: string | null
+          outlet_id: string | null
+          payment_terms: string | null
+          primary_color: string | null
+          tax_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_address?: string | null
+          company_email?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          created_at?: string
+          footer_note?: string | null
+          id?: string
+          invoice_title?: string
+          logo_url?: string | null
+          outlet_id?: string | null
+          payment_terms?: string | null
+          primary_color?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_address?: string | null
+          company_email?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          created_at?: string
+          footer_note?: string | null
+          id?: string
+          invoice_title?: string
+          logo_url?: string | null
+          outlet_id?: string | null
+          payment_terms?: string | null
+          primary_color?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           created_at: string
