@@ -39,11 +39,12 @@ const Menus: React.FC = () => {
 
     setLoading(true);
     try {
+      // Include menus with matching outlet_id OR NULL outlet_id (legacy menus)
       const { data, error } = await supabase
         .from('menus')
         .select('*')
         .eq('user_id', user.id)
-        .eq('outlet_id', profile.selected_outlet_id);
+        .or(`outlet_id.eq.${profile.selected_outlet_id},outlet_id.is.null`);
 
       if (error) {
         toast({
