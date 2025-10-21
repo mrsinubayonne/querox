@@ -51,6 +51,8 @@ const SelectOutlet: React.FC = () => {
     if (newOutlet) {
       setIsDialogOpen(false);
       setFormData({ name: '', address: '', phone: '' });
+      // Rediriger immédiatement après la création
+      navigate('/dashboard');
     }
   };
 
