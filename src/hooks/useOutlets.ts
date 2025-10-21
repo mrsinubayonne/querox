@@ -97,6 +97,12 @@ export const useOutlets = () => {
       
       toast.success('Point de vente créé avec succès');
       await loadOutlets();
+      
+      // Sélectionner automatiquement le premier outlet créé si aucun n'est sélectionné
+      if (!selectedOutletId) {
+        await selectOutlet(data.id);
+      }
+      
       return data;
     } catch (error) {
       console.error('Error creating outlet:', error);
