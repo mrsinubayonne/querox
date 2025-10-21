@@ -8,32 +8,63 @@ import ModernStatCard from "@/components/ModernStatCard";
 import StatisticsReports from "@/components/statistics/StatisticsReports";
 import { useOrders } from "@/hooks/useOrders";
 import { useCustomers } from "@/hooks/useCustomers";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useInvoices } from "@/hooks/useInvoices";
 
 const Statistiques: React.FC = () => {
   const { orders, loading: ordersLoading } = useOrders();
   const { customers, loading: customersLoading } = useCustomers();
+  const { transactions, loading: transactionsLoading } = useTransactions();
+  const { invoices, loading: invoicesLoading } = useInvoices();
 
   const statsData = useMemo(() => {
-    const totalRevenue = orders.reduce((sum, order) => sum + order.total_amount, 0);
+    // Calcul du chiffre d'affaires total à partir des transactions et factures payées
+    const totalRevenueFromTransactions = transactions
+      .filter(t => t.type === 'income' && t.status === 'completed')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const totalRevenueFromInvoices = invoices
+      .filter(inv => inv.status === 'paid')
+      .reduce((sum, inv) => sum + inv.total_amount, 0);
+    
+    const totalRevenue = totalRevenueFromTransactions + totalRevenueFromInvoices;
     const ordersCount = orders.length;
     const customersCount = customers.length;
     
     // Calcul de la croissance (30 derniers jours vs 30 jours précédents)
     const now = new Date();
-    const last30Days = orders.filter(o => {
-      const orderDate = new Date(o.created_at);
-      const daysDiff = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
+    const last30DaysTransactions = transactions.filter(t => {
+      if (t.type !== 'income' || t.status !== 'completed') return false;
+      const transactionDate = new Date(t.date);
+      const daysDiff = Math.floor((now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60 * 24));
       return daysDiff <= 30;
     });
     
-    const previous30Days = orders.filter(o => {
-      const orderDate = new Date(o.created_at);
-      const daysDiff = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
+    const previous30DaysTransactions = transactions.filter(t => {
+      if (t.type !== 'income' || t.status !== 'completed') return false;
+      const transactionDate = new Date(t.date);
+      const daysDiff = Math.floor((now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60 * 24));
       return daysDiff > 30 && daysDiff <= 60;
     });
 
-    const last30Revenue = last30Days.reduce((sum, o) => sum + o.total_amount, 0);
-    const prev30Revenue = previous30Days.reduce((sum, o) => sum + o.total_amount, 0);
+    const last30DaysInvoices = invoices.filter(inv => {
+      if (inv.status !== 'paid' || !inv.paid_date) return false;
+      const paidDate = new Date(inv.paid_date);
+      const daysDiff = Math.floor((now.getTime() - paidDate.getTime()) / (1000 * 60 * 60 * 24));
+      return daysDiff <= 30;
+    });
+    
+    const previous30DaysInvoices = invoices.filter(inv => {
+      if (inv.status !== 'paid' || !inv.paid_date) return false;
+      const paidDate = new Date(inv.paid_date);
+      const daysDiff = Math.floor((now.getTime() - paidDate.getTime()) / (1000 * 60 * 60 * 24));
+      return daysDiff > 30 && daysDiff <= 60;
+    });
+
+    const last30Revenue = last30DaysTransactions.reduce((sum, t) => sum + t.amount, 0) +
+                         last30DaysInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
+    const prev30Revenue = previous30DaysTransactions.reduce((sum, t) => sum + t.amount, 0) +
+                         previous30DaysInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
     const growth = prev30Revenue > 0 ? ((last30Revenue - prev30Revenue) / prev30Revenue) * 100 : 0;
 
     return [
@@ -62,10 +93,10 @@ const Statistiques: React.FC = () => {
         color: "orange" as const,
       },
     ];
-  }, [orders, customers]);
+  }, [orders, customers, transactions, invoices]);
 
   const hasData = orders.length > 0 || customers.length > 0;
-  const loading = ordersLoading || customersLoading;
+  const loading = ordersLoading || customersLoading || transactionsLoading || invoicesLoading;
 
   if (loading) {
     return (
