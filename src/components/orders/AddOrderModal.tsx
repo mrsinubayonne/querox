@@ -86,8 +86,9 @@ const AddOrderModal: React.FC<AddOrderModalProps> = ({
         .from("customers")
         .select("id, total_visits, total_spent")
         .eq("user_id", user.id)
+        .eq("outlet_id", outletId)
         .eq("phone", customerPhone)
-        .single();
+        .maybeSingle();
 
       if (existingCustomer) {
         // Mettre à jour le client existant
@@ -106,6 +107,7 @@ const AddOrderModal: React.FC<AddOrderModalProps> = ({
         await supabase.from("customers").insert([
           {
             user_id: user.id,
+            outlet_id: outletId,
             name: customerName,
             phone: customerPhone || null,
             email: customerEmail || null,

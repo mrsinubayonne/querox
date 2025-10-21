@@ -53,8 +53,27 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     setLoading(true);
 
     try {
+      // Get the outlet_id for the restaurant
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', restaurantUserId)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        toast({ 
+          title: "Erreur", 
+          description: "Point de vente non configuré pour ce restaurant.", 
+          variant: "destructive" 
+        });
+        setLoading(false);
+        return;
+      }
+
       const payload: any = {
         user_id: restaurantUserId,
+        outlet_id: outletId,
         customer_name: customerName,
         customer_phone: customerPhone,
         notes: notes || null,
