@@ -368,6 +368,7 @@ export type Database = {
           is_active: boolean | null
           logo_url: string | null
           name: string
+          outlet_id: string | null
           updated_at: string
           user_id: string
         }
@@ -379,6 +380,7 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name: string
+          outlet_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -390,10 +392,19 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name?: string
+          outlet_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "menus_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {

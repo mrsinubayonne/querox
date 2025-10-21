@@ -52,7 +52,25 @@ const CreateMenuModal: React.FC<CreateMenuModalProps> = ({
 
     setLoading(true);
     try {
-      console.log('🔥 Création du menu:', { name, description, isActive });
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        toast({
+          title: "Erreur",
+          description: "Aucun point de vente sélectionné",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log('🔥 Création du menu:', { name, description, isActive, outletId });
 
       const { data: menu, error: menuError } = await supabase
         .from('menus')
@@ -60,6 +78,7 @@ const CreateMenuModal: React.FC<CreateMenuModalProps> = ({
           name: name.trim(),
           description: description.trim() || null,
           user_id: user.id,
+          outlet_id: outletId,
           is_active: isActive
         })
         .select()

@@ -8,6 +8,7 @@ export interface Menu {
   name: string;
   description?: string;
   user_id: string;
+  outlet_id?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -68,10 +69,26 @@ export const useMenus = () => {
 
       console.log('🔄 Fetching menus for user:', user.id);
 
-      const { data: menusData, error: menusError } = await supabase
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+
+      let query = supabase
         .from('menus')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id);
+
+      // Filter by outlet if one is selected
+      if (outletId) {
+        query = query.eq('outlet_id', outletId);
+      }
+
+      const { data: menusData, error: menusError } = await query
         .order('created_at', { ascending: true });
 
       if (menusError) {
@@ -159,12 +176,30 @@ export const useMenus = () => {
     try {
       console.log('🔧 Creating default menu for user:', user.id);
 
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      const outletId = profile?.selected_outlet_id;
+      if (!outletId) {
+        toast({
+          title: "Erreur",
+          description: "Aucun point de vente sélectionné",
+          variant: "destructive"
+        });
+        return null;
+      }
+
       const { data: menu, error: menuError } = await supabase
         .from('menus')
         .insert({
           name: 'Menu Principal',
           description: 'Votre menu principal',
           user_id: user.id,
+          outlet_id: outletId,
           is_active: true
         })
         .select()
