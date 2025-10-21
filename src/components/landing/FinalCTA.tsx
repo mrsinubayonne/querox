@@ -30,8 +30,8 @@ const FinalCTA: React.FC = () => {
         {/* Benefits List */}
         <div className="grid sm:grid-cols-3 gap-4 mb-12 max-w-3xl mx-auto">
           {[
-            "Essai gratuit 14 jours",
-            "Sans carte bancaire",
+            "Accès immédiat",
+            "Paiement sécurisé",
             "Configuration en 15min"
           ].map((benefit, index) => (
             <div key={index} className="flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3">

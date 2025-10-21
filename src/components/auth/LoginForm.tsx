@@ -90,7 +90,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
 
         // Redirect to dashboard after successful team member login
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/select-outlet');
         }, 100);
       } else {
         // Normal owner login with password
@@ -124,6 +124,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
           title: "Connexion réussie !",
           description: "Bienvenue sur QUEROX",
         });
+        
+        // Redirect to outlet selection
+        setTimeout(() => {
+          navigate('/select-outlet');
+        }, 100);
       }
     } catch (error: any) {
       toast({

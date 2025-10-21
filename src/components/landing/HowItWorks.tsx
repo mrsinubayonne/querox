@@ -101,17 +101,17 @@ const HowItWorks: React.FC = () => {
           <Card className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 border-primary/20 max-w-3xl mx-auto">
             <CardContent className="p-8">
               <p className="text-2xl font-bold text-foreground mb-4">
-                🎁 Offre spéciale : Essai gratuit de 14 jours
+                🚀 Prêt à transformer votre restaurant ?
               </p>
               <p className="text-muted-foreground mb-6">
-                Testez toutes les fonctionnalités premium sans engagement. 
-                Aucune carte bancaire requise.
+                Choisissez votre plan et commencez à automatiser votre gestion dès maintenant.
+                Accès immédiat après paiement.
               </p>
               <a 
                 href="#pricing"
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-primary via-purple-600 to-pink-600 text-white font-bold px-8 py-4 rounded-xl hover:opacity-90 transition-opacity"
               >
-                Commencer mon essai gratuit
+                Voir les plans
                 <ArrowRight className="h-5 w-5" />
               </a>
             </CardContent>

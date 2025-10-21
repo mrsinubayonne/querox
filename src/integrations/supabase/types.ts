@@ -418,6 +418,36 @@ export type Database = {
         }
         Relationships: []
       }
+      outlets: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       partners: {
         Row: {
           commission_rate: number
@@ -476,6 +506,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          selected_outlet_id: string | null
           updated_at: string
         }
         Insert: {
@@ -484,6 +515,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          selected_outlet_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -492,9 +524,18 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          selected_outlet_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_selected_outlet_id_fkey"
+            columns: ["selected_outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referrals: {
         Row: {

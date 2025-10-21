@@ -45,8 +45,8 @@ const VideoDemo: React.FC = () => {
             <p className="text-sm text-muted-foreground">Configuration complète</p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-black text-foreground mb-2">0€</p>
-            <p className="text-sm text-muted-foreground">Essai gratuit 14 jours</p>
+            <p className="text-3xl font-black text-foreground mb-2">Dès 59€</p>
+            <p className="text-sm text-muted-foreground">Par mois</p>
           </div>
         </div>
       </div>

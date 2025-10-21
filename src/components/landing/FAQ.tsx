@@ -13,8 +13,8 @@ const faqs = [
     answer: "Absolument pas ! QUEROX est conçu pour être utilisé par n'importe qui, sans aucune compétence technique. Notre interface est intuitive et notre équipe vous accompagne à chaque étape. La configuration complète prend moins de 15 minutes."
   },
   {
-    question: "Puis-je vraiment essayer gratuitement pendant 14 jours ?",
-    answer: "Oui ! Vous avez accès à toutes les fonctionnalités premium pendant 14 jours sans avoir à entrer votre carte bancaire. À la fin de la période d'essai, vous pouvez choisir de continuer avec un abonnement ou arrêter sans frais."
+    question: "Comment puis-je commencer avec QUEROX ?",
+    answer: "Choisissez votre plan, effectuez le paiement et accédez immédiatement à votre tableau de bord. Notre équipe vous accompagne dans la configuration complète de votre restaurant en moins de 15 minutes."
   },
   {
     question: "Comment QUEROX peut-il m'aider à augmenter mon chiffre d'affaires ?",
