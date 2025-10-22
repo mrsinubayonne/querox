@@ -19,15 +19,13 @@ interface AddMenuItemModalProps {
   onClose: () => void;
   onSuccess: () => void;
   activeMenuId?: string;
-  defaultCategoryId?: string | null;
 }
 
 const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({ 
   isOpen, 
   onClose, 
   onSuccess,
-  activeMenuId,
-  defaultCategoryId
+  activeMenuId
 }) => {
   const { addMenuItem, loading } = useMenuItems();
   const { categories, menus, refetch } = useMenus();
@@ -45,18 +43,11 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
     name: '',
     description: '',
     price: 0,
-    category_id: defaultCategoryId || '',
+    category_id: '',
     image_url: APP_CONFIG.images.defaultMenuItem,
     is_available: true,
     allergens: []
   });
-
-  // Mettre à jour category_id quand defaultCategoryId change
-  React.useEffect(() => {
-    if (defaultCategoryId) {
-      setFormData(prev => ({ ...prev, category_id: defaultCategoryId }));
-    }
-  }, [defaultCategoryId]);
 
   const [allergenInput, setAllergenInput] = useState('');
 
@@ -106,7 +97,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
         name: '',
         description: '',
         price: 0,
-        category_id: defaultCategoryId || '',
+        category_id: '',
         image_url: APP_CONFIG.images.defaultMenuItem,
         is_available: true,
         allergens: []
