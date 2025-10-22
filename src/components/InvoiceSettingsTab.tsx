@@ -5,8 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useInvoiceSettings } from '@/hooks/useInvoiceSettings';
-import { FileText, Save, Loader2 } from 'lucide-react';
+import { FileText, Save, Loader2, Eye } from 'lucide-react';
 import LogoUpload from './LogoUpload';
+import InvoicePreview from './invoices/InvoicePreview';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const InvoiceSettingsTab: React.FC = () => {
   const { settings, loading, updateSettings } = useInvoiceSettings();
@@ -62,8 +64,22 @@ export const InvoiceSettingsTab: React.FC = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Card>
+    <div className="space-y-6">
+      <Tabs defaultValue="edit" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="edit">
+            <FileText className="w-4 h-4 mr-2" />
+            Modifier
+          </TabsTrigger>
+          <TabsTrigger value="preview">
+            <Eye className="w-4 h-4 mr-2" />
+            Aperçu en temps réel
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="edit">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" />
@@ -202,23 +218,40 @@ export const InvoiceSettingsTab: React.FC = () => {
             </div>
           </div>
         </CardContent>
-      </Card>
+            </Card>
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={saving} className="gap-2">
-          {saving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Enregistrement...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" />
-              Enregistrer les paramètres
-            </>
-          )}
-        </Button>
-      </div>
-    </form>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={saving} className="gap-2">
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Enregistrer les paramètres
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </TabsContent>
+
+        <TabsContent value="preview">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Aperçu en temps réel</CardTitle>
+                <CardDescription>
+                  Visualisez comment vos factures apparaîtront avec les paramètres actuels
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <InvoicePreview settings={formData} />
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };

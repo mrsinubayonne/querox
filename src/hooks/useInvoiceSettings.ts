@@ -94,6 +94,9 @@ export const useInvoiceSettings = () => {
         description: 'Paramètres de facturation mis à jour',
       });
 
+      // Force refetch to ensure latest data
+      await fetchSettings();
+      
       return true;
     } catch (error: any) {
       console.error('Error updating invoice settings:', error);
