@@ -7,7 +7,7 @@ import TransferMenuItemModal from '@/components/TransferMenuItemModal';
 import { useMenus, Menu, MenuCategory } from '@/hooks/useMenus';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useOutlets } from '@/hooks/useOutlets';
-import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft, Search } from 'lucide-react';
+import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft, Search, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,7 +41,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const [searchTerm, setSearchTerm] = useState('');
   
   const { items, categories, menus, loading, refetch, fetchAllMenus, fetchAllCategories } = useMenus();
-  const { toggleAvailability, deleteMenuItem, shareMenuItems } = useMenuItems();
+  const { toggleAvailability, deleteMenuItem, shareMenuItems, addMenuItem } = useMenuItems();
   const { outlets } = useOutlets();
 
   // Charger tous les menus et catégories pour le modal de transfert
@@ -159,6 +159,22 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
       await refetch();
       setSelectedItems(new Set());
       setShowBulkTransfer(false);
+    }
+  };
+
+  const handleDuplicateItem = async (item: MenuItem) => {
+    const success = await addMenuItem({
+      name: `${item.name} (copie)`,
+      description: item.description,
+      price: item.price,
+      category_id: item.category_id,
+      image_url: item.image_url,
+      is_available: item.is_available,
+      allergens: item.allergens || [],
+      order_index: item.order_index
+    });
+    if (success) {
+      await refetch();
     }
   };
 
@@ -296,15 +312,24 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                     </span>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditItem(item)}
-                      className="flex-1"
+                      className="flex-1 min-w-[100px]"
                     >
                       <Edit className="w-4 h-4 mr-1" />
                       Modifier
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDuplicateItem(item)}
+                      title="Dupliquer ce plat"
+                    >
+                      <Copy className="w-4 h-4" />
                     </Button>
                     
                     <Button
