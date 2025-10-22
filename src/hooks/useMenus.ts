@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export interface Menu {
   id: string;
@@ -47,10 +48,12 @@ export const useMenus = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
   const fetchingRef = useRef(false);
 
+  const navigate = useNavigate();
+  const tokenExpiredHandledRef = useRef(false);
   const fetchMenus = useCallback(async () => {
     if (!user || fetchingRef.current) {
       if (!user) {
@@ -157,7 +160,25 @@ export const useMenus = () => {
 
     } catch (error: any) {
       console.error('🚨 Error in fetchMenus:', error);
-      const errorMessage = error.message || 'Erreur lors du chargement des menus';
+      const code = error?.code;
+      const message = error?.message || '';
+      // Gestion spécifique de l'expiration du JWT
+      if ((code === 'PGRST301' || message.includes('JWT expired')) && !tokenExpiredHandledRef.current) {
+        tokenExpiredHandledRef.current = true;
+        toast({
+          title: "Session expirée",
+          description: "Votre session a expiré. Veuillez vous reconnecter.",
+          variant: "destructive",
+        });
+        try {
+          await signOut();
+        } finally {
+          navigate('/auth');
+        }
+        return;
+      }
+
+      const errorMessage = message || 'Erreur lors du chargement des menus';
       setError(errorMessage);
       toast({
         title: "Erreur",
@@ -168,7 +189,7 @@ export const useMenus = () => {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [user?.id, toast]);
+  }, [user?.id, toast, signOut, navigate]);
 
   const createDefaultMenu = useCallback(async () => {
     if (!user) return null;
