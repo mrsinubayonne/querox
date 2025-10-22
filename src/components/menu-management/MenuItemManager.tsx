@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import EmptyState from '@/components/EmptyState';
 import AddMenuItemModal from '@/components/AddMenuItemModal';
 import EditMenuItemModal from '@/components/EditMenuItemModal';
 import TransferMenuItemModal from '@/components/TransferMenuItemModal';
 
-import { useMenus } from '@/hooks/useMenus';
+import { useMenus, Menu, MenuCategory } from '@/hooks/useMenus';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useOutlets } from '@/hooks/useOutlets';
-import { Menu, Edit, Trash2, Eye, EyeOff, ArrowRightLeft } from 'lucide-react';
+import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,10 +35,25 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const [transferringItem, setTransferringItem] = useState<MenuItem | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [showBulkTransfer, setShowBulkTransfer] = useState(false);
+  const [allMenus, setAllMenus] = useState<Menu[]>([]);
+  const [allCategories, setAllCategories] = useState<MenuCategory[]>([]);
   
-  const { items, categories, menus, loading, refetch } = useMenus();
+  const { items, categories, menus, loading, refetch, fetchAllMenus, fetchAllCategories } = useMenus();
   const { toggleAvailability, deleteMenuItem, transferMenuItem } = useMenuItems();
   const { outlets } = useOutlets();
+
+  // Charger tous les menus et catégories pour le modal de transfert
+  useEffect(() => {
+    const loadAllData = async () => {
+      const [menusData, categoriesData] = await Promise.all([
+        fetchAllMenus(),
+        fetchAllCategories()
+      ]);
+      setAllMenus(menusData);
+      setAllCategories(categoriesData);
+    };
+    loadAllData();
+  }, [fetchAllMenus, fetchAllCategories]);
 
   const itemsToShow = activeMenuId
     ? items.filter((it) => {
@@ -157,7 +172,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
         <>
           <div className="mt-6">
             <EmptyState
-              icon={Menu}
+              icon={MenuIcon}
               title="Aucun plat configuré"
               description="Commencez par ajouter vos premiers plats à votre menu"
               actionLabel="Ajouter un plat"
@@ -199,7 +214,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                 </Button>
               )}
               <Button onClick={handleAddItem} className="bg-green-600 hover:bg-green-700">
-                <Menu className="w-4 h-4 mr-2" />
+                <MenuIcon className="w-4 h-4 mr-2" />
                 Ajouter un plat
               </Button>
             </div>
@@ -320,8 +335,8 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
             onClose={() => setTransferringItem(null)}
             onConfirm={handleTransferConfirm}
             itemName={transferringItem.name}
-            menus={menus}
-            categories={categories}
+            menus={allMenus}
+            categories={allCategories}
             currentCategoryId={transferringItem.category_id}
             outlets={outlets}
           />
@@ -333,8 +348,8 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
             onClose={() => setShowBulkTransfer(false)}
             onConfirm={handleBulkTransferConfirm}
             itemName={`${selectedItems.size} plat${selectedItems.size > 1 ? 's' : ''}`}
-            menus={menus}
-            categories={categories}
+            menus={allMenus}
+            categories={allCategories}
             currentCategoryId=""
             outlets={outlets}
             isBulkTransfer

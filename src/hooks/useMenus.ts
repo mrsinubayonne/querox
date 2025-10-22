@@ -299,6 +299,50 @@ export const useMenus = () => {
     fetchMenus();
   }, [fetchMenus]);
 
+  const fetchAllMenus = useCallback(async (): Promise<Menu[]> => {
+    if (!user) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from('menus')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all menus:', error);
+      return [];
+    }
+  }, [user?.id]);
+
+  const fetchAllCategories = useCallback(async (): Promise<MenuCategory[]> => {
+    if (!user) return [];
+
+    try {
+      const { data: allMenus } = await supabase
+        .from('menus')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (!allMenus || allMenus.length === 0) return [];
+
+      const menuIds = allMenus.map(m => m.id);
+      const { data, error } = await supabase
+        .from('menu_categories')
+        .select('*')
+        .in('menu_id', menuIds)
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all categories:', error);
+      return [];
+    }
+  }, [user?.id]);
+
   return {
     menus,
     categories,
@@ -307,6 +351,8 @@ export const useMenus = () => {
     error,
     refetch,
     createDefaultMenu,
-    transferMenu
+    transferMenu,
+    fetchAllMenus,
+    fetchAllCategories
   };
 };
