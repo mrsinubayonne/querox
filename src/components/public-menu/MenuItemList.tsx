@@ -1,7 +1,7 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import MenuItemCard from './MenuItemCard';
 import { MenuItem } from '@/types/menu';
+import { Button } from '@/components/ui/button';
 
 interface MenuItemListProps {
   groupedItems: Record<string, MenuItem[]>;
@@ -16,13 +16,19 @@ const MenuItemList: React.FC<MenuItemListProps> = ({
   menuItemsCount,
   filteredItemsCount,
 }) => {
-  console.log("🔥 MenuItemList - Debug:", {
-    groupedItemsKeys: Object.keys(groupedItems),
-    totalCategories: Object.keys(groupedItems).length,
-    menuItemsCount,
-    filteredItemsCount,
-    groupedItems
-  });
+  const [visibleItemsPerCategory, setVisibleItemsPerCategory] = useState<Record<string, number>>({});
+  const INITIAL_ITEMS = 6;
+  
+  const getVisibleCount = (category: string, totalItems: number) => {
+    return visibleItemsPerCategory[category] || Math.min(INITIAL_ITEMS, totalItems);
+  };
+  
+  const showMoreItems = (category: string, currentVisible: number) => {
+    setVisibleItemsPerCategory(prev => ({
+      ...prev,
+      [category]: currentVisible + 6
+    }));
+  };
 
   if (Object.keys(groupedItems).length === 0) {
     return (
@@ -50,7 +56,9 @@ const MenuItemList: React.FC<MenuItemListProps> = ({
   return (
     <>
       {Object.entries(groupedItems).map(([category, items]) => {
-        console.log(`🔥 Affichage catégorie "${category}" avec ${items.length} plats`);
+        const visibleCount = getVisibleCount(category, items.length);
+        const visibleItems = items.slice(0, visibleCount);
+        const hasMore = visibleCount < items.length;
         
         return (
           <section key={category} className="mb-12">
@@ -60,10 +68,22 @@ const MenuItemList: React.FC<MenuItemListProps> = ({
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <MenuItemCard key={item.id} item={item} onAddToCart={onAddToCart} />
               ))}
             </div>
+            
+            {hasMore && (
+              <div className="text-center mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => showMoreItems(category, visibleCount)}
+                  className="px-8"
+                >
+                  Voir plus ({items.length - visibleCount} restant{items.length - visibleCount > 1 ? 's' : ''})
+                </Button>
+              </div>
+            )}
           </section>
         );
       })}
