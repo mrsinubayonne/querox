@@ -258,7 +258,7 @@ export const useMenuItems = () => {
     return await updateMenuItem(id, { is_available: isAvailable });
   }, [updateMenuItem]);
 
-  const shareMenuItems = useCallback(async (itemIds: string[], targetCategoryIds: string[]): Promise<boolean> => {
+  const shareMenuItems = useCallback(async (itemIds: string[], targetOutletIds: string[]): Promise<boolean> => {
     if (!user) {
       toast({
         title: "Erreur",
@@ -270,15 +270,22 @@ export const useMenuItems = () => {
 
     setLoading(true);
     try {
-      console.log('🔄 Sharing menu items:', itemIds, 'to categories:', targetCategoryIds);
+      console.log('🔄 Sharing menu items:', itemIds, 'to outlets:', targetOutletIds);
 
-      // Récupérer les données complètes des items à partager
+      // Récupérer les données complètes des items à partager avec leurs catégories et menus
       const { data: items, error: itemsError } = await supabase
         .from('menu_items')
         .select(`
           *,
           menu_categories!inner(
-            menus!inner(user_id)
+            id,
+            name,
+            menus!inner(
+              id,
+              name,
+              outlet_id,
+              user_id
+            )
           )
         `)
         .in('id', itemIds)
@@ -294,42 +301,59 @@ export const useMenuItems = () => {
         return false;
       }
 
-      // Vérifier que toutes les catégories de destination appartiennent à l'utilisateur
-      const { data: categories, error: categoriesError } = await supabase
-        .from('menu_categories')
+      // Récupérer tous les menus et catégories des outlets de destination
+      const { data: targetMenus, error: menusError } = await supabase
+        .from('menus')
         .select(`
           id,
-          menus!inner(user_id)
+          name,
+          outlet_id,
+          menu_categories(id, name)
         `)
-        .in('id', targetCategoryIds)
-        .eq('menus.user_id', user.id);
+        .in('outlet_id', targetOutletIds)
+        .eq('user_id', user.id);
 
-      if (categoriesError || !categories || categories.length !== targetCategoryIds.length) {
-        console.error('Categories validation error:', categoriesError);
+      if (menusError || !targetMenus) {
+        console.error('Target menus fetch error:', menusError);
         toast({
           title: "Erreur",
-          description: "Catégories de destination invalides",
+          description: "Impossible de récupérer les menus de destination",
           variant: "destructive",
         });
         return false;
       }
 
-      // Créer les nouveaux items (copie vers chaque catégorie)
+      // Créer les nouveaux items (copie vers chaque outlet)
       const itemsToInsert = [];
       for (const item of items) {
-        for (const categoryId of targetCategoryIds) {
-          // Ne pas dupliquer si l'item est déjà dans cette catégorie
-          if (item.category_id !== categoryId) {
-            itemsToInsert.push({
-              name: item.name,
-              description: item.description,
-              price: item.price,
-              category_id: categoryId,
-              image_url: item.image_url,
-              is_available: item.is_available,
-              allergens: item.allergens,
-              order_index: item.order_index || 0,
-            });
+        const sourceCategory = item.menu_categories;
+        const sourceMenu = sourceCategory.menus;
+        
+        // Pour chaque outlet de destination
+        for (const outletId of targetOutletIds) {
+          // Trouver le menu avec le même nom dans cet outlet
+          const targetMenu = targetMenus.find(
+            m => m.outlet_id === outletId && m.name === sourceMenu.name
+          );
+
+          if (targetMenu && targetMenu.menu_categories) {
+            // Trouver la catégorie avec le même nom dans ce menu
+            const targetCategory = targetMenu.menu_categories.find(
+              c => c.name === sourceCategory.name
+            );
+
+            if (targetCategory && targetCategory.id !== item.category_id) {
+              itemsToInsert.push({
+                name: item.name,
+                description: item.description,
+                price: item.price,
+                category_id: targetCategory.id,
+                image_url: item.image_url,
+                is_available: item.is_available,
+                allergens: item.allergens,
+                order_index: item.order_index || 0,
+              });
+            }
           }
         }
       }
@@ -337,7 +361,7 @@ export const useMenuItems = () => {
       if (itemsToInsert.length === 0) {
         toast({
           title: "Information",
-          description: "Les plats existent déjà dans les catégories sélectionnées",
+          description: "Aucune catégorie correspondante trouvée dans les points de vente sélectionnés",
         });
         return true;
       }

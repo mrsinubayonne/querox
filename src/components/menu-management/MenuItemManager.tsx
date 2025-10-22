@@ -111,9 +111,9 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
     setTransferringItem(item);
   };
 
-  const handleTransferConfirm = async (categoryId: string) => {
+  const handleTransferConfirm = async (outletIds: string[]) => {
     if (!transferringItem) return;
-    const success = await shareMenuItems([transferringItem.id], [categoryId]);
+    const success = await shareMenuItems([transferringItem.id], outletIds);
     if (success) {
       await refetch();
       setTransferringItem(null);
@@ -142,8 +142,8 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
     setShowBulkTransfer(true);
   };
 
-  const handleBulkTransferConfirm = async (categoryId: string) => {
-    const success = await shareMenuItems(Array.from(selectedItems), [categoryId]);
+  const handleBulkTransferConfirm = async (outletIds: string[]) => {
+    const success = await shareMenuItems(Array.from(selectedItems), outletIds);
     if (success) {
       await refetch();
       setSelectedItems(new Set());
@@ -331,10 +331,8 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
             onClose={() => setTransferringItem(null)}
             onConfirm={handleTransferConfirm}
             itemName={transferringItem.name}
-            menus={allMenus}
-            categories={allCategories}
-            currentCategoryId={transferringItem.category_id}
             outlets={outlets}
+            currentOutletId={menus.find(m => categories.find(c => c.id === transferringItem.category_id)?.menu_id === m.id)?.outlet_id || ''}
           />
         )}
 
@@ -344,10 +342,8 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
             onClose={() => setShowBulkTransfer(false)}
             onConfirm={handleBulkTransferConfirm}
             itemName={`${selectedItems.size} plat${selectedItems.size > 1 ? 's' : ''}`}
-            menus={allMenus}
-            categories={allCategories}
-            currentCategoryId=""
             outlets={outlets}
+            currentOutletId={menus[0]?.outlet_id || ''}
             isBulkTransfer
           />
         )}

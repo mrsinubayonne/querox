@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Menu, MenuCategory } from '@/hooks/useMenus';
 
 interface Outlet {
   id: string;
@@ -26,12 +25,10 @@ interface Outlet {
 interface TransferMenuItemModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (categoryId: string) => Promise<void>;
+  onConfirm: (outletIds: string[]) => Promise<void>;
   itemName: string;
-  menus: Menu[];
-  categories: MenuCategory[];
-  currentCategoryId: string;
   outlets: Outlet[];
+  currentOutletId: string;
   isBulkTransfer?: boolean;
 }
 
@@ -40,52 +37,37 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
   onClose,
   onConfirm,
   itemName,
-  menus,
-  categories,
-  currentCategoryId,
   outlets,
+  currentOutletId,
   isBulkTransfer = false,
 }) => {
-  const [selectedOutletId, setSelectedOutletId] = useState<string>('');
-  const [selectedMenuId, setSelectedMenuId] = useState<string>('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedOutletIds, setSelectedOutletIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
 
-  const availableMenus = useMemo(() => {
-    if (!selectedOutletId) return [];
-    return menus.filter(menu => menu.outlet_id === selectedOutletId);
-  }, [selectedOutletId, menus]);
+  const availableOutlets = useMemo(() => {
+    return outlets.filter(outlet => outlet.id !== currentOutletId);
+  }, [outlets, currentOutletId]);
 
-  const availableCategories = useMemo(() => {
-    if (!selectedMenuId) return [];
-    return categories.filter(cat => {
-      if (isBulkTransfer) {
-        return cat.menu_id === selectedMenuId;
+  const toggleOutlet = (outletId: string) => {
+    setSelectedOutletIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(outletId)) {
+        newSet.delete(outletId);
+      } else {
+        newSet.add(outletId);
       }
-      return cat.menu_id === selectedMenuId && cat.id !== currentCategoryId;
+      return newSet;
     });
-  }, [selectedMenuId, categories, currentCategoryId, isBulkTransfer]);
-
-  const handleOutletChange = (outletId: string) => {
-    setSelectedOutletId(outletId);
-    setSelectedMenuId('');
-    setSelectedCategoryId('');
-  };
-
-  const handleMenuChange = (menuId: string) => {
-    setSelectedMenuId(menuId);
-    setSelectedCategoryId('');
   };
 
   const handleConfirm = async () => {
-    if (!selectedCategoryId) return;
+    if (selectedOutletIds.size === 0) return;
     
     setIsLoading(true);
     try {
-      await onConfirm(selectedCategoryId);
+      await onConfirm(Array.from(selectedOutletIds));
       onClose();
-      setSelectedMenuId('');
-      setSelectedCategoryId('');
+      setSelectedOutletIds(new Set());
     } finally {
       setIsLoading(false);
     }
@@ -93,9 +75,7 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
 
   const handleClose = () => {
     onClose();
-    setSelectedOutletId('');
-    setSelectedMenuId('');
-    setSelectedCategoryId('');
+    setSelectedOutletIds(new Set());
   };
 
   return (
@@ -104,80 +84,46 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
         <DialogHeader>
           <DialogTitle>Partager {isBulkTransfer ? 'les plats' : 'le plat'}</DialogTitle>
           <DialogDescription>
-            Copier "{itemName}" vers d'autres points de vente
+            {isBulkTransfer 
+              ? "Copier les plats sélectionnés dans les mêmes catégories des autres points de vente"
+              : `Copier "${itemName}" dans la même catégorie des autres points de vente`
+            }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div>
-            <Label className="text-sm font-medium mb-2 block">
-              Point de vente de destination
+            <Label className="text-sm font-medium mb-3 block">
+              Sélectionner les points de vente
             </Label>
-            <Select value={selectedOutletId} onValueChange={handleOutletChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un point de vente" />
-              </SelectTrigger>
-              <SelectContent>
-                {outlets.map((outlet) => (
-                  <SelectItem key={outlet.id} value={outlet.id}>
-                    {outlet.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {availableOutlets.length === 0 ? (
+                <div className="p-4 text-sm text-muted-foreground text-center">
+                  Aucun autre point de vente disponible
+                </div>
+              ) : (
+                availableOutlets.map((outlet) => (
+                  <label
+                    key={outlet.id}
+                    className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedOutletIds.has(outlet.id)}
+                      onChange={() => toggleOutlet(outlet.id)}
+                      className="w-4 h-4 rounded border-gray-300"
+                    />
+                    <span className="text-sm font-medium">{outlet.name}</span>
+                  </label>
+                ))
+              )}
+            </div>
+            {selectedOutletIds.size > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {selectedOutletIds.size} point{selectedOutletIds.size > 1 ? 's' : ''} de vente sélectionné{selectedOutletIds.size > 1 ? 's' : ''}
+              </p>
+            )}
           </div>
-
-          {selectedOutletId && (
-            <div>
-              <Label className="text-sm font-medium mb-2 block">
-                Menu de destination
-              </Label>
-              <Select value={selectedMenuId} onValueChange={handleMenuChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un menu" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableMenus.length === 0 ? (
-                    <div className="p-2 text-sm text-gray-500">
-                      Aucun menu disponible pour ce point de vente
-                    </div>
-                  ) : (
-                    availableMenus.map((menu) => (
-                      <SelectItem key={menu.id} value={menu.id}>
-                        {menu.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {selectedMenuId && (
-            <div>
-              <Label className="text-sm font-medium mb-2 block">
-                Catégorie de destination
-              </Label>
-              <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une catégorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableCategories.length === 0 ? (
-                    <div className="p-2 text-sm text-gray-500">
-                      Aucune catégorie disponible
-                    </div>
-                  ) : (
-                    availableCategories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
         </div>
 
         <DialogFooter>
@@ -186,7 +132,7 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
           </Button>
           <Button 
             onClick={handleConfirm} 
-            disabled={!selectedCategoryId || isLoading}
+            disabled={selectedOutletIds.size === 0 || isLoading}
           >
             {isLoading ? 'Partage...' : 'Partager'}
           </Button>
