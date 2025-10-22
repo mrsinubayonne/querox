@@ -3,6 +3,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useSubscription } from './useSubscription';
+
+const OUTLET_LIMITS = {
+  'starter': 1,
+  'pro': 3,
+  'entreprise': 10
+};
 
 export interface Outlet {
   id: string;
@@ -19,9 +26,20 @@ type UpdateOutletData = Partial<Pick<Outlet, 'name' | 'address' | 'phone'>>;
 
 export const useOutlets = () => {
   const { user } = useAuth();
+  const { subscription } = useSubscription();
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const getOutletLimit = () => {
+    const tier = subscription?.subscription_tier || 'starter';
+    return OUTLET_LIMITS[tier as keyof typeof OUTLET_LIMITS] || 1;
+  };
+
+  const canAddMoreOutlets = () => {
+    const limit = getOutletLimit();
+    return outlets.length < limit;
+  };
 
   const loadOutlets = async (): Promise<void> => {
     if (!user?.id) {
@@ -80,6 +98,14 @@ export const useOutlets = () => {
 
   const createOutlet = async (outletData: CreateOutletData): Promise<Outlet | undefined> => {
     if (!user?.id) return undefined;
+
+    if (!canAddMoreOutlets()) {
+      const limit = getOutletLimit();
+      toast.error(
+        `Limite atteinte - Votre plan ${subscription?.subscription_tier || 'starter'} permet jusqu'à ${limit} point(s) de vente. Passez à un plan supérieur pour en ajouter plus.`
+      );
+      return undefined;
+    }
 
     try {
       const { data, error } = await supabase
@@ -173,6 +199,8 @@ export const useOutlets = () => {
     updateOutlet,
     deleteOutlet,
     selectOutlet,
-    refetch: loadOutlets
+    refetch: loadOutlets,
+    canAddMoreOutlets,
+    getOutletLimit
   };
 };

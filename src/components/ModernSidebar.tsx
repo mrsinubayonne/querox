@@ -27,7 +27,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { isAdmin } = useSubscription();
-  const { outlets, selectedOutletId, selectOutlet } = useOutlets();
+  const { outlets, selectedOutletId, selectOutlet, canAddMoreOutlets, getOutletLimit } = useOutlets();
   
   const [servicesExpanded, setServicesExpanded] = useState(location.pathname.includes('/service'));
   const [marketingExpanded, setMarketingExpanded] = useState(location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook'));
@@ -217,11 +217,22 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => navigate('/select-outlet')}
+                onClick={() => {
+                  if (canAddMoreOutlets()) {
+                    navigate('/select-outlet');
+                  } else {
+                    navigate('/abonnement');
+                  }
+                }}
                 className="flex items-center cursor-pointer text-primary"
               >
                 <Plus size={16} className="mr-2" />
-                <span>Ajouter un point de vente</span>
+                <span>
+                  {canAddMoreOutlets() 
+                    ? 'Ajouter un point de vente' 
+                    : `Limite atteinte (${getOutletLimit()} max)`
+                  }
+                </span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

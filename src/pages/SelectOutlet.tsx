@@ -14,7 +14,7 @@ import SubscriptionGuard from '@/components/SubscriptionGuard';
 const SelectOutlet: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { outlets, loading, createOutlet, selectOutlet, selectedOutletId } = useOutlets();
+  const { outlets, loading, createOutlet, selectOutlet, selectedOutletId, canAddMoreOutlets, getOutletLimit } = useOutlets();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -124,13 +124,33 @@ const SelectOutlet: React.FC = () => {
 
             {/* Card pour créer un nouveau point de vente */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-dashed border-2 flex items-center justify-center min-h-[280px]">
+              <DialogTrigger asChild disabled={!canAddMoreOutlets()}>
+                <Card className={`transition-shadow cursor-pointer border-dashed border-2 flex items-center justify-center min-h-[280px] ${
+                  canAddMoreOutlets() 
+                    ? 'hover:shadow-lg' 
+                    : 'opacity-50 cursor-not-allowed'
+                }`}>
                   <CardContent className="text-center py-8">
                     <Plus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-lg font-semibold text-foreground">
-                      Créer un nouveau point de vente
+                      {canAddMoreOutlets() 
+                        ? 'Créer un nouveau point de vente'
+                        : `Limite atteinte (${getOutletLimit()} max)`
+                      }
                     </p>
+                    {!canAddMoreOutlets() && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        <Button 
+                          variant="link" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate('/abonnement');
+                          }}
+                        >
+                          Passer à un plan supérieur
+                        </Button>
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               </DialogTrigger>

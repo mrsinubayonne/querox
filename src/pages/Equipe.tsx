@@ -197,23 +197,29 @@ const Equipe: React.FC = () => {
                             <span>Ajouté le {formatDate(member.invited_at)}</span>
                           </div>
                            {(member as any).access_code && (
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 bg-gray-100 p-2 rounded">
-                                <Key className="w-4 h-4 text-gray-600" />
-                                <code className="font-mono font-bold text-sm">{(member as any).access_code}</code>
+                            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold text-blue-900 flex items-center gap-1">
+                                  <Key className="w-3 h-3" />
+                                  Code d'accès à partager
+                                </span>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => copyAccessCode((member as any).access_code)}
+                                  className="h-6 px-2"
                                 >
                                   <Copy className="w-3 h-3" />
                                 </Button>
                               </div>
-                              <p className="text-xs text-gray-500 ml-6">
-                                Ce code permet la connexion sur /auth
+                              <code className="block px-3 py-2 bg-white text-blue-700 rounded font-mono text-base font-bold text-center border border-blue-300">
+                                {(member as any).access_code}
+                              </code>
+                              <p className="text-xs text-blue-600 mt-2">
+                                Le membre doit se connecter sur <strong>/team-login</strong> avec son email et ce code
                               </p>
                             </div>
-                           )}
+                          )}
                         </div>
                       </div>
                       <Button
