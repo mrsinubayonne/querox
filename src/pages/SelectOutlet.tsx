@@ -27,12 +27,7 @@ const SelectOutlet: React.FC = () => {
       navigate('/auth');
       return;
     }
-
-    // Si un outlet est déjà sélectionné, rediriger vers le dashboard
-    if (selectedOutletId && outlets.length > 0) {
-      navigate('/dashboard');
-    }
-  }, [user, selectedOutletId, outlets, navigate]);
+  }, [user, navigate]);
 
   const handleCreateOutlet = async (e: React.FormEvent) => {
     e.preventDefault();

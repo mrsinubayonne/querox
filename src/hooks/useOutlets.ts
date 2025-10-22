@@ -7,8 +7,8 @@ import { useSubscription } from './useSubscription';
 
 const OUTLET_LIMITS = {
   'starter': 1,
-  'pro': 3,
-  'entreprise': 10
+  'pro': 2,
+  'entreprise': 3
 };
 
 export interface Outlet {
