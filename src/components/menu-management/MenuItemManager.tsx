@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import EmptyState from '@/components/EmptyState';
 import AddMenuItemModal from '@/components/AddMenuItemModal';
 import EditMenuItemModal from '@/components/EditMenuItemModal';
+import TransferMenuItemModal from '@/components/TransferMenuItemModal';
 
 import { useMenus } from '@/hooks/useMenus';
 import { useMenuItems } from '@/hooks/useMenuItems';
-import { Menu, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Menu, Edit, Trash2, Eye, EyeOff, ArrowRightLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,9 +30,10 @@ interface EditableMenuItem {
 const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState<EditableMenuItem | null>(null);
+  const [transferringItem, setTransferringItem] = useState<MenuItem | null>(null);
   
   const { items, categories, menus, loading, refetch } = useMenus();
-  const { toggleAvailability, deleteMenuItem } = useMenuItems();
+  const { toggleAvailability, deleteMenuItem, transferMenuItem } = useMenuItems();
 
   const itemsToShow = activeMenuId
     ? items.filter((it) => {
@@ -83,6 +85,19 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
       is_available: item.is_available
     };
     setEditingItem(editableItem);
+  };
+
+  const handleTransferClick = (item: MenuItem) => {
+    setTransferringItem(item);
+  };
+
+  const handleTransferConfirm = async (categoryId: string) => {
+    if (!transferringItem) return;
+    const success = await transferMenuItem(transferringItem.id, categoryId);
+    if (success) {
+      await refetch();
+      setTransferringItem(null);
+    }
   };
 
   if (loading) {
@@ -177,6 +192,15 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleTransferClick(item)}
+                      title="Transférer vers un autre menu"
+                    >
+                      <ArrowRightLeft className="w-4 h-4" />
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleToggleAvailability(item.id, item.is_available)}
                     >
                       {item.is_available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -210,6 +234,18 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
           onClose={() => setEditingItem(null)}
           onSuccess={handleEditSuccess}
         />
+
+        {transferringItem && (
+          <TransferMenuItemModal
+            isOpen={!!transferringItem}
+            onClose={() => setTransferringItem(null)}
+            onConfirm={handleTransferConfirm}
+            itemName={transferringItem.name}
+            menus={menus}
+            categories={categories}
+            currentCategoryId={transferringItem.category_id}
+          />
+        )}
       </>
     );
   };
