@@ -7,11 +7,12 @@ import TransferMenuItemModal from '@/components/TransferMenuItemModal';
 import { useMenus, Menu, MenuCategory } from '@/hooks/useMenus';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useOutlets } from '@/hooks/useOutlets';
-import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft } from 'lucide-react';
+import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import SafeImage from '@/components/SafeImage';
 import { APP_CONFIG } from '@/config/app.config';
 
@@ -37,6 +38,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const [showBulkTransfer, setShowBulkTransfer] = useState(false);
   const [allMenus, setAllMenus] = useState<Menu[]>([]);
   const [allCategories, setAllCategories] = useState<MenuCategory[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const { items, categories, menus, loading, refetch, fetchAllMenus, fetchAllCategories } = useMenus();
   const { toggleAvailability, deleteMenuItem, shareMenuItems } = useMenuItems();
@@ -61,6 +63,15 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
         return cat?.menu_id === activeMenuId;
       })
     : items;
+
+  // Filtrer par recherche
+  const filteredItems = searchTerm.trim() === '' 
+    ? itemsToShow 
+    : itemsToShow.filter(item => 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        item.category_name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
   const handleAddItem = () => {
     setShowAddModal(true);
@@ -163,7 +174,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   }
 
   const MenuItemsContent = () => {
-    if (itemsToShow.length === 0) {
+    if (itemsToShow.length === 0 && searchTerm.trim() === '') {
       return (
         <>
           <div className="mt-6">
@@ -216,21 +227,38 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
             </div>
           </div>
 
-          {itemsToShow.length > 0 && (
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Rechercher un plat par nom, description ou catégorie..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          {filteredItems.length === 0 && searchTerm.trim() !== '' && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Aucun plat trouvé pour "{searchTerm}"</p>
+            </div>
+          )}
+
+          {filteredItems.length > 0 && (
             <div className="flex items-center gap-2 py-2 border-b">
               <Checkbox
-                checked={selectedItems.size === itemsToShow.length}
+                checked={selectedItems.size === filteredItems.length && filteredItems.length > 0}
                 onCheckedChange={handleSelectAll}
                 id="select-all"
               />
               <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
-                Tout sélectionner
+                Tout sélectionner {searchTerm.trim() !== '' && `(${filteredItems.length} résultat${filteredItems.length > 1 ? 's' : ''})`}
               </label>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {itemsToShow.map((item) => (
+            {filteredItems.map((item) => (
               <Card key={item.id} className="overflow-hidden relative">
                 <div className="absolute top-3 left-3 z-10">
                   <Checkbox
