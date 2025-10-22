@@ -7,12 +7,13 @@ import TransferMenuItemModal from '@/components/TransferMenuItemModal';
 import { useMenus, Menu, MenuCategory } from '@/hooks/useMenus';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useOutlets } from '@/hooks/useOutlets';
-import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft, Search } from 'lucide-react';
+import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft, Search, Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import SafeImage from '@/components/SafeImage';
 import { APP_CONFIG } from '@/config/app.config';
 
@@ -39,6 +40,8 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const [allMenus, setAllMenus] = useState<Menu[]>([]);
   const [allCategories, setAllCategories] = useState<MenuCategory[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [selectedCategoryForAdd, setSelectedCategoryForAdd] = useState<string | null>(null);
   
   const { items, categories, menus, loading, refetch, fetchAllMenus, fetchAllCategories } = useMenus();
   const { toggleAvailability, deleteMenuItem, shareMenuItems } = useMenuItems();
@@ -73,8 +76,43 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
         item.category_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
-  const handleAddItem = () => {
+  // Grouper les items par catégorie
+  const categoriesToShow = activeMenuId 
+    ? categories.filter(cat => cat.menu_id === activeMenuId)
+    : categories;
+
+  const itemsByCategory = categoriesToShow.reduce((acc, category) => {
+    acc[category.id] = filteredItems.filter(item => item.category_id === category.id);
+    return acc;
+  }, {} as Record<string, typeof filteredItems>);
+
+  // Ouvrir automatiquement toutes les catégories lors du premier chargement
+  React.useEffect(() => {
+    if (categoriesToShow.length > 0 && expandedCategories.size === 0) {
+      setExpandedCategories(new Set(categoriesToShow.map(cat => cat.id)));
+    }
+  }, [categoriesToShow.length]);
+
+  // Ouvrir toutes les catégories lors d'une recherche
+  React.useEffect(() => {
+    if (searchTerm.trim() !== '') {
+      setExpandedCategories(new Set(categoriesToShow.map(cat => cat.id)));
+    }
+  }, [searchTerm]);
+
+  const handleAddItem = (categoryId?: string) => {
+    setSelectedCategoryForAdd(categoryId || null);
     setShowAddModal(true);
+  };
+
+  const toggleCategory = (categoryId: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
   };
 
   const handleModalSuccess = async () => {
@@ -174,25 +212,18 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   }
 
   const MenuItemsContent = () => {
-    if (itemsToShow.length === 0 && searchTerm.trim() === '') {
+    if (categoriesToShow.length === 0) {
       return (
         <>
           <div className="mt-6">
             <EmptyState
               icon={MenuIcon}
-              title="Aucun plat configuré"
-              description="Commencez par ajouter vos premiers plats à votre menu"
-              actionLabel="Ajouter un plat"
-              onAction={handleAddItem}
+              title="Aucune catégorie"
+              description="Commencez par créer des catégories pour organiser votre menu"
+              actionLabel="Gérer les catégories"
+              onAction={() => {}}
             />
           </div>
-
-          <AddMenuItemModal
-            isOpen={showAddModal}
-            onClose={() => setShowAddModal(false)}
-            onSuccess={handleModalSuccess}
-            activeMenuId={activeMenuId}
-          />
         </>
       );
     }
@@ -209,22 +240,16 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                 </Badge>
               )}
             </div>
-            <div className="flex gap-2">
-              {selectedItems.size > 0 && (
-                <Button 
-                  onClick={handleBulkTransferClick} 
-                  variant="outline"
-                  className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                >
-                  <ArrowRightLeft className="w-4 h-4 mr-2" />
-                  Partager la sélection
-                </Button>
-              )}
-              <Button onClick={handleAddItem} className="bg-green-600 hover:bg-green-700">
-                <MenuIcon className="w-4 h-4 mr-2" />
-                Ajouter un plat
+            {selectedItems.size > 0 && (
+              <Button 
+                onClick={handleBulkTransferClick} 
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                <ArrowRightLeft className="w-4 h-4 mr-2" />
+                Partager la sélection
               </Button>
-            </div>
+            )}
           </div>
 
           <div className="relative max-w-md">
@@ -244,106 +269,165 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
             </div>
           )}
 
-          {filteredItems.length > 0 && (
-            <div className="flex items-center gap-2 py-2 border-b">
-              <Checkbox
-                checked={selectedItems.size === filteredItems.length && filteredItems.length > 0}
-                onCheckedChange={handleSelectAll}
-                id="select-all"
-              />
-              <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
-                Tout sélectionner {searchTerm.trim() !== '' && `(${filteredItems.length} résultat${filteredItems.length > 1 ? 's' : ''})`}
-              </label>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredItems.map((item) => (
-              <Card key={item.id} className="overflow-hidden relative">
-                <div className="absolute top-3 left-3 z-10">
-                  <Checkbox
-                    checked={selectedItems.has(item.id)}
-                    onCheckedChange={(checked) => handleSelectItem(item.id, checked as boolean)}
-                    className="bg-white border-2"
-                  />
-                </div>
-                <div className="aspect-video bg-gray-100 overflow-hidden">
-                  <SafeImage
-                    src={item.image_url || APP_CONFIG.images.defaultMenuItem}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg line-clamp-1">{item.name}</CardTitle>
-                    <Badge variant={item.is_available ? "default" : "secondary"}>
-                      {item.is_available ? "Disponible" : "Indisponible"}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-gray-600">{item.category_name}</p>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  {item.description && (
-                    <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.description}</p>
-                  )}
+          {/* Affichage par catégories */}
+          <div className="space-y-4">
+            {categoriesToShow.map((category) => {
+              const categoryItems = itemsByCategory[category.id] || [];
+              const isExpanded = expandedCategories.has(category.id);
+              
+              return (
+                <Collapsible
+                  key={category.id}
+                  open={isExpanded}
+                  onOpenChange={() => toggleCategory(category.id)}
+                  className="border rounded-lg"
+                >
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center justify-between p-4 hover:bg-accent/50 cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        {isExpanded ? (
+                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-lg">{category.name}</h3>
+                          {category.description && (
+                            <p className="text-sm text-muted-foreground">{category.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="secondary">
+                          {categoryItems.length} plat{categoryItems.length !== 1 ? 's' : ''}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddItem(category.id);
+                          }}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Ajouter un plat
+                        </Button>
+                      </div>
+                    </div>
+                  </CollapsibleTrigger>
                   
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-lg font-bold text-green-600">
-                      {item.price.toLocaleString()} FCFA
-                    </span>
-                  </div>
+                  <CollapsibleContent>
+                    {categoryItems.length === 0 ? (
+                      <div className="p-8 text-center border-t">
+                        <p className="text-muted-foreground mb-4">Aucun plat dans cette catégorie</p>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAddItem(category.id)}
+                          variant="outline"
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Ajouter le premier plat
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="p-4 border-t">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {categoryItems.map((item) => (
+                            <Card key={item.id} className="overflow-hidden relative">
+                              <div className="absolute top-3 left-3 z-10">
+                                <Checkbox
+                                  checked={selectedItems.has(item.id)}
+                                  onCheckedChange={(checked) => handleSelectItem(item.id, checked as boolean)}
+                                  className="bg-white border-2"
+                                />
+                              </div>
+                              <div className="aspect-video bg-gray-100 overflow-hidden">
+                                <SafeImage
+                                  src={item.image_url || APP_CONFIG.images.defaultMenuItem}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              
+                              <CardHeader className="pb-2">
+                                <div className="flex justify-between items-start">
+                                  <CardTitle className="text-lg line-clamp-1">{item.name}</CardTitle>
+                                  <Badge variant={item.is_available ? "default" : "secondary"}>
+                                    {item.is_available ? "Disponible" : "Indisponible"}
+                                  </Badge>
+                                </div>
+                              </CardHeader>
+                              
+                              <CardContent className="pt-0">
+                                {item.description && (
+                                  <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.description}</p>
+                                )}
+                                
+                                <div className="flex justify-between items-center mb-4">
+                                  <span className="text-lg font-bold text-green-600">
+                                    {item.price.toLocaleString()} FCFA
+                                  </span>
+                                </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditItem(item)}
-                      className="flex-1"
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Modifier
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleTransferClick(item)}
-                      title="Partager avec d'autres points de vente"
-                    >
-                      <ArrowRightLeft className="w-4 h-4" />
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleToggleAvailability(item.id, item.is_available)}
-                    >
-                      {item.is_available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditItem(item)}
+                                    className="flex-1"
+                                  >
+                                    <Edit className="w-4 h-4 mr-1" />
+                                    Modifier
+                                  </Button>
+                                  
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleTransferClick(item)}
+                                    title="Partager avec d'autres points de vente"
+                                  >
+                                    <ArrowRightLeft className="w-4 h-4" />
+                                  </Button>
+                                  
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleToggleAvailability(item.id, item.is_available)}
+                                  >
+                                    {item.is_available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                  </Button>
+                                  
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteItem(item.id)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
           </div>
         </div>
 
         <AddMenuItemModal
           isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
+          onClose={() => {
+            setShowAddModal(false);
+            setSelectedCategoryForAdd(null);
+          }}
           onSuccess={handleModalSuccess}
           activeMenuId={activeMenuId}
+          defaultCategoryId={selectedCategoryForAdd}
         />
 
         <EditMenuItemModal
