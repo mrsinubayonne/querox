@@ -36,26 +36,13 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const [transferringItem, setTransferringItem] = useState<MenuItem | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [showBulkTransfer, setShowBulkTransfer] = useState(false);
-  const [allMenus, setAllMenus] = useState<Menu[]>([]);
-  const [allCategories, setAllCategories] = useState<MenuCategory[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
   
-  const { items, categories, menus, loading, refetch, fetchAllMenus, fetchAllCategories } = useMenus();
+  const { items, categories, menus, loading, refetch } = useMenus();
   const { toggleAvailability, deleteMenuItem, shareMenuItems, addMenuItem } = useMenuItems();
   const { outlets } = useOutlets();
-
-  // Charger tous les menus et catégories pour le modal de transfert
-  useEffect(() => {
-    const loadAllData = async () => {
-      const [menusData, categoriesData] = await Promise.all([
-        fetchAllMenus(),
-        fetchAllCategories()
-      ]);
-      setAllMenus(menusData);
-      setAllCategories(categoriesData);
-    };
-    loadAllData();
-  }, [fetchAllMenus, fetchAllCategories]);
 
   const itemsToShow = activeMenuId
     ? items.filter((it) => {
@@ -72,6 +59,16 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
         (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
         item.category_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
+
+  // Pagination
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleAddItem = () => {
     setShowAddModal(true);
@@ -143,7 +140,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedItems(new Set(itemsToShow.map(item => item.id)));
+      setSelectedItems(new Set(paginatedItems.map(item => item.id)));
     } else {
       setSelectedItems(new Set());
     }
@@ -263,7 +260,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
           {filteredItems.length > 0 && (
             <div className="flex items-center gap-2 py-2 border-b">
               <Checkbox
-                checked={selectedItems.size === filteredItems.length && filteredItems.length > 0}
+                checked={selectedItems.size === paginatedItems.length && paginatedItems.length > 0 && paginatedItems.every(item => selectedItems.has(item.id))}
                 onCheckedChange={handleSelectAll}
                 id="select-all"
               />
@@ -274,7 +271,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredItems.map((item) => (
+            {paginatedItems.map((item) => (
               <Card key={item.id} className="overflow-hidden relative">
                 <div className="absolute top-3 left-3 z-10">
                   <Checkbox
@@ -284,10 +281,11 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                   />
                 </div>
                 <div className="aspect-video bg-gray-100 overflow-hidden">
-                  <SafeImage
+                  <img
                     src={item.image_url || APP_CONFIG.images.defaultMenuItem}
                     alt={item.name}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 </div>
                 
@@ -362,6 +360,30 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
               </Card>
             ))}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Précédent
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} sur {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Suivant
+              </Button>
+            </div>
+          )}
         </div>
 
         <AddMenuItemModal
