@@ -4,24 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
 import { CheckCircle2, ArrowRight, TrendingUp, Users, Zap } from 'lucide-react';
-
 const SalesFunnelHero: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-
+  const {
+    user
+  } = useAuth();
   const handleGetStarted = () => {
     if (user) {
       navigate('/dashboard');
     } else {
       const pricingSection = document.querySelector('#pricing');
       if (pricingSection) {
-        pricingSection.scrollIntoView({ behavior: 'smooth' });
+        pricingSection.scrollIntoView({
+          behavior: 'smooth'
+        });
       }
     }
   };
-
-  return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-background via-primary/5 to-background">
+  return <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-background via-primary/5 to-background">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.15),transparent_50%)]"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,hsl(var(--primary)/0.1),transparent_50%)]"></div>
@@ -53,35 +53,17 @@ const SalesFunnelHero: React.FC = () => {
             </p>
 
             {/* Benefits Checklist */}
-            <div className="space-y-3">
-              {[
-                'Gagnez 4h par jour sur les tâches administratives',
-                'Réduisez vos pertes de stocks de 40%',
-                'Augmentez vos réservations de 65%'
-              ].map((benefit, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span className="text-base text-foreground font-medium">{benefit}</span>
-                </div>
-              ))}
-            </div>
+            
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button 
-                size="lg"
-                onClick={handleGetStarted}
-                className="bg-gradient-to-r from-primary via-purple-600 to-pink-600 hover:opacity-90 text-white font-bold text-lg px-8 py-6 rounded-xl shadow-2xl hover:shadow-primary/50 transition-all duration-300 group"
-              >
+              <Button size="lg" onClick={handleGetStarted} className="bg-gradient-to-r from-primary via-purple-600 to-pink-600 hover:opacity-90 text-white font-bold text-lg px-8 py-6 rounded-xl shadow-2xl hover:shadow-primary/50 transition-all duration-300 group">
                 Démarrer maintenant
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button 
-                size="lg"
-                variant="outline"
-                onClick={() => document.querySelector('#how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-                className="border-2 font-semibold text-lg px-8 py-6 rounded-xl"
-              >
+              <Button size="lg" variant="outline" onClick={() => document.querySelector('#how-it-works')?.scrollIntoView({
+              behavior: 'smooth'
+            })} className="border-2 font-semibold text-lg px-8 py-6 rounded-xl">
                 Voir comment ça marche
               </Button>
             </div>
@@ -90,9 +72,7 @@ const SalesFunnelHero: React.FC = () => {
             <div className="flex flex-wrap items-center gap-8 pt-6 border-t border-border">
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-2">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-purple-600 border-2 border-background"></div>
-                  ))}
+                  {[1, 2, 3, 4].map(i => <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-purple-600 border-2 border-background"></div>)}
                 </div>
                 <span className="text-sm font-medium text-muted-foreground">
                   <span className="text-foreground font-bold">500+</span> restaurateurs satisfaits
@@ -136,8 +116,6 @@ const SalesFunnelHero: React.FC = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default SalesFunnelHero;
