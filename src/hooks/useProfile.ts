@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface Profile {
   id: string;
@@ -15,8 +16,9 @@ interface Profile {
 }
 
 export const useProfile = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -41,11 +43,23 @@ export const useProfile = () => {
 
       if (error) {
         console.error('Error fetching profile:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger le profil",
-          variant: "destructive",
-        });
+        
+        // Si le JWT a expiré, déconnecter l'utilisateur
+        if (error.code === 'PGRST301' || error.message?.includes('JWT expired')) {
+          toast({
+            title: "Session expirée",
+            description: "Votre session a expiré. Veuillez vous reconnecter.",
+            variant: "destructive",
+          });
+          await signOut();
+          navigate('/auth');
+        } else {
+          toast({
+            title: "Erreur",
+            description: "Impossible de charger le profil",
+            variant: "destructive",
+          });
+        }
       } else {
         setProfile(data);
       }
