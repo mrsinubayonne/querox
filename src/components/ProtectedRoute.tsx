@@ -23,21 +23,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const loading = authLoading || profileLoading || subscriptionLoading;
 
   useEffect(() => {
+    // Rediriger vers la page d'authentification si non connecté
     if (!authLoading && !user) {
       navigate('/auth');
       return;
     }
 
-    // Si l'utilisateur est connecté mais n'a pas d'abonnement actif
-    // et qu'il n'est pas déjà sur la page abonnement
-    if (!subscriptionLoading && user && !isSubscriptionActive && location.pathname !== '/abonnement') {
-      navigate('/abonnement');
-      return;
-    }
-
     // Si l'utilisateur est connecté, a un abonnement actif mais n'a pas de selected_outlet_id
-    // et qu'il n'est pas déjà sur la page select-outlet
-    if (!profileLoading && !subscriptionLoading && user && isSubscriptionActive && !profile?.selected_outlet_id && location.pathname !== '/select-outlet') {
+    // et qu'il n'est pas déjà sur la page select-outlet ou abonnement
+    if (
+      !profileLoading && 
+      !subscriptionLoading && 
+      user && 
+      isSubscriptionActive && 
+      !profile?.selected_outlet_id && 
+      location.pathname !== '/select-outlet' && 
+      location.pathname !== '/abonnement'
+    ) {
       navigate('/select-outlet');
     }
   }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, navigate, location.pathname]);
