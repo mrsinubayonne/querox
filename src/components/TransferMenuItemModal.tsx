@@ -18,6 +18,11 @@ import {
 import { Label } from '@/components/ui/label';
 import { Menu, MenuCategory } from '@/hooks/useMenus';
 
+interface Outlet {
+  id: string;
+  name: string;
+}
+
 interface TransferMenuItemModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -26,6 +31,8 @@ interface TransferMenuItemModalProps {
   menus: Menu[];
   categories: MenuCategory[];
   currentCategoryId: string;
+  outlets: Outlet[];
+  isBulkTransfer?: boolean;
 }
 
 const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
@@ -36,17 +43,34 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
   menus,
   categories,
   currentCategoryId,
+  outlets,
+  isBulkTransfer = false,
 }) => {
+  const [selectedOutletId, setSelectedOutletId] = useState<string>('');
   const [selectedMenuId, setSelectedMenuId] = useState<string>('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const availableMenus = useMemo(() => {
+    if (!selectedOutletId) return [];
+    return menus.filter(menu => menu.outlet_id === selectedOutletId);
+  }, [selectedOutletId, menus]);
+
   const availableCategories = useMemo(() => {
     if (!selectedMenuId) return [];
-    return categories.filter(cat => 
-      cat.menu_id === selectedMenuId && cat.id !== currentCategoryId
-    );
-  }, [selectedMenuId, categories, currentCategoryId]);
+    return categories.filter(cat => {
+      if (isBulkTransfer) {
+        return cat.menu_id === selectedMenuId;
+      }
+      return cat.menu_id === selectedMenuId && cat.id !== currentCategoryId;
+    });
+  }, [selectedMenuId, categories, currentCategoryId, isBulkTransfer]);
+
+  const handleOutletChange = (outletId: string) => {
+    setSelectedOutletId(outletId);
+    setSelectedMenuId('');
+    setSelectedCategoryId('');
+  };
 
   const handleMenuChange = (menuId: string) => {
     setSelectedMenuId(menuId);
@@ -69,6 +93,7 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
 
   const handleClose = () => {
     onClose();
+    setSelectedOutletId('');
     setSelectedMenuId('');
     setSelectedCategoryId('');
   };
@@ -77,30 +102,56 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Transférer le plat</DialogTitle>
+          <DialogTitle>Transférer {isBulkTransfer ? 'les plats' : 'le plat'}</DialogTitle>
           <DialogDescription>
-            Transférer "{itemName}" vers une autre catégorie
+            Transférer "{itemName}" vers un autre point de vente
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div>
             <Label className="text-sm font-medium mb-2 block">
-              Menu de destination
+              Point de vente de destination
             </Label>
-            <Select value={selectedMenuId} onValueChange={handleMenuChange}>
+            <Select value={selectedOutletId} onValueChange={handleOutletChange}>
               <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un menu" />
+                <SelectValue placeholder="Sélectionner un point de vente" />
               </SelectTrigger>
               <SelectContent>
-                {menus.map((menu) => (
-                  <SelectItem key={menu.id} value={menu.id}>
-                    {menu.name}
+                {outlets.map((outlet) => (
+                  <SelectItem key={outlet.id} value={outlet.id}>
+                    {outlet.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
+          {selectedOutletId && (
+            <div>
+              <Label className="text-sm font-medium mb-2 block">
+                Menu de destination
+              </Label>
+              <Select value={selectedMenuId} onValueChange={handleMenuChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un menu" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMenus.length === 0 ? (
+                    <div className="p-2 text-sm text-gray-500">
+                      Aucun menu disponible pour ce point de vente
+                    </div>
+                  ) : (
+                    availableMenus.map((menu) => (
+                      <SelectItem key={menu.id} value={menu.id}>
+                        {menu.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {selectedMenuId && (
             <div>
