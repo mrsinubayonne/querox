@@ -280,9 +280,14 @@ export const useMenuItems = () => {
           menu_categories!inner(
             id,
             name,
+            description,
+            order_index,
             menus!inner(
               id,
               name,
+              description,
+              logo_url,
+              header_image_url,
               outlet_id,
               user_id
             )
@@ -302,7 +307,7 @@ export const useMenuItems = () => {
       }
 
       // Récupérer tous les menus et catégories des outlets de destination
-      const { data: targetMenus, error: menusError } = await supabase
+      const { data: existingMenus, error: menusError } = await supabase
         .from('menus')
         .select(`
           id,
@@ -313,7 +318,7 @@ export const useMenuItems = () => {
         .in('outlet_id', targetOutletIds)
         .eq('user_id', user.id);
 
-      if (menusError || !targetMenus) {
+      if (menusError) {
         console.error('Target menus fetch error:', menusError);
         toast({
           title: "Erreur",
@@ -325,35 +330,81 @@ export const useMenuItems = () => {
 
       // Créer les nouveaux items (copie vers chaque outlet)
       const itemsToInsert = [];
+      
       for (const item of items) {
         const sourceCategory = item.menu_categories;
         const sourceMenu = sourceCategory.menus;
         
         // Pour chaque outlet de destination
         for (const outletId of targetOutletIds) {
-          // Trouver le menu avec le même nom dans cet outlet
-          const targetMenu = targetMenus.find(
+          // Trouver ou créer le menu dans l'outlet de destination
+          let targetMenu = existingMenus?.find(
             m => m.outlet_id === outletId && m.name === sourceMenu.name
           );
 
-          if (targetMenu && targetMenu.menu_categories) {
-            // Trouver la catégorie avec le même nom dans ce menu
-            const targetCategory = targetMenu.menu_categories.find(
-              c => c.name === sourceCategory.name
-            );
+          // Si le menu n'existe pas, le créer
+          if (!targetMenu) {
+            console.log(`📋 Création du menu "${sourceMenu.name}" pour l'outlet ${outletId}`);
+            const { data: newMenu, error: menuCreateError } = await supabase
+              .from('menus')
+              .insert({
+                user_id: user.id,
+                outlet_id: outletId,
+                name: sourceMenu.name,
+                description: sourceMenu.description,
+                logo_url: sourceMenu.logo_url,
+                header_image_url: sourceMenu.header_image_url,
+                is_active: true
+              })
+              .select('id, name, outlet_id')
+              .single();
 
-            if (targetCategory && targetCategory.id !== item.category_id) {
-              itemsToInsert.push({
-                name: item.name,
-                description: item.description,
-                price: item.price,
-                category_id: targetCategory.id,
-                image_url: item.image_url,
-                is_available: item.is_available,
-                allergens: item.allergens,
-                order_index: item.order_index || 0,
-              });
+            if (menuCreateError || !newMenu) {
+              console.error('Error creating menu:', menuCreateError);
+              continue;
             }
+
+            targetMenu = { ...newMenu, menu_categories: [] };
+          }
+
+          // Trouver ou créer la catégorie dans le menu de destination
+          let targetCategory = targetMenu.menu_categories?.find(
+            c => c.name === sourceCategory.name
+          );
+
+          if (!targetCategory) {
+            console.log(`📁 Création de la catégorie "${sourceCategory.name}" dans le menu ${targetMenu.id}`);
+            const { data: newCategory, error: categoryCreateError } = await supabase
+              .from('menu_categories')
+              .insert({
+                menu_id: targetMenu.id,
+                name: sourceCategory.name,
+                description: sourceCategory.description,
+                order_index: sourceCategory.order_index || 0
+              })
+              .select('id, name')
+              .single();
+
+            if (categoryCreateError || !newCategory) {
+              console.error('Error creating category:', categoryCreateError);
+              continue;
+            }
+
+            targetCategory = newCategory;
+          }
+
+          // Vérifier que l'item n'existe pas déjà dans cette catégorie
+          if (targetCategory.id !== item.category_id) {
+            itemsToInsert.push({
+              name: item.name,
+              description: item.description,
+              price: item.price,
+              category_id: targetCategory.id,
+              image_url: item.image_url,
+              is_available: item.is_available,
+              allergens: item.allergens,
+              order_index: item.order_index || 0,
+            });
           }
         }
       }
@@ -361,7 +412,7 @@ export const useMenuItems = () => {
       if (itemsToInsert.length === 0) {
         toast({
           title: "Information",
-          description: "Aucune catégorie correspondante trouvée dans les points de vente sélectionnés",
+          description: "Les plats existent déjà dans les points de vente sélectionnés",
         });
         return true;
       }
