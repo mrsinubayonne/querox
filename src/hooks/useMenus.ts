@@ -260,6 +260,41 @@ export const useMenus = () => {
     return fetchMenus();
   }, [fetchMenus]);
 
+  const transferMenu = useCallback(async (menuId: string, newOutletId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('menus')
+        .update({ outlet_id: newOutletId })
+        .eq('id', menuId)
+        .eq('user_id', user?.id);
+
+      if (error) {
+        console.error('Error transferring menu:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de transférer le menu",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Menu transféré avec succès"
+      });
+      await fetchMenus();
+      return true;
+    } catch (error) {
+      console.error('Error transferring menu:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors du transfert",
+        variant: "destructive"
+      });
+      return false;
+    }
+  }, [user?.id, toast, fetchMenus]);
+
   useEffect(() => {
     fetchMenus();
   }, [fetchMenus]);
@@ -271,6 +306,7 @@ export const useMenus = () => {
     loading,
     error,
     refetch,
-    createDefaultMenu
+    createDefaultMenu,
+    transferMenu
   };
 };
