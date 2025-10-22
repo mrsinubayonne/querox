@@ -258,11 +258,11 @@ export const useMenuItems = () => {
     return await updateMenuItem(id, { is_available: isAvailable });
   }, [updateMenuItem]);
 
-  const transferMenuItem = useCallback(async (itemId: string, newCategoryId: string): Promise<boolean> => {
+  const shareMenuItems = useCallback(async (itemIds: string[], targetCategoryIds: string[]): Promise<boolean> => {
     if (!user) {
       toast({
         title: "Erreur",
-        description: "Vous devez être connecté pour transférer un plat",
+        description: "Vous devez être connecté pour partager des plats",
         variant: "destructive",
       });
       return false;
@@ -270,80 +270,101 @@ export const useMenuItems = () => {
 
     setLoading(true);
     try {
-      console.log('🔄 Transferring menu item:', itemId, 'to category:', newCategoryId);
+      console.log('🔄 Sharing menu items:', itemIds, 'to categories:', targetCategoryIds);
 
-      // Vérifier que l'item appartient à l'utilisateur
-      const { data: existingItem, error: checkError } = await supabase
+      // Récupérer les données complètes des items à partager
+      const { data: items, error: itemsError } = await supabase
         .from('menu_items')
         .select(`
-          id,
+          *,
           menu_categories!inner(
             menus!inner(user_id)
           )
         `)
-        .eq('id', itemId)
-        .eq('menu_categories.menus.user_id', user.id)
-        .single();
+        .in('id', itemIds)
+        .eq('menu_categories.menus.user_id', user.id);
 
-      if (checkError || !existingItem) {
-        console.error('Item ownership check failed:', checkError);
+      if (itemsError || !items || items.length === 0) {
+        console.error('Items fetch error:', itemsError);
         toast({
           title: "Erreur",
-          description: "Plat non trouvé ou non autorisé",
+          description: "Plats non trouvés ou non autorisés",
           variant: "destructive",
         });
         return false;
       }
 
-      // Vérifier que la catégorie de destination existe et appartient à l'utilisateur
-      const { data: category, error: categoryError } = await supabase
+      // Vérifier que toutes les catégories de destination appartiennent à l'utilisateur
+      const { data: categories, error: categoriesError } = await supabase
         .from('menu_categories')
         .select(`
           id,
           menus!inner(user_id)
         `)
-        .eq('id', newCategoryId)
-        .eq('menus.user_id', user.id)
-        .single();
+        .in('id', targetCategoryIds)
+        .eq('menus.user_id', user.id);
 
-      if (categoryError || !category) {
-        console.error('Category validation error:', categoryError);
+      if (categoriesError || !categories || categories.length !== targetCategoryIds.length) {
+        console.error('Categories validation error:', categoriesError);
         toast({
           title: "Erreur",
-          description: "Catégorie de destination invalide",
+          description: "Catégories de destination invalides",
           variant: "destructive",
         });
         return false;
       }
 
-      // Effectuer le transfert
-      const { error: transferError } = await supabase
+      // Créer les nouveaux items (copie vers chaque catégorie)
+      const itemsToInsert = [];
+      for (const item of items) {
+        for (const categoryId of targetCategoryIds) {
+          // Ne pas dupliquer si l'item est déjà dans cette catégorie
+          if (item.category_id !== categoryId) {
+            itemsToInsert.push({
+              name: item.name,
+              description: item.description,
+              price: item.price,
+              category_id: categoryId,
+              image_url: item.image_url,
+              is_available: item.is_available,
+              allergens: item.allergens,
+              order_index: item.order_index || 0,
+            });
+          }
+        }
+      }
+
+      if (itemsToInsert.length === 0) {
+        toast({
+          title: "Information",
+          description: "Les plats existent déjà dans les catégories sélectionnées",
+        });
+        return true;
+      }
+
+      const { error: insertError } = await supabase
         .from('menu_items')
-        .update({ 
-          category_id: newCategoryId,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', itemId);
+        .insert(itemsToInsert);
 
-      if (transferError) {
-        console.error('Error transferring menu item:', transferError);
+      if (insertError) {
+        console.error('Error sharing menu items:', insertError);
         toast({
           title: "Erreur",
-          description: "Impossible de transférer le plat",
+          description: "Impossible de partager les plats",
           variant: "destructive",
         });
         return false;
       }
 
-      console.log('✅ Menu item transferred successfully');
+      console.log('✅ Menu items shared successfully');
       toast({
         title: "Succès",
-        description: "Plat transféré avec succès",
+        description: `${itemsToInsert.length} plat(s) partagé(s) avec succès`,
       });
       return true;
 
     } catch (error: any) {
-      console.error('🚨 Error transferring menu item:', error);
+      console.error('🚨 Error sharing menu items:', error);
       toast({
         title: "Erreur",
         description: "Une erreur inattendue s'est produite",
@@ -360,7 +381,7 @@ export const useMenuItems = () => {
     updateMenuItem,
     deleteMenuItem,
     toggleAvailability,
-    transferMenuItem,
+    shareMenuItems,
     loading,
   };
 };

@@ -102,9 +102,9 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Transférer {isBulkTransfer ? 'les plats' : 'le plat'}</DialogTitle>
+          <DialogTitle>Partager {isBulkTransfer ? 'les plats' : 'le plat'}</DialogTitle>
           <DialogDescription>
-            Transférer "{itemName}" vers un autre point de vente
+            Copier "{itemName}" vers d'autres points de vente
           </DialogDescription>
         </DialogHeader>
 
@@ -188,7 +188,7 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
             onClick={handleConfirm} 
             disabled={!selectedCategoryId || isLoading}
           >
-            {isLoading ? 'Transfert...' : 'Transférer'}
+            {isLoading ? 'Partage...' : 'Partager'}
           </Button>
         </DialogFooter>
       </DialogContent>

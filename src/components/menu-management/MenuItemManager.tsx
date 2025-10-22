@@ -39,7 +39,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const [allCategories, setAllCategories] = useState<MenuCategory[]>([]);
   
   const { items, categories, menus, loading, refetch, fetchAllMenus, fetchAllCategories } = useMenus();
-  const { toggleAvailability, deleteMenuItem, transferMenuItem } = useMenuItems();
+  const { toggleAvailability, deleteMenuItem, shareMenuItems } = useMenuItems();
   const { outlets } = useOutlets();
 
   // Charger tous les menus et catégories pour le modal de transfert
@@ -113,7 +113,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
 
   const handleTransferConfirm = async (categoryId: string) => {
     if (!transferringItem) return;
-    const success = await transferMenuItem(transferringItem.id, categoryId);
+    const success = await shareMenuItems([transferringItem.id], [categoryId]);
     if (success) {
       await refetch();
       setTransferringItem(null);
@@ -143,12 +143,8 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   };
 
   const handleBulkTransferConfirm = async (categoryId: string) => {
-    let successCount = 0;
-    for (const itemId of selectedItems) {
-      const success = await transferMenuItem(itemId, categoryId);
-      if (success) successCount++;
-    }
-    if (successCount > 0) {
+    const success = await shareMenuItems(Array.from(selectedItems), [categoryId]);
+    if (success) {
       await refetch();
       setSelectedItems(new Set());
       setShowBulkTransfer(false);
@@ -210,7 +206,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                   className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                 >
                   <ArrowRightLeft className="w-4 h-4 mr-2" />
-                  Transférer la sélection
+                  Partager la sélection
                 </Button>
               )}
               <Button onClick={handleAddItem} className="bg-green-600 hover:bg-green-700">
@@ -287,7 +283,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                       variant="outline"
                       size="sm"
                       onClick={() => handleTransferClick(item)}
-                      title="Transférer vers un autre menu"
+                      title="Partager avec d'autres points de vente"
                     >
                       <ArrowRightLeft className="w-4 h-4" />
                     </Button>
