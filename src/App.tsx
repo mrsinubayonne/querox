@@ -53,6 +53,7 @@ import Factures from '@/pages/Factures';
 import Equipe from '@/pages/Equipe';
 import StaffRequest from '@/pages/StaffRequest';
 import SelectOutlet from '@/pages/SelectOutlet';
+import ProfileLogin from '@/pages/ProfileLogin';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 
@@ -74,6 +75,7 @@ function App() {
 
               {/* Routes protégées */}
               <Route path="/select-outlet" element={<ProtectedRoute><SelectOutlet /></ProtectedRoute>} />
+              <Route path="/profile-login" element={<ProtectedRoute><ProfileLogin /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/menus" element={<ProtectedRoute><Menus /></ProtectedRoute>} />
               <Route path="/all-menus" element={<ProtectedRoute><AllMenus /></ProtectedRoute>} />
