@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -19,10 +19,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { isSubscriptionActive, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isTeamMember, setIsTeamMember] = useState(false);
 
   const loading = authLoading || profileLoading || subscriptionLoading;
 
+  // Check if this is a team member session
   useEffect(() => {
+    const teamMemberData = localStorage.getItem('teamMember');
+    setIsTeamMember(!!teamMemberData);
+  }, []);
+
+  useEffect(() => {
+    // Allow team members to access without Supabase auth
+    if (isTeamMember) {
+      return;
+    }
+
     // Rediriger vers la page d'authentification si non connecté
     if (!authLoading && !user) {
       navigate('/auth');
@@ -42,10 +54,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     ) {
       navigate('/select-outlet');
     }
-  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, navigate, location.pathname]);
+  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, navigate, location.pathname, isTeamMember]);
 
   // Show loading state while checking authentication
-  if (loading) {
+  if (loading && !isTeamMember) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -56,8 +68,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Don't render content if user is not authenticated
-  if (!user) {
+  // Don't render content if user is not authenticated (unless team member)
+  if (!user && !isTeamMember) {
     return null;
   }
 
