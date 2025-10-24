@@ -15,6 +15,11 @@ export interface TeamMember {
   accepted_at: string | null;
   created_at: string;
   access_code?: string;
+  full_name?: string;
+  phone?: string;
+  is_active: boolean;
+  last_login_at: string | null;
+  actions_count: number;
 }
 
 const TEAM_LIMITS = {
@@ -64,7 +69,7 @@ export const useTeamMembers = () => {
     }
   }, [user]);
 
-  const inviteMember = async (email: string, role: string = 'member') => {
+  const inviteMember = async (email: string, role: string = 'member', fullName?: string, phone?: string) => {
     if (!user) return;
 
     if (!canAddMoreMembers()) {
@@ -91,10 +96,13 @@ export const useTeamMembers = () => {
         .insert({
           owner_id: user.id,
           member_email: email,
+          full_name: fullName,
+          phone: phone,
           role,
           status: 'accepted',
           access_code: accessCode,
-          accepted_at: new Date().toISOString()
+          accepted_at: new Date().toISOString(),
+          is_active: true
         });
 
       if (error) throw error;

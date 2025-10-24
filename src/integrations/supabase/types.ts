@@ -19,7 +19,7 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_values: Json | null
           old_values: Json | null
           record_id: string | null
@@ -31,7 +31,7 @@ export type Database = {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
@@ -43,7 +43,7 @@ export type Database = {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
@@ -606,6 +606,30 @@ export type Database = {
         }
         Relationships: []
       }
+      permissions: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -743,6 +767,35 @@ export type Database = {
             columns: ["outlet_id"]
             isOneToOne: false
             referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          permission_id: string | null
+          role_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          permission_id?: string | null
+          role_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          permission_id?: string | null
+          role_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
             referencedColumns: ["id"]
           },
         ]
@@ -929,40 +982,93 @@ export type Database = {
         }
         Relationships: []
       }
+      team_activity_logs: {
+        Row: {
+          action_description: string | null
+          action_type: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          team_member_id: string | null
+        }
+        Insert: {
+          action_description?: string | null
+          action_type: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          team_member_id?: string | null
+        }
+        Update: {
+          action_description?: string | null
+          action_type?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          team_member_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_activity_logs_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           accepted_at: string | null
           access_code: string | null
+          actions_count: number | null
           created_at: string
+          full_name: string | null
           id: string
           invited_at: string
+          is_active: boolean | null
+          last_login_at: string | null
           member_email: string
           member_user_id: string | null
           owner_id: string
+          phone: string | null
           role: string
           status: string
         }
         Insert: {
           accepted_at?: string | null
           access_code?: string | null
+          actions_count?: number | null
           created_at?: string
+          full_name?: string | null
           id?: string
           invited_at?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
           member_email: string
           member_user_id?: string | null
           owner_id: string
+          phone?: string | null
           role?: string
           status?: string
         }
         Update: {
           accepted_at?: string | null
           access_code?: string | null
+          actions_count?: number | null
           created_at?: string
+          full_name?: string | null
           id?: string
           invited_at?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
           member_email?: string
           member_user_id?: string | null
           owner_id?: string
+          phone?: string | null
           role?: string
           status?: string
         }
@@ -1437,10 +1543,7 @@ export type Database = {
       }
     }
     Functions: {
-      admin_revenue_stats_policy: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      admin_revenue_stats_policy: { Args: never; Returns: boolean }
       calculate_churn_rate: {
         Args: { period_months?: number }
         Returns: {
@@ -1451,16 +1554,14 @@ export type Database = {
           period_start: string
         }[]
       }
-      generate_invoice_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
+      check_team_member_permission: {
+        Args: { _member_email: string; _permission_name: string }
+        Returns: boolean
       }
-      generate_team_access_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_invoice_number: { Args: never; Returns: string }
+      generate_team_access_code: { Args: never; Returns: string }
       get_admin_revenue_stats: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           active_subscribers: number
           churned_subscribers: number
@@ -1561,6 +1662,14 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_role_permissions: {
+        Args: { _role_name: string }
+        Returns: {
+          permission_category: string
+          permission_description: string
+          permission_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -1568,14 +1677,8 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_current_user_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
+      is_current_user_admin: { Args: never; Returns: boolean }
       verify_team_access: {
         Args: { _access_code: string; _email: string }
         Returns: {

@@ -16,10 +16,11 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 
 const ROLES = [
-  { value: 'admin', label: 'Administrateur', description: 'Accès complet' },
-  { value: 'manager', label: 'Gestionnaire', description: 'Gestion des menus et commandes' },
-  { value: 'cashier', label: 'Caissier', description: 'Commandes et paiements' },
-  { value: 'staff', label: 'Personnel', description: 'Consultation uniquement' }
+  { value: 'manager', label: 'Manager', description: 'Gestion complète sauf équipe' },
+  { value: 'serveur', label: 'Serveur', description: 'Commandes, réservations, clients' },
+  { value: 'caissier', label: 'Caissier', description: 'Commandes, paiements, factures' },
+  { value: 'cuisinier', label: 'Cuisinier', description: 'Consultation commandes et menu' },
+  { value: 'livreur', label: 'Livreur', description: 'Consultation commandes et clients' }
 ];
 
 const Equipe: React.FC = () => {
@@ -27,14 +28,18 @@ const Equipe: React.FC = () => {
   const { subscription } = useSubscription();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
-  const [selectedRole, setSelectedRole] = useState('manager');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [selectedRole, setSelectedRole] = useState('serveur');
   const [open, setOpen] = useState(false);
 
   const handleInvite = async () => {
     if (email) {
-      await inviteMember(email, selectedRole);
+      await inviteMember(email, selectedRole, fullName, phone);
       setEmail('');
-      setSelectedRole('manager');
+      setFullName('');
+      setPhone('');
+      setSelectedRole('serveur');
       setOpen(false);
     }
   };
@@ -100,6 +105,16 @@ const Equipe: React.FC = () => {
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
                   <div>
+                    <Label htmlFor="fullName">Nom complet</Label>
+                    <Input
+                      id="fullName"
+                      placeholder="Jean Dupont"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
                     <Label htmlFor="email">Adresse email</Label>
                     <Input
                       id="email"
@@ -107,6 +122,17 @@ const Equipe: React.FC = () => {
                       placeholder="email@exemple.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone">Téléphone</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+33 6 12 34 56 78"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
                     />
                   </div>
                   
@@ -186,15 +212,19 @@ const Equipe: React.FC = () => {
                         </div>
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-semibold">{member.member_email}</h3>
+                            <h3 className="text-lg font-semibold">{member.full_name || member.member_email}</h3>
                             {getStatusBadge(member.status)}
+                            {!member.is_active && <Badge variant="secondary">Désactivé</Badge>}
                           </div>
+                          <p className="text-sm text-gray-500 mb-2">{member.member_email} {member.phone && `• ${member.phone}`}</p>
                           <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
                             <span className="flex items-center gap-1">
                               <Shield className="w-4 h-4" />
                               {ROLES.find(r => r.value === member.role)?.label || member.role}
                             </span>
                             <span>Ajouté le {formatDate(member.invited_at)}</span>
+                            {member.last_login_at && <span>• Dernière connexion: {formatDate(member.last_login_at)}</span>}
+                            <span>• {member.actions_count} actions</span>
                           </div>
                            {(member as any).access_code && (
                             <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
