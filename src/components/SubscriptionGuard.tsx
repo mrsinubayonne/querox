@@ -5,6 +5,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, Crown, RefreshCw, Shield } from 'lucide-react';
+import { useTeamPermissions } from '@/hooks/useTeamPermissions';
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
@@ -17,10 +18,16 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
 }) => {
   const { isSubscriptionActive, loading, refetch, isAdmin } = useSubscription();
   const navigate = useNavigate();
+  const { isTeamMember } = useTeamPermissions();
 
   const handleRefresh = async () => {
     await refetch();
   };
+
+  // Allow team members to bypass subscription checks
+  if (isTeamMember()) {
+    return <>{children}</>;
+  }
 
   // Loading state
   if (loading) {

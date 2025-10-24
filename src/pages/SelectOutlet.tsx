@@ -10,10 +10,12 @@ import { useOutlets } from '@/hooks/useOutlets';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
+import { useTeamPermissions } from '@/hooks/useTeamPermissions';
 
 const SelectOutlet: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isTeamMember } = useTeamPermissions();
   const { outlets, loading, createOutlet, selectOutlet, selectedOutletId, canAddMoreOutlets, getOutletLimit } = useOutlets();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -23,11 +25,10 @@ const SelectOutlet: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!user) {
+    if (!user && !isTeamMember()) {
       navigate('/auth');
-      return;
     }
-  }, [user, navigate]);
+  }, [user, navigate, isTeamMember]);
 
   const handleCreateOutlet = async (e: React.FormEvent) => {
     e.preventDefault();
