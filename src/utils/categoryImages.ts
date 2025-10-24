@@ -91,8 +91,8 @@ export function getCategoryDefaultImage(categoryName: string | undefined): strin
   // Spiritueux
   if (category.includes('whisky') || category.includes('rhum') || 
       category.includes('vodka') || category.includes('gin') || 
-      category.includes('tequila') || category.includes('spiritueux') || 
-      category.includes('digestif')) {
+      category.includes('tequila') || category.includes('cognac') || 
+      category.includes('spiritueux') || category.includes('digestif')) {
     return '/lovable-uploads/category-spiritueux.jpg';
   }
   

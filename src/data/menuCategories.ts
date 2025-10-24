@@ -125,6 +125,7 @@ export const PREDEFINED_CATEGORIES = [
   'Vodkas',
   'Gins',
   'Tequilas',
+  'Cognacs',
   'Shots',
   'Digestifs',
   'Apéritifs alcoolisés',

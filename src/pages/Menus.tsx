@@ -53,15 +53,16 @@ const Menus: React.FC = () => {
         });
       } else {
         setMenus(data || []);
-        if (data && data.length > 0 && !activeMenu) {
-          const firstMenu = data[0];
-          setActiveMenu(firstMenu);
-        }
+        // Ne définir activeMenu que si aucun n'est déjà sélectionné
+        setActiveMenu((current) => {
+          if (current) return current;
+          return data && data.length > 0 ? data[0] : null;
+        });
       }
     } finally {
       setLoading(false);
     }
-  }, [user, profile?.selected_outlet_id, toast, activeMenu]);
+  }, [user, profile?.selected_outlet_id, toast]);
 
   useEffect(() => {
     fetchMenus();
