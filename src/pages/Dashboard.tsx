@@ -20,15 +20,13 @@ import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { useState } from 'react';
 
 const Dashboard: React.FC = () => {
-  const { user, isTeamMember, teamMemberSession } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const { toast } = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Display name logic
-  const displayName = isTeamMember && teamMemberSession
-    ? teamMemberSession.memberEmail.split('@')[0]
-    : user?.user_metadata?.full_name || user?.email;
+  const displayName = user?.user_metadata?.full_name || user?.email;
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -132,14 +130,9 @@ const Dashboard: React.FC = () => {
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">
                 Bienvenue sur QUEROX, {displayName}!
-                {isTeamMember && (
-                  <span className="ml-3 text-sm font-normal text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
-                    Membre d'équipe - {teamMemberSession?.role}
-                  </span>
-                )}
               </h1>
               <p className="text-gray-600 mt-2">
-                Voici votre tableau de bord. Cliquez sur une fonctionnalité pour commencer{isTeamMember ? ' votre travail' : ' à configurer votre restaurant'}.
+                Voici votre tableau de bord. Cliquez sur une fonctionnalité pour commencer à configurer votre restaurant.
               </p>
             </div>
 

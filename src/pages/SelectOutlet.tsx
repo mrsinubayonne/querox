@@ -10,12 +10,10 @@ import { useOutlets } from '@/hooks/useOutlets';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
-import { useTeamPermissions } from '@/hooks/useTeamPermissions';
 
 const SelectOutlet: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isTeamMember: isTeamMemberAuth, teamMemberSession } = useAuth();
-  const { isTeamMember, loading: teamLoading } = useTeamPermissions();
+  const { user } = useAuth();
   const { outlets, loading, createOutlet, selectOutlet, selectedOutletId, canAddMoreOutlets, getOutletLimit } = useOutlets();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -25,19 +23,10 @@ const SelectOutlet: React.FC = () => {
   });
 
   useEffect(() => {
-    if (teamLoading) return;
-    
-    // Team members should be redirected directly to dashboard
-    // The useOutlets hook will automatically load owner's outlets
-    if (isTeamMemberAuth && teamMemberSession) {
-      navigate('/dashboard', { replace: true });
-      return;
-    }
-
-    if (!user && !isTeamMember()) {
+    if (!user) {
       navigate('/auth', { replace: true });
     }
-  }, [user, isTeamMember, isTeamMemberAuth, teamMemberSession, teamLoading, navigate]);
+  }, [user, navigate]);
 
   const handleCreateOutlet = async (e: React.FormEvent) => {
     e.preventDefault();
