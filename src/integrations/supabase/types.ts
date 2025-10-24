@@ -525,6 +525,41 @@ export type Database = {
           },
         ]
       }
+      outlet_user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          outlet_id: string
+          role: Database["public"]["Enums"]["outlet_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          outlet_id: string
+          role: Database["public"]["Enums"]["outlet_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          outlet_id?: string
+          role?: Database["public"]["Enums"]["outlet_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outlet_user_roles_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outlets: {
         Row: {
           address: string | null
@@ -1670,6 +1705,18 @@ export type Database = {
           permission_name: string
         }[]
       }
+      get_user_outlet_role: {
+        Args: { _outlet_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["outlet_role"]
+      }
+      has_outlet_role: {
+        Args: {
+          _outlet_id: string
+          _role: Database["public"]["Enums"]["outlet_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -1690,6 +1737,7 @@ export type Database = {
       }
     }
     Enums: {
+      outlet_role: "proprietaire" | "superviseur" | "comptable" | "caissier"
       user_role: "admin" | "user"
     }
     CompositeTypes: {
@@ -1818,6 +1866,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      outlet_role: ["proprietaire", "superviseur", "comptable", "caissier"],
       user_role: ["admin", "user"],
     },
   },

@@ -14,7 +14,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requiresSubscription = false 
 }) => {
-  const { user, loading: authLoading, isTeamMember, teamMemberSession } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
   const { isSubscriptionActive, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
@@ -23,14 +23,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const loading = authLoading || (user && (profileLoading || subscriptionLoading));
 
   useEffect(() => {
-    // Allow team members to access without Supabase auth
-    if (isTeamMember && teamMemberSession) {
-      // Team members bypass the selected_outlet_id check
-      return;
-    }
-
     // Rediriger vers la page d'authentification si non connecté
-    if (!authLoading && !user && !isTeamMember) {
+    if (!authLoading && !user) {
       navigate('/auth');
       return;
     }
@@ -48,10 +42,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     ) {
       navigate('/select-outlet');
     }
-  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, navigate, location.pathname, isTeamMember, teamMemberSession]);
+  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, navigate, location.pathname]);
 
   // Show loading state while checking authentication
-  if (loading && !isTeamMember) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -62,8 +56,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Don't render content if user is not authenticated (unless team member)
-  if (!user && !isTeamMember) {
+  // Don't render content if user is not authenticated
+  if (!user) {
     return null;
   }
 

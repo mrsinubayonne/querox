@@ -5,6 +5,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useOutlets } from '@/hooks/useOutlets';
+import { useOutletRole } from '@/hooks/useOutletRole';
+import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -25,9 +27,11 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut, isTeamMember, teamMemberSession, signOutTeamMember } = useAuth();
+  const { signOut } = useAuth();
   const { isAdmin } = useSubscription();
+  const { profile } = useProfile();
   const { outlets, selectedOutletId, selectOutlet, canAddMoreOutlets, getOutletLimit } = useOutlets();
+  const { role, hasPermission } = useOutletRole(profile?.selected_outlet_id || undefined);
   
   const [servicesExpanded, setServicesExpanded] = useState(location.pathname.includes('/service'));
   const [marketingExpanded, setMarketingExpanded] = useState(location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook'));
@@ -43,54 +47,66 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const menuItems = [{
     icon: Home,
     label: 'Dashboard',
-    path: '/dashboard'
+    path: '/dashboard',
+    permission: 'dashboard'
   }, {
     icon: ShoppingBag,
     label: 'Commandes',
-    path: '/commandes'
+    path: '/commandes',
+    permission: 'orders'
   }, {
     icon: FileText,
     label: 'Factures',
-    path: '/factures'
+    path: '/factures',
+    permission: 'invoices'
   }, {
     icon: Menu,
     label: 'Menus',
-    path: '/menus'
+    path: '/menus',
+    permission: 'menus'
   }, {
     icon: Package,
     label: 'Inventaire',
-    path: '/inventaire'
+    path: '/inventaire',
+    permission: 'inventory'
   }, {
     icon: Users,
     label: 'Mise à disposition du personnel',
-    path: '/staff-request'
+    path: '/staff-request',
+    permission: 'staff_request'
   }, {
     icon: QrCode,
     label: 'QR Codes',
-    path: '/qr-codes'
+    path: '/qr-codes',
+    permission: 'qrcodes'
   }, {
     icon: Globe,
     label: 'Site Web',
-    path: '/site-web'
+    path: '/site-web',
+    permission: 'website'
   }, {
     icon: Calendar,
     label: 'Réservations',
-    path: '/reservations'
+    path: '/reservations',
+    permission: 'reservations'
   }, {
     icon: Calculator,
     label: 'Comptabilité',
-    path: '/comptabilite'
+    path: '/comptabilite',
+    permission: 'accounting'
   }, {
     icon: BarChart3,
     label: 'Statistiques',
-    path: '/statistiques'
+    path: '/statistiques',
+    permission: 'statistics'
   }, {
     icon: LifeBuoy,
     label: 'Support',
-    path: '/support'
-  }];
+    path: '/support',
+    permission: 'support'
+  }].filter(item => hasPermission(item.permission as any));
 
-  const marketingItems = [{
+  const marketingItems = hasPermission('marketing') ? [{
     icon: TrendingUp,
     label: 'Aperçu Marketing',
     path: '/marketing'
@@ -106,7 +122,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     icon: Facebook,
     label: 'Publicité Facebook',
     path: '/publicite-facebook'
-  }];
+  }] : [];
 
   const servicesItems = [{
     icon: Headphones,
@@ -133,11 +149,16 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   }];
 
   const bottomMenuItems = [
-    {
+    ...(hasPermission('settings') ? [{
       icon: Settings,
       label: 'Paramètres',
       path: '/parametres'
-    },
+    }] : []),
+    ...(hasPermission('team') ? [{
+      icon: Users,
+      label: 'Équipe',
+      path: '/parametres?tab=equipe'
+    }] : []),
     {
       icon: CreditCard,
       label: 'Abonnement',
@@ -308,15 +329,14 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
       {/* Bottom Navigation */}
       <div className="border-t border-gray-200 px-2 py-4 space-y-2">
-        {/* Team Member Info */}
-        {isTeamMember && teamMemberSession && (
+        {/* Role Info */}
+        {role && (
           <div className={`px-3 py-2 mb-2 rounded-lg bg-purple-50 border border-purple-200 ${collapsed ? 'hidden' : ''}`}>
             <div className="flex items-center gap-2 mb-1">
               <UserCircle size={16} className="text-purple-600" />
-              <span className="text-xs font-semibold text-purple-900">Membre d'équipe</span>
+              <span className="text-xs font-semibold text-purple-900 capitalize">{role}</span>
             </div>
-            <p className="text-xs text-purple-700 truncate">{teamMemberSession.memberEmail}</p>
-            <p className="text-xs text-purple-600 mt-1">Rôle: {teamMemberSession.role}</p>
+            <p className="text-xs text-purple-600">Accès restreint selon profil</p>
           </div>
         )}
 
@@ -338,13 +358,8 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
         {/* Logout Button */}
         <button
           onClick={() => {
-            if (isTeamMember) {
-              signOutTeamMember();
-              navigate('/team-auth');
-            } else {
-              signOut();
-              navigate('/auth');
-            }
+            signOut();
+            navigate('/auth');
           }}
           className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50"
         >

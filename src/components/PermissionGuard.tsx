@@ -1,38 +1,29 @@
 import React from 'react';
-import { useTeamPermissions } from '@/hooks/useTeamPermissions';
+import { useOutletRole } from '@/hooks/useOutletRole';
+import { useProfile } from '@/hooks/useProfile';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface PermissionGuardProps {
-  permission: string | string[];
-  requireAll?: boolean;
+  permission: string;
   fallback?: React.ReactNode;
   children: React.ReactNode;
 }
 
 export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   permission,
-  requireAll = false,
   fallback,
   children
 }) => {
-  const { loading, hasPermission, hasAnyPermission, hasAllPermissions } = useTeamPermissions();
+  const { profile } = useProfile();
+  const { loading, hasPermission } = useOutletRole(profile?.selected_outlet_id || undefined);
 
   if (loading) {
     return <Skeleton className="h-20 w-full" />;
   }
 
-  const permissions = Array.isArray(permission) ? permission : [permission];
-  
-  let hasAccess = false;
-  if (requireAll) {
-    hasAccess = hasAllPermissions(permissions);
-  } else {
-    hasAccess = permissions.length === 1 
-      ? hasPermission(permissions[0]) 
-      : hasAnyPermission(permissions);
-  }
+  const hasAccess = hasPermission(permission as any);
 
   if (!hasAccess) {
     if (fallback) {
