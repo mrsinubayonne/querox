@@ -70,13 +70,6 @@ const Dashboard: React.FC = () => {
       color: "from-green-500 to-green-600"
     },
     {
-      title: "Clients",
-      description: "Suivez vos clients et leur historique",
-      icon: Users,
-      link: "/clients",
-      color: "from-pink-500 to-pink-600"
-    },
-    {
       title: "Comptabilité",
       description: "Gérez vos finances et transactions",
       icon: DollarSign,

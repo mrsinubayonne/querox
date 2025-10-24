@@ -128,6 +128,8 @@ export const PREDEFINED_CATEGORIES = [
   'Shots',
   'Digestifs',
   'Apéritifs alcoolisés',
+  'Vermouth',
+  'Verre',
   
   // Repas par moment
   'Petit-déjeuner',

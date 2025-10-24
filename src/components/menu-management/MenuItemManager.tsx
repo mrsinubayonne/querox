@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import SafeImage from '@/components/SafeImage';
-import { APP_CONFIG } from '@/config/app.config';
+import { getCategoryDefaultImage } from '@/utils/categoryImages';
 
 import { MenuItem } from '@/hooks/useMenus';
 
@@ -282,7 +282,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                 </div>
                 <div className="aspect-video bg-gray-100 overflow-hidden">
                   <img
-                    src={item.image_url || APP_CONFIG.images.defaultMenuItem}
+                    src={item.image_url || getCategoryDefaultImage(item.category_name)}
                     alt={item.name}
                     className="w-full h-full object-cover"
                     loading="lazy"

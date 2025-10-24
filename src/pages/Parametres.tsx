@@ -8,7 +8,6 @@ import {
   User, 
   Bell, 
   Shield,
-  Users,
   Globe,
   Database,
   FileText,
@@ -17,7 +16,6 @@ import {
 import ProfileTab from "@/components/ProfileTab";
 import { NotificationsTab } from "@/components/NotificationsTab";
 import { SecurityTab } from "@/components/SecurityTab";
-import { EquipeTab } from "@/components/EquipeTab";
 import DomainTab from "@/components/DomainTab";
 import { DataTab } from "@/components/DataTab";
 import { InvoiceSettingsTab } from "@/components/InvoiceSettingsTab";
@@ -59,7 +57,7 @@ const Parametres = () => {
       
       <main className="container max-w-4xl py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-3xl mx-auto">
-          <TabsList className="mb-8 grid grid-cols-8 w-full mx-auto">
+          <TabsList className="mb-8 grid grid-cols-7 w-full mx-auto">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profil
@@ -75,10 +73,6 @@ const Parametres = () => {
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Sécurité
-            </TabsTrigger>
-            <TabsTrigger value="equipe" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Équipe
             </TabsTrigger>
             <TabsTrigger value="profiles" className="flex items-center gap-2">
               <UserCog className="h-4 w-4" />
@@ -113,10 +107,6 @@ const Parametres = () => {
 
           <TabsContent value="security" className="space-y-6">
             <SecurityTab />
-          </TabsContent>
-
-          <TabsContent value="equipe" className="space-y-6">
-            <EquipeTab />
           </TabsContent>
 
           <TabsContent value="profiles" className="space-y-6">
