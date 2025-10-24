@@ -88,13 +88,13 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
 
   const handleToggleAvailability = async (id: string, isActive: boolean) => {
     await toggleAvailability(id, !isActive);
-    // Le refetch se fera via useEffect
+    setTimeout(() => refetch(), 300);
   };
 
   const handleDeleteItem = async (id: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) {
       await deleteMenuItem(id);
-      // Le refetch se fera via useEffect
+      setTimeout(() => refetch(), 300);
     }
   };
 
