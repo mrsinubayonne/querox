@@ -14,7 +14,7 @@ import { useTeamPermissions } from '@/hooks/useTeamPermissions';
 
 const SelectOutlet: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isTeamMember: isTeamMemberAuth, teamMemberSession } = useAuth();
   const { isTeamMember, loading: teamLoading } = useTeamPermissions();
   const { outlets, loading, createOutlet, selectOutlet, selectedOutletId, canAddMoreOutlets, getOutletLimit } = useOutlets();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -26,10 +26,18 @@ const SelectOutlet: React.FC = () => {
 
   useEffect(() => {
     if (teamLoading) return;
+    
+    // Team members should be redirected directly to dashboard
+    // The useOutlets hook will automatically load owner's outlets
+    if (isTeamMemberAuth && teamMemberSession) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
     if (!user && !isTeamMember()) {
       navigate('/auth', { replace: true });
     }
-  }, [user, isTeamMember, teamLoading, navigate]);
+  }, [user, isTeamMember, isTeamMemberAuth, teamMemberSession, teamLoading, navigate]);
 
   const handleCreateOutlet = async (e: React.FormEvent) => {
     e.preventDefault();

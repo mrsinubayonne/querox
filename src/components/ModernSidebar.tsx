@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, UserCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -25,7 +25,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, isTeamMember, teamMemberSession, signOutTeamMember } = useAuth();
   const { isAdmin } = useSubscription();
   const { outlets, selectedOutletId, selectOutlet, canAddMoreOutlets, getOutletLimit } = useOutlets();
   
@@ -308,6 +308,18 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
       {/* Bottom Navigation */}
       <div className="border-t border-gray-200 px-2 py-4 space-y-2">
+        {/* Team Member Info */}
+        {isTeamMember && teamMemberSession && (
+          <div className={`px-3 py-2 mb-2 rounded-lg bg-purple-50 border border-purple-200 ${collapsed ? 'hidden' : ''}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <UserCircle size={16} className="text-purple-600" />
+              <span className="text-xs font-semibold text-purple-900">Membre d'équipe</span>
+            </div>
+            <p className="text-xs text-purple-700 truncate">{teamMemberSession.memberEmail}</p>
+            <p className="text-xs text-purple-600 mt-1">Rôle: {teamMemberSession.role}</p>
+          </div>
+        )}
+
         {bottomMenuItems.map(item => (
           <button 
             key={item.path} 
@@ -322,6 +334,23 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
             {!collapsed && <span className="ml-3">{item.label}</span>}
           </button>
         ))}
+
+        {/* Logout Button */}
+        <button
+          onClick={() => {
+            if (isTeamMember) {
+              signOutTeamMember();
+              navigate('/team-auth');
+            } else {
+              signOut();
+              navigate('/auth');
+            }
+          }}
+          className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50"
+        >
+          <LogOut size={20} className="flex-shrink-0" />
+          {!collapsed && <span className="ml-3">Déconnexion</span>}
+        </button>
       </div>
     </div>;
 };

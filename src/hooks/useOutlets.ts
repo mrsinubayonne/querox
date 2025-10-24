@@ -25,7 +25,7 @@ type CreateOutletData = Pick<Outlet, 'name' | 'address' | 'phone'>;
 type UpdateOutletData = Partial<Pick<Outlet, 'name' | 'address' | 'phone'>>;
 
 export const useOutlets = () => {
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { subscription } = useSubscription();
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
@@ -42,7 +42,15 @@ export const useOutlets = () => {
   };
 
   const loadOutlets = async (): Promise<void> => {
-    if (!user?.id) {
+    // Determine which user_id to use
+    let userId = user?.id;
+    
+    // If team member, use owner_id instead
+    if (isTeamMember && teamMemberSession) {
+      userId = teamMemberSession.ownerId;
+    }
+
+    if (!userId) {
       setLoading(false);
       return;
     }
@@ -51,7 +59,7 @@ export const useOutlets = () => {
       const { data, error } = await supabase
         .from('outlets')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -60,6 +68,11 @@ export const useOutlets = () => {
       }
       
       setOutlets(data || []);
+      
+      // Auto-select first outlet if only one exists
+      if (data && data.length === 1 && !selectedOutletId) {
+        await selectOutlet(data[0].id);
+      }
     } catch (error) {
       console.error('Error:', error);
       toast.error('Erreur lors du chargement des points de vente');
@@ -90,11 +103,13 @@ export const useOutlets = () => {
   };
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id || (isTeamMember && teamMemberSession)) {
       loadOutlets();
-      loadSelectedOutlet();
+      if (user?.id) {
+        loadSelectedOutlet();
+      }
     }
-  }, [user?.id]);
+  }, [user?.id, isTeamMember, teamMemberSession]);
 
   const createOutlet = async (outletData: CreateOutletData): Promise<Outlet | undefined> => {
     if (!user?.id) return undefined;

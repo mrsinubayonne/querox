@@ -14,31 +14,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requiresSubscription = false 
 }) => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isTeamMember, teamMemberSession } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
   const { isSubscriptionActive, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isTeamMember] = useState(() => {
-    try {
-      const tm = localStorage.getItem('teamMember');
-      const legacy = localStorage.getItem('team_member_session');
-      return !!(tm || legacy);
-    } catch {
-      return false;
-    }
-  });
 
-  const loading = authLoading || profileLoading || subscriptionLoading;
+  const loading = authLoading || (user && (profileLoading || subscriptionLoading));
 
   useEffect(() => {
     // Allow team members to access without Supabase auth
-    if (isTeamMember) {
+    if (isTeamMember && teamMemberSession) {
+      // Team members bypass the selected_outlet_id check
       return;
     }
 
     // Rediriger vers la page d'authentification si non connecté
-    if (!authLoading && !user) {
+    if (!authLoading && !user && !isTeamMember) {
       navigate('/auth');
       return;
     }
@@ -56,7 +48,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     ) {
       navigate('/select-outlet');
     }
-  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, navigate, location.pathname, isTeamMember]);
+  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, navigate, location.pathname, isTeamMember, teamMemberSession]);
 
   // Show loading state while checking authentication
   if (loading && !isTeamMember) {

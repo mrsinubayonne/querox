@@ -49,12 +49,16 @@ const TeamMemberAuth: React.FC = () => {
         .update({ last_login_at: new Date().toISOString() })
         .eq('id', member.member_id);
 
-      // Store team member session info in localStorage
+      // Store team member session info in localStorage with 8-hour expiration
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 8);
+
       localStorage.setItem('teamMember', JSON.stringify({
         memberId: member.member_id,
         ownerId: member.owner_id,
+        memberEmail: formData.email,
         role: member.role,
-        email: formData.email
+        expiresAt: expiresAt.toISOString()
       }));
 
       // Log activity

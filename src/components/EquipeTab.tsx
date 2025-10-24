@@ -204,16 +204,18 @@ export const EquipeTab: React.FC = () => {
                       <p className="text-sm text-gray-500 mb-2">
                         {member.member_email} {member.phone && `• ${member.phone}`}
                       </p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+                       <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-2">
                         <span className="flex items-center gap-1">
                           <Shield className="w-4 h-4" />
                           {ROLES.find(r => r.value === member.role)?.label || member.role}
                         </span>
-                        <span>Ajouté le {formatDate(member.invited_at)}</span>
-                        {member.last_login_at && (
-                          <span>• Dernière connexion: {formatDate(member.last_login_at)}</span>
+                        <span>Ajouté: {formatDate(member.invited_at)}</span>
+                        {member.last_login_at ? (
+                          <span className="text-green-600">• Dernière connexion: {formatDate(member.last_login_at)}</span>
+                        ) : (
+                          <span className="text-orange-600">• Jamais connecté</span>
                         )}
-                        <span>• {member.actions_count} actions</span>
+                        <span>• {member.actions_count || 0} actions</span>
                       </div>
                       {(member as any).access_code && (
                         <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
