@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useOutlets } from '@/hooks/useOutlets';
-import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Trash2, UserPlus, Shield } from 'lucide-react';
+import { Trash2, UserPlus, Shield, Copy, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 
 type OutletRole = 'proprietaire' | 'superviseur' | 'comptable' | 'caissier';
 
@@ -28,119 +28,129 @@ const ROLE_COLORS: Record<OutletRole, string> = {
   caissier: 'bg-purple-100 text-purple-800'
 };
 
-interface OutletUserRole {
+interface OutletProfile {
   id: string;
   role: OutletRole;
+  access_code: string;
+  profile_name: string;
+  is_active: boolean;
+  last_login_at: string | null;
   created_at: string;
-  profiles: {
-    email: string;
-    full_name: string;
-  };
 }
 
 export const ProfileManagement: React.FC = () => {
-  const { profile } = useProfile();
   const { selectedOutletId } = useOutlets();
   const queryClient = useQueryClient();
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserRole, setNewUserRole] = useState<OutletRole>('caissier');
+  const [newProfileName, setNewProfileName] = useState('');
+  const [newProfileRole, setNewProfileRole] = useState<OutletRole>('caissier');
+  const [showCodes, setShowCodes] = useState<Record<string, boolean>>({});
 
-  const { data: outletRoles, isLoading } = useQuery({
-    queryKey: ['outlet-roles', selectedOutletId],
+  const { data: outletProfiles, isLoading } = useQuery({
+    queryKey: ['outlet-profiles', selectedOutletId],
     queryFn: async () => {
       if (!selectedOutletId) return [];
 
       const { data, error } = await supabase
-        .from('outlet_user_roles')
-        .select(`
-          id,
-          role,
-          created_at,
-          user_id
-        `)
-        .eq('outlet_id', selectedOutletId);
+        .from('outlet_profiles')
+        .select('*')
+        .eq('outlet_id', selectedOutletId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      // Fetch profiles separately
-      const userIds = data?.map(r => r.user_id) || [];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .in('id', userIds);
-
-      // Combine data
-      const combined = data?.map(role => ({
-        ...role,
-        profiles: profiles?.find(p => p.id === role.user_id) || { email: '', full_name: '' }
-      }));
-
-      return combined as OutletUserRole[];
+      return data as OutletProfile[];
     },
     enabled: !!selectedOutletId
   });
 
-  const addUserMutation = useMutation({
+  const addProfileMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedOutletId || !newUserEmail) return;
+      if (!selectedOutletId || !newProfileName) return;
 
-      // Find user by email
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', newUserEmail)
-        .single();
+      // Generate access code
+      const { data: codeData, error: codeError } = await supabase.rpc('generate_outlet_access_code', {
+        _outlet_id: selectedOutletId,
+        _role: newProfileRole
+      });
 
-      if (userError) {
-        throw new Error("Utilisateur non trouvé avec cet email");
-      }
+      if (codeError) throw codeError;
 
-      // Add role
-      const { error: roleError } = await supabase
-        .from('outlet_user_roles')
+      // Create profile
+      const { data, error } = await supabase
+        .from('outlet_profiles')
         .insert({
           outlet_id: selectedOutletId,
-          user_id: userData.id,
-          role: newUserRole
-        });
+          profile_name: newProfileName,
+          role: newProfileRole,
+          access_code: codeData
+        })
+        .select()
+        .single();
 
-      if (roleError) throw roleError;
+      if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      toast.success('Utilisateur ajouté avec succès');
-      setNewUserEmail('');
-      setNewUserRole('caissier');
-      queryClient.invalidateQueries({ queryKey: ['outlet-roles'] });
+    onSuccess: (data) => {
+      toast.success(`Profil créé ! Code: ${data?.access_code}`);
+      setNewProfileName('');
+      setNewProfileRole('caissier');
+      queryClient.invalidateQueries({ queryKey: ['outlet-profiles'] });
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Erreur lors de l\'ajout');
+      toast.error(error.message || 'Erreur lors de la création');
     }
   });
 
-  const deleteRoleMutation = useMutation({
-    mutationFn: async (roleId: string) => {
+  const toggleProfileMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const { error } = await supabase
-        .from('outlet_user_roles')
+        .from('outlet_profiles')
+        .update({ is_active: isActive })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Statut du profil mis à jour');
+      queryClient.invalidateQueries({ queryKey: ['outlet-profiles'] });
+    },
+    onError: () => {
+      toast.error('Erreur lors de la mise à jour');
+    }
+  });
+
+  const deleteProfileMutation = useMutation({
+    mutationFn: async (profileId: string) => {
+      const { error } = await supabase
+        .from('outlet_profiles')
         .delete()
-        .eq('id', roleId);
+        .eq('id', profileId);
 
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Profil supprimé');
-      queryClient.invalidateQueries({ queryKey: ['outlet-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['outlet-profiles'] });
     },
     onError: () => {
       toast.error('Erreur lors de la suppression');
     }
   });
 
-  const handleAddUser = () => {
-    if (!newUserEmail) {
-      toast.error('Veuillez entrer un email');
+  const copyAccessCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast.success('Code copié dans le presse-papier !');
+  };
+
+  const toggleCodeVisibility = (profileId: string) => {
+    setShowCodes(prev => ({ ...prev, [profileId]: !prev[profileId] }));
+  };
+
+  const handleAddProfile = () => {
+    if (!newProfileName.trim()) {
+      toast.error('Veuillez entrer un nom de profil');
       return;
     }
-    addUserMutation.mutate();
+    addProfileMutation.mutate();
   };
 
   if (isLoading) {
@@ -160,26 +170,25 @@ export const ProfileManagement: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Add User Form */}
-          <div className="border rounded-lg p-4 space-y-4">
+          {/* Add Profile Form */}
+          <div className="border rounded-lg p-4 space-y-4 bg-blue-50">
             <h3 className="font-semibold flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
-              Ajouter un utilisateur
+              Créer un nouveau profil
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email de l'utilisateur</Label>
+                <Label htmlFor="profileName">Nom du profil</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="email@example.com"
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  id="profileName"
+                  placeholder="Ex: Caissier Principal"
+                  value={newProfileName}
+                  onChange={(e) => setNewProfileName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="role">Profil</Label>
-                <Select value={newUserRole} onValueChange={(v) => setNewUserRole(v as OutletRole)}>
+                <Label htmlFor="role">Rôle</Label>
+                <Select value={newProfileRole} onValueChange={(v) => setNewProfileRole(v as OutletRole)}>
                   <SelectTrigger id="role">
                     <SelectValue />
                   </SelectTrigger>
@@ -192,50 +201,109 @@ export const ProfileManagement: React.FC = () => {
               </div>
               <div className="flex items-end">
                 <Button 
-                  onClick={handleAddUser}
-                  disabled={addUserMutation.isPending}
+                  onClick={handleAddProfile}
+                  disabled={addProfileMutation.isPending}
                   className="w-full"
                 >
-                  Ajouter
+                  {addProfileMutation.isPending ? 'Création...' : 'Créer le profil'}
                 </Button>
               </div>
             </div>
+            <p className="text-xs text-blue-600">
+              Un code d'accès unique sera généré automatiquement (format: QRX-XXX-XXXX)
+            </p>
           </div>
 
-          {/* Users List */}
+          {/* Profiles List */}
           <div className="space-y-3">
-            <h3 className="font-semibold">Utilisateurs avec accès</h3>
-            {outletRoles && outletRoles.length > 0 ? (
+            <h3 className="font-semibold">Profils existants ({outletProfiles?.length || 0})</h3>
+            {outletProfiles && outletProfiles.length > 0 ? (
               <div className="space-y-2">
-                {outletRoles.map((roleEntry) => (
+                {outletProfiles.map((profile) => (
                   <div
-                    key={roleEntry.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                    key={profile.id}
+                    className={`p-4 border rounded-lg ${profile.is_active ? 'bg-white' : 'bg-gray-50'}`}
                   >
-                    <div className="flex-1">
-                      <p className="font-medium">{roleEntry.profiles?.full_name || 'Nom non défini'}</p>
-                      <p className="text-sm text-gray-500">{roleEntry.profiles?.email}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={ROLE_COLORS[roleEntry.role]}>
-                        {ROLE_LABELS[roleEntry.role]}
-                      </Badge>
-                      {roleEntry.role !== 'proprietaire' && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteRoleMutation.mutate(roleEntry.id)}
-                          disabled={deleteRoleMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      )}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <p className="font-medium text-lg">{profile.profile_name}</p>
+                          <Badge className={ROLE_COLORS[profile.role]}>
+                            {ROLE_LABELS[profile.role]}
+                          </Badge>
+                          {!profile.is_active && (
+                            <Badge variant="destructive">Désactivé</Badge>
+                          )}
+                        </div>
+
+                        {/* Access Code */}
+                        <div className="flex items-center gap-2 bg-gray-100 p-2 rounded">
+                          <code className="font-mono text-sm flex-1">
+                            {showCodes[profile.id] ? profile.access_code : '●●●●-●●●-●●●●'}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleCodeVisibility(profile.id)}
+                            className="h-8 w-8"
+                          >
+                            {showCodes[profile.id] ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => copyAccessCode(profile.access_code)}
+                            className="h-8 w-8"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        {/* Last Login */}
+                        <p className="text-xs text-gray-500">
+                          {profile.last_login_at 
+                            ? `Dernière connexion: ${new Date(profile.last_login_at).toLocaleString('fr-FR')}`
+                            : 'Jamais connecté'}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 ml-4">
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor={`active-${profile.id}`} className="text-xs">
+                            {profile.is_active ? 'Actif' : 'Inactif'}
+                          </Label>
+                          <Switch
+                            id={`active-${profile.id}`}
+                            checked={profile.is_active}
+                            onCheckedChange={(checked) => 
+                              toggleProfileMutation.mutate({ id: profile.id, isActive: checked })
+                            }
+                          />
+                        </div>
+                        {profile.role !== 'proprietaire' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteProfileMutation.mutate(profile.id)}
+                            disabled={deleteProfileMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">Aucun utilisateur avec accès</p>
+              <p className="text-sm text-gray-500 text-center py-8">
+                Aucun profil créé pour ce point de vente
+              </p>
             )}
           </div>
         </CardContent>

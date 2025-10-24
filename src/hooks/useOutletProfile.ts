@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { v4 as uuidv4 } from 'uuid';
 
 type OutletRole = 'proprietaire' | 'superviseur' | 'comptable' | 'caissier';
+
+interface ProfileSession {
+  profileId: string;
+  outletId: string;
+  role: OutletRole;
+  profileName: string;
+  outletName: string;
+  ownerId: string;
+  sessionId: string;
+  expiresAt: string;
+}
 
 interface Permission {
   dashboard: boolean;
@@ -18,7 +28,6 @@ interface Permission {
   qrcodes: boolean;
   settings: boolean;
   team: boolean;
-  // Accessible to all
   website: boolean;
   marketing: boolean;
   staff_request: boolean;
@@ -57,7 +66,7 @@ const ROLE_PERMISSIONS: Record<OutletRole, Permission> = {
     customers: true,
     events: true,
     qrcodes: true,
-    settings: false, // Superviseur n'a pas accès aux paramètres
+    settings: false,
     team: true,
     website: true,
     marketing: true,
@@ -104,53 +113,90 @@ const ROLE_PERMISSIONS: Record<OutletRole, Permission> = {
   },
 };
 
-export const useOutletRole = (outletId?: string) => {
-  const { user } = useAuth();
-  const [role, setRole] = useState<OutletRole | null>(null);
+export const useOutletProfile = () => {
+  const [profileSession, setProfileSession] = useState<ProfileSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [permissions, setPermissions] = useState<Permission>(ROLE_PERMISSIONS.proprietaire);
 
   useEffect(() => {
-    const loadRole = async () => {
-      if (!user || !outletId) {
-        setLoading(false);
-        return;
+    loadSession();
+    
+    // Check session validity every minute
+    const interval = setInterval(checkSessionValidity, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadSession = () => {
+    try {
+      const sessionStr = localStorage.getItem('outletProfile');
+      if (sessionStr) {
+        const session: ProfileSession = JSON.parse(sessionStr);
+        
+        // Check expiration
+        if (new Date(session.expiresAt) > new Date()) {
+          setProfileSession(session);
+          setPermissions(ROLE_PERMISSIONS[session.role]);
+        } else {
+          // Session expired
+          logout();
+        }
       }
+    } catch (error) {
+      console.error('Error loading profile session:', error);
+      logout();
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      try {
-        const { data, error } = await supabase
-          .from('outlet_user_roles')
-          .select('role')
-          .eq('outlet_id', outletId)
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) throw error;
-
-        const userRole = data?.role as OutletRole;
-        setRole(userRole);
-        setPermissions(ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS.proprietaire);
-      } catch (error) {
-        console.error('Error loading outlet role:', error);
-        // Default to proprietaire if error
-        setRole('proprietaire');
-        setPermissions(ROLE_PERMISSIONS.proprietaire);
-      } finally {
-        setLoading(false);
+  const checkSessionValidity = () => {
+    const sessionStr = localStorage.getItem('outletProfile');
+    if (sessionStr) {
+      const session: ProfileSession = JSON.parse(sessionStr);
+      if (new Date(session.expiresAt) <= new Date()) {
+        logout();
+        window.location.href = '/profile-login';
       }
+    }
+  };
+
+  const login = (sessionData: Omit<ProfileSession, 'sessionId' | 'expiresAt'>) => {
+    const sessionId = uuidv4();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 8); // 8 hours
+
+    const session: ProfileSession = {
+      ...sessionData,
+      sessionId,
+      expiresAt: expiresAt.toISOString()
     };
 
-    loadRole();
-  }, [user, outletId]);
+    localStorage.setItem('outletProfile', JSON.stringify(session));
+    setProfileSession(session);
+    setPermissions(ROLE_PERMISSIONS[session.role]);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('outletProfile');
+    setProfileSession(null);
+    setPermissions(ROLE_PERMISSIONS.proprietaire);
+  };
 
   const hasPermission = (permission: keyof Permission): boolean => {
     return permissions[permission];
   };
 
+  const isProfileAuthenticated = (): boolean => {
+    return profileSession !== null;
+  };
+
   return {
-    role,
+    profileSession,
     loading,
     permissions,
     hasPermission,
+    isProfileAuthenticated,
+    login,
+    logout,
   };
 };

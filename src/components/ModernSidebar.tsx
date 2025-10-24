@@ -5,8 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useOutlets } from '@/hooks/useOutlets';
-import { useOutletRole } from '@/hooks/useOutletRole';
-import { useProfile } from '@/hooks/useProfile';
+import { useOutletProfile } from '@/hooks/useOutletProfile';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -29,9 +28,8 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { isAdmin } = useSubscription();
-  const { profile } = useProfile();
   const { outlets, selectedOutletId, selectOutlet, canAddMoreOutlets, getOutletLimit } = useOutlets();
-  const { role, hasPermission } = useOutletRole(profile?.selected_outlet_id || undefined);
+  const { profileSession, hasPermission, isProfileAuthenticated, logout: profileLogout } = useOutletProfile();
   
   const [servicesExpanded, setServicesExpanded] = useState(location.pathname.includes('/service'));
   const [marketingExpanded, setMarketingExpanded] = useState(location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook'));
@@ -329,14 +327,15 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
       {/* Bottom Navigation */}
       <div className="border-t border-gray-200 px-2 py-4 space-y-2">
-        {/* Role Info */}
-        {role && (
+        {/* Profile Info */}
+        {profileSession && (
           <div className={`px-3 py-2 mb-2 rounded-lg bg-purple-50 border border-purple-200 ${collapsed ? 'hidden' : ''}`}>
             <div className="flex items-center gap-2 mb-1">
               <UserCircle size={16} className="text-purple-600" />
-              <span className="text-xs font-semibold text-purple-900 capitalize">{role}</span>
+              <span className="text-xs font-semibold text-purple-900">{profileSession.profileName}</span>
             </div>
-            <p className="text-xs text-purple-600">Accès restreint selon profil</p>
+            <p className="text-xs text-purple-600 capitalize">{profileSession.role}</p>
+            <p className="text-xs text-purple-500">{profileSession.outletName}</p>
           </div>
         )}
 
@@ -358,8 +357,13 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
         {/* Logout Button */}
         <button
           onClick={() => {
-            signOut();
-            navigate('/auth');
+            if (isProfileAuthenticated()) {
+              profileLogout();
+              navigate('/profile-login');
+            } else {
+              signOut();
+              navigate('/auth');
+            }
           }}
           className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50"
         >

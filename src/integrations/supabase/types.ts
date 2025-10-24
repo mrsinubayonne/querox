@@ -525,34 +525,46 @@ export type Database = {
           },
         ]
       }
-      outlet_user_roles: {
+      outlet_profiles: {
         Row: {
+          access_code: string
+          active_session_id: string | null
           created_at: string
           id: string
+          is_active: boolean
+          last_login_at: string | null
           outlet_id: string
+          profile_name: string
           role: Database["public"]["Enums"]["outlet_role"]
           updated_at: string
-          user_id: string
         }
         Insert: {
+          access_code: string
+          active_session_id?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
+          last_login_at?: string | null
           outlet_id: string
+          profile_name: string
           role: Database["public"]["Enums"]["outlet_role"]
           updated_at?: string
-          user_id: string
         }
         Update: {
+          access_code?: string
+          active_session_id?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
+          last_login_at?: string | null
           outlet_id?: string
+          profile_name?: string
           role?: Database["public"]["Enums"]["outlet_role"]
           updated_at?: string
-          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "outlet_user_roles_outlet_id_fkey"
+            foreignKeyName: "outlet_profiles_outlet_id_fkey"
             columns: ["outlet_id"]
             isOneToOne: false
             referencedRelation: "outlets"
@@ -1594,6 +1606,13 @@ export type Database = {
         Returns: boolean
       }
       generate_invoice_number: { Args: never; Returns: string }
+      generate_outlet_access_code: {
+        Args: {
+          _outlet_id: string
+          _role: Database["public"]["Enums"]["outlet_role"]
+        }
+        Returns: string
+      }
       generate_team_access_code: { Args: never; Returns: string }
       get_admin_revenue_stats: {
         Args: never
@@ -1726,6 +1745,21 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_current_user_admin: { Args: never; Returns: boolean }
+      logout_outlet_profile: {
+        Args: { _profile_id: string }
+        Returns: undefined
+      }
+      verify_outlet_access_code: {
+        Args: { _access_code: string; _session_id: string }
+        Returns: {
+          outlet_id: string
+          outlet_name: string
+          owner_id: string
+          profile_id: string
+          profile_name: string
+          role: Database["public"]["Enums"]["outlet_role"]
+        }[]
+      }
       verify_team_access: {
         Args: { _access_code: string; _email: string }
         Returns: {

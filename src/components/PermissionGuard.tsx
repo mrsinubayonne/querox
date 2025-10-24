@@ -1,6 +1,5 @@
 import React from 'react';
-import { useOutletRole } from '@/hooks/useOutletRole';
-import { useProfile } from '@/hooks/useProfile';
+import { useOutletProfile } from '@/hooks/useOutletProfile';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,8 +15,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   fallback,
   children
 }) => {
-  const { profile } = useProfile();
-  const { loading, hasPermission } = useOutletRole(profile?.selected_outlet_id || undefined);
+  const { loading, hasPermission } = useOutletProfile();
 
   if (loading) {
     return <Skeleton className="h-20 w-full" />;
