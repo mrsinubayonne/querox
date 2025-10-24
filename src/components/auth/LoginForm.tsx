@@ -74,14 +74,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
 
         const member = memberData[0];
 
-        // Store team member session
-        localStorage.setItem('team_member_session', JSON.stringify({
+        // Store team member session (normalized key)
+        localStorage.setItem('teamMember', JSON.stringify({
           memberId: member.member_id,
           ownerId: member.owner_id,
           role: member.role,
-          email: data.email,
-          loginTime: new Date().toISOString()
+          email: data.email
         }));
+        // Clean up legacy key if it exists
+        try { localStorage.removeItem('team_member_session'); } catch { /* ignore */ }
 
         toast({
           title: "Connexion réussie",
