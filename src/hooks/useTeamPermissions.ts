@@ -56,7 +56,7 @@ export const useTeamPermissions = () => {
 
   const loadPermissions = async () => {
     try {
-      const teamMemberStr = localStorage.getItem('teamMember') || localStorage.getItem('team_member_session');
+      const teamMemberStr = localStorage.getItem('teamMember');
       if (!teamMemberStr) {
         setPermissions([]);
         setLoading(false);
@@ -84,7 +84,7 @@ export const useTeamPermissions = () => {
     } catch (error) {
       console.error('Error loading permissions:', error);
       // Fallback to predefined permissions
-      const teamMemberStr = localStorage.getItem('teamMember') || localStorage.getItem('team_member_session');
+      const teamMemberStr = localStorage.getItem('teamMember');
       if (teamMemberStr) {
         const member: TeamMemberSession = JSON.parse(teamMemberStr);
         setPermissions(ROLE_PERMISSIONS[member.role] || []);
