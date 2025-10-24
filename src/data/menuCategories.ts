@@ -102,6 +102,7 @@ export const PREDEFINED_CATEGORIES = [
   'Smoothies',
   'Milkshakes',
   'Sodas',
+  'Soft drink',
   'Eaux',
   'Boissons énergisantes',
   
@@ -126,6 +127,7 @@ export const PREDEFINED_CATEGORIES = [
   'Gins',
   'Tequilas',
   'Cognacs',
+  'Liqueurs',
   'Shots',
   'Digestifs',
   'Apéritifs alcoolisés',

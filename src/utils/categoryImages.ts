@@ -69,7 +69,7 @@ export function getCategoryDefaultImage(categoryName: string | undefined): strin
   // Boissons froides non alcoolisées
   if (category.includes('jus') || category.includes('smoothie') || 
       category.includes('milkshake') || category.includes('soda') || 
-      category.includes('boisson froide')) {
+      category.includes('soft drink') || category.includes('boisson froide')) {
     return '/lovable-uploads/category-boissons-froides.jpg';
   }
   
@@ -92,8 +92,8 @@ export function getCategoryDefaultImage(categoryName: string | undefined): strin
   if (category.includes('whisky') || category.includes('rhum') || 
       category.includes('vodka') || category.includes('gin') || 
       category.includes('tequila') || category.includes('cognac') || 
-      category.includes('cognacs') || category.includes('spiritueux') || 
-      category.includes('digestif')) {
+      category.includes('cognacs') || category.includes('liqueur') || 
+      category.includes('spiritueux') || category.includes('digestif')) {
     return '/lovable-uploads/category-spiritueux.jpg';
   }
   
