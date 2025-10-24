@@ -19,15 +19,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { isSubscriptionActive, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isTeamMember, setIsTeamMember] = useState(false);
+  const [isTeamMember] = useState(() => {
+    try {
+      return !!localStorage.getItem('teamMember');
+    } catch {
+      return false;
+    }
+  });
 
   const loading = authLoading || profileLoading || subscriptionLoading;
-
-  // Check if this is a team member session
-  useEffect(() => {
-    const teamMemberData = localStorage.getItem('teamMember');
-    setIsTeamMember(!!teamMemberData);
-  }, []);
 
   useEffect(() => {
     // Allow team members to access without Supabase auth
