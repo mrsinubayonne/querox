@@ -21,7 +21,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const location = useLocation();
   const [isTeamMember] = useState(() => {
     try {
-      return !!localStorage.getItem('teamMember');
+      const tm = localStorage.getItem('teamMember');
+      const legacy = localStorage.getItem('team_member_session');
+      return !!(tm || legacy);
     } catch {
       return false;
     }
