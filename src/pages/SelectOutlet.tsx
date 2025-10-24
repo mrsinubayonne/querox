@@ -15,7 +15,7 @@ import { useTeamPermissions } from '@/hooks/useTeamPermissions';
 const SelectOutlet: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isTeamMember } = useTeamPermissions();
+  const { isTeamMember, loading: teamLoading } = useTeamPermissions();
   const { outlets, loading, createOutlet, selectOutlet, selectedOutletId, canAddMoreOutlets, getOutletLimit } = useOutlets();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -25,10 +25,11 @@ const SelectOutlet: React.FC = () => {
   });
 
   useEffect(() => {
+    if (teamLoading) return;
     if (!user && !isTeamMember()) {
-      navigate('/auth');
+      navigate('/auth', { replace: true });
     }
-  }, [user, navigate, isTeamMember]);
+  }, [user, isTeamMember, teamLoading, navigate]);
 
   const handleCreateOutlet = async (e: React.FormEvent) => {
     e.preventDefault();
