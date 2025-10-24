@@ -156,6 +156,31 @@ export const useTeamMembers = () => {
     }
   };
 
+  const toggleMemberStatus = async (memberId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .update({ is_active: !currentStatus })
+        .eq('id', memberId);
+
+      if (error) throw error;
+
+      toast({
+        title: currentStatus ? "Membre désactivé" : "Membre activé",
+        description: currentStatus ? "Le membre ne peut plus se connecter" : "Le membre peut maintenant se connecter",
+      });
+
+      await fetchTeamMembers();
+    } catch (error: any) {
+      console.error('Error toggling member status:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier le statut du membre",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     fetchTeamMembers();
   }, [fetchTeamMembers]);
@@ -165,6 +190,7 @@ export const useTeamMembers = () => {
     loading,
     inviteMember,
     removeMember,
+    toggleMemberStatus,
     canAddMoreMembers,
     getTeamLimit,
     refetch: fetchTeamMembers

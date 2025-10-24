@@ -43,14 +43,28 @@ const TeamMemberAuth: React.FC = () => {
 
       const member = memberData[0];
 
+      // Update last login
+      await supabase
+        .from('team_members')
+        .update({ last_login_at: new Date().toISOString() })
+        .eq('id', member.member_id);
+
       // Store team member session info in localStorage
-      localStorage.setItem('team_member_session', JSON.stringify({
+      localStorage.setItem('teamMember', JSON.stringify({
         memberId: member.member_id,
         ownerId: member.owner_id,
         role: member.role,
-        email: formData.email,
-        loginTime: new Date().toISOString()
+        email: formData.email
       }));
+
+      // Log activity
+      await supabase
+        .from('team_activity_logs')
+        .insert({
+          team_member_id: member.member_id,
+          action_type: 'login',
+          action_description: 'Connexion réussie'
+        });
 
       toast({
         title: "Connexion réussie",

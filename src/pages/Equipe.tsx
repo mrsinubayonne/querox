@@ -24,7 +24,7 @@ const ROLES = [
 ];
 
 const Equipe: React.FC = () => {
-  const { teamMembers, loading, inviteMember, removeMember, canAddMoreMembers, getTeamLimit } = useTeamMembers();
+  const { teamMembers, loading, inviteMember, removeMember, toggleMemberStatus, canAddMoreMembers, getTeamLimit } = useTeamMembers();
   const { subscription } = useSubscription();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
@@ -252,13 +252,22 @@ const Equipe: React.FC = () => {
                           )}
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => removeMember(member.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant={member.is_active ? "outline" : "default"}
+                          onClick={() => toggleMemberStatus(member.id, member.is_active)}
+                        >
+                          {member.is_active ? "Désactiver" : "Activer"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => removeMember(member.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
