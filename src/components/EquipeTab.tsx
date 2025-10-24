@@ -5,37 +5,53 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Users, Mail, UserPlus, Trash2, Shield } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Users, UserPlus, Trash2, Shield, Key, Copy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useToast } from '@/hooks/use-toast';
+
+const ROLES = [
+  { value: 'manager', label: 'Manager', description: 'Gestion complète sauf équipe' },
+  { value: 'serveur', label: 'Serveur', description: 'Commandes, réservations, clients' },
+  { value: 'caissier', label: 'Caissier', description: 'Commandes, paiements, factures' },
+  { value: 'cuisinier', label: 'Cuisinier', description: 'Consultation commandes et menu' },
+  { value: 'livreur', label: 'Livreur', description: 'Consultation commandes et clients' }
+];
 
 export const EquipeTab: React.FC = () => {
-  const { teamMembers, loading, inviteMember, removeMember, canAddMoreMembers, getTeamLimit } = useTeamMembers();
+  const { teamMembers, loading, inviteMember, removeMember, toggleMemberStatus, canAddMoreMembers, getTeamLimit } = useTeamMembers();
   const { subscription } = useSubscription();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [selectedRole, setSelectedRole] = useState('serveur');
   const [open, setOpen] = useState(false);
 
   const handleInvite = async () => {
     if (email) {
-      await inviteMember(email);
+      await inviteMember(email, selectedRole, fullName, phone);
       setEmail('');
+      setFullName('');
+      setPhone('');
+      setSelectedRole('serveur');
       setOpen(false);
     }
   };
 
+  const copyAccessCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({
+      title: "Code copié",
+      description: "Le code d'accès a été copié dans le presse-papier"
+    });
+  };
+
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'accepted':
-        return <Badge className="bg-emerald-500">Actif</Badge>;
-      case 'pending':
-        return <Badge variant="secondary">En attente</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Refusé</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
+    return <Badge className="bg-emerald-500">Actif</Badge>;
   };
 
   const formatDate = (dateString: string | null) => {
@@ -62,19 +78,29 @@ export const EquipeTab: React.FC = () => {
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button disabled={!canAdd}>
+            <Button disabled={!canAdd} className="bg-purple-600 hover:bg-purple-700">
               <UserPlus className="w-4 h-4 mr-2" />
-              Inviter un membre
+              Ajouter un membre
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Inviter un membre</DialogTitle>
+              <DialogTitle>Ajouter un membre d'équipe</DialogTitle>
               <DialogDescription>
-                Envoyez une invitation pour rejoindre votre équipe
+                Un code d'accès unique sera généré pour ce membre.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 pt-4">
+              <div>
+                <Label htmlFor="fullName">Nom complet</Label>
+                <Input
+                  id="fullName"
+                  placeholder="Jean Dupont"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+
               <div>
                 <Label htmlFor="email">Adresse email</Label>
                 <Input
@@ -85,13 +111,44 @@ export const EquipeTab: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
+
+              <div>
+                <Label htmlFor="phone">Téléphone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+33 6 12 34 56 78"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="role">Rôle</Label>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        <div>
+                          <div className="font-medium">{role.label}</div>
+                          <div className="text-xs text-gray-500">{role.description}</div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <Button 
                 onClick={handleInvite} 
-                className="w-full"
+                className="w-full bg-purple-600 hover:bg-purple-700"
                 disabled={!email}
               >
-                <Mail className="w-4 h-4 mr-2" />
-                Envoyer l'invitation
+                <Key className="w-4 h-4 mr-2" />
+                Générer le code d'accès
               </Button>
             </div>
           </DialogContent>
@@ -134,34 +191,72 @@ export const EquipeTab: React.FC = () => {
             <Card key={member.id}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Users className="w-6 h-6 text-primary" />
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                      <Users className="w-6 h-6 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold">{member.member_email}</h3>
+                        <h3 className="text-lg font-semibold">{member.full_name || member.member_email}</h3>
                         {getStatusBadge(member.status)}
+                        {!member.is_active && <Badge variant="secondary">Désactivé</Badge>}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <p className="text-sm text-gray-500 mb-2">
+                        {member.member_email} {member.phone && `• ${member.phone}`}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                         <span className="flex items-center gap-1">
                           <Shield className="w-4 h-4" />
-                          {member.role}
+                          {ROLES.find(r => r.value === member.role)?.label || member.role}
                         </span>
-                        <span>Invité le {formatDate(member.invited_at)}</span>
-                        {member.accepted_at && (
-                          <span>Accepté le {formatDate(member.accepted_at)}</span>
+                        <span>Ajouté le {formatDate(member.invited_at)}</span>
+                        {member.last_login_at && (
+                          <span>• Dernière connexion: {formatDate(member.last_login_at)}</span>
                         )}
+                        <span>• {member.actions_count} actions</span>
                       </div>
+                      {(member as any).access_code && (
+                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold text-blue-900 flex items-center gap-1">
+                              <Key className="w-3 h-3" />
+                              Code d'accès
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => copyAccessCode((member as any).access_code)}
+                              className="h-6 px-2"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <code className="block px-3 py-2 bg-white text-blue-700 rounded font-mono text-base font-bold text-center border border-blue-300">
+                            {(member as any).access_code}
+                          </code>
+                          <p className="text-xs text-blue-600 mt-2">
+                            Connexion sur /team-login avec email et code
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => removeMember(member.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant={member.is_active ? "outline" : "default"}
+                      onClick={() => toggleMemberStatus(member.id, member.is_active)}
+                    >
+                      {member.is_active ? "Désactiver" : "Activer"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => removeMember(member.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
