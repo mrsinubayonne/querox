@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useMenus } from '@/hooks/useMenus';
+import { useMenuCategories } from '@/hooks/useMenuCategories';
 import ImageUpload from '@/components/ImageUpload';
 import { PREDEFINED_CATEGORIES } from '@/data/menuCategories';
 import { APP_CONFIG } from '@/config/app.config';
@@ -38,7 +39,8 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
   onSuccess 
 }) => {
   const { updateMenuItem, loading } = useMenuItems();
-  const { categories } = useMenus();
+  const { categories, menus, refetch } = useMenus();
+  const { addCategory } = useMenuCategories();
   
   const [formData, setFormData] = useState<{
     name: string;
@@ -82,8 +84,37 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
       return;
     }
 
+    let categoryId = formData.category_id;
+
+    // Si c'est une catégorie prédéfinie, la créer d'abord
+    if (categoryId.startsWith('predefined-')) {
+      const categoryName = categoryId.replace('predefined-', '');
+      
+      // Utiliser le premier menu disponible
+      const targetMenuId = menus[0]?.id;
+      
+      if (!targetMenuId) {
+        console.error('Aucun menu trouvé');
+        return;
+      }
+
+      const newCategory = await addCategory({
+        name: categoryName,
+        menu_id: targetMenuId,
+        description: `Catégorie ${categoryName}`
+      });
+
+      if (!newCategory) {
+        return;
+      }
+
+      categoryId = newCategory.id;
+      await refetch(); // Rafraîchir les catégories
+    }
+
     const success = await updateMenuItem(item.id, {
       ...formData,
+      category_id: categoryId,
       allergens: formData.allergens.length > 0 ? formData.allergens : undefined
     });
 
