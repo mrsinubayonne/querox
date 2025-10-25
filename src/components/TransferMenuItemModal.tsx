@@ -74,12 +74,12 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
   };
 
   const handleClose = () => {
-    onClose();
     setSelectedOutletIds(new Set());
+    onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Partager {isBulkTransfer ? 'les plats' : 'le plat'}</DialogTitle>

@@ -398,28 +398,24 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
           onSuccess={handleEditSuccess}
         />
 
-        {transferringItem && (
-          <TransferMenuItemModal
-            isOpen={!!transferringItem}
-            onClose={() => setTransferringItem(null)}
-            onConfirm={handleTransferConfirm}
-            itemName={transferringItem.name}
-            outlets={outlets}
-            currentOutletId={menus.find(m => categories.find(c => c.id === transferringItem.category_id)?.menu_id === m.id)?.outlet_id || ''}
-          />
-        )}
+        <TransferMenuItemModal
+          isOpen={!!transferringItem}
+          onClose={() => setTransferringItem(null)}
+          onConfirm={handleTransferConfirm}
+          itemName={transferringItem?.name || ''}
+          outlets={outlets}
+          currentOutletId={transferringItem ? (menus.find(m => categories.find(c => c.id === transferringItem.category_id)?.menu_id === m.id)?.outlet_id || '') : ''}
+        />
 
-        {showBulkTransfer && (
-          <TransferMenuItemModal
-            isOpen={showBulkTransfer}
-            onClose={() => setShowBulkTransfer(false)}
-            onConfirm={handleBulkTransferConfirm}
-            itemName={`${selectedItems.size} plat${selectedItems.size > 1 ? 's' : ''}`}
-            outlets={outlets}
-            currentOutletId={menus[0]?.outlet_id || ''}
-            isBulkTransfer
-          />
-        )}
+        <TransferMenuItemModal
+          isOpen={showBulkTransfer}
+          onClose={() => setShowBulkTransfer(false)}
+          onConfirm={handleBulkTransferConfirm}
+          itemName={`${selectedItems.size} plat${selectedItems.size > 1 ? 's' : ''}`}
+          outlets={outlets}
+          currentOutletId={menus[0]?.outlet_id || ''}
+          isBulkTransfer
+        />
       </>
     );
   };
