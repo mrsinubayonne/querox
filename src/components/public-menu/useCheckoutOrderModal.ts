@@ -20,7 +20,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const [tableNumber, setTableNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { restaurantUserId } = useRestaurant();
+  const { restaurantUserId, outletId } = useRestaurant();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,15 +53,19 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     setLoading(true);
 
     try {
-      // Get the outlet_id for the restaurant
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', restaurantUserId)
-        .maybeSingle();
+      // Resolve outlet_id: prefer outlet from menu context, fallback to owner's selected outlet
+      let resolvedOutletId = outletId || null;
+
+      if (!resolvedOutletId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('selected_outlet_id')
+          .eq('id', restaurantUserId)
+          .maybeSingle();
+        resolvedOutletId = profile?.selected_outlet_id || null;
+      }
       
-      const outletId = profile?.selected_outlet_id;
-      if (!outletId) {
+      if (!resolvedOutletId) {
         toast({ 
           title: "Erreur", 
           description: "Point de vente non configuré pour ce restaurant.", 
@@ -73,7 +77,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
 
       const payload: any = {
         user_id: restaurantUserId,
-        outlet_id: outletId,
+        outlet_id: resolvedOutletId,
         customer_name: customerName,
         customer_phone: customerPhone,
         notes: notes || null,

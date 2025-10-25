@@ -54,12 +54,13 @@ import Equipe from '@/pages/Equipe';
 import StaffRequest from '@/pages/StaffRequest';
 import SelectOutlet from '@/pages/SelectOutlet';
 import ProfileLogin from '@/pages/ProfileLogin';
+import SelectProfile from '@/pages/SelectProfile';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 
 function App() {
   return (
-    <RestaurantProvider restaurantUserId={null}>
+    <RestaurantProvider restaurantUserId={null} outletId={null}>
         <Router>
           <div className="min-h-screen bg-background">
             <Routes>
@@ -75,6 +76,7 @@ function App() {
 
               {/* Routes protégées */}
               <Route path="/select-outlet" element={<ProtectedRoute><SelectOutlet /></ProtectedRoute>} />
+              <Route path="/select-profile" element={<ProtectedRoute><SelectProfile /></ProtectedRoute>} />
               <Route path="/profile-login" element={<ProtectedRoute><ProfileLogin /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/menus" element={<ProtectedRoute><Menus /></ProtectedRoute>} />

@@ -61,7 +61,7 @@ const PublicMenu: React.FC = () => {
   }
 
   return (
-    <RestaurantProvider restaurantUserId={restaurantUserId}>
+    <RestaurantProvider restaurantUserId={restaurantUserId} outletId={menuData?.outlet_id || null}>
       <div className="min-h-screen w-full bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex flex-col">
         <PublicMenuHeader 
           totalItems={getTotalItems()} 
