@@ -10,7 +10,6 @@ interface MenuData {
   description?: string;
   logo_url?: string;
   header_image_url?: string;
-  outlet_id?: string;
 }
 
 export const useMenuData = (menuId: string | null) => {
@@ -29,7 +28,7 @@ export const useMenuData = (menuId: string | null) => {
       // 1. Récupérer le menu et vérifier qu'il existe
       const { data: menuData, error: menuError } = await supabase
         .from('menus')
-        .select('user_id, outlet_id, name, description, logo_url, header_image_url, is_active')
+        .select('user_id, name, description, logo_url, header_image_url, is_active')
         .eq('id', id)
         .eq('is_active', true)
         .single();
@@ -45,7 +44,6 @@ export const useMenuData = (menuId: string | null) => {
         description: menuData.description || undefined,
         logo_url: menuData.logo_url || undefined,
         header_image_url: menuData.header_image_url || undefined,
-        outlet_id: menuData.outlet_id || undefined,
       });
 
       // 2. Récupérer les catégories
