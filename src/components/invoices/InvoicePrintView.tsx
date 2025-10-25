@@ -115,22 +115,40 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-100">
-              <th className="border border-gray-300 px-6 py-4 text-left text-lg font-bold">Description</th>
-              <th className="border border-gray-300 px-6 py-4 text-right text-lg font-bold">Montant</th>
+              <th className="border border-gray-300 px-6 py-4 text-left text-lg font-bold">Article</th>
+              <th className="border border-gray-300 px-6 py-4 text-center text-lg font-bold">Quantité</th>
+              <th className="border border-gray-300 px-6 py-4 text-right text-lg font-bold">Prix unitaire</th>
+              <th className="border border-gray-300 px-6 py-4 text-right text-lg font-bold">Total</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td className="border border-gray-300 px-6 py-4">
-                <p className="text-base font-bold">Services et produits</p>
-                {invoice.notes && (
-                  <p className="text-base font-semibold text-gray-700 mt-2">{invoice.notes}</p>
-                )}
-              </td>
-              <td className="border border-gray-300 px-6 py-4 text-right text-lg font-bold">
-                {invoice.total_amount.toLocaleString('fr-FR')} FCFA
-              </td>
-            </tr>
+            {invoice.order?.items && Array.isArray(invoice.order.items) && invoice.order.items.length > 0 ? (
+              invoice.order.items.map((item: any, index: number) => (
+                <tr key={index}>
+                  <td className="border border-gray-300 px-6 py-4">
+                    <p className="text-base font-bold">{item.name}</p>
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center text-base font-bold">
+                    {item.quantity}
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-right text-base font-bold">
+                    {item.price?.toLocaleString('fr-FR')} FCFA
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-right text-lg font-bold">
+                    {((item.price || 0) * (item.quantity || 0)).toLocaleString('fr-FR')} FCFA
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="border border-gray-300 px-6 py-4">
+                  <p className="text-base font-bold">Services et produits</p>
+                  {invoice.notes && (
+                    <p className="text-base font-semibold text-gray-700 mt-2">{invoice.notes}</p>
+                  )}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -160,10 +178,6 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
               {invoice.status === 'paid' ? 'PAYÉE' : 
                invoice.status === 'unpaid' ? 'EN ATTENTE' : 'EN RETARD'}
             </p>
-          </div>
-          <div>
-            <p className="text-base font-semibold text-gray-700">Date d'échéance:</p>
-            <p className="text-lg font-bold text-gray-900">{formatDate(invoice.due_date)}</p>
           </div>
           {invoice.paid_date && (
             <div>
