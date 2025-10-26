@@ -24,8 +24,11 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
   };
 
   return (
-    <div className="print-only fixed inset-0 bg-white z-[9999] p-8">
+    <div className="print-only fixed inset-0 bg-white z-[9999] p-8" style={{ fontWeight: 'bold' }}>
       <style>{`
+        * {
+          font-weight: bold !important;
+        }
         @media print {
           body * {
             visibility: hidden;
