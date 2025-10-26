@@ -66,8 +66,11 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
     setIsLoading(true);
     try {
       await onConfirm(Array.from(selectedOutletIds));
-      onClose();
-      setSelectedOutletIds(new Set());
+      // Attendre 300ms avant de fermer pour éviter les va-et-vient
+      setTimeout(() => {
+        onClose();
+        setSelectedOutletIds(new Set());
+      }, 300);
     } finally {
       setIsLoading(false);
     }
