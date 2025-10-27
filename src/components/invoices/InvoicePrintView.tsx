@@ -111,7 +111,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
           <p className="text-base text-gray-700" style={{ fontWeight: '900' }}>{invoice.order.customer_email}</p>
         )}
         {invoice.order?.customer_phone && (
-          <p className="text-base text-gray-700" style={{ fontWeight: '900' }}>{invoice.order.customer_phone}</p>
+          <p className="text-base text-gray-700" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{invoice.order.customer_phone}</p>
         )}
         {servedBy && (
           <p className="text-base text-gray-900 mt-2" style={{ fontWeight: '900' }}>Servi par: {servedBy}</p>
@@ -152,7 +152,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
                 <td colSpan={4} className="border border-gray-300 px-6 py-4">
                   <p className="text-base" style={{ fontWeight: '900' }}>Services et produits</p>
                   {invoice.notes && (
-                    <p className="text-base text-gray-700 mt-2" style={{ fontWeight: '900' }}>{invoice.notes}</p>
+                    <p className="text-base text-gray-700 mt-2" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{invoice.notes}</p>
                   )}
                 </td>
               </tr>
@@ -165,10 +165,10 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
       <div className="flex justify-end mb-12">
         <div className="w-80">
           <div className="flex justify-between py-3 border-t-2 border-gray-300">
-            <span className="text-xl text-gray-900" style={{ fontWeight: '900' }}>TOTAL:</span>
+            <span className="text-xl text-gray-900" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>TOTAL:</span>
             <span 
               className="text-2xl"
-              style={{ color: settings?.primary_color || '#3B82F6', fontWeight: '900' }}
+              style={{ color: settings?.primary_color || '#3B82F6', fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}
             >
               {invoice.total_amount.toLocaleString('fr-FR')} FCFA
             </span>
