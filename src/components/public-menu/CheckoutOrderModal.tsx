@@ -43,6 +43,8 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
     setOrderType,
     tableNumber,
     setTableNumber,
+    numberOfPeople,
+    setNumberOfPeople,
     loading,
     handleSubmit,
     restaurantUserId,
@@ -71,6 +73,8 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
             setOrderType={setOrderType}
             tableNumber={tableNumber}
             setTableNumber={setTableNumber}
+            numberOfPeople={numberOfPeople}
+            setNumberOfPeople={setNumberOfPeople}
           />
           <CheckoutOrderCartSummary
             cart={cart}
