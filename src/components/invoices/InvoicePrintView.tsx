@@ -104,7 +104,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
       {/* Informations client */}
       <div className="mb-8">
         <h3 className="text-xl text-gray-900 mb-3" style={{ fontWeight: '900' }}>Facturé à:</h3>
-        <p className="text-lg text-gray-900" style={{ fontWeight: '900' }}>
+        <p className="text-lg text-gray-900" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>
           {invoice.order?.customer_name || 'Client'}
         </p>
         {invoice.order?.customer_email && (
@@ -190,7 +190,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
           {invoice.paid_date && (
             <div>
               <p className="text-base text-gray-700" style={{ fontWeight: '900' }}>Date de paiement:</p>
-              <p className="text-lg text-gray-900" style={{ fontWeight: '900' }}>{formatDate(invoice.paid_date)}</p>
+              <p className="text-lg text-gray-900" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{formatDate(invoice.paid_date)}</p>
             </div>
           )}
         </div>
@@ -199,7 +199,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
       {/* Footer */}
       <div className="border-t-2 border-gray-300 pt-6 mt-12">
         {settings?.footer_note && (
-          <p className="text-sm text-gray-700 mb-4 whitespace-pre-line" style={{ fontWeight: '900' }}>
+          <p className="text-sm text-gray-700 mb-4 whitespace-pre-line" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>
             {settings.footer_note}
           </p>
         )}
