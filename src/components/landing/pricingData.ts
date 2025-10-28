@@ -46,7 +46,7 @@ export const plans = [
     ],
     popular: true,
     cta: "Commencer maintenant",
-    tier: "premium"
+    tier: "pro"
   },
   {
     name: "Entreprise",
@@ -72,7 +72,7 @@ export const plans = [
     ],
     popular: false,
     cta: "Commencer maintenant",
-    tier: "pro"
+    tier: "entreprise"
   },
   {
     name: "LICENCE QUEROX",
