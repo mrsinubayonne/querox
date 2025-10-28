@@ -47,14 +47,12 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
         </div>
         <div className="text-right">
           <h2 
-            className="text-xl font-bold mb-1"
-            style={{ color: settings.primary_color || '#3B82F6' }}
+            className="text-xl font-bold mb-1 text-black"
           >
             {settings.invoice_title || 'FACTURE'}
           </h2>
           <p 
-            className="text-base font-semibold"
-            style={{ color: settings.primary_color || '#3B82F6' }}
+            className="text-base font-semibold text-black"
           >
             INV-202501-0001
           </p>
@@ -96,11 +94,11 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
       {/* Total */}
       <div className="flex justify-end mb-8">
         <div className="w-48">
-          <div className="flex justify-between py-2 border-t-2" style={{ borderColor: settings.primary_color || '#3B82F6' }}>
+          <div className="flex justify-between py-2 border-t-2 border-gray-300">
             <span className="text-sm font-semibold text-gray-900">TOTAL:</span>
             <span 
-              className="font-bold text-base"
-              style={{ color: settings.primary_color || '#3B82F6', fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}
+              className="font-bold text-base text-black"
+              style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}
             >
               15,000 FCFA
             </span>

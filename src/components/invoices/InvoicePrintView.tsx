@@ -86,14 +86,13 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         </div>
         <div className="text-right">
           <h2 
-            className="text-3xl font-bold mb-2"
-            style={{ color: settings?.primary_color || '#3B82F6' }}
+            className="text-3xl font-bold mb-2 text-black"
           >
             {settings?.invoice_title || 'FACTURE'}
           </h2>
           <p 
-            className="text-2xl"
-            style={{ color: settings?.primary_color || '#3B82F6', fontWeight: '900' }}
+            className="text-2xl text-black"
+            style={{ fontWeight: '900' }}
           >
             {invoice.invoice_number}
           </p>
@@ -167,8 +166,8 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
           <div className="flex justify-between py-3 border-t-2 border-gray-300">
             <span className="text-xl text-gray-900" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>TOTAL:</span>
             <span 
-              className="text-2xl"
-              style={{ color: settings?.primary_color || '#3B82F6', fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}
+              className="text-2xl text-black"
+              style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}
             >
               {invoice.total_amount.toLocaleString('fr-FR')} FCFA
             </span>
