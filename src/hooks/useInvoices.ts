@@ -19,6 +19,7 @@ export interface Invoice {
     customer_name: string;
     customer_email: string | null;
     customer_phone: string | null;
+    items: any[];
   };
 }
 
@@ -56,7 +57,7 @@ export const useInvoices = () => {
         .from('invoices')
         .select(`
           id, user_id, order_id, invoice_number, total_amount, status, due_date, paid_date, notes, created_at, updated_at,
-          order:orders(customer_name, customer_email, customer_phone)
+          order:orders(customer_name, customer_email, customer_phone, items)
         `)
         .eq('user_id', user.id)
         .eq('outlet_id', outletId)

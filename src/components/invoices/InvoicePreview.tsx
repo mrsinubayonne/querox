@@ -33,13 +33,13 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
             {settings.company_name || 'Nom de l\'entreprise'}
           </h1>
           {settings.company_address && (
-            <p className="text-sm text-gray-600 whitespace-pre-line">{settings.company_address}</p>
+            <p className="text-sm text-black-600 whitespace-pre-line">{settings.company_address}</p>
           )}
           {settings.company_phone && (
-            <p className="text-xs text-gray-500 mt-1">Tél: {settings.company_phone}</p>
+            <p className="text-xs text-black-500 mt-1">Tél: {settings.company_phone}</p>
           )}
           {settings.company_email && (
-            <p className="text-xs text-gray-500">{settings.company_email}</p>
+            <p className="text-xs text-black-500">{settings.company_email}</p>
           )}
           {settings.tax_id && (
             <p className="text-xs text-gray-500">SIRET/TVA: {settings.tax_id}</p>
@@ -47,27 +47,25 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
         </div>
         <div className="text-right">
           <h2 
-            className="text-xl font-bold mb-1"
-            style={{ color: settings.primary_color || '#3B82F6' }}
+            className="text-xl font-bold mb-1 text-black"
           >
             {settings.invoice_title || 'FACTURE'}
           </h2>
           <p 
-            className="text-base font-semibold"
-            style={{ color: settings.primary_color || '#3B82F6' }}
+            className="text-base font-semibold text-black"
           >
             INV-202501-0001
           </p>
-          <p className="text-xs text-gray-600 mt-1">Date: {new Date().toLocaleDateString('fr-FR')}</p>
+          <p className="text-xs text-black-600 mt-1">Date: {new Date().toLocaleDateString('fr-FR')}</p>
         </div>
       </div>
 
       {/* Informations client */}
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-gray-900 mb-1">Facturé à:</h3>
-        <p className="text-sm text-gray-700">Client Exemple</p>
-        <p className="text-xs text-gray-600">client@exemple.com</p>
-        <p className="text-xs text-gray-600">+33 6 12 34 56 78</p>
+        <p className="text-sm text-black-700">Client Exemple</p>
+        <p className="text-xs text-black-600">client@exemple.com</p>
+        <p className="text-xs text-black-600">+33 6 12 34 56 78</p>
       </div>
 
       {/* Tableau */}
@@ -75,8 +73,8 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-100">
-              <th className="border border-gray-300 px-3 py-2 text-left text-xs font-semibold">Description</th>
-              <th className="border border-gray-300 px-3 py-2 text-right text-xs font-semibold">Montant</th>
+              <th className="border border-gray-300 px-3 py-2 text-left text-xs font-normal">Description</th>
+              <th className="border border-gray-300 px-3 py-2 text-right text-xs font-normal">Montant</th>
             </tr>
           </thead>
           <tbody>
@@ -96,11 +94,11 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
       {/* Total */}
       <div className="flex justify-end mb-8">
         <div className="w-48">
-          <div className="flex justify-between py-2 border-t-2" style={{ borderColor: settings.primary_color || '#3B82F6' }}>
+          <div className="flex justify-between py-2 border-t-2 border-gray-300">
             <span className="text-sm font-semibold text-gray-900">TOTAL:</span>
             <span 
-              className="font-bold text-base"
-              style={{ color: settings.primary_color || '#3B82F6' }}
+              className="font-bold text-base text-black"
+              style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}
             >
               15,000 FCFA
             </span>

@@ -3,9 +3,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Download, Check, X, Clock, Building2, Calendar, CreditCard, Printer } from 'lucide-react';
 import { Invoice } from '@/hooks/useInvoices';
 import InvoicePrintView from './InvoicePrintView';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface InvoiceDetailsModalProps {
   invoice: Invoice | null;
@@ -21,6 +33,8 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   onMarkAsPaid
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
+  const [showServerDialog, setShowServerDialog] = useState(false);
+  const [servedBy, setServedBy] = useState('');
 
   if (!invoice) return null;
 
@@ -47,10 +61,18 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   };
 
   const handlePrint = () => {
+    setShowServerDialog(true);
+  };
+
+  const confirmPrint = () => {
+    setShowServerDialog(false);
     setIsPrinting(true);
     setTimeout(() => {
       window.print();
-      setTimeout(() => setIsPrinting(false), 100);
+      setTimeout(() => {
+        setIsPrinting(false);
+        setServedBy('');
+      }, 100);
     }, 100);
   };
 
@@ -79,7 +101,7 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-primary mb-1">
+                  <p className="text-2xl font-normal text-black mb-1">
                     {invoice.invoice_number}
                   </p>
                   <p className="text-sm text-muted-foreground">
@@ -91,7 +113,7 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
               {/* Informations montant */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
                 <p className="text-sm text-muted-foreground mb-1">Montant total</p>
-                <p className="text-4xl font-bold text-primary">
+                <p className="text-4xl font-bold text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}>
                   {invoice.total_amount.toLocaleString('fr-FR')} FCFA
                 </p>
               </div>
@@ -152,8 +174,35 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
           </div>
         </div>
 
-        {isPrinting && <InvoicePrintView invoice={invoice} />}
+        {isPrinting && <InvoicePrintView invoice={invoice} servedBy={servedBy} />}
       </DialogContent>
+
+      <AlertDialog open={showServerDialog} onOpenChange={setShowServerDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Menu servi par qui?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette information est facultative et sera ajoutée à la facture si vous la renseignez.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="served-by">Nom du serveur (facultatif)</Label>
+            <Input
+              id="served-by"
+              placeholder="Ex: Jean Dupont"
+              value={servedBy}
+              onChange={(e) => setServedBy(e.target.value)}
+              className="mt-2"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setServedBy('')}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPrint}>
+              Imprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };

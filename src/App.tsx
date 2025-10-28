@@ -8,23 +8,23 @@ import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import Blog from '@/pages/Blog';
 import Dashboard from '@/pages/Dashboard';
-import Menus from '@/pages/Menus';
+import MenusProtected from '@/pages/MenusProtected';
 import AllMenus from '@/pages/AllMenus';
 import Commandes from '@/pages/Commandes';
-import Inventaire from '@/pages/Inventaire';
+import InventaireProtected from '@/pages/InventaireProtected';
 import QRCodes from '@/pages/QRCodes';
 import SiteWeb from '@/pages/SiteWeb';
 import SiteWebContainer from '@/pages/SiteWebContainer';
 import SiteWebBenefits from '@/pages/SiteWebBenefits';
-import Statistiques from '@/pages/Statistiques';
-import Parametres from '@/pages/Parametres';
+import StatistiquesProtected from '@/pages/StatistiquesProtected';
+import ParametresProtected from '@/pages/ParametresProtected';
 import Abonnement from '@/pages/Abonnement';
 import PublicMenu from '@/pages/PublicMenu';
 import PublicWebsite from '@/pages/PublicWebsite';
 import NotFound from '@/pages/NotFound';
 import PaymentSuccess from '@/pages/PaymentSuccess';
 import PaymentFailure from '@/pages/PaymentFailure';
-import Comptabilite from '@/pages/Comptabilite';
+import ComptabiliteProtected from '@/pages/ComptabiliteProtected';
 
 // Marketing pages
 import MarketingHub from '@/pages/MarketingHub';
@@ -41,6 +41,7 @@ import Consulting from '@/pages/Consulting';
 import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AdminRoles from '@/pages/AdminRoles';
+import AdminAccessCodes from '@/pages/AdminAccessCodes';
 
 // Partner pages
 import PartnerSignup from '@/pages/PartnerSignup';
@@ -50,7 +51,7 @@ import PartnerDashboard from '@/pages/PartnerDashboard';
 import Reservations from '@/pages/Reservations';
 import Support from '@/pages/Support';
 import Factures from '@/pages/Factures';
-import Equipe from '@/pages/Equipe';
+import EquipeProtected from '@/pages/EquipeProtected';
 import StaffRequest from '@/pages/StaffRequest';
 import SelectOutlet from '@/pages/SelectOutlet';
 import ProfileLogin from '@/pages/ProfileLogin';
@@ -77,18 +78,18 @@ function App() {
               <Route path="/select-outlet" element={<ProtectedRoute><SelectOutlet /></ProtectedRoute>} />
               <Route path="/profile-login" element={<ProtectedRoute><ProfileLogin /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/menus" element={<ProtectedRoute><Menus /></ProtectedRoute>} />
+              <Route path="/menus" element={<ProtectedRoute><MenusProtected /></ProtectedRoute>} />
               <Route path="/all-menus" element={<ProtectedRoute><AllMenus /></ProtectedRoute>} />
               <Route path="/commandes" element={<ProtectedRoute><Commandes /></ProtectedRoute>} />
-              <Route path="/inventaire" element={<ProtectedRoute><Inventaire /></ProtectedRoute>} />
+              <Route path="/inventaire" element={<ProtectedRoute><InventaireProtected /></ProtectedRoute>} />
               <Route path="/qr-codes" element={<ProtectedRoute><QRCodes /></ProtectedRoute>} />
               <Route path="/site-web" element={<ProtectedRoute><SiteWeb /></ProtectedRoute>} />
               <Route path="/site-web-container" element={<ProtectedRoute><SiteWebContainer /></ProtectedRoute>} />
               <Route path="/site-web-benefits" element={<ProtectedRoute><SiteWebBenefits /></ProtectedRoute>} />
-              <Route path="/statistiques" element={<ProtectedRoute><Statistiques /></ProtectedRoute>} />
-              <Route path="/parametres" element={<ProtectedRoute><Parametres /></ProtectedRoute>} />
+              <Route path="/statistiques" element={<ProtectedRoute><StatistiquesProtected /></ProtectedRoute>} />
+              <Route path="/parametres" element={<ProtectedRoute><ParametresProtected /></ProtectedRoute>} />
               <Route path="/abonnement" element={<ProtectedRoute><Abonnement /></ProtectedRoute>} />
-              <Route path="/comptabilite" element={<ProtectedRoute><Comptabilite /></ProtectedRoute>} />
+              <Route path="/comptabilite" element={<ProtectedRoute><ComptabiliteProtected /></ProtectedRoute>} />
 
               {/* Routes Marketing */}
               <Route path="/marketing-hub" element={<ProtectedRoute><MarketingHub /></ProtectedRoute>} />
@@ -105,6 +106,7 @@ function App() {
               <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
               <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
+              <Route path="/admin/access-codes" element={<ProtectedRoute><AdminAccessCodes /></ProtectedRoute>} />
 
               {/* Routes Partner */}
               <Route path="/partner-dashboard" element={<ProtectedRoute><PartnerDashboard /></ProtectedRoute>} />
@@ -113,7 +115,7 @@ function App() {
               <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
               <Route path="/factures" element={<ProtectedRoute><Factures /></ProtectedRoute>} />
-          <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
+          <Route path="/equipe" element={<ProtectedRoute><EquipeProtected /></ProtectedRoute>} />
           <Route path="/staff-request" element={<ProtectedRoute><StaffRequest /></ProtectedRoute>} />
 
               {/* Redirection par défaut */}

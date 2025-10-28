@@ -31,7 +31,7 @@ const Menus: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const fetchMenus = useCallback(async () => {
+  const fetchMenus = async () => {
     if (!user || !profile?.selected_outlet_id) {
       setLoading(false);
       return;
@@ -54,19 +54,18 @@ const Menus: React.FC = () => {
       } else {
         setMenus(data || []);
         // Ne définir activeMenu que si aucun n'est déjà sélectionné
-        setActiveMenu((current) => {
-          if (current) return current;
-          return data && data.length > 0 ? data[0] : null;
-        });
+        if (!activeMenu && data && data.length > 0) {
+          setActiveMenu(data[0]);
+        }
       }
     } finally {
       setLoading(false);
     }
-  }, [user, profile?.selected_outlet_id, toast]);
+  };
 
   useEffect(() => {
     fetchMenus();
-  }, [fetchMenus]);
+  }, [user?.id, profile?.selected_outlet_id]);
 
   const handleMenuChange = (menuId: string) => {
     const selectedMenu = menus.find(menu => menu.id === menuId);
@@ -82,7 +81,7 @@ const Menus: React.FC = () => {
     setShowCreateModal(true);
   };
 
-  const handleViewPublicMenu = useCallback(() => {
+  const handleViewPublicMenu = () => {
     if (!activeMenu?.id) {
       toast({
         title: "Erreur",
@@ -94,7 +93,7 @@ const Menus: React.FC = () => {
     
     const publicUrl = APP_CONFIG.urls.getPublicMenuUrl(activeMenu.id);
     window.open(publicUrl, '_blank');
-  }, [activeMenu, toast]);
+  };
 
   return (
     <PageWithSidebar>

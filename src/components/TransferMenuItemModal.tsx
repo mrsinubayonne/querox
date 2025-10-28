@@ -66,20 +66,23 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
     setIsLoading(true);
     try {
       await onConfirm(Array.from(selectedOutletIds));
-      onClose();
-      setSelectedOutletIds(new Set());
+      // Attendre 300ms avant de fermer pour éviter les va-et-vient
+      setTimeout(() => {
+        onClose();
+        setSelectedOutletIds(new Set());
+      }, 300);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleClose = () => {
-    onClose();
     setSelectedOutletIds(new Set());
+    onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Partager {isBulkTransfer ? 'les plats' : 'le plat'}</DialogTitle>
