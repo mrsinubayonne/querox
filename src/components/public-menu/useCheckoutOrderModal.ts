@@ -78,6 +78,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
         order_type: orderType,
         table_number: orderType === "sur_place" && tableNumber ? tableNumber : null,
         delivery_address: orderType === "livrer" && deliveryAddress ? deliveryAddress : null,
+        number_of_people: numberOfPeople ? parseInt(numberOfPeople) : null,
       };
       const { error } = await supabase.from("orders").insert([payload]);
 
@@ -95,6 +96,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       setNotes("");
       setOrderType("");
       setTableNumber("");
+      setNumberOfPeople("");
       onOpenChange(false);
       onClearCart();
     } catch (err: any) {
@@ -123,6 +125,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     notes, setNotes,
     orderType, setOrderType: handleOrderTypeChange,
     tableNumber, setTableNumber,
+    numberOfPeople, setNumberOfPeople,
     loading,
     handleSubmit,
     restaurantUserId,
