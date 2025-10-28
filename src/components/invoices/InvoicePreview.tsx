@@ -100,7 +100,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
             <span className="text-sm font-semibold text-gray-900">TOTAL:</span>
             <span 
               className="font-bold text-base"
-              style={{ color: settings.primary_color || '#3B82F6' }}
+              style={{ color: settings.primary_color || '#3B82F6', fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}
             >
               15,000 FCFA
             </span>
