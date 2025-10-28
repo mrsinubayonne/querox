@@ -101,7 +101,7 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-primary mb-1">
+                  <p className="text-2xl font-normal text-black mb-1">
                     {invoice.invoice_number}
                   </p>
                   <p className="text-sm text-muted-foreground">
