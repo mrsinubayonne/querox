@@ -103,7 +103,6 @@ const CreateMenuModal: React.FC<CreateMenuModalProps> = ({
         ...cat,
         menu_id: menu.id
       }));
-
       const { error: categoriesError } = await supabase
         .from('menu_categories')
         .insert(categoriesToInsert);
