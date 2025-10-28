@@ -13,32 +13,20 @@ const SubscriptionPopup: React.FC = () => {
 
   useEffect(() => {
     // Ne pas afficher le popup si:
-    // - L'utilisateur l'a déjà fermé aujourd'hui
+    // - L'utilisateur l'a déjà fermé
     // - L'abonnement n'est pas actif
     // - L'utilisateur a un plan Licence
-    // - Il reste plus de 5 jours
     if (isDismissed || !isSubscriptionActive || subscription?.subscription_tier === 'licence') {
       return;
     }
 
-    // Vérifier si on a déjà affiché le popup aujourd'hui
-    const lastShown = localStorage.getItem('subscription_popup_last_shown');
-    const today = new Date().toDateString();
-    
-    if (lastShown === today) {
-      return;
-    }
+    // Afficher le popup après 3 secondes
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 3000);
 
-    // Afficher uniquement si 5 jours ou moins
-    if (daysRemaining !== null && daysRemaining <= 5 && daysRemaining > 0) {
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-        localStorage.setItem('subscription_popup_last_shown', today);
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isDismissed, isSubscriptionActive, subscription?.subscription_tier, daysRemaining]);
+    return () => clearTimeout(timer);
+  }, [isDismissed, isSubscriptionActive, subscription?.subscription_tier]);
 
   const handleDismiss = () => {
     setIsVisible(false);

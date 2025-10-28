@@ -18,8 +18,6 @@ type Props = {
   setOrderType: (val: string) => void;
   tableNumber: string;
   setTableNumber: (val: string) => void;
-  numberOfPeople: string;
-  setNumberOfPeople: (val: string) => void;
 };
 
 const CheckoutOrderFormFields: React.FC<Props> = ({
@@ -35,22 +33,22 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
   setOrderType,
   tableNumber,
   setTableNumber,
-  numberOfPeople,
-  setNumberOfPeople,
 }) => {
   return (
     <div className="space-y-2">
       <div>
-        <label className="block font-medium mb-1">Nom et prénom</label>
+        <label className="block font-medium mb-1">Nom et prénom *</label>
         <Input
+          required
           value={customerName}
           onChange={(e) => setCustomerName(e.target.value)}
           placeholder="Votre nom complet"
         />
       </div>
       <div>
-        <label className="block font-medium mb-1">Téléphone</label>
+        <label className="block font-medium mb-1">Téléphone *</label>
         <Input
+          required
           type="tel"
           value={customerPhone}
           onChange={(e) => setCustomerPhone(e.target.value)}
@@ -77,48 +75,36 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
       </div>
 
       {orderType === "sur_place" && (
-        <>
-          <div>
-            <label className="block font-medium mb-1">
-              Numéro de table
-            </label>
-            <Select
-              value={tableNumber}
-              onValueChange={setTableNumber}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="N° de table" />
-              </SelectTrigger>
-              <SelectContent>
-                {TABLE_NUMBERS.map((num) => (
-                  <SelectItem value={num} key={num}>
-                    {num}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="block font-medium mb-1">
-              Nombre de personnes
-            </label>
-            <Input
-              type="number"
-              min="1"
-              value={numberOfPeople}
-              onChange={(e) => setNumberOfPeople(e.target.value)}
-              placeholder="Nombre de personnes"
-            />
-          </div>
-        </>
+        <div>
+          <label className="block font-medium mb-1">
+            Numéro de table *
+          </label>
+          <Select
+            value={tableNumber}
+            onValueChange={setTableNumber}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="N° de table" />
+            </SelectTrigger>
+            <SelectContent>
+              {TABLE_NUMBERS.map((num) => (
+                <SelectItem value={num} key={num}>
+                  {num}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
       {orderType === "livrer" && (
         <div>
           <label className="block font-medium mb-1">
-            Adresse de livraison
+            Adresse de livraison *
           </label>
           <Textarea
+            required
             value={deliveryAddress}
             onChange={(e) => setDeliveryAddress(e.target.value)}
             placeholder="Rue, quartier, spécificités…"

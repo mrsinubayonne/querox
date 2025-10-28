@@ -45,15 +45,14 @@ const SelectOutlet: React.FC = () => {
     if (newOutlet) {
       setIsDialogOpen(false);
       setFormData({ name: '', address: '', phone: '' });
-      // Rediriger directement au dashboard (propriétaire)
-      navigate('/dashboard');
+      // Rediriger vers la connexion de profil après la création
+      navigate('/profile-login');
     }
   };
 
   const handleSelectOutlet = async (outletId: string) => {
     await selectOutlet(outletId);
-    // Rediriger directement au dashboard (propriétaire)
-    navigate('/dashboard');
+    navigate('/profile-login');
   };
 
   if (loading) {

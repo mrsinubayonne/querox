@@ -39,8 +39,6 @@ const Factures: React.FC = () => {
   const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showServerDialog, setShowServerDialog] = useState(false);
-  const [servedBy, setServedBy] = useState('');
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -77,17 +75,9 @@ const Factures: React.FC = () => {
 
   const handlePrint = (invoice: Invoice) => {
     setPrintInvoice(invoice);
-    setShowServerDialog(true);
-  };
-
-  const confirmPrint = () => {
-    setShowServerDialog(false);
     setTimeout(() => {
       window.print();
-      setTimeout(() => {
-        setPrintInvoice(null);
-        setServedBy('');
-      }, 100);
+      setTimeout(() => setPrintInvoice(null), 100);
     }, 100);
   };
 
@@ -344,36 +334,7 @@ const Factures: React.FC = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={showServerDialog} onOpenChange={setShowServerDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Menu servi par qui?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette information est facultative et sera ajoutée à la facture si vous la renseignez.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="py-4">
-              <label htmlFor="served-by" className="text-sm font-medium">
-                Nom du serveur (facultatif)
-              </label>
-              <input
-                id="served-by"
-                placeholder="Ex: Jean Dupont"
-                value={servedBy}
-                onChange={(e) => setServedBy(e.target.value)}
-                className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setServedBy('')}>Annuler</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmPrint}>
-                Imprimer
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {printInvoice && <InvoicePrintView invoice={printInvoice} servedBy={servedBy} />}
+        {printInvoice && <InvoicePrintView invoice={printInvoice} />}
       </PageWithSidebar>
     </SubscriptionGuard>
   );

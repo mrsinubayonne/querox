@@ -64,6 +64,22 @@ const AddInvoiceModal: React.FC<AddInvoiceModalProps> = ({ open, onOpenChange })
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="template">Modèle de facture *</Label>
+            <Select value={template} onValueChange={setTemplate}>
+              <SelectTrigger id="template">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="moderne">Moderne</SelectItem>
+                <SelectItem value="minimaliste">Minimaliste</SelectItem>
+                <SelectItem value="professionnel">Professionnel</SelectItem>
+                <SelectItem value="colore">Coloré</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="amount">Montant (FCFA) *</Label>
             <Input
               id="amount"

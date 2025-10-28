@@ -9,7 +9,7 @@ export const ORDER_TYPE_OPTIONS = [
   { value: "sur_place", label: "À manger sur place" }
 ];
 
-export const TABLE_NUMBERS = Array.from({ length: 200 }, (_, i) => (i + 1).toString());
+export const TABLE_NUMBERS = Array.from({ length: 20 }, (_, i) => (i + 1).toString());
 
 export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOpenChange: (open: boolean) => void, onClearCart: () => void) {
   const [customerName, setCustomerName] = useState("");
@@ -18,7 +18,6 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const [notes, setNotes] = useState("");
   const [orderType, setOrderType] = useState("");
   const [tableNumber, setTableNumber] = useState("");
-  const [numberOfPeople, setNumberOfPeople] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { restaurantUserId } = useRestaurant();
@@ -38,6 +37,16 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
 
     if (cart.length === 0) {
       toast({ title: "Panier vide", description: "Ajoutez un plat avant de passer commande.", variant: "destructive" });
+      return;
+    }
+
+    if (orderType === "sur_place" && !tableNumber) {
+      toast({ title: "Numéro de table requis", description: "Veuillez choisir un numéro de table.", variant: "destructive" });
+      return;
+    }
+
+    if (orderType === "livrer" && !deliveryAddress) {
+      toast({ title: "Adresse de livraison requise", description: "Veuillez saisir votre adresse de livraison.", variant: "destructive" });
       return;
     }
 
@@ -65,8 +74,8 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       const payload: any = {
         user_id: restaurantUserId,
         outlet_id: outletId,
-        customer_name: customerName || null,
-        customer_phone: customerPhone || null,
+        customer_name: customerName,
+        customer_phone: customerPhone,
         notes: notes || null,
         items: cart.map((item) => ({
           id: item.id,
@@ -77,9 +86,8 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
         total_amount: totalPrice,
         status: "pending",
         order_type: orderType,
-        table_number: orderType === "sur_place" && tableNumber ? tableNumber : null,
-        delivery_address: orderType === "livrer" && deliveryAddress ? deliveryAddress : null,
-        number_of_people: numberOfPeople ? parseInt(numberOfPeople) : null,
+        table_number: orderType === "sur_place" ? tableNumber : null,
+        delivery_address: orderType === "livrer" ? deliveryAddress : null,
       };
       const { error } = await supabase.from("orders").insert([payload]);
 
@@ -97,7 +105,6 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       setNotes("");
       setOrderType("");
       setTableNumber("");
-      setNumberOfPeople("");
       onOpenChange(false);
       onClearCart();
     } catch (err: any) {
@@ -126,7 +133,6 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     notes, setNotes,
     orderType, setOrderType: handleOrderTypeChange,
     tableNumber, setTableNumber,
-    numberOfPeople, setNumberOfPeople,
     loading,
     handleSubmit,
     restaurantUserId,

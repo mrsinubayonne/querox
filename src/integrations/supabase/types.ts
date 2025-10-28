@@ -1171,33 +1171,6 @@ export type Database = {
           },
         ]
       }
-      user_access_codes: {
-        Row: {
-          accounting_code: string
-          created_at: string | null
-          id: string
-          last_modified_at: string | null
-          management_code: string
-          user_id: string
-        }
-        Insert: {
-          accounting_code?: string
-          created_at?: string | null
-          id?: string
-          last_modified_at?: string | null
-          management_code?: string
-          user_id: string
-        }
-        Update: {
-          accounting_code?: string
-          created_at?: string | null
-          id?: string
-          last_modified_at?: string | null
-          management_code?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string | null

@@ -144,10 +144,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     icon: UserCog,
     label: 'Gestion des Rôles',
     path: '/admin/roles'
-  }, {
-    icon: Shield,
-    label: 'Codes d\'Accès',
-    path: '/admin/access-codes'
   }];
 
   const bottomMenuItems = [

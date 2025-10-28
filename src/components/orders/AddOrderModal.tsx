@@ -151,18 +151,20 @@ const AddOrderModal: React.FC<AddOrderModalProps> = ({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="customer-name">Nom du client</Label>
+            <Label htmlFor="customer-name">Nom du client *</Label>
             <Input
               id="customer-name"
+              required
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder="Nom complet"
             />
           </div>
           <div>
-            <Label htmlFor="customer-phone">Téléphone</Label>
+            <Label htmlFor="customer-phone">Téléphone *</Label>
             <Input
               id="customer-phone"
+              required
               type="tel"
               value={customerPhone}
               onChange={(e) => setCustomerPhone(e.target.value)}
