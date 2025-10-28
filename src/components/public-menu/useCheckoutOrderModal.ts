@@ -18,7 +18,6 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const [notes, setNotes] = useState("");
   const [orderType, setOrderType] = useState("");
   const [tableNumber, setTableNumber] = useState("");
-  const [numberOfPeople, setNumberOfPeople] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { restaurantUserId } = useRestaurant();
@@ -79,7 +78,8 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
         order_type: orderType,
         table_number: orderType === "sur_place" && tableNumber ? tableNumber : null,
         delivery_address: orderType === "livrer" && deliveryAddress ? deliveryAddress : null,
-   };
+        number_of_people: numberOfPeople ? parseInt(numberOfPeople) : null,
+      };
       const { error } = await supabase.from("orders").insert([payload]);
 
       if (error) throw error;
