@@ -7,8 +7,7 @@ import { useSubscription } from './useSubscription';
 
 const OUTLET_LIMITS = {
   'starter': 1,
-  'premium': 2,
-  'pro': 3,
+  'pro': 2,
   'entreprise': 3
 };
 
