@@ -19,7 +19,7 @@ import { SecurityTab } from "@/components/SecurityTab";
 import DomainTab from "@/components/DomainTab";
 import { DataTab } from "@/components/DataTab";
 import { InvoiceSettingsTab } from "@/components/InvoiceSettingsTab";
-import { ProfileManagement } from "@/pages/ProfileManagement";
+import { UserProfilesTab } from "@/components/UserProfilesTab";
 
 const Parametres = () => {
   const [searchParams] = useSearchParams();
@@ -110,7 +110,7 @@ const Parametres = () => {
           </TabsContent>
 
           <TabsContent value="profiles" className="space-y-6">
-            <ProfileManagement />
+            <UserProfilesTab />
           </TabsContent>
 
           <TabsContent value="domain" className="space-y-6">

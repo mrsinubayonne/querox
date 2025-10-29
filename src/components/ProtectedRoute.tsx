@@ -29,7 +29,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return;
     }
 
-    // Si l'utilisateur est connecté, a un abonnement actif mais n'a pas de selected_outlet_id
+    // Si l'utilisateur est connecté et n'a pas de profil sélectionné, rediriger vers select-profile
+    // (sauf s'il est déjà sur select-profile ou abonnement)
+    if (
+      !profileLoading && 
+      user && 
+      location.pathname !== '/select-profile' && 
+      location.pathname !== '/select-outlet' &&
+      location.pathname !== '/abonnement'
+    ) {
+      const hasSelectedProfile = localStorage.getItem('selectedProfileId');
+      if (!hasSelectedProfile) {
+        navigate('/select-profile');
+        return;
+      }
+    }
+
+    // Si l'utilisateur a un profil sélectionné, a un abonnement actif mais n'a pas de selected_outlet_id
     // et qu'il n'est pas déjà sur la page select-outlet ou abonnement
     if (
       !profileLoading && 
@@ -37,10 +53,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       user && 
       isSubscriptionActive && 
       !profile?.selected_outlet_id && 
+      location.pathname !== '/select-profile' &&
       location.pathname !== '/select-outlet' && 
       location.pathname !== '/abonnement'
     ) {
-      navigate('/select-outlet');
+      const hasSelectedProfile = localStorage.getItem('selectedProfileId');
+      if (hasSelectedProfile) {
+        navigate('/select-outlet');
+      }
     }
   }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, navigate, location.pathname]);
 
