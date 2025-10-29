@@ -46,7 +46,7 @@ export function useTableSessions() {
         .from("table_sessions" as any)
         .select("*")
         .eq("user_id", user.id)
-        .order("started_at", { ascending: false });
+        .order("started_at", { ascending: false }) as any;
 
       if (outletId) {
         query = query.eq("outlet_id", outletId);
