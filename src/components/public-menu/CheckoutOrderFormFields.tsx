@@ -41,7 +41,7 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
   return (
     <div className="space-y-2">
       <div>
-        <label className="block font-medium mb-1">Nom et prénom</label>
+        <label className="block font-medium mb-1">Nom et prénom (optionnel)</label>
         <Input
           value={customerName}
           onChange={(e) => setCustomerName(e.target.value)}
@@ -49,7 +49,7 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
         />
       </div>
       <div>
-        <label className="block font-medium mb-1">Téléphone</label>
+        <label className="block font-medium mb-1">Téléphone (optionnel)</label>
         <Input
           type="tel"
           value={customerPhone}
@@ -59,10 +59,11 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
       </div>
       
       <div>
-        <label className="block font-medium mb-1">Numéro de table</label>
+        <label className="block font-medium mb-1">Numéro de table *</label>
         <Select
           value={tableNumber}
           onValueChange={setTableNumber}
+          required
         >
           <SelectTrigger>
             <SelectValue placeholder="N° de table" />

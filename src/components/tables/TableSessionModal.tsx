@@ -15,9 +15,10 @@ import { TableSession } from "@/hooks/useTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Clock, Users, FileText, Package, Receipt, Plus } from "lucide-react";
+import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface Order {
   id: string;
@@ -45,8 +46,10 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (session && isOpen) {
@@ -181,6 +184,43 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     }
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm("Supprimer cette commande ?")) return;
+    
+    setDeletingOrderId(orderId);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .delete()
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Commande supprimée",
+        description: "La commande a été supprimée avec succès.",
+      });
+
+      fetchOrders();
+      window.dispatchEvent(new CustomEvent("session-updated"));
+    } catch (error: any) {
+      console.error("Error deleting order:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la commande.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingOrderId(null);
+    }
+  };
+
+  const handleEditOrder = (orderId: string) => {
+    // Redirect to orders page with the order ID
+    navigate(`/commandes?edit=${orderId}`);
+    onClose();
+  };
+
   if (!session) return null;
 
   return (
@@ -259,9 +299,32 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                           <span className="font-medium">Commande #{index + 1}</span>
                           {getStatusBadge(order.status)}
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(order.created_at), "HH:mm")}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(order.created_at), "HH:mm")}
+                          </span>
+                          {session.status === "active" && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleEditOrder(order.id)}
+                                className="h-8 w-8"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleDeleteOrder(order.id)}
+                                disabled={deletingOrderId === order.id}
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
                       
                       <div className="text-sm space-y-1">

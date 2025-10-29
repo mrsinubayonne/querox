@@ -43,6 +43,11 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       return;
     }
 
+    if (!tableNumber) {
+      toast({ title: "Numéro de table requis", description: "Veuillez sélectionner un numéro de table.", variant: "destructive" });
+      return;
+    }
+
     if (!restaurantUserId) {
       toast({ title: "Erreur", description: "Impossible d'identifier le restaurant. La commande ne peut être passée.", variant: "destructive" });
       return;

@@ -42,7 +42,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const { user } = useAuth();
   const { toast } = useToast();
   const [numberOfGuests, setNumberOfGuests] = useState("");
-  const [notes, setNotes] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -159,7 +158,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             outlet_id: outletId,
             table_number: tableNumber,
             number_of_guests: parseInt(numberOfGuests) || 1,
-            notes: notes || null,
             status: "active",
           },
         ])
@@ -198,7 +196,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       });
 
       setNumberOfGuests("");
-      setNotes("");
       setCart([]);
       setSearchTerm("");
       onSuccess();
@@ -238,18 +235,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                 value={numberOfGuests}
                 onChange={(e) => setNumberOfGuests(e.target.value)}
                 required
-              />
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optionnel)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Allergies, préférences..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
               />
             </div>
 
