@@ -79,6 +79,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
         order_type: orderType,
         table_number: orderType === "sur_place" && tableNumber ? tableNumber : null,
         delivery_address: orderType === "livrer" && deliveryAddress ? deliveryAddress : null,
+        number_of_people: numberOfPeople ? parseInt(numberOfPeople) : null,
       };
       const { error } = await supabase.from("orders").insert([payload]);
 
