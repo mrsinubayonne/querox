@@ -109,7 +109,6 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
       }
 
       categoryId = newCategory.id;
-      await refetch(); // Rafraîchir les catégories
     }
 
     const success = await updateMenuItem(item.id, {

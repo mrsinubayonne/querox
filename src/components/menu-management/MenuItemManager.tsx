@@ -74,27 +74,25 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
     setShowAddModal(true);
   };
 
-  const handleModalSuccess = () => {
-    // Pas de refetch immédiat - le refetch se fait automatiquement via le useEffect
+  const handleModalSuccess = async () => {
     setShowAddModal(false);
-    // Refetch après un délai court pour laisser le temps à la BD de se mettre à jour
-    setTimeout(() => refetch(), 300);
+    await refetch();
   };
 
-  const handleEditSuccess = () => {
+  const handleEditSuccess = async () => {
     setEditingItem(null);
-    setTimeout(() => refetch(), 300);
+    await refetch();
   };
 
   const handleToggleAvailability = async (id: string, isActive: boolean) => {
     await toggleAvailability(id, !isActive);
-    setTimeout(() => refetch(), 300);
+    await refetch();
   };
 
   const handleDeleteItem = async (id: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) {
       await deleteMenuItem(id);
-      setTimeout(() => refetch(), 300);
+      await refetch();
     }
   };
 
@@ -122,7 +120,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
     const success = await shareMenuItems([transferringItem.id], outletIds);
     if (success) {
       setTransferringItem(null);
-      setTimeout(() => refetch(), 300);
+      await refetch();
     }
   };
 
@@ -153,7 +151,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
     if (success) {
       setSelectedItems(new Set());
       setShowBulkTransfer(false);
-      setTimeout(() => refetch(), 300);
+      await refetch();
     }
   };
 
@@ -169,7 +167,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
       order_index: item.order_index
     });
     if (success) {
-      setTimeout(() => refetch(), 300);
+      await refetch();
     }
   };
 

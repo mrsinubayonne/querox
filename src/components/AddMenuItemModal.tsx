@@ -83,8 +83,6 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
       }
 
       categoryId = newCategory.id;
-      // Rafraîchir après 300ms pour éviter les va-et-vient
-      setTimeout(() => refetch(), 300);
     }
 
     const success = await addMenuItem({
@@ -104,11 +102,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
         allergens: []
       });
       setAllergenInput('');
-      // Attendre 300ms avant de fermer et rafraîchir
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 300);
+      onSuccess();
     }
   };
 
