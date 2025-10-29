@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Plus, Lock } from 'lucide-react';
+import { User, Plus, Lock, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -39,6 +39,7 @@ const SelectProfile: React.FC = () => {
     profiles, 
     loading, 
     createProfile, 
+    updateProfile,
     selectProfile,
     canAddMoreProfiles, 
     getProfileLimit 
@@ -51,6 +52,8 @@ const SelectProfile: React.FC = () => {
     title: '' as ProfileTitle | '',
     name: ''
   });
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -117,6 +120,25 @@ const SelectProfile: React.FC = () => {
     }
   };
 
+  const handleEditProfile = (profileId: string, currentName: string) => {
+    setEditingProfile({ id: profileId, name: currentName });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProfile) return;
+    if (!editingProfile.name.trim()) {
+      toast.error('Le nom du profil ne peut pas être vide');
+      return;
+    }
+    const success = await updateProfile(editingProfile.id, editingProfile.name);
+    if (success) {
+      setIsEditDialogOpen(false);
+      setEditingProfile(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50">
@@ -164,6 +186,9 @@ const SelectProfile: React.FC = () => {
                 <CardContent>
                   <Button className="w-full">
                     Utiliser ce profil
+                  </Button>
+                  <Button type="button" variant="outline" className="w-full mt-2" onClick={(e) => { e.stopPropagation(); handleEditProfile(profile.id, profile.name || profile.title); }}>
+                    <Pencil className="h-4 w-4 mr-2" /> Renommer
                   </Button>
                 </CardContent>
               </Card>
@@ -297,6 +322,32 @@ const SelectProfile: React.FC = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Edit Profile Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Modifier le profil</DialogTitle>
+              <DialogDescription>
+                Changez le nom de ce profil
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Nom du profil *</Label>
+                <Input
+                  id="edit-name"
+                  value={editingProfile?.name || ''}
+                  onChange={(e) => setEditingProfile(prev => prev ? { ...prev, name: e.target.value } : null)}
+                  placeholder="Ex: Caissier Principal"
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                Enregistrer
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </SubscriptionGuard>
   );

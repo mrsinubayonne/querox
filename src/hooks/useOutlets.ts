@@ -121,7 +121,8 @@ export const useOutlets = () => {
         return;
       }
       
-      setSelectedOutletId(data?.selected_outlet_id || null);
+      const fallbackLocal = typeof window !== 'undefined' ? localStorage.getItem('selectedOutletId') : null;
+      setSelectedOutletId((data?.selected_outlet_id as string | null) ?? (fallbackLocal as string | null) ?? null);
     } catch (error) {
       console.error('Error:', error);
     }
