@@ -4,7 +4,7 @@ import SubscriptionGuard from "@/components/SubscriptionGuard";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Plus } from "lucide-react";
 import { TableGrid } from "@/components/tables/TableGrid";
-import { OpenSessionModal } from "@/components/tables/OpenSessionModal";
+import { CreateSessionWithOrderModal } from "@/components/tables/CreateSessionWithOrderModal";
 import { TableSessionModal } from "@/components/tables/TableSessionModal";
 import { useTableSessions, TableSession } from "@/hooks/useTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,11 +20,10 @@ const Tables: React.FC = () => {
     refetch,
   } = useTableSessions();
 
-  const [showOpenModal, setShowOpenModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<TableSession | null>(null);
-  const [creatingSession, setCreatingSession] = useState(false);
 
   // Generate table numbers (default to 120 tables)
   const tableNumbers = Array.from({ length: 120 }, (_, i) => String(i + 1).padStart(2, "0"));
@@ -73,21 +72,13 @@ const Tables: React.FC = () => {
     if (session) {
       setShowSessionModal(true);
     } else {
-      setShowOpenModal(true);
+      setShowCreateModal(true);
     }
   };
 
-  const handleOpenSession = async (numberOfGuests: number, notes: string) => {
-    if (!selectedTable) return;
-
-    setCreatingSession(true);
-    const session = await createSession(selectedTable, numberOfGuests, notes);
-    setCreatingSession(false);
-
-    if (session) {
-      setShowOpenModal(false);
-      setSelectedTable(null);
-    }
+  const handleCreateSuccess = () => {
+    refetch();
+    setSelectedTable(null);
   };
 
   const handleCloseSession = async () => {
@@ -177,15 +168,14 @@ const Tables: React.FC = () => {
 
           {/* Modals */}
           {selectedTable && (
-            <OpenSessionModal
-              isOpen={showOpenModal}
+            <CreateSessionWithOrderModal
+              isOpen={showCreateModal}
               onClose={() => {
-                setShowOpenModal(false);
+                setShowCreateModal(false);
                 setSelectedTable(null);
               }}
-              onConfirm={handleOpenSession}
+              onSuccess={handleCreateSuccess}
               tableNumber={selectedTable}
-              loading={creatingSession}
             />
           )}
 
