@@ -51,38 +51,12 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     navigate('/select-profile');
   };
 
-  // Filter menu items based on profile
-  const getFilteredMenuItems = () => {
-    if (!selectedProfile) return menuItems;
-    
-    const title = selectedProfile.title;
-    
-    if (title === 'Admin') {
-      return menuItems; // Admin has access to everything
-    } else if (title === 'Caissier(e)') {
-      return menuItems.filter(item => 
-        ['Dashboard', 'Commandes', 'Tables', 'Factures', 'Réservations', 'Support'].includes(item.label)
-      );
-    } else if (title === 'Comptable') {
-      return menuItems.filter(item => 
-        ['Inventaire', 'Comptabilité', 'Statistiques'].includes(item.label)
-      );
-    } else if (title === 'Serveur') {
-      return menuItems.filter(item => 
-        ['Dashboard', 'Commandes', 'Tables'].includes(item.label)
-      );
-    }
-    
-    return menuItems;
-  };
-
-  const filteredMenuItems = getFilteredMenuItems();
-
   const handleOutletChange = async (outletId: string) => {
     await selectOutlet(outletId);
     window.location.reload(); // Recharger la page pour rafraîchir toutes les données
   };
 
+  // Define menuItems FIRST before using it
   const menuItems = [{
     icon: Home,
     label: 'Dashboard',
@@ -149,6 +123,33 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/support',
     permission: 'support'
   }].filter(item => hasPermission(item.permission as any));
+
+  // Filter menu items based on profile (AFTER menuItems is defined)
+  const getFilteredMenuItems = () => {
+    if (!selectedProfile) return menuItems;
+    
+    const title = selectedProfile.title;
+    
+    if (title === 'Admin') {
+      return menuItems; // Admin has access to everything
+    } else if (title === 'Caissier(e)') {
+      return menuItems.filter(item => 
+        ['Dashboard', 'Commandes', 'Tables', 'Factures', 'Réservations', 'Support'].includes(item.label)
+      );
+    } else if (title === 'Comptable') {
+      return menuItems.filter(item => 
+        ['Inventaire', 'Comptabilité', 'Statistiques'].includes(item.label)
+      );
+    } else if (title === 'Serveur') {
+      return menuItems.filter(item => 
+        ['Dashboard', 'Commandes', 'Tables'].includes(item.label)
+      );
+    }
+    
+    return menuItems;
+  };
+
+  const filteredMenuItems = getFilteredMenuItems();
 
   const marketingItems = hasPermission('marketing') ? [{
     icon: TrendingUp,
