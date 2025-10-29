@@ -159,6 +159,11 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/statistiques',
     permission: 'statistics'
   }, {
+    icon: FileText,
+    label: 'Rapports Journaliers',
+    path: '/rapports-journaliers',
+    permission: 'statistics'
+  }, {
     icon: LifeBuoy,
     label: 'Support',
     path: '/support',
@@ -175,11 +180,11 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       return menuItems; // Admin has access to everything
     } else if (title === 'Caissier(e)') {
       return menuItems.filter(item => 
-        ['Dashboard', 'Commandes', 'Tables', 'Factures', 'Réservations', 'Support'].includes(item.label)
+        ['Dashboard', 'Commandes', 'Tables', 'Factures', 'Réservations', 'Rapports Journaliers', 'Support'].includes(item.label)
       );
     } else if (title === 'Comptable') {
       return menuItems.filter(item => 
-        ['Inventaire', 'Comptabilité', 'Statistiques'].includes(item.label)
+        ['Inventaire', 'Comptabilité', 'Statistiques', 'Rapports Journaliers'].includes(item.label)
       );
     } else if (title === 'Serveur') {
       return menuItems.filter(item => 

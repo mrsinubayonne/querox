@@ -52,6 +52,7 @@ import PartnerDashboard from '@/pages/PartnerDashboard';
 import Reservations from '@/pages/Reservations';
 import Support from '@/pages/Support';
 import Factures from '@/pages/Factures';
+import RapportsJournaliers from '@/pages/RapportsJournaliers';
 import EquipeProtected from '@/pages/EquipeProtected';
 import StaffRequest from '@/pages/StaffRequest';
 import SelectOutlet from '@/pages/SelectOutlet';
@@ -91,6 +92,7 @@ function App() {
               <Route path="/site-web-container" element={<ProtectedRoute><SiteWebContainer /></ProtectedRoute>} />
               <Route path="/site-web-benefits" element={<ProtectedRoute><SiteWebBenefits /></ProtectedRoute>} />
               <Route path="/statistiques" element={<ProtectedRoute><StatistiquesProtected /></ProtectedRoute>} />
+              <Route path="/rapports-journaliers" element={<ProtectedRoute><RapportsJournaliers /></ProtectedRoute>} />
               <Route path="/parametres" element={<ProtectedRoute><ParametresProtected /></ProtectedRoute>} />
               <Route path="/abonnement" element={<ProtectedRoute><Abonnement /></ProtectedRoute>} />
               <Route path="/comptabilite" element={<ProtectedRoute><ComptabiliteProtected /></ProtectedRoute>} />
