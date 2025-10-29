@@ -90,11 +90,9 @@ const Menus: React.FC = () => {
       });
       return;
     }
-    
-    const publicUrl = APP_CONFIG.urls.getPublicMenuUrl(activeMenu.id);
-    window.open(publicUrl, '_blank');
+    // Ouvrir la version publique dans l'application pour éviter les blocages de pop-up en preview
+    navigate(`/menu/${activeMenu.id}`);
   };
-
   return (
     <PageWithSidebar>
       <div className="space-y-8">
