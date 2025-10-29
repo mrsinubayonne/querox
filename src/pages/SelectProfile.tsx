@@ -23,7 +23,14 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const PROFILE_TITLES: ProfileTitle[] = ['Admin', 'Caissier(e)', 'Comptable', 'Serveur'];
-const ADMIN_ACCESS_CODE = 'QRX-27A79';
+
+// Codes d'accès pour chaque type de profil
+const ACCESS_CODES: Record<ProfileTitle, string[]> = {
+  'Admin': ['QRX-27A79'],
+  'Comptable': ['QRX-C8218'],
+  'Caissier(e)': ['QRX-B2A15', 'QRX-CAS77'],
+  'Serveur': ['QRX-B2A15', 'QRX-CAS77']
+};
 
 const SelectProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -79,20 +86,25 @@ const SelectProfile: React.FC = () => {
   const handleSelectProfile = async (profileId: string) => {
     const profile = profiles.find(p => p.id === profileId);
     
-    // Si c'est un profil Admin, demander le code d'accès
-    if (profile?.title === 'Admin') {
+    // Tous les profils nécessitent un code d'accès
+    if (profile) {
       setSelectedProfileForAccess(profileId);
       setIsAccessCodeDialogOpen(true);
-      return;
     }
-    
-    // Pour les autres profils (Caissier, Comptable, Serveur), accès libre
-    selectProfile(profileId);
-    navigate('/select-outlet');
   };
 
   const handleAccessCodeSubmit = () => {
-    if (accessCode.trim().toUpperCase() === ADMIN_ACCESS_CODE) {
+    const profile = profiles.find(p => p.id === selectedProfileForAccess);
+    
+    if (!profile) {
+      toast.error('Profil introuvable');
+      return;
+    }
+
+    const validCodes = ACCESS_CODES[profile.title];
+    const enteredCode = accessCode.trim().toUpperCase();
+
+    if (validCodes.includes(enteredCode)) {
       if (selectedProfileForAccess) {
         selectProfile(selectedProfileForAccess);
         navigate('/select-outlet');
@@ -253,7 +265,7 @@ const SelectProfile: React.FC = () => {
                 Code d'accès requis
               </AlertDialogTitle>
               <AlertDialogDescription>
-                Le profil Admin nécessite un code d'accès pour garantir la sécurité. Veuillez entrer le code d'accès.
+                Ce profil nécessite un code d'accès pour garantir la sécurité. Veuillez entrer le code d'accès.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="py-4">
