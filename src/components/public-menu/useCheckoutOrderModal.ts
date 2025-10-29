@@ -18,6 +18,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const [notes, setNotes] = useState("");
   const [orderType, setOrderType] = useState("");
   const [tableNumber, setTableNumber] = useState("");
+  const [numberOfPeople, setNumberOfPeople] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { restaurantUserId } = useRestaurant();
