@@ -87,9 +87,9 @@ export const useOutlets = () => {
       
       setOutlets(data || []);
       
-      // Auto-select first outlet if only one exists
+      // Auto-select first outlet if only one exists and none is selected
       if (data && data.length === 1 && !selectedOutletId) {
-        await selectOutlet(data[0].id);
+        await selectOutlet(data[0].id, true);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -171,10 +171,8 @@ export const useOutlets = () => {
       toast.success('Point de vente créé avec succès');
       await loadOutlets();
       
-      // Sélectionner automatiquement le premier outlet créé si aucun n'est sélectionné
-      if (!selectedOutletId) {
-        await selectOutlet(data.id);
-      }
+      // Sélectionner automatiquement le nouveau outlet
+      await selectOutlet(data.id, true);
       
       return data;
     } catch (error) {
@@ -218,14 +216,19 @@ export const useOutlets = () => {
     }
   };
 
-  const selectOutlet = async (outletId: string): Promise<void> => {
+  const selectOutlet = async (outletId: string, silent = false): Promise<void> => {
     if (!user?.id) return;
 
     try {
       // Get the selected profile ID from localStorage
       const selectedProfileId = localStorage.getItem('selectedProfileId');
       if (!selectedProfileId) {
-        toast.error('Aucun profil sélectionné');
+        // Si pas de profil sélectionné, juste stocker l'outlet ID localement
+        setSelectedOutletId(outletId);
+        localStorage.setItem('selectedOutletId', outletId);
+        if (!silent) {
+          toast.success('Point de vente sélectionné');
+        }
         return;
       }
 
@@ -239,10 +242,14 @@ export const useOutlets = () => {
       
       setSelectedOutletId(outletId);
       localStorage.setItem('selectedOutletId', outletId);
-      toast.success('Point de vente sélectionné');
+      if (!silent) {
+        toast.success('Point de vente sélectionné');
+      }
     } catch (error) {
       console.error('Error selecting outlet:', error);
-      toast.error('Erreur lors de la sélection');
+      if (!silent) {
+        toast.error('Erreur lors de la sélection');
+      }
     }
   };
 
