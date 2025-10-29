@@ -21,14 +21,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
     }).replace(/\//g, ' / ');
   };
 
-  const calculateTotals = () => {
-    const totalHT = invoice.total_amount;
-    const tva = totalHT * 0.20; // TVA 20%
-    const totalTTC = totalHT + tva;
-    return { totalHT, tva, totalTTC };
-  };
-
-  const { totalHT, tva, totalTTC } = calculateTotals();
+  const total = invoice.total_amount;
 
   return (
     <div className="print-only fixed inset-0 bg-white z-[9999] p-16">
@@ -81,14 +74,11 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         </div>
       </div>
 
-      {/* Date, Échéance et Numéro de facture */}
+      {/* Date et Numéro de facture */}
       <div className="flex justify-between items-start mb-12 pb-8 border-b-2 border-black">
-        <div className="space-y-1">
+        <div>
           <p className="text-base font-bold text-black uppercase">
             DATE : {formatDate(invoice.created_at)}
-          </p>
-          <p className="text-base font-bold text-black uppercase">
-            ÉCHÉANCE : {formatDate(invoice.due_date)}
           </p>
         </div>
         <div className="text-right">
@@ -176,13 +166,13 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
                 <p className="text-base text-black">Services et produits</p>
               </div>
               <div className="col-span-2 text-right">
-                <p className="text-base text-black">{totalHT.toLocaleString('fr-FR')} FCFA</p>
+                <p className="text-base text-black">{total.toLocaleString('fr-FR')} FCFA</p>
               </div>
               <div className="col-span-2 text-center">
                 <p className="text-base text-black">1</p>
               </div>
               <div className="col-span-2 text-right">
-                <p className="text-base text-black">{totalHT.toLocaleString('fr-FR')} FCFA</p>
+                <p className="text-base text-black">{total.toLocaleString('fr-FR')} FCFA</p>
               </div>
             </div>
           )}
@@ -197,43 +187,13 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         </div>
       </div>
 
-      {/* Section Règlement et Totaux */}
-      <div className="flex justify-between">
-        <div className="w-5/12">
-          <h3 className="text-base font-bold text-black mb-4 uppercase">RÈGLEMENT :</h3>
-          <p className="text-base font-bold text-black mb-3">Par virement bancaire :</p>
-          <p className="text-base text-black">Banque : {settings?.company_name || 'Nom de la banque'}</p>
-          <p className="text-base text-black mb-8">Compte : {settings?.tax_id || '123-456-7890'}</p>
-          
-          {settings?.payment_terms && (
-            <p className="text-sm text-black mb-5 leading-relaxed">
-              {settings.payment_terms}
-            </p>
-          )}
-          {settings?.footer_note && (
-            <p className="text-sm text-black leading-relaxed">
-              {settings.footer_note}
-            </p>
-          )}
-        </div>
-        
+      {/* Section Totaux */}
+      <div className="flex justify-end">
         <div className="w-5/12">
           <div className="space-y-3">
-            <div className="flex justify-between">
-              <p className="text-base font-bold text-black uppercase">TOTAL HT :</p>
-              <p className="text-base font-bold text-black">{totalHT.toLocaleString('fr-FR')} FCFA</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-base font-bold text-black uppercase">TVA 20% :</p>
-              <p className="text-base font-bold text-black">{tva.toLocaleString('fr-FR')} FCFA</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-base font-bold text-black uppercase">REMISE :</p>
-              <p className="text-base font-bold text-black">-</p>
-            </div>
             <div className="flex justify-between pt-3 border-t-2 border-black">
-              <p className="text-base font-bold text-black uppercase">TOTAL TTC :</p>
-              <p className="text-base font-bold text-black">{totalTTC.toLocaleString('fr-FR')} FCFA</p>
+              <p className="text-lg font-bold text-black uppercase">TOTAL :</p>
+              <p className="text-lg font-bold text-black">{total.toLocaleString('fr-FR')} FCFA</p>
             </div>
           </div>
         </div>

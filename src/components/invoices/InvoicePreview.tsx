@@ -42,14 +42,11 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
         </div>
       </div>
 
-      {/* Date, Échéance et Numéro de facture */}
+      {/* Date et Numéro de facture */}
       <div className="flex justify-between items-start mb-10 pb-6 border-b-2 border-black">
-        <div className="space-y-1">
+        <div>
           <p className="text-sm font-bold text-black uppercase">
             DATE : {new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, ' / ')}
-          </p>
-          <p className="text-sm font-bold text-black uppercase">
-            ÉCHÉANCE : {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, ' / ')}
           </p>
         </div>
         <div className="text-right">
@@ -132,43 +129,13 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
         </div>
       </div>
 
-      {/* Section Règlement et Totaux */}
-      <div className="flex justify-between">
-        <div className="w-5/12">
-          <h3 className="text-sm font-bold text-black mb-3 uppercase">RÈGLEMENT :</h3>
-          <p className="text-sm font-bold text-black mb-2">Par virement bancaire :</p>
-          <p className="text-sm text-black">Banque : {settings.company_name || 'Nom de la banque'}</p>
-          <p className="text-sm text-black mb-6">Compte : {settings.tax_id || '123-456-7890'}</p>
-          
-          {settings.payment_terms && (
-            <p className="text-xs text-black mb-4 leading-relaxed">
-              {settings.payment_terms}
-            </p>
-          )}
-          {settings.footer_note && (
-            <p className="text-xs text-black leading-relaxed">
-              {settings.footer_note}
-            </p>
-          )}
-        </div>
-        
+      {/* Section Totaux */}
+      <div className="flex justify-end">
         <div className="w-5/12">
           <div className="space-y-2">
-            <div className="flex justify-between">
-              <p className="text-sm font-bold text-black uppercase">TOTAL HT :</p>
-              <p className="text-sm font-bold text-black">15,000 FCFA</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-sm font-bold text-black uppercase">TVA 20% :</p>
-              <p className="text-sm font-bold text-black">3,000 FCFA</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-sm font-bold text-black uppercase">REMISE :</p>
-              <p className="text-sm font-bold text-black">-</p>
-            </div>
             <div className="flex justify-between pt-2 border-t-2 border-black">
-              <p className="text-sm font-bold text-black uppercase">TOTAL TTC :</p>
-              <p className="text-sm font-bold text-black">18,000 FCFA</p>
+              <p className="text-lg font-bold text-black uppercase">TOTAL :</p>
+              <p className="text-lg font-bold text-black">15,000 FCFA</p>
             </div>
           </div>
         </div>
