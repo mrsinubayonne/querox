@@ -31,10 +31,10 @@ export const useUserProfiles = () => {
   }, [user]);
 
   const getProfileLimit = (): number => {
-    const tier = subscription?.subscription_tier || 'free';
+    const tier = subscription?.subscription_tier || 'starter';
     if (tier === 'pro') return 7;
     if (tier === 'premium') return 3;
-    return 1; // free tier
+    return 1; // starter tier
   };
 
   const canAddMoreProfiles = (): boolean => {
