@@ -29,20 +29,20 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
               className="h-12 mb-2" 
             />
           )}
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">
+          <h1 className="text-2xl font-bold text-black mb-1">
             {settings.company_name || 'Nom de l\'entreprise'}
           </h1>
           {settings.company_address && (
-            <p className="text-sm text-black-600 whitespace-pre-line">{settings.company_address}</p>
+            <p className="text-sm text-black whitespace-pre-line">{settings.company_address}</p>
           )}
           {settings.company_phone && (
-            <p className="text-xs text-black-500 mt-1">Tél: {settings.company_phone}</p>
+            <p className="text-xs text-black mt-1">Tél: {settings.company_phone}</p>
           )}
           {settings.company_email && (
-            <p className="text-xs text-black-500">{settings.company_email}</p>
+            <p className="text-xs text-black">{settings.company_email}</p>
           )}
           {settings.tax_id && (
-            <p className="text-xs text-gray-500">SIRET/TVA: {settings.tax_id}</p>
+            <p className="text-xs text-black">SIRET/TVA: {settings.tax_id}</p>
           )}
         </div>
         <div className="text-right">
@@ -56,16 +56,16 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
           >
             INV-202501-0001
           </p>
-          <p className="text-xs text-black-600 mt-1">Date: {new Date().toLocaleDateString('fr-FR')}</p>
+          <p className="text-xs text-black mt-1">Date: {new Date().toLocaleDateString('fr-FR')}</p>
         </div>
       </div>
 
       {/* Informations client */}
       <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-1">Facturé à:</h3>
-        <p className="text-sm text-black-700">Client Exemple</p>
-        <p className="text-xs text-black-600">client@exemple.com</p>
-        <p className="text-xs text-black-600">+33 6 12 34 56 78</p>
+        <h3 className="text-sm font-semibold text-black mb-1">Facturé à:</h3>
+        <p className="text-sm text-black">Client Exemple</p>
+        <p className="text-xs text-black">client@exemple.com</p>
+        <p className="text-xs text-black">+33 6 12 34 56 78</p>
       </div>
 
       {/* Tableau */}
@@ -80,10 +80,10 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
           <tbody>
             <tr>
               <td className="border border-gray-300 px-3 py-2 text-sm">
-                <p className="font-medium">Services et produits</p>
-                <p className="text-xs text-gray-600">Exemple de description</p>
+                <p className="font-medium text-black">Services et produits</p>
+                <p className="text-xs text-black">Exemple de description</p>
               </td>
-              <td className="border border-gray-300 px-3 py-2 text-right text-sm font-semibold">
+              <td className="border border-gray-300 px-3 py-2 text-right text-sm font-semibold text-black">
                 15,000 FCFA
               </td>
             </tr>
@@ -95,7 +95,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
       <div className="flex justify-end mb-8">
         <div className="w-48">
           <div className="flex justify-between py-2 border-t-2 border-gray-300">
-            <span className="text-sm font-semibold text-gray-900">TOTAL:</span>
+            <span className="text-sm font-semibold text-black">TOTAL:</span>
             <span 
               className="font-bold text-base text-black"
               style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}
@@ -108,15 +108,15 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
 
       {/* Informations de paiement */}
       <div className="mb-6 p-3 bg-gray-50 rounded">
-        <h3 className="text-sm font-semibold text-gray-900 mb-2">Informations de paiement</h3>
+        <h3 className="text-sm font-semibold text-black mb-2">Informations de paiement</h3>
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div>
-            <p className="text-gray-600">Statut:</p>
-            <p className="font-semibold text-gray-900">EN ATTENTE</p>
+            <p className="text-black">Statut:</p>
+            <p className="font-semibold text-black">EN ATTENTE</p>
           </div>
           <div>
-            <p className="text-gray-600">Date d'échéance:</p>
-            <p className="font-semibold text-gray-900">
+            <p className="text-black">Date d'échéance:</p>
+            <p className="font-semibold text-black">
               {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR')}
             </p>
           </div>
@@ -125,16 +125,16 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
 
       {/* Conditions */}
       <div className="border-t-2 pt-4 mt-6" style={{ borderColor: settings.primary_color || '#3B82F6' }}>
-        <h3 className="text-xs font-semibold text-gray-900 mb-1">Conditions de paiement:</h3>
-        <p className="text-xs text-gray-600 mb-3 whitespace-pre-line">
+        <h3 className="text-xs font-semibold text-black mb-1">Conditions de paiement:</h3>
+        <p className="text-xs text-black mb-3 whitespace-pre-line">
           {settings.payment_terms || 'Paiement à effectuer sous 30 jours à compter de la date de facturation.'}
         </p>
         {settings.footer_note && (
-          <p className="text-xs text-gray-600 mb-3 whitespace-pre-line">
+          <p className="text-xs text-black mb-3 whitespace-pre-line">
             {settings.footer_note}
           </p>
         )}
-        <p className="text-xs text-gray-500 text-center mt-4">
+        <p className="text-xs text-black text-center mt-4">
           {settings.company_name || 'Mon Restaurant'}
         </p>
       </div>

@@ -57,61 +57,6 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
           placeholder="Numéro de téléphone"
         />
       </div>
-      <div>
-        <label className="block font-medium mb-1">Type de commande *</label>
-        <Select
-          value={orderType}
-          onValueChange={setOrderType}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Choisir..." />
-          </SelectTrigger>
-          <SelectContent>
-            {ORDER_TYPE_OPTIONS.map((option) => (
-              <SelectItem value={option.value} key={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {orderType === "sur_place" && (
-        <>
-          <div>
-            <label className="block font-medium mb-1">
-              Numéro de table
-            </label>
-            <Select
-              value={tableNumber}
-              onValueChange={setTableNumber}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="N° de table" />
-              </SelectTrigger>
-              <SelectContent>
-                {TABLE_NUMBERS.map((num) => (
-                  <SelectItem value={num} key={num}>
-                    {num}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="block font-medium mb-1">
-              Nombre de personnes
-            </label>
-            <Input
-              type="number"
-              min="1"
-              value={numberOfPeople}
-              onChange={(e) => setNumberOfPeople(e.target.value)}
-              placeholder="Nombre de personnes"
-            />
-          </div>
-        </>
-      )}
 
       {orderType === "livrer" && (
         <div>
@@ -134,7 +79,6 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Instructions, allergies, code porte…"
-          disabled={orderType === ""}
         />
       </div>
     </div>
