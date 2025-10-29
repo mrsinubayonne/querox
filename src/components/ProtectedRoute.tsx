@@ -18,7 +18,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
   const { isSubscriptionActive, loading: subscriptionLoading } = useSubscription();
-  const { selectedProfileId, loading: profilesLoading } = useUserProfiles();
+  const { selectedProfileId, profiles, loading: profilesLoading } = useUserProfiles();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -48,17 +48,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
     // Étape 3: Vérifier qu'un outlet est sélectionné (seulement après avoir un profil)
     if (
-      !profileLoading && 
+      !profilesLoading && 
       !subscriptionLoading && 
       user && 
       selectedProfileId &&
-      isSubscriptionActive && 
-      !profile?.selected_outlet_id
+      isSubscriptionActive
     ) {
-      navigate('/select-outlet');
-      return;
+      // Vérifier si le profil métier sélectionné a un outlet
+      const selectedProfile = profiles?.find(p => p.id === selectedProfileId);
+      if (selectedProfile && !selectedProfile.selected_outlet_id) {
+        navigate('/select-outlet');
+        return;
+      }
     }
-  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, selectedProfileId, profilesLoading, navigate, location.pathname]);
+  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, selectedProfileId, profiles, profilesLoading, navigate, location.pathname]);
 
   // Show loading state while checking authentication
   if (loading) {

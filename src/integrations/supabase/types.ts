@@ -1267,6 +1267,7 @@ export type Database = {
           id: string
           is_default: boolean | null
           name: string | null
+          selected_outlet_id: string | null
           title: string
           updated_at: string
           user_id: string
@@ -1276,6 +1277,7 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           name?: string | null
+          selected_outlet_id?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -1285,11 +1287,20 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           name?: string | null
+          selected_outlet_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_selected_outlet_id_fkey"
+            columns: ["selected_outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

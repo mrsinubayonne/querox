@@ -12,6 +12,7 @@ export interface UserProfile {
   title: ProfileTitle;
   name: string | null;
   is_default: boolean;
+  selected_outlet_id: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -30,7 +30,24 @@ export const useOutlets = () => {
   const { subscription } = useSubscription();
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Listen for profile changes in localStorage
+  useEffect(() => {
+    const profileId = localStorage.getItem('selectedProfileId');
+    setSelectedProfileId(profileId);
+    
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'selectedProfileId') {
+        setSelectedProfileId(e.newValue);
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const getOutletLimit = () => {
     const tier = subscription?.subscription_tier || 'starter';
@@ -86,10 +103,17 @@ export const useOutlets = () => {
     if (!user?.id) return;
 
     try {
+      // Get the selected profile ID from localStorage
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      if (!selectedProfileId) {
+        setSelectedOutletId(null);
+        return;
+      }
+
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('selected_outlet_id')
-        .eq('id', user.id)
+        .eq('id', selectedProfileId)
         .maybeSingle();
 
       if (error) {
@@ -111,6 +135,13 @@ export const useOutlets = () => {
       }
     }
   }, [user?.id, isTeamMember, teamMemberSession]);
+
+  // Recharger le outlet sélectionné quand le profil change
+  useEffect(() => {
+    if (selectedProfileId && user?.id) {
+      loadSelectedOutlet();
+    }
+  }, [selectedProfileId, user?.id]);
 
   const createOutlet = async (outletData: CreateOutletData): Promise<Outlet | undefined> => {
     if (!user?.id) return undefined;
@@ -191,10 +222,18 @@ export const useOutlets = () => {
     if (!user?.id) return;
 
     try {
+      // Get the selected profile ID from localStorage
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      if (!selectedProfileId) {
+        toast.error('Aucun profil sélectionné');
+        return;
+      }
+
+      // Update the selected_outlet_id on the user_profile
       const { error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .update({ selected_outlet_id: outletId })
-        .eq('id', user.id);
+        .eq('id', selectedProfileId);
 
       if (error) throw error;
       
