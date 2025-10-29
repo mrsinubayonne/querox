@@ -175,25 +175,6 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         </div>
       </div>
 
-      {/* Informations de paiement */}
-      <div className="mb-8 p-6 bg-gray-50 rounded">
-        <h3 className="text-xl text-black mb-4" style={{ fontWeight: '900' }}>Informations de paiement</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-base text-black" style={{ fontWeight: '900' }}>Statut:</p>
-            <p className="text-lg text-black" style={{ fontWeight: '900' }}>
-              {invoice.status === 'paid' ? 'PAYÉE' : 
-               invoice.status === 'unpaid' ? 'EN ATTENTE' : 'EN RETARD'}
-            </p>
-          </div>
-          {invoice.paid_date && (
-            <div>
-              <p className="text-base text-black" style={{ fontWeight: '900' }}>Date de paiement:</p>
-              <p className="text-lg text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{formatDate(invoice.paid_date)}</p>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Footer */}
       <div className="border-t-2 border-gray-300 pt-6 mt-12">
