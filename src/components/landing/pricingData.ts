@@ -50,9 +50,9 @@ export const plans = [
   },
   {
     name: "Entreprise",
-    price: "129",
+    price: "139",
     period: "€/mois",
-    annualPrice: "1355",
+    annualPrice: "1460",
     annualPeriod: "€/an",
     description: "Pour les chaînes et grandes structures",
     spotsLeft: 7,
