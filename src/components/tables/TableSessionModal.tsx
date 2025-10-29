@@ -54,6 +54,57 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     }
   }, [session, isOpen]);
 
+  // Real-time listener pour les commandes
+  useEffect(() => {
+    if (!session || !isOpen) return;
+
+    const channel = supabase
+      .channel(`session-orders-${session.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+          filter: `session_id=eq.${session.id}`,
+        },
+        () => {
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session?.id, isOpen]);
+
+  // Real-time listener pour les changements de session (total_amount)
+  useEffect(() => {
+    if (!session || !isOpen) return;
+
+    const channel = supabase
+      .channel(`session-${session.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "table_sessions",
+          filter: `id=eq.${session.id}`,
+        },
+        () => {
+          // Recharger la page parent pour voir les changements
+          window.dispatchEvent(new CustomEvent("session-updated"));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session?.id, isOpen]);
+
   const fetchOrders = async () => {
     if (!session) return;
 

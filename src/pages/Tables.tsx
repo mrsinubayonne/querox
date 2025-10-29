@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PageWithSidebar from "@/components/PageWithSidebar";
 import SubscriptionGuard from "@/components/SubscriptionGuard";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,25 @@ const Tables: React.FC = () => {
 
   // Generate table numbers (default to 120 tables)
   const tableNumbers = Array.from({ length: 120 }, (_, i) => String(i + 1).padStart(2, "0"));
+
+  // Écouter les mises à jour de session depuis le modal
+  useEffect(() => {
+    const handleSessionUpdate = () => {
+      refetch();
+      // Si le modal est ouvert, mettre à jour la session affichée
+      if (selectedSession) {
+        const updatedSession = sessions.find(s => s.id === selectedSession.id);
+        if (updatedSession) {
+          setSelectedSession(updatedSession);
+        }
+      }
+    };
+
+    window.addEventListener("session-updated", handleSessionUpdate);
+    return () => {
+      window.removeEventListener("session-updated", handleSessionUpdate);
+    };
+  }, [refetch, selectedSession, sessions]);
 
   const handleTableClick = (tableNumber: string, session: TableSession | null) => {
     setSelectedTable(tableNumber);
