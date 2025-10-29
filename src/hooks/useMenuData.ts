@@ -31,9 +31,14 @@ export const useMenuData = (menuId: string | null) => {
         .select('user_id, name, description, logo_url, header_image_url, is_active')
         .eq('id', id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
       
-      if (menuError || !menuData) {
+      if (menuError) {
+        console.error("Menu fetch error:", menuError);
+        throw new Error("Erreur lors de la récupération du menu");
+      }
+      
+      if (!menuData) {
         throw new Error("Menu non trouvé ou inactif");
       }
 
@@ -95,14 +100,22 @@ export const useMenuData = (menuId: string | null) => {
       setMenuItems(transformedItems);
       
     } catch (err: any) {
+      console.error("Error in fetchMenu:", err);
       const errorMessage = err.message || "Erreur lors du chargement du menu";
       setError(errorMessage);
       setMenuItems([]);
       setMenuData(null);
+      setRestaurantUserId(null);
+      
+      toast({
+        title: "Erreur de chargement",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (menuId) {
