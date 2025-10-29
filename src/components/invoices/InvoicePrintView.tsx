@@ -31,7 +31,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
   const { totalHT, tva, totalTTC } = calculateTotals();
 
   return (
-    <div className="print-only fixed inset-0 bg-white z-[9999] p-16">
+    <div className="print-only fixed inset-0 bg-black z-[9999] p-16">
       <style>{`
         @media print {
           body * {
@@ -45,6 +45,9 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
             left: 0;
             top: 0;
             width: 100%;
+            background: black !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           @page {
             margin: 1.5cm;
@@ -58,143 +61,169 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         }
       `}</style>
 
-      <div className="relative max-w-2xl mx-auto p-8 border-4 border-black" style={{
-        borderImage: 'repeating-linear-gradient(45deg, #000 0, #000 10px, transparent 10px, transparent 20px) 4'
-      }}>
-        {/* Decorative corner elements */}
-        <div className="absolute top-2 left-2 w-8 h-8 border-t-2 border-l-2 border-black"></div>
-        <div className="absolute top-2 right-2 w-8 h-8 border-t-2 border-r-2 border-black"></div>
-        <div className="absolute bottom-2 left-2 w-8 h-8 border-b-2 border-l-2 border-black"></div>
-        <div className="absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-black"></div>
-        
-        {/* Decorative dots */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex gap-1">
-          <div className="w-1 h-1 bg-black rounded-full"></div>
-          <div className="w-1 h-1 bg-black rounded-full"></div>
-          <div className="w-1 h-1 bg-black rounded-full"></div>
-          <div className="w-1 h-1 bg-black rounded-full"></div>
-          <div className="w-1 h-1 bg-black rounded-full"></div>
-        </div>
-        
-        <div className="relative z-10">
-          {/* Logo centré */}
-          <div className="text-center mb-4">
+      <div className="text-white">
+        {/* En-tête: Logo + Restaurant Name à gauche, Invoice badge à droite */}
+        <div className="flex justify-between items-start mb-16">
+          <div className="flex items-center gap-4">
             {(settings?.logo_url || website?.logo_url) && (
               <img 
                 src={settings?.logo_url || website?.logo_url} 
                 alt="Logo" 
-                className="h-16 mx-auto mb-2 object-contain" 
+                className="h-16 w-16 object-contain" 
               />
             )}
-            {(settings?.company_name || website?.name) && (
-              <>
-                <h1 className="text-2xl font-bold text-black uppercase tracking-wider mb-1">
-                  {settings?.company_name || website?.name}
-                </h1>
-                <p className="text-xs text-black uppercase tracking-wide">
-                  {settings?.payment_terms || 'CUISINE GASTRONOMIQUE'}
-                </p>
-              </>
+            <div>
+              <h1 className="text-2xl font-bold text-white">
+                {settings?.company_name || website?.name || 'Restaurant'}
+              </h1>
+            </div>
+          </div>
+          <div className="bg-white px-8 py-3 rounded-full">
+            <p className="text-black font-bold text-2xl">
+              {settings?.invoice_title || 'Facture'}
+            </p>
+          </div>
+        </div>
+
+        {/* Destinataire et Détails */}
+        <div className="flex justify-between mb-12">
+          <div>
+            <h3 className="text-base font-bold text-white mb-4">TO: {invoice.order?.customer_name || 'Client'}</h3>
+            {invoice.order?.customer_email && (
+              <p className="text-base text-gray-300">{invoice.order.customer_email}</p>
+            )}
+            {invoice.order?.customer_phone && (
+              <p className="text-base text-gray-300 mt-1">📞 {invoice.order.customer_phone}</p>
+            )}
+            {settings?.company_address && (
+              <p className="text-sm text-gray-400 mt-3 whitespace-pre-line">{settings.company_address}</p>
+            )}
+            {servedBy && (
+              <p className="text-sm text-gray-400 mt-2">Servi par: {servedBy}</p>
             )}
           </div>
+          <div className="text-right">
+            <h3 className="text-base font-bold text-white mb-4">Invoice Details</h3>
+            <p className="text-base text-gray-300">
+              Date: {formatDate(invoice.created_at)}
+            </p>
+            <p className="text-base text-gray-300 mt-1">
+              Échéance: {formatDate(invoice.due_date)}
+            </p>
+            <p className="text-base text-gray-300 mt-1">
+              Invoice no: {invoice.invoice_number}
+            </p>
+          </div>
+        </div>
 
-          {/* Date et Numéro de facture */}
-          <div className="flex justify-between items-center mb-6 text-xs">
-            <div className="text-black">
-              {formatDate(invoice.created_at).replace(/\s\/\s/g, '.')}
-            </div>
-            <div className="text-black font-bold uppercase">
-              INVOICE #{invoice.invoice_number}
+        {/* Tableau des items */}
+        <div className="mb-12">
+          {/* En-tête du tableau */}
+          <div className="bg-white rounded-t-lg">
+            <div className="grid grid-cols-12 gap-4 px-6 py-4">
+              <div className="col-span-2">
+                <p className="text-base font-bold text-black">Qty</p>
+              </div>
+              <div className="col-span-6">
+                <p className="text-base font-bold text-black">Item Description</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-base font-bold text-black">Price</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-base font-bold text-black">Total</p>
+              </div>
             </div>
           </div>
-
-          {/* En-têtes du tableau */}
-          <div className="grid grid-cols-12 gap-2 mb-2 pb-2 border-b border-black">
-            <div className="col-span-2 text-xs font-bold text-black uppercase">
-              QUANTITÉ
-            </div>
-            <div className="col-span-7 text-xs font-bold text-black uppercase">
-              ARTICLE
-            </div>
-            <div className="col-span-3 text-xs font-bold text-black text-right uppercase">
-              PRIX (FCFA)
-            </div>
-          </div>
-
-          {/* Articles */}
-          <div className="space-y-3 mb-6">
+          
+          {/* Corps du tableau */}
+          <div className="bg-gray-900">
             {invoice.order?.items && Array.isArray(invoice.order.items) && invoice.order.items.length > 0 ? (
-              invoice.order.items.map((item: any, index: number) => (
-                <div key={index} className="grid grid-cols-12 gap-2 items-start">
-                  <div className="col-span-2 text-sm text-black font-bold">
-                    {item.quantity}
-                  </div>
-                  <div className="col-span-7">
-                    <p className="text-sm font-bold text-black uppercase">{item.name}</p>
-                    {item.description && (
-                      <p className="text-xs text-black">({item.description})</p>
-                    )}
-                  </div>
-                  <div className="col-span-3 text-sm text-black text-right">
-                    {((item.price || 0) * (item.quantity || 0)).toLocaleString('fr-FR')}
-                  </div>
-                </div>
-              ))
-            ) : (
               <>
-                <div className="grid grid-cols-12 gap-2 items-start">
-                  <div className="col-span-2 text-sm text-black font-bold">1</div>
-                  <div className="col-span-7">
-                    <p className="text-sm font-bold text-black uppercase">SERVICE</p>
-                    <p className="text-xs text-black">(Prestations)</p>
+                {invoice.order.items.map((item: any, index: number) => (
+                  <div key={index} className="grid grid-cols-12 gap-4 px-6 py-5 border-b border-gray-700">
+                    <div className="col-span-2">
+                      <p className="text-base text-white">{item.quantity}</p>
+                    </div>
+                    <div className="col-span-6">
+                      <p className="text-base text-white">{item.name}</p>
+                    </div>
+                    <div className="col-span-2 text-right">
+                      <p className="text-base text-white">{item.price?.toLocaleString('fr-FR')}</p>
+                    </div>
+                    <div className="col-span-2 text-right">
+                      <p className="text-base text-white">
+                        {((item.price || 0) * (item.quantity || 0)).toLocaleString('fr-FR')}
+                      </p>
+                    </div>
                   </div>
-                  <div className="col-span-3 text-sm text-black text-right">
-                    {totalHT.toLocaleString('fr-FR')}
-                  </div>
-                </div>
+                ))}
               </>
+            ) : (
+              <div className="grid grid-cols-12 gap-4 px-6 py-5">
+                <div className="col-span-2">
+                  <p className="text-base text-white">1</p>
+                </div>
+                <div className="col-span-6">
+                  <p className="text-base text-white">Services et produits</p>
+                </div>
+                <div className="col-span-2 text-right">
+                  <p className="text-base text-white">{totalHT.toLocaleString('fr-FR')}</p>
+                </div>
+                <div className="col-span-2 text-right">
+                  <p className="text-base text-white">{totalHT.toLocaleString('fr-FR')}</p>
+                </div>
+              </div>
             )}
           </div>
+        </div>
 
-          {/* Totaux */}
-          <div className="border-t border-black pt-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-black uppercase">Subtotal</span>
-              <span className="text-black">{totalHT.toLocaleString('fr-FR')}</span>
+        {/* Totaux */}
+        <div className="flex justify-end mb-12">
+          <div className="w-96">
+            <div className="flex justify-between py-3 text-white">
+              <p className="text-base">Sub Total:</p>
+              <p className="text-base">{totalHT.toLocaleString('fr-FR')} FCFA</p>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-black uppercase">Service Charge (10%)</span>
-              <span className="text-black">{(totalHT * 0.1).toLocaleString('fr-FR')}</span>
+            <div className="flex justify-between py-3 text-white">
+              <p className="text-base">Tax:</p>
+              <p className="text-base">20%</p>
             </div>
-            <div className="flex justify-between text-base font-bold border-t border-black pt-2">
-              <span className="text-black uppercase">Total Dû</span>
-              <span className="text-black">{(totalHT * 1.1).toLocaleString('fr-FR')}</span>
+            <div className="bg-white rounded-full px-8 py-4 flex justify-between mt-4">
+              <p className="text-base font-bold text-black">Total:</p>
+              <p className="text-base font-bold text-black">{totalTTC.toLocaleString('fr-FR')} FCFA</p>
             </div>
           </div>
+        </div>
 
-          {/* QR Code et message de remerciement */}
-          <div className="mt-6 flex items-end justify-between">
-            <div className="w-16 h-16 bg-black flex items-center justify-center text-white text-[8px] leading-tight p-1">
-              QR CODE
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] text-black italic">
-                {settings?.footer_note || "MERCI D'AVOIR DÎNÉ AU BORD DE L'UNIVERS"}
-              </p>
-              {servedBy && (
-                <p className="text-[10px] text-black mt-1">Servi par: {servedBy}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Decorative dots bottom */}
-          <div className="flex justify-center gap-1 mt-4">
-            <div className="w-1 h-1 bg-black rounded-full"></div>
-            <div className="w-1 h-1 bg-black rounded-full"></div>
-            <div className="w-1 h-1 bg-black rounded-full"></div>
-            <div className="w-1 h-1 bg-black rounded-full"></div>
-            <div className="w-1 h-1 bg-black rounded-full"></div>
-          </div>
+        {/* Section Info */}
+        <div className="border-t border-gray-700 pt-10">
+          <h3 className="text-base font-bold text-white mb-5">Info:</h3>
+          {settings?.company_address && (
+            <p className="text-base text-gray-300 mb-3 whitespace-pre-line">
+              {settings.company_address}
+            </p>
+          )}
+          {settings?.company_phone && (
+            <p className="text-base text-gray-300 mb-8">
+              📞 {settings.company_phone}
+            </p>
+          )}
+          
+          {settings?.footer_note && (
+            <p className="text-sm text-gray-400 mb-5">
+              {settings.footer_note}
+            </p>
+          )}
+          
+          <p className="text-base text-white font-semibold mb-3">
+            Thank you very much
+          </p>
+          {settings?.payment_terms && (
+            <p className="text-sm text-gray-400">
+              {settings.payment_terms}
+            </p>
+          )}
         </div>
       </div>
     </div>

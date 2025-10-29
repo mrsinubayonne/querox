@@ -18,146 +18,162 @@ interface InvoicePreviewProps {
 
 const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
   return (
-    <Card className="relative p-8 bg-white shadow-lg max-w-2xl mx-auto border-4 border-black" style={{
-      borderImage: 'repeating-linear-gradient(45deg, #000 0, #000 10px, transparent 10px, transparent 20px) 4'
-    }}>
-      {/* Decorative corner elements */}
-      <div className="absolute top-2 left-2 w-8 h-8 border-t-2 border-l-2 border-black"></div>
-      <div className="absolute top-2 right-2 w-8 h-8 border-t-2 border-r-2 border-black"></div>
-      <div className="absolute bottom-2 left-2 w-8 h-8 border-b-2 border-l-2 border-black"></div>
-      <div className="absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-black"></div>
-      
-      {/* Decorative dots */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex gap-1">
-        <div className="w-1 h-1 bg-black rounded-full"></div>
-        <div className="w-1 h-1 bg-black rounded-full"></div>
-        <div className="w-1 h-1 bg-black rounded-full"></div>
-        <div className="w-1 h-1 bg-black rounded-full"></div>
-        <div className="w-1 h-1 bg-black rounded-full"></div>
-      </div>
-      
-      <div className="relative z-10">
-        {/* Logo centré */}
-        <div className="text-center mb-4">
-          {settings.logo_url && (
-            <img 
-              src={settings.logo_url} 
-              alt="Logo" 
-              className="h-16 mx-auto mb-2 object-contain" 
-            />
-          )}
-          {settings.company_name && (
-            <>
-              <h1 className="text-2xl font-bold text-black uppercase tracking-wider mb-1">
-                {settings.company_name}
+    <Card className="p-0 bg-black shadow-lg max-w-4xl mx-auto overflow-hidden">
+      <div className="p-12 bg-black text-white">
+        {/* En-tête: Logo + Restaurant Name à gauche, Invoice badge à droite */}
+        <div className="flex justify-between items-start mb-12">
+          <div className="flex items-center gap-3">
+            {settings.logo_url && (
+              <img 
+                src={settings.logo_url} 
+                alt="Logo" 
+                className="h-12 w-12 object-contain" 
+              />
+            )}
+            <div>
+              <h1 className="text-xl font-bold text-white">
+                {settings.company_name || 'Restaurant'}
               </h1>
-              <p className="text-xs text-black uppercase tracking-wide">
-                {settings.payment_terms || 'CUISINE GASTRONOMIQUE'}
-              </p>
-            </>
-          )}
-        </div>
-
-        {/* Date et Numéro de facture */}
-        <div className="flex justify-between items-center mb-6 text-xs">
-          <div className="text-black">
-            {new Date().toLocaleDateString('fr-FR').replace(/\//g, '.')}
+            </div>
           </div>
-          <div className="text-black font-bold uppercase">
-            INVOICE #{new Date().getFullYear()}-001
+          <div className="bg-white px-6 py-2 rounded-full">
+            <p className="text-black font-bold text-lg">
+              {settings.invoice_title || 'Facture'}
+            </p>
           </div>
         </div>
 
-        {/* En-têtes du tableau */}
-        <div className="grid grid-cols-12 gap-2 mb-2 pb-2 border-b border-black">
-          <div className="col-span-2 text-xs font-bold text-black uppercase">
-            QUANTITÉ
+        {/* Destinataire et Détails */}
+        <div className="flex justify-between mb-8">
+          <div>
+            <h3 className="text-sm font-bold text-white mb-3">TO: Jony Bristow</h3>
+            <p className="text-sm text-gray-300">
+              {settings.company_address || 'Malaga, volume 42b4,\nstreet 42t, spain'}
+            </p>
+            <p className="text-sm text-gray-300 mt-2">
+              📞 {settings.company_phone || '060 123 456 789'}
+            </p>
           </div>
-          <div className="col-span-7 text-xs font-bold text-black uppercase">
-            ARTICLE
-          </div>
-          <div className="col-span-3 text-xs font-bold text-black text-right uppercase">
-            PRIX (FCFA)
+          <div className="text-right">
+            <h3 className="text-sm font-bold text-white mb-3">Invoice Details</h3>
+            <p className="text-sm text-gray-300">
+              Date: {new Date().toLocaleDateString('fr-FR')}
+            </p>
+            <p className="text-sm text-gray-300">
+              Invoice no: INV-202501-0001
+            </p>
           </div>
         </div>
 
-        {/* Articles */}
-        <div className="space-y-3 mb-6">
-          <div className="grid grid-cols-12 gap-2 items-start">
-            <div className="col-span-2 text-sm text-black font-bold">
-              2
-            </div>
-            <div className="col-span-7">
-              <p className="text-sm font-bold text-black uppercase">PLAT PRINCIPAL</p>
-              <p className="text-xs text-black">(SPÉCIALITÉ DE LA MAISON)</p>
-            </div>
-            <div className="col-span-3 text-sm text-black text-right">
-              15,000
-            </div>
-          </div>
-
-          <div className="grid grid-cols-12 gap-2 items-start">
-            <div className="col-span-2 text-sm text-black font-bold">
-              1
-            </div>
-            <div className="col-span-7">
-              <p className="text-sm font-bold text-black uppercase">DESSERT</p>
-              <p className="text-xs text-black">(PÂTISSERIE FINE)</p>
-            </div>
-            <div className="col-span-3 text-sm text-black text-right">
-              5,000
+        {/* Tableau des items */}
+        <div className="mb-8">
+          {/* En-tête du tableau */}
+          <div className="bg-white rounded-t-lg">
+            <div className="grid grid-cols-12 gap-4 px-4 py-3">
+              <div className="col-span-2">
+                <p className="text-sm font-bold text-black">Qty</p>
+              </div>
+              <div className="col-span-6">
+                <p className="text-sm font-bold text-black">Item Description</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-sm font-bold text-black">Price</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-sm font-bold text-black">Total</p>
+              </div>
             </div>
           </div>
+          
+          {/* Corps du tableau */}
+          <div className="bg-gray-900">
+            <div className="grid grid-cols-12 gap-4 px-4 py-4 border-b border-gray-700">
+              <div className="col-span-2">
+                <p className="text-sm text-white">1</p>
+              </div>
+              <div className="col-span-6">
+                <p className="text-sm text-white">Services et produits</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-sm text-white">15,000</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-sm text-white">15,000</p>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-12 gap-2 items-start">
-            <div className="col-span-2 text-sm text-black font-bold">
-              3
+            <div className="grid grid-cols-12 gap-4 px-4 py-4 border-b border-gray-700">
+              <div className="col-span-2">
+                <p className="text-sm text-white">2</p>
+              </div>
+              <div className="col-span-6">
+                <p className="text-sm text-white">Article exemple</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-sm text-white">5,000</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-sm text-white">10,000</p>
+              </div>
             </div>
-            <div className="col-span-7">
-              <p className="text-sm font-bold text-black uppercase">BOISSONS</p>
-              <p className="text-xs text-black">(COCKTAILS DE LA MAISON)</p>
-            </div>
-            <div className="col-span-3 text-sm text-black text-right">
-              9,000
+
+            <div className="grid grid-cols-12 gap-4 px-4 py-4">
+              <div className="col-span-2">
+                <p className="text-sm text-white">1</p>
+              </div>
+              <div className="col-span-6">
+                <p className="text-sm text-white">Autre article</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-sm text-white">3,000</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-sm text-white">3,000</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Totaux */}
-        <div className="border-t border-black pt-4 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-black uppercase">Subtotal</span>
-            <span className="text-black">29,000</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-black uppercase">Service Charge (10%)</span>
-            <span className="text-black">2,900</span>
-          </div>
-          <div className="flex justify-between text-base font-bold border-t border-black pt-2">
-            <span className="text-black uppercase">Total Dû</span>
-            <span className="text-black">31,900</span>
+        <div className="flex justify-end mb-8">
+          <div className="w-80">
+            <div className="flex justify-between py-2 text-white">
+              <p className="text-sm">Sub Total:</p>
+              <p className="text-sm">28,000 FCFA</p>
+            </div>
+            <div className="flex justify-between py-2 text-white">
+              <p className="text-sm">Tax:</p>
+              <p className="text-sm">20%</p>
+            </div>
+            <div className="bg-white rounded-full px-6 py-3 flex justify-between mt-3">
+              <p className="text-sm font-bold text-black">Total:</p>
+              <p className="text-sm font-bold text-black">33,600 FCFA</p>
+            </div>
           </div>
         </div>
 
-        {/* QR Code et message de remerciement */}
-        <div className="mt-6 flex items-end justify-between">
-          <div className="w-16 h-16 bg-black flex items-center justify-center text-white text-[8px] leading-tight p-1">
-            QR CODE
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] text-black italic">
-              {settings.footer_note || "MERCI D'AVOIR DÎNÉ AU BORD DE L'UNIVERS"}
+        {/* Section Info */}
+        <div className="border-t border-gray-700 pt-8">
+          <h3 className="text-sm font-bold text-white mb-4">Info:</h3>
+          <p className="text-sm text-gray-300 mb-2">
+            {settings.company_address || 'Malaga, volume 42b4,\nstreet 42t, spain'}
+          </p>
+          <p className="text-sm text-gray-300 mb-6">
+            📞 {settings.company_phone || '060 123 456 789'}
+          </p>
+          
+          {settings.footer_note && (
+            <p className="text-xs text-gray-400 mb-4">
+              {settings.footer_note}
             </p>
-          </div>
-        </div>
-
-        {/* Decorative dots bottom */}
-        <div className="flex justify-center gap-1 mt-4">
-          <div className="w-1 h-1 bg-black rounded-full"></div>
-          <div className="w-1 h-1 bg-black rounded-full"></div>
-          <div className="w-1 h-1 bg-black rounded-full"></div>
-          <div className="w-1 h-1 bg-black rounded-full"></div>
-          <div className="w-1 h-1 bg-black rounded-full"></div>
+          )}
+          
+          <p className="text-sm text-white font-semibold mb-2">
+            Thank you very much
+          </p>
+          <p className="text-xs text-gray-400">
+            {settings.payment_terms || 'Paiement par virement bancaire'}
+          </p>
         </div>
       </div>
     </Card>
