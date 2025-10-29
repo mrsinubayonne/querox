@@ -1,17 +1,19 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { CartItem } from "@/types/menu";
 import { useRestaurant } from "@/contexts/RestaurantContext";
+import { useLocation } from "react-router-dom";
 
 export const ORDER_TYPE_OPTIONS = [
   { value: "sur_place", label: "À manger sur place" }
 ];
 
-export const TABLE_NUMBERS = Array.from({ length: 120 }, (_, i) => (i + 1).toString());
+export const TABLE_NUMBERS = Array.from({ length: 120 }, (_, i) => (i + 1).toString().padStart(2, '0'));
 
 export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOpenChange: (open: boolean) => void, onClearCart: () => void) {
+  const location = useLocation();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
@@ -22,6 +24,16 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { restaurantUserId } = useRestaurant();
+
+  // Pre-fill table number from URL parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tableFromUrl = params.get('table');
+    if (tableFromUrl) {
+      setTableNumber(tableFromUrl.padStart(2, '0'));
+      setOrderType("sur_place");
+    }
+  }, [location.search]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -15,8 +15,9 @@ import { TableSession } from "@/hooks/useTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Clock, Users, FileText, Package, Receipt } from "lucide-react";
+import { Clock, Users, FileText, Package, Receipt, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Order {
   id: string;
@@ -45,6 +46,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (session && isOpen) {
@@ -108,6 +110,23 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
       }
     } catch (error) {
       console.error("Error fetching invoice:", error);
+    }
+  };
+
+  const handleAddOrder = async () => {
+    if (!session || !user) return;
+    
+    // Get the user's active menu
+    const { data: menus } = await supabase
+      .from("menus")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .limit(1);
+
+    if (menus && menus.length > 0) {
+      // Redirect to public menu with table number pre-filled
+      window.open(`/menu/${user.id}?table=${session.table_number}`, '_blank');
     }
   };
 
@@ -232,10 +251,16 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
         <DialogFooter className="flex-wrap gap-2">
           {session.status === "active" && (
-            <Button onClick={onCloseSession} variant="default">
-              <Receipt className="h-4 w-4 mr-2" />
-              Fermer & Générer Facture
-            </Button>
+            <>
+              <Button onClick={handleAddOrder} variant="secondary">
+                <Plus className="h-4 w-4 mr-2" />
+                Ajouter une commande
+              </Button>
+              <Button onClick={onCloseSession} variant="default">
+                <Receipt className="h-4 w-4 mr-2" />
+                Fermer & Générer Facture
+              </Button>
+            </>
           )}
           
           {session.status === "closed" && (
