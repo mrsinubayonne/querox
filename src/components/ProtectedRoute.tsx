@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useUserProfiles } from '@/hooks/useUserProfiles';
+import { useOutlets } from '@/hooks/useOutlets';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -19,10 +20,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { profile, loading: profileLoading } = useProfile();
   const { isSubscriptionActive, loading: subscriptionLoading } = useSubscription();
   const { selectedProfileId, profiles, loading: profilesLoading } = useUserProfiles();
+  const { selectedOutletId, loading: outletsLoading } = useOutlets();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const loading = authLoading || (user && (profileLoading || subscriptionLoading || profilesLoading));
+  const loading = authLoading || (user && (profileLoading || subscriptionLoading || profilesLoading || outletsLoading));
 
   useEffect(() => {
     // Étape 1: Vérifier l'authentification
@@ -54,14 +56,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       selectedProfileId &&
       isSubscriptionActive
     ) {
-      // Vérifier si le profil métier sélectionné a un outlet
-      const selectedProfile = profiles?.find(p => p.id === selectedProfileId);
-      if (selectedProfile && !selectedProfile.selected_outlet_id) {
+      if (!selectedOutletId) {
         navigate('/select-outlet');
         return;
       }
     }
-  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, selectedProfileId, profiles, profilesLoading, navigate, location.pathname]);
+  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, selectedProfileId, profiles, profilesLoading, selectedOutletId, outletsLoading, navigate, location.pathname]);
 
   // Show loading state while checking authentication
   if (loading) {
