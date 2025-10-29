@@ -1,9 +1,10 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useUserProfiles } from '@/hooks/useUserProfiles';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,52 +18,47 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
   const { isSubscriptionActive, loading: subscriptionLoading } = useSubscription();
+  const { selectedProfileId, loading: profilesLoading } = useUserProfiles();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const loading = authLoading || (user && (profileLoading || subscriptionLoading));
+  const loading = authLoading || (user && (profileLoading || subscriptionLoading || profilesLoading));
 
   useEffect(() => {
-    // Rediriger vers la page d'authentification si non connecté
+    // Étape 1: Vérifier l'authentification
     if (!authLoading && !user) {
       navigate('/auth');
       return;
     }
 
-    // Si l'utilisateur est connecté et n'a pas de profil sélectionné, rediriger vers select-profile
-    // (sauf s'il est déjà sur select-profile ou abonnement)
+    // Ne pas rediriger si on est déjà sur les pages de sélection ou d'abonnement
     if (
-      !profileLoading && 
-      user && 
-      location.pathname !== '/select-profile' && 
-      location.pathname !== '/select-outlet' &&
-      location.pathname !== '/abonnement'
+      location.pathname === '/select-profile' || 
+      location.pathname === '/select-outlet' ||
+      location.pathname === '/abonnement'
     ) {
-      const hasSelectedProfile = localStorage.getItem('selectedProfileId');
-      if (!hasSelectedProfile) {
-        navigate('/select-profile');
-        return;
-      }
+      return;
     }
 
-    // Si l'utilisateur a un profil sélectionné, a un abonnement actif mais n'a pas de selected_outlet_id
-    // et qu'il n'est pas déjà sur la page select-outlet ou abonnement
+    // Étape 2: Vérifier qu'un profil est sélectionné (OBLIGATOIRE avant outlet)
+    if (!profilesLoading && user && !selectedProfileId) {
+      navigate('/select-profile');
+      return;
+    }
+
+    // Étape 3: Vérifier qu'un outlet est sélectionné (seulement après avoir un profil)
     if (
       !profileLoading && 
       !subscriptionLoading && 
       user && 
+      selectedProfileId &&
       isSubscriptionActive && 
-      !profile?.selected_outlet_id && 
-      location.pathname !== '/select-profile' &&
-      location.pathname !== '/select-outlet' && 
-      location.pathname !== '/abonnement'
+      !profile?.selected_outlet_id
     ) {
-      const hasSelectedProfile = localStorage.getItem('selectedProfileId');
-      if (hasSelectedProfile) {
-        navigate('/select-outlet');
-      }
+      navigate('/select-outlet');
+      return;
     }
-  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, navigate, location.pathname]);
+  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, selectedProfileId, profilesLoading, navigate, location.pathname]);
 
   // Show loading state while checking authentication
   if (loading) {
