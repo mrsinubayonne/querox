@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
-import { useUserProfiles } from '@/hooks/useUserProfiles';
+import { useUserProfiles, ProfileTitle } from '@/hooks/useUserProfiles';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,6 +15,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 interface ModernSidebarProps {
   collapsed: boolean;
@@ -40,10 +52,39 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
   const { profiles, selectedProfileId, selectProfile: selectUserProfile, canAddMoreProfiles, getProfileLimit } = useUserProfiles();
   const selectedProfile = profiles.find(p => p.id === selectedProfileId);
+
+  const [isAccessCodeDialogOpen, setIsAccessCodeDialogOpen] = useState(false);
+  const [selectedProfileForAccess, setSelectedProfileForAccess] = useState<{ id: string; title: ProfileTitle } | null>(null);
+  const [accessCode, setAccessCode] = useState('');
+
+  const ACCESS_CODES: Record<ProfileTitle, string[]> = {
+    'Admin': ['QRX-27A79'],
+    'Comptable': ['QRX-C8218'],
+    'Caissier(e)': ['QRX-B2A15', 'QRX-CAS77'],
+    'Serveur': ['QRX-B2A15', 'QRX-CAS77'],
+  };
   
-  const handleProfileChange = async (profileId: string) => {
-    await selectUserProfile(profileId);
-    window.location.reload();
+  const handleProfileChange = (profileId: string) => {
+    const profile = profiles.find(p => p.id === profileId);
+    if (profile) {
+      setSelectedProfileForAccess({ id: profileId, title: profile.title });
+      setIsAccessCodeDialogOpen(true);
+    }
+  };
+
+  const handleAccessCodeSubmit = async () => {
+    if (!selectedProfileForAccess) return;
+
+    const validCodes = ACCESS_CODES[selectedProfileForAccess.title];
+    if (validCodes.includes(accessCode.toUpperCase())) {
+      await selectUserProfile(selectedProfileForAccess.id);
+      setIsAccessCodeDialogOpen(false);
+      setAccessCode('');
+      setSelectedProfileForAccess(null);
+      window.location.reload();
+    } else {
+      toast.error('Code d\'accès incorrect');
+    }
   };
 
   const handleLogoutProfile = () => {
@@ -273,7 +314,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
               {profiles.map((p) => (
                 <DropdownMenuItem
                   key={p.id}
-                  onClick={async () => { await handleProfileChange(p.id); }}
+                  onClick={() => handleProfileChange(p.id)}
                   className="flex items-center justify-between cursor-pointer"
                 >
                   <div className="flex items-center">
@@ -483,6 +524,42 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
           {!collapsed && <span className="ml-3">Déconnexion</span>}
         </button>
       </div>
+
+      {/* Access Code Dialog */}
+      <AlertDialog open={isAccessCodeDialogOpen} onOpenChange={setIsAccessCodeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Code d'accès requis</AlertDialogTitle>
+            <AlertDialogDescription>
+              Entrez le code d'accès pour ce profil
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Input
+              type="text"
+              placeholder="Code d'accès"
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleAccessCodeSubmit();
+                }
+              }}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setAccessCode('');
+              setSelectedProfileForAccess(null);
+            }}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleAccessCodeSubmit}>
+              Valider
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>;
 };
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, User, Plus } from 'lucide-react';
+import { Trash2, User, Plus, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,12 +15,15 @@ const PROFILE_TITLES: ProfileTitle[] = ['Admin', 'Caissier(e)', 'Comptable', 'Se
 export const UserProfilesTab: React.FC = () => {
   const { 
     profiles, 
-    createProfile, 
+    createProfile,
+    updateProfile,
     deleteProfile,
     canAddMoreProfiles,
     getProfileLimit 
   } = useUserProfiles();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<{ id: string; name: string } | null>(null);
   const [formData, setFormData] = useState({
     title: '' as ProfileTitle | '',
     name: ''
@@ -48,6 +51,29 @@ export const UserProfilesTab: React.FC = () => {
     if (newProfile) {
       setIsDialogOpen(false);
       setFormData({ title: '', name: '' });
+    }
+  };
+
+  const handleEditProfile = (profileId: string, currentName: string) => {
+    setEditingProfile({ id: profileId, name: currentName });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingProfile) return;
+    
+    if (!editingProfile.name.trim()) {
+      toast.error('Le nom du profil ne peut pas être vide');
+      return;
+    }
+
+    const success = await updateProfile(editingProfile.id, editingProfile.name);
+
+    if (success) {
+      setIsEditDialogOpen(false);
+      setEditingProfile(null);
     }
   };
 
@@ -117,6 +143,32 @@ export const UserProfilesTab: React.FC = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Profile Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Modifier le profil</DialogTitle>
+              <DialogDescription>
+                Changez le nom de ce profil
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Nom du profil *</Label>
+                <Input
+                  id="edit-name"
+                  value={editingProfile?.name || ''}
+                  onChange={(e) => setEditingProfile(prev => prev ? { ...prev, name: e.target.value } : null)}
+                  placeholder="Ex: Caissier Principal"
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                Enregistrer
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {!canAddMoreProfiles() && (
@@ -152,6 +204,13 @@ export const UserProfilesTab: React.FC = () => {
                   {profile.is_default && (
                     <Badge variant="secondary">Par défaut</Badge>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEditProfile(profile.id, profile.name || profile.title)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                   {!profile.is_default && (
                     <Button
                       variant="ghost"

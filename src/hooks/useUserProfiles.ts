@@ -129,6 +129,36 @@ export const useUserProfiles = () => {
     }
   };
 
+  const updateProfile = async (profileId: string, name: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ name, updated_at: new Date().toISOString() })
+        .eq('id', profileId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Profil mis à jour',
+        description: 'Le nom du profil a été modifié avec succès',
+      });
+
+      await fetchProfiles();
+      return true;
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le profil',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   const deleteProfile = async (profileId: string): Promise<boolean> => {
     if (!user) return false;
 
@@ -183,6 +213,7 @@ export const useUserProfiles = () => {
     loading,
     selectedProfileId,
     createProfile,
+    updateProfile,
     deleteProfile,
     selectProfile,
     getSelectedProfile,
