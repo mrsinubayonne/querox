@@ -16,7 +16,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
-  const [orderType, setOrderType] = useState("");
+  const [orderType, setOrderType] = useState("sur_place");
   const [tableNumber, setTableNumber] = useState("");
   const [numberOfPeople, setNumberOfPeople] = useState("");
   const [loading, setLoading] = useState(false);
