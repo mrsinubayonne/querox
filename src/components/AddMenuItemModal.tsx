@@ -124,7 +124,7 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ajouter un nouveau plat</DialogTitle>

@@ -143,7 +143,7 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
   if (!item) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modifier le plat</DialogTitle>
