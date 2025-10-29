@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
-import { Package, Plus } from 'lucide-react';
+import { Package, Plus, SquareArrowOutUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AddOrderModal from './AddOrderModal';
+import { useNavigate } from 'react-router-dom';
 
 interface OrdersHeaderProps {
   onOrderCreated: () => Promise<void>;
@@ -10,6 +11,7 @@ interface OrdersHeaderProps {
 
 export const OrdersHeader: React.FC<OrdersHeaderProps> = ({ onOrderCreated }) => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -22,10 +24,16 @@ export const OrdersHeader: React.FC<OrdersHeaderProps> = ({ onOrderCreated }) =>
           <p className="text-gray-600">Gérez toutes vos commandes</p>
         </div>
       </div>
-      <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setOpen(true)}>
-        <Plus className="w-4 h-4 mr-2" />
-        Nouvelle commande
-      </Button>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={() => navigate('/tables')}>
+          <SquareArrowOutUpRight className="w-4 h-4 mr-2" />
+          Voir les Tables
+        </Button>
+        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nouvelle commande
+        </Button>
+      </div>
       <AddOrderModal open={open} onOpenChange={setOpen} onOrderCreated={onOrderCreated} />
     </div>
   );

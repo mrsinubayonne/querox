@@ -3,9 +3,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Clock, MapPin, Phone, Mail } from 'lucide-react';
+import { MoreHorizontal, Clock, MapPin, Phone, Mail, SquareArrowOutUpRight } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { OrderStatusSelect } from './OrderStatusSelect';
+import { useNavigate } from 'react-router-dom';
 
 interface OrderItem {
   id: string;
@@ -65,6 +66,7 @@ const getOrderTypeDisplay = (orderType?: string, tableNumber?: string) => {
 };
 
 export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) => {
+  const navigate = useNavigate();
   const orderDate = new Date(order.created_at).toLocaleDateString('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -74,6 +76,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) =
   });
 
   const orderTypeDisplay = getOrderTypeDisplay(order.order_type, order.table_number);
+  const hasTable = order.order_type === 'sur_place' && order.table_number;
 
   return (
     <Card>
@@ -88,9 +91,22 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) =
                   {orderDate}
                 </div>
                 {orderTypeDisplay && (
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                    {orderTypeDisplay}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                      {orderTypeDisplay}
+                    </span>
+                    {hasTable && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/tables')}
+                        className="h-6 px-2 text-xs"
+                      >
+                        <SquareArrowOutUpRight className="w-3 h-3 mr-1" />
+                        Voir la table
+                      </Button>
+                    )}
+                  </div>
                 )}
                 {order.customer_phone && (
                   <div className="flex items-center gap-1">

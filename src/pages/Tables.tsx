@@ -90,32 +90,32 @@ const Tables: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 bg-card border rounded-lg">
               <p className="text-sm text-muted-foreground">Tables Libres</p>
-              <p className="text-2xl font-bold text-success">
+              <p className="text-2xl font-bold text-emerald-600">
                 {tableNumbers.length - sessions.filter(s => s.status === "active" || s.status === "closed").length}
               </p>
             </div>
             <div className="p-4 bg-card border rounded-lg">
               <p className="text-sm text-muted-foreground">Tables Occupées</p>
-              <p className="text-2xl font-bold text-destructive">
+              <p className="text-2xl font-bold text-red-600">
                 {sessions.filter(s => s.status === "active").length}
               </p>
             </div>
             <div className="p-4 bg-card border rounded-lg">
-              <p className="text-sm text-muted-foreground">En Attente</p>
-              <p className="text-2xl font-bold text-warning">
+              <p className="text-sm text-muted-foreground">En Attente de Paiement</p>
+              <p className="text-2xl font-bold text-yellow-600">
                 {sessions.filter(s => s.status === "closed").length}
               </p>
             </div>
             <div className="p-4 bg-card border rounded-lg">
-              <p className="text-sm text-muted-foreground">Total Actif</p>
-              <p className="text-2xl font-bold text-primary">
+              <p className="text-sm text-muted-foreground">Total à Encaisser</p>
+              <p className="text-2xl font-bold text-blue-600">
                 {new Intl.NumberFormat("fr-FR", {
                   style: "currency",
                   currency: "XOF",
                   minimumFractionDigits: 0,
                 }).format(
                   sessions
-                    .filter(s => s.status === "active")
+                    .filter(s => s.status === "active" || s.status === "closed")
                     .reduce((sum, s) => sum + s.total_amount, 0)
                 )}
               </p>
