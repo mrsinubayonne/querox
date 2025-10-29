@@ -18,126 +18,146 @@ interface InvoicePreviewProps {
 
 const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
   return (
-    <Card className="p-12 bg-white shadow-lg max-w-4xl mx-auto">
-      {/* En-tête avec logo et titre FACTURE */}
-      <div className="flex justify-between items-start mb-12">
-        <div>
+    <Card className="relative p-8 bg-white shadow-lg max-w-2xl mx-auto border-4 border-black" style={{
+      borderImage: 'repeating-linear-gradient(45deg, #000 0, #000 10px, transparent 10px, transparent 20px) 4'
+    }}>
+      {/* Decorative corner elements */}
+      <div className="absolute top-2 left-2 w-8 h-8 border-t-2 border-l-2 border-black"></div>
+      <div className="absolute top-2 right-2 w-8 h-8 border-t-2 border-r-2 border-black"></div>
+      <div className="absolute bottom-2 left-2 w-8 h-8 border-b-2 border-l-2 border-black"></div>
+      <div className="absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-black"></div>
+      
+      {/* Decorative dots */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex gap-1">
+        <div className="w-1 h-1 bg-black rounded-full"></div>
+        <div className="w-1 h-1 bg-black rounded-full"></div>
+        <div className="w-1 h-1 bg-black rounded-full"></div>
+        <div className="w-1 h-1 bg-black rounded-full"></div>
+        <div className="w-1 h-1 bg-black rounded-full"></div>
+      </div>
+      
+      <div className="relative z-10">
+        {/* Logo centré */}
+        <div className="text-center mb-4">
           {settings.logo_url && (
             <img 
               src={settings.logo_url} 
               alt="Logo" 
-              className="h-16 mb-2 object-contain" 
+              className="h-16 mx-auto mb-2 object-contain" 
             />
           )}
           {settings.company_name && (
-            <h1 className="text-xl font-bold text-black uppercase tracking-wide">
-              {settings.company_name}
-            </h1>
+            <>
+              <h1 className="text-2xl font-bold text-black uppercase tracking-wider mb-1">
+                {settings.company_name}
+              </h1>
+              <p className="text-xs text-black uppercase tracking-wide">
+                {settings.payment_terms || 'CUISINE GASTRONOMIQUE'}
+              </p>
+            </>
           )}
         </div>
-        <div>
-          <h2 className="text-6xl font-bold text-black uppercase tracking-tight">
-            {settings.invoice_title || 'FACTURE'}
-          </h2>
-        </div>
-      </div>
 
-      {/* Date et Numéro de facture */}
-      <div className="flex justify-between items-start mb-10 pb-6 border-b-2 border-black">
-        <div>
-          <p className="text-sm font-bold text-black uppercase">
-            DATE : {new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, ' / ')}
-          </p>
+        {/* Date et Numéro de facture */}
+        <div className="flex justify-between items-center mb-6 text-xs">
+          <div className="text-black">
+            {new Date().toLocaleDateString('fr-FR').replace(/\//g, '.')}
+          </div>
+          <div className="text-black font-bold uppercase">
+            INVOICE #{new Date().getFullYear()}-001
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-sm font-bold text-black uppercase">
-            FACTURE N° : INV-202501-0001
-          </p>
-        </div>
-      </div>
 
-      {/* Émetteur et Destinataire */}
-      <div className="flex justify-between mb-12">
-        <div className="w-5/12">
-          <h3 className="text-sm font-bold text-black mb-3 uppercase">ÉMETTEUR :</h3>
-          {settings.company_phone && (
-            <p className="text-sm text-black mb-1">{settings.company_phone}</p>
-          )}
-          {settings.company_email && (
-            <p className="text-sm text-black mb-1">{settings.company_email}</p>
-          )}
-          {settings.company_address && (
-            <p className="text-sm text-black whitespace-pre-line">{settings.company_address}</p>
-          )}
+        {/* En-têtes du tableau */}
+        <div className="grid grid-cols-12 gap-2 mb-2 pb-2 border-b border-black">
+          <div className="col-span-2 text-xs font-bold text-black uppercase">
+            QUANTITÉ
+          </div>
+          <div className="col-span-7 text-xs font-bold text-black uppercase">
+            ARTICLE
+          </div>
+          <div className="col-span-3 text-xs font-bold text-black text-right uppercase">
+            PRIX (FCFA)
+          </div>
         </div>
-        <div className="w-5/12 text-right">
-          <h3 className="text-sm font-bold text-black mb-3 uppercase">DESTINATAIRE :</h3>
-          <p className="text-sm font-bold text-black mb-1">CLIENT EXEMPLE</p>
-          <p className="text-sm text-black mb-1">client@exemple.com</p>
-          <p className="text-sm text-black">123 Rue Exemple,<br />75000 Paris</p>
-        </div>
-      </div>
 
-      {/* Tableau des articles */}
-      <div className="mb-10">
-        <div className="border-b-2 border-black mb-2">
-          <div className="grid grid-cols-12 gap-4 pb-2">
-            <div className="col-span-6">
-              <p className="text-sm font-bold text-black uppercase">Description :</p>
+        {/* Articles */}
+        <div className="space-y-3 mb-6">
+          <div className="grid grid-cols-12 gap-2 items-start">
+            <div className="col-span-2 text-sm text-black font-bold">
+              2
             </div>
-            <div className="col-span-2 text-right">
-              <p className="text-sm font-bold text-black uppercase">Prix Unitaire :</p>
+            <div className="col-span-7">
+              <p className="text-sm font-bold text-black uppercase">PLAT PRINCIPAL</p>
+              <p className="text-xs text-black">(SPÉCIALITÉ DE LA MAISON)</p>
             </div>
-            <div className="col-span-2 text-center">
-              <p className="text-sm font-bold text-black uppercase">Quantité :</p>
-            </div>
-            <div className="col-span-2 text-right">
-              <p className="text-sm font-bold text-black uppercase">Total :</p>
+            <div className="col-span-3 text-sm text-black text-right">
+              15,000
             </div>
           </div>
-        </div>
-        
-        <div className="space-y-0">
-          <div className="grid grid-cols-12 gap-4 py-4 border-b border-black">
-            <div className="col-span-6">
-              <p className="text-sm text-black">Services et produits</p>
-            </div>
-            <div className="col-span-2 text-right">
-              <p className="text-sm text-black">15,000 FCFA</p>
-            </div>
-            <div className="col-span-2 text-center">
-              <p className="text-sm text-black">1</p>
-            </div>
-            <div className="col-span-2 text-right">
-              <p className="text-sm text-black">15,000 FCFA</p>
-            </div>
-          </div>
-          
-          {/* Lignes vides pour l'espacement */}
-          <div className="grid grid-cols-12 gap-4 py-4 border-b border-black">
-            <div className="col-span-6"><p className="text-sm text-black">-</p></div>
-            <div className="col-span-2 text-right"><p className="text-sm text-black">-</p></div>
-            <div className="col-span-2 text-center"><p className="text-sm text-black">-</p></div>
-            <div className="col-span-2 text-right"><p className="text-sm text-black">-</p></div>
-          </div>
-          <div className="grid grid-cols-12 gap-4 py-4 border-b border-black">
-            <div className="col-span-6"><p className="text-sm text-black">-</p></div>
-            <div className="col-span-2 text-right"><p className="text-sm text-black">-</p></div>
-            <div className="col-span-2 text-center"><p className="text-sm text-black">-</p></div>
-            <div className="col-span-2 text-right"><p className="text-sm text-black">-</p></div>
-          </div>
-        </div>
-      </div>
 
-      {/* Section Totaux */}
-      <div className="flex justify-end">
-        <div className="w-5/12">
-          <div className="space-y-2">
-            <div className="flex justify-between pt-2 border-t-2 border-black">
-              <p className="text-lg font-bold text-black uppercase">TOTAL :</p>
-              <p className="text-lg font-bold text-black">15,000 FCFA</p>
+          <div className="grid grid-cols-12 gap-2 items-start">
+            <div className="col-span-2 text-sm text-black font-bold">
+              1
+            </div>
+            <div className="col-span-7">
+              <p className="text-sm font-bold text-black uppercase">DESSERT</p>
+              <p className="text-xs text-black">(PÂTISSERIE FINE)</p>
+            </div>
+            <div className="col-span-3 text-sm text-black text-right">
+              5,000
             </div>
           </div>
+
+          <div className="grid grid-cols-12 gap-2 items-start">
+            <div className="col-span-2 text-sm text-black font-bold">
+              3
+            </div>
+            <div className="col-span-7">
+              <p className="text-sm font-bold text-black uppercase">BOISSONS</p>
+              <p className="text-xs text-black">(COCKTAILS DE LA MAISON)</p>
+            </div>
+            <div className="col-span-3 text-sm text-black text-right">
+              9,000
+            </div>
+          </div>
+        </div>
+
+        {/* Totaux */}
+        <div className="border-t border-black pt-4 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-black uppercase">Subtotal</span>
+            <span className="text-black">29,000</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-black uppercase">Service Charge (10%)</span>
+            <span className="text-black">2,900</span>
+          </div>
+          <div className="flex justify-between text-base font-bold border-t border-black pt-2">
+            <span className="text-black uppercase">Total Dû</span>
+            <span className="text-black">31,900</span>
+          </div>
+        </div>
+
+        {/* QR Code et message de remerciement */}
+        <div className="mt-6 flex items-end justify-between">
+          <div className="w-16 h-16 bg-black flex items-center justify-center text-white text-[8px] leading-tight p-1">
+            QR CODE
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-black italic">
+              {settings.footer_note || "MERCI D'AVOIR DÎNÉ AU BORD DE L'UNIVERS"}
+            </p>
+          </div>
+        </div>
+
+        {/* Decorative dots bottom */}
+        <div className="flex justify-center gap-1 mt-4">
+          <div className="w-1 h-1 bg-black rounded-full"></div>
+          <div className="w-1 h-1 bg-black rounded-full"></div>
+          <div className="w-1 h-1 bg-black rounded-full"></div>
+          <div className="w-1 h-1 bg-black rounded-full"></div>
+          <div className="w-1 h-1 bg-black rounded-full"></div>
         </div>
       </div>
     </Card>
