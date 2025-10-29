@@ -55,15 +55,25 @@ export const useUserProfiles = () => {
 
       setProfiles((data || []) as UserProfile[]);
 
-      // Auto-select default profile if exists
-      const defaultProfile = data?.find(p => p.is_default);
-      if (defaultProfile) {
-        const stored = localStorage.getItem('selectedProfileId');
-        if (!stored) {
+      // Synchroniser la sélection avec le stockage local et la réalité des profils
+      const stored = localStorage.getItem('selectedProfileId');
+      if (stored) {
+        const exists = (data || []).some(p => p.id === stored);
+        if (exists) {
+          setSelectedProfileId(stored);
+        } else {
+          // ID stocké invalide -> on réinitialise pour forcer la sélection
+          localStorage.removeItem('selectedProfileId');
+          setSelectedProfileId(null);
+        }
+      } else {
+        // S'il n'y a rien en stockage, on sélectionne le profil par défaut s'il existe
+        const defaultProfile = data?.find(p => p.is_default);
+        if (defaultProfile) {
           setSelectedProfileId(defaultProfile.id);
           localStorage.setItem('selectedProfileId', defaultProfile.id);
         } else {
-          setSelectedProfileId(stored);
+          setSelectedProfileId(null);
         }
       }
     } catch (error: any) {

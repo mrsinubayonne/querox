@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
+import { useUserProfiles } from '@/hooks/useUserProfiles';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -36,6 +37,13 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const [adminExpanded, setAdminExpanded] = useState(location.pathname.includes('/admin'));
 
   const selectedOutlet = outlets.find(o => o.id === selectedOutletId);
+
+  const { profiles, selectedProfileId, selectProfile: selectUserProfile, canAddMoreProfiles, getProfileLimit } = useUserProfiles();
+  const selectedProfile = profiles.find(p => p.id === selectedProfileId);
+  const handleProfileChange = async (profileId: string) => {
+    await selectUserProfile(profileId);
+    window.location.reload();
+  };
 
   const handleOutletChange = async (outletId: string) => {
     await selectOutlet(outletId);
@@ -212,6 +220,59 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
           {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
       </div>
+
+      {/* Profile Selector */}
+      {profiles.length > 0 && (
+        <div className={`p-3 border-b border-gray-200 ${collapsed ? 'flex justify-center' : ''}`}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className={`w-full justify-start ${collapsed ? 'w-10 h-10 p-0' : ''}`}>
+                <UserCircle size={18} className={collapsed ? '' : 'mr-2'} />
+                {!collapsed && (
+                  <span className="truncate text-sm">
+                    {selectedProfile?.name || selectedProfile?.title || 'Sélectionner...'}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {profiles.map((p) => (
+                <DropdownMenuItem
+                  key={p.id}
+                  onClick={async () => { await handleProfileChange(p.id); }}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center">
+                    <UserCircle size={16} className="mr-2" />
+                    <span>{p.name || p.title}</span>
+                  </div>
+                  {p.id === selectedProfileId && (
+                    <Check size={16} className="text-primary" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  if (canAddMoreProfiles()) {
+                    navigate('/select-profile');
+                  } else {
+                    navigate('/abonnement');
+                  }
+                }}
+                className="flex items-center cursor-pointer text-primary"
+              >
+                <Plus size={16} className="mr-2" />
+                <span>
+                  {canAddMoreProfiles()
+                    ? 'Ajouter un profil'
+                    : `Limite atteinte (${getProfileLimit()} max)`}
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
 
       {/* Outlet Selector */}
       {outlets.length > 0 && (
