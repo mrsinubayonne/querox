@@ -12,19 +12,26 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
   const { settings } = useInvoiceSettings();
   const { website } = useRestaurantSettings();
 
-  const primaryColor = settings?.primary_color || '#3B82F6';
-
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('fr-FR', {
       day: '2-digit',
-      month: 'long',
+      month: '2-digit',
       year: 'numeric'
-    });
+    }).replace(/\//g, ' / ');
   };
 
+  const calculateTotals = () => {
+    const totalHT = invoice.total_amount;
+    const tva = totalHT * 0.20; // TVA 20%
+    const totalTTC = totalHT + tva;
+    return { totalHT, tva, totalTTC };
+  };
+
+  const { totalHT, tva, totalTTC } = calculateTotals();
+
   return (
-    <div className="print-only fixed inset-0 bg-white z-[9999] p-12">
+    <div className="print-only fixed inset-0 bg-white z-[9999] p-16">
       <style>{`
         @media print {
           body * {
@@ -51,172 +58,185 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         }
       `}</style>
 
-      {/* En-tête moderne */}
+      {/* En-tête avec logo et titre FACTURE */}
       <div className="flex justify-between items-start mb-16">
-        <div className="flex-1">
+        <div>
           {(settings?.logo_url || website?.logo_url) && (
             <img 
               src={settings?.logo_url || website?.logo_url} 
               alt="Logo" 
-              className="h-20 mb-5 object-contain" 
+              className="h-20 mb-3 object-contain" 
             />
           )}
-          <h1 className="text-4xl font-bold text-black mb-3">
-            {settings?.company_name || website?.name || 'Mon Restaurant'}
-          </h1>
-          <div className="space-y-1">
-            {settings?.company_address && (
-              <p className="text-base text-black leading-relaxed">{settings.company_address}</p>
-            )}
-            <div className="flex gap-6 text-base text-black mt-2">
-              {settings?.company_phone && <span>📞 {settings.company_phone}</span>}
-              {settings?.company_email && <span>✉ {settings.company_email}</span>}
-            </div>
-            {settings?.tax_id && (
-              <p className="text-sm text-black mt-2">SIRET/TVA: {settings.tax_id}</p>
-            )}
-          </div>
+          {(settings?.company_name || website?.name) && (
+            <h1 className="text-2xl font-bold text-black uppercase tracking-wide">
+              {settings?.company_name || website?.name}
+            </h1>
+          )}
         </div>
-        
-        <div className="text-right">
-          <div 
-            className="inline-block px-8 py-4 rounded-xl mb-4"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <h2 className="text-3xl font-bold text-white">
-              {settings?.invoice_title || 'FACTURE'}
-            </h2>
-          </div>
-          <div className="bg-gray-100 p-5 rounded-xl">
-            <p className="text-xs text-black mb-2 uppercase tracking-wide">Numéro</p>
-            <p className="text-2xl font-bold text-black">{invoice.invoice_number}</p>
-            <p className="text-sm text-black mt-3">
-              {formatDate(invoice.created_at)}
-            </p>
-          </div>
+        <div>
+          <h2 className="text-7xl font-bold text-black uppercase tracking-tight">
+            {settings?.invoice_title || 'FACTURE'}
+          </h2>
         </div>
       </div>
 
-      {/* Informations client */}
-      <div className="bg-gray-50 p-6 rounded-xl mb-10">
-        <h3 className="text-sm font-semibold text-black mb-3 uppercase tracking-wide">Facturé à</h3>
-        <p className="text-xl font-bold text-black">
-          {invoice.order?.customer_name || 'Client'}
-        </p>
-        {invoice.order?.customer_email && (
-          <p className="text-base text-black mt-1">{invoice.order.customer_email}</p>
-        )}
-        {invoice.order?.customer_phone && (
-          <p className="text-base text-black">{invoice.order.customer_phone}</p>
-        )}
-        {servedBy && (
-          <p className="text-base text-black mt-3">
-            <span className="font-semibold">Servi par:</span> {servedBy}
+      {/* Date, Échéance et Numéro de facture */}
+      <div className="flex justify-between items-start mb-12 pb-8 border-b-2 border-black">
+        <div className="space-y-1">
+          <p className="text-base font-bold text-black uppercase">
+            DATE : {formatDate(invoice.created_at)}
           </p>
-        )}
+          <p className="text-base font-bold text-black uppercase">
+            ÉCHÉANCE : {formatDate(invoice.due_date)}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-base font-bold text-black uppercase">
+            FACTURE N° : {invoice.invoice_number}
+          </p>
+        </div>
+      </div>
+
+      {/* Émetteur et Destinataire */}
+      <div className="flex justify-between mb-16">
+        <div className="w-5/12">
+          <h3 className="text-base font-bold text-black mb-4 uppercase">ÉMETTEUR :</h3>
+          {settings?.company_phone && (
+            <p className="text-base text-black mb-2">{settings.company_phone}</p>
+          )}
+          {settings?.company_email && (
+            <p className="text-base text-black mb-2">{settings.company_email}</p>
+          )}
+          {settings?.company_address && (
+            <p className="text-base text-black whitespace-pre-line">{settings.company_address}</p>
+          )}
+        </div>
+        <div className="w-5/12 text-right">
+          <h3 className="text-base font-bold text-black mb-4 uppercase">DESTINATAIRE :</h3>
+          <p className="text-base font-bold text-black mb-2">
+            {invoice.order?.customer_name || 'Client'}
+          </p>
+          {invoice.order?.customer_email && (
+            <p className="text-base text-black mb-2">{invoice.order.customer_email}</p>
+          )}
+          {invoice.order?.customer_phone && (
+            <p className="text-base text-black mb-2">{invoice.order.customer_phone}</p>
+          )}
+          {servedBy && (
+            <p className="text-base text-black mt-3">Servi par: {servedBy}</p>
+          )}
+        </div>
       </div>
 
       {/* Tableau des articles */}
-      <div className="mb-10">
-        <div className="overflow-hidden rounded-xl border-2 border-gray-200">
-          <table className="w-full">
-            <thead>
-              <tr style={{ backgroundColor: primaryColor }}>
-                <th className="px-8 py-5 text-left text-base font-bold text-white">Article</th>
-                <th className="px-8 py-5 text-center text-base font-bold text-white">Qté</th>
-                <th className="px-8 py-5 text-right text-base font-bold text-white">P.U.</th>
-                <th className="px-8 py-5 text-right text-base font-bold text-white">Total</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white">
-              {invoice.order?.items && Array.isArray(invoice.order.items) && invoice.order.items.length > 0 ? (
-                invoice.order.items.map((item: any, index: number) => (
-                  <tr key={index} className="border-b border-gray-200">
-                    <td className="px-8 py-5">
-                      <p className="text-lg font-semibold text-black">{item.name}</p>
-                    </td>
-                    <td className="px-8 py-5 text-center text-lg font-semibold text-black">
-                      {item.quantity}
-                    </td>
-                    <td className="px-8 py-5 text-right text-lg text-black">
-                      {item.price?.toLocaleString('fr-FR')} FCFA
-                    </td>
-                    <td className="px-8 py-5 text-right text-xl font-bold text-black">
-                      {((item.price || 0) * (item.quantity || 0)).toLocaleString('fr-FR')} FCFA
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr className="border-b border-gray-200">
-                  <td colSpan={4} className="px-8 py-6">
-                    <p className="text-lg font-semibold text-black">Services et produits</p>
-                    {invoice.notes && (
-                      <p className="text-base text-black mt-2">{invoice.notes}</p>
-                    )}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Total */}
-      <div className="flex justify-end mb-12">
-        <div className="w-96">
-          <div 
-            className="p-8 rounded-xl text-white"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <div className="flex justify-between items-center">
-              <span className="text-xl font-bold">MONTANT TOTAL</span>
-              <span className="text-4xl font-bold">
-                {invoice.total_amount.toLocaleString('fr-FR')} FCFA
-              </span>
+      <div className="mb-12">
+        <div className="border-b-2 border-black mb-3">
+          <div className="grid grid-cols-12 gap-4 pb-3">
+            <div className="col-span-6">
+              <p className="text-base font-bold text-black uppercase">Description :</p>
+            </div>
+            <div className="col-span-2 text-right">
+              <p className="text-base font-bold text-black uppercase">Prix Unitaire :</p>
+            </div>
+            <div className="col-span-2 text-center">
+              <p className="text-base font-bold text-black uppercase">Quantité :</p>
+            </div>
+            <div className="col-span-2 text-right">
+              <p className="text-base font-bold text-black uppercase">Total :</p>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Informations de paiement */}
-      <div className="grid grid-cols-2 gap-8 mb-10">
-        <div className="bg-gray-50 p-6 rounded-xl">
-          <p className="text-sm text-black mb-2 uppercase tracking-wide">Statut du paiement</p>
-          <p className="text-2xl font-bold text-black">
-            {invoice.status === 'paid' ? 'PAYÉE' : 
-             invoice.status === 'unpaid' ? 'EN ATTENTE' : 'EN RETARD'}
-          </p>
-        </div>
-        {invoice.paid_date && (
-          <div className="bg-gray-50 p-6 rounded-xl">
-            <p className="text-sm text-black mb-2 uppercase tracking-wide">Date de paiement</p>
-            <p className="text-2xl font-bold text-black">{formatDate(invoice.paid_date)}</p>
+        
+        <div className="space-y-0">
+          {invoice.order?.items && Array.isArray(invoice.order.items) && invoice.order.items.length > 0 ? (
+            <>
+              {invoice.order.items.map((item: any, index: number) => (
+                <div key={index} className="grid grid-cols-12 gap-4 py-5 border-b border-black">
+                  <div className="col-span-6">
+                    <p className="text-base text-black">{item.name}</p>
+                  </div>
+                  <div className="col-span-2 text-right">
+                    <p className="text-base text-black">{item.price?.toLocaleString('fr-FR')} FCFA</p>
+                  </div>
+                  <div className="col-span-2 text-center">
+                    <p className="text-base text-black">{item.quantity}</p>
+                  </div>
+                  <div className="col-span-2 text-right">
+                    <p className="text-base text-black">
+                      {((item.price || 0) * (item.quantity || 0)).toLocaleString('fr-FR')} FCFA
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <div className="grid grid-cols-12 gap-4 py-5 border-b border-black">
+              <div className="col-span-6">
+                <p className="text-base text-black">Services et produits</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-base text-black">{totalHT.toLocaleString('fr-FR')} FCFA</p>
+              </div>
+              <div className="col-span-2 text-center">
+                <p className="text-base text-black">1</p>
+              </div>
+              <div className="col-span-2 text-right">
+                <p className="text-base text-black">{totalHT.toLocaleString('fr-FR')} FCFA</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Lignes vides pour l'espacement */}
+          <div className="grid grid-cols-12 gap-4 py-5 border-b border-black">
+            <div className="col-span-6"><p className="text-base text-black">-</p></div>
+            <div className="col-span-2 text-right"><p className="text-base text-black">-</p></div>
+            <div className="col-span-2 text-center"><p className="text-base text-black">-</p></div>
+            <div className="col-span-2 text-right"><p className="text-base text-black">-</p></div>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Conditions de paiement */}
-      {settings?.payment_terms && (
-        <div className="border-t-2 pt-6 mb-6">
-          <h3 className="text-sm font-semibold text-black mb-3 uppercase tracking-wide">
-            Conditions de paiement
-          </h3>
-          <p className="text-base text-black leading-relaxed">
-            {settings.payment_terms}
-          </p>
+      {/* Section Règlement et Totaux */}
+      <div className="flex justify-between">
+        <div className="w-5/12">
+          <h3 className="text-base font-bold text-black mb-4 uppercase">RÈGLEMENT :</h3>
+          <p className="text-base font-bold text-black mb-3">Par virement bancaire :</p>
+          <p className="text-base text-black">Banque : {settings?.company_name || 'Nom de la banque'}</p>
+          <p className="text-base text-black mb-8">Compte : {settings?.tax_id || '123-456-7890'}</p>
+          
+          {settings?.payment_terms && (
+            <p className="text-sm text-black mb-5 leading-relaxed">
+              {settings.payment_terms}
+            </p>
+          )}
+          {settings?.footer_note && (
+            <p className="text-sm text-black leading-relaxed">
+              {settings.footer_note}
+            </p>
+          )}
         </div>
-      )}
-
-      {/* Footer */}
-      <div className="text-center mt-12 pt-8 border-t-2">
-        {settings?.footer_note && (
-          <p className="text-base text-black mb-4 leading-relaxed">
-            {settings.footer_note}
-          </p>
-        )}
-        <p className="text-sm text-black font-semibold">
-          Généré par QUEROX - Logiciel de gestion, automatisation et optimisation
-        </p>
+        
+        <div className="w-5/12">
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <p className="text-base font-bold text-black uppercase">TOTAL HT :</p>
+              <p className="text-base font-bold text-black">{totalHT.toLocaleString('fr-FR')} FCFA</p>
+            </div>
+            <div className="flex justify-between">
+              <p className="text-base font-bold text-black uppercase">TVA 20% :</p>
+              <p className="text-base font-bold text-black">{tva.toLocaleString('fr-FR')} FCFA</p>
+            </div>
+            <div className="flex justify-between">
+              <p className="text-base font-bold text-black uppercase">REMISE :</p>
+              <p className="text-base font-bold text-black">-</p>
+            </div>
+            <div className="flex justify-between pt-3 border-t-2 border-black">
+              <p className="text-base font-bold text-black uppercase">TOTAL TTC :</p>
+              <p className="text-base font-bold text-black">{totalTTC.toLocaleString('fr-FR')} FCFA</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
