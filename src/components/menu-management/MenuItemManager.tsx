@@ -195,13 +195,6 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
               onAction={handleAddItem}
             />
           </div>
-
-          <AddMenuItemModal
-            isOpen={showAddModal}
-            onClose={() => setShowAddModal(false)}
-            onSuccess={handleModalSuccess}
-            activeMenuId={activeMenuId}
-          />
         </>
       );
     }
@@ -382,44 +375,47 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
           )}
         </div>
 
-        <AddMenuItemModal
-          isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onSuccess={handleModalSuccess}
-          activeMenuId={activeMenuId}
-        />
-
-        <EditMenuItemModal
-          item={editingItem}
-          isOpen={!!editingItem}
-          onClose={() => setEditingItem(null)}
-          onSuccess={handleEditSuccess}
-        />
-
-        <TransferMenuItemModal
-          isOpen={!!transferringItem}
-          onClose={() => setTransferringItem(null)}
-          onConfirm={handleTransferConfirm}
-          itemName={transferringItem?.name || ''}
-          outlets={outlets}
-          currentOutletId={transferringItem ? (menus.find(m => categories.find(c => c.id === transferringItem.category_id)?.menu_id === m.id)?.outlet_id || '') : ''}
-        />
-
-        <TransferMenuItemModal
-          isOpen={showBulkTransfer}
-          onClose={() => setShowBulkTransfer(false)}
-          onConfirm={handleBulkTransferConfirm}
-          itemName={`${selectedItems.size} plat${selectedItems.size > 1 ? 's' : ''}`}
-          outlets={outlets}
-          currentOutletId={menus[0]?.outlet_id || ''}
-          isBulkTransfer
-        />
       </>
     );
   };
 
   return (
-    <MenuItemsContent />
+    <>
+      <MenuItemsContent />
+
+      <AddMenuItemModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={handleModalSuccess}
+        activeMenuId={activeMenuId}
+      />
+
+      <EditMenuItemModal
+        item={editingItem}
+        isOpen={!!editingItem}
+        onClose={() => setEditingItem(null)}
+        onSuccess={handleEditSuccess}
+      />
+
+      <TransferMenuItemModal
+        isOpen={!!transferringItem}
+        onClose={() => setTransferringItem(null)}
+        onConfirm={handleTransferConfirm}
+        itemName={transferringItem?.name || ''}
+        outlets={outlets}
+        currentOutletId={transferringItem ? (menus.find(m => categories.find(c => c.id === transferringItem.category_id)?.menu_id === m.id)?.outlet_id || '') : ''}
+      />
+
+      <TransferMenuItemModal
+        isOpen={showBulkTransfer}
+        onClose={() => setShowBulkTransfer(false)}
+        onConfirm={handleBulkTransferConfirm}
+        itemName={`${selectedItems.size} plat${selectedItems.size > 1 ? 's' : ''}`}
+        outlets={outlets}
+        currentOutletId={menus[0]?.outlet_id || ''}
+        isBulkTransfer
+      />
+    </>
   );
 };
 

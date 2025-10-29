@@ -316,9 +316,15 @@ export const useMenus = () => {
     }
   }, [user?.id, toast, fetchMenus]);
 
+  const fetchMenusRef = useRef(fetchMenus);
+
   useEffect(() => {
-    fetchMenus();
+    fetchMenusRef.current = fetchMenus;
   }, [fetchMenus]);
+
+  useEffect(() => {
+    if (user) fetchMenusRef.current();
+  }, [user?.id]);
 
   const fetchAllMenus = useCallback(async (): Promise<Menu[]> => {
     if (!user) return [];
