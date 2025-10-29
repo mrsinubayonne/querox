@@ -11,6 +11,7 @@ import Dashboard from '@/pages/Dashboard';
 import MenusProtected from '@/pages/MenusProtected';
 import AllMenus from '@/pages/AllMenus';
 import Commandes from '@/pages/Commandes';
+import Tables from '@/pages/Tables';
 import InventaireProtected from '@/pages/InventaireProtected';
 import QRCodes from '@/pages/QRCodes';
 import SiteWeb from '@/pages/SiteWeb';
@@ -81,6 +82,7 @@ function App() {
               <Route path="/menus" element={<ProtectedRoute><MenusProtected /></ProtectedRoute>} />
               <Route path="/all-menus" element={<ProtectedRoute><AllMenus /></ProtectedRoute>} />
               <Route path="/commandes" element={<ProtectedRoute><Commandes /></ProtectedRoute>} />
+              <Route path="/tables" element={<ProtectedRoute><Tables /></ProtectedRoute>} />
               <Route path="/inventaire" element={<ProtectedRoute><InventaireProtected /></ProtectedRoute>} />
               <Route path="/qr-codes" element={<ProtectedRoute><QRCodes /></ProtectedRoute>} />
               <Route path="/site-web" element={<ProtectedRoute><SiteWeb /></ProtectedRoute>} />

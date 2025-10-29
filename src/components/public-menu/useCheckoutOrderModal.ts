@@ -62,9 +62,44 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
         return;
       }
 
+      // Check if there's an active session for this table
+      let sessionId = null;
+      if (orderType === "sur_place" && tableNumber) {
+        const { data: existingSession, error: checkError } = await supabase
+          .from("table_sessions" as any)
+          .select("id")
+          .eq("user_id", restaurantUserId)
+          .eq("outlet_id", outletId)
+          .eq("table_number", tableNumber)
+          .eq("status", "active")
+          .maybeSingle();
+
+        if (!checkError && existingSession) {
+          sessionId = (existingSession as any).id;
+        } else {
+          // Create new session for this table
+          const { data: newSession, error: sessionError } = await supabase
+            .from("table_sessions" as any)
+            .insert([{
+              user_id: restaurantUserId,
+              outlet_id: outletId,
+              table_number: tableNumber,
+              number_of_guests: numberOfPeople ? parseInt(numberOfPeople) : null,
+              status: "active",
+            }])
+            .select()
+            .single();
+
+          if (!sessionError && newSession) {
+            sessionId = (newSession as any).id;
+          }
+        }
+      }
+
       const payload: any = {
         user_id: restaurantUserId,
         outlet_id: outletId,
+        session_id: sessionId,
         customer_name: customerName || null,
         customer_phone: customerPhone || null,
         notes: notes || null,
