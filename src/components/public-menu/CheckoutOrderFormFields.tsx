@@ -57,6 +57,25 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
           placeholder="Numéro de téléphone"
         />
       </div>
+      
+      <div>
+        <label className="block font-medium mb-1">Numéro de table</label>
+        <Select
+          value={tableNumber}
+          onValueChange={setTableNumber}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="N° de table" />
+          </SelectTrigger>
+          <SelectContent>
+            {TABLE_NUMBERS.map((num) => (
+              <SelectItem value={num} key={num}>
+                {num}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {orderType === "livrer" && (
         <div>
