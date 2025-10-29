@@ -2,7 +2,6 @@ import React from 'react';
 import { Invoice } from '@/hooks/useInvoices';
 import { useInvoiceSettings } from '@/hooks/useInvoiceSettings';
 import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
-import { useProfile } from '@/hooks/useProfile';
 
 interface InvoicePrintViewProps {
   invoice: Invoice;
@@ -12,7 +11,8 @@ interface InvoicePrintViewProps {
 const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }) => {
   const { settings } = useInvoiceSettings();
   const { website } = useRestaurantSettings();
-  const { profile } = useProfile();
+
+  const primaryColor = settings?.primary_color || '#3B82F6';
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -24,16 +24,8 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
   };
 
   return (
-    <div className="print-only fixed inset-0 bg-white z-[9999] p-8" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}>
+    <div className="print-only fixed inset-0 bg-white z-[9999] p-12">
       <style>{`
-        * {
-          font-family: 'Arial Black', sans-serif !important;
-          font-weight: 900 !important;
-        }
-        p, span, td, th, div, h1, h2, h3, h4, h5, h6 {
-          font-family: 'Arial Black', sans-serif !important;
-          font-weight: 900 !important;
-        }
         @media print {
           body * {
             visibility: hidden;
@@ -48,7 +40,8 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
             width: 100%;
           }
           @page {
-            margin: 1cm;
+            margin: 1.5cm;
+            size: A4;
           }
         }
         @media screen {
@@ -58,151 +51,170 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         }
       `}</style>
 
-      {/* En-tête */}
-      <div className="flex justify-between items-start mb-12 pb-6 border-b-2 border-gray-300">
-        <div>
+      {/* En-tête moderne */}
+      <div className="flex justify-between items-start mb-16">
+        <div className="flex-1">
           {(settings?.logo_url || website?.logo_url) && (
             <img 
               src={settings?.logo_url || website?.logo_url} 
               alt="Logo" 
-              className="h-20 mb-4" 
+              className="h-20 mb-5 object-contain" 
             />
           )}
-          <h1 className="text-5xl font-bold text-black mb-3">
+          <h1 className="text-4xl font-bold text-black mb-3">
             {settings?.company_name || website?.name || 'Mon Restaurant'}
           </h1>
-          {settings?.company_address && (
-            <p className="text-base text-black whitespace-pre-line" style={{ fontWeight: '900' }}>{settings.company_address}</p>
-          )}
-          {settings?.company_phone && (
-            <p className="text-base text-black mt-1" style={{ fontWeight: '900' }}>Tél: {settings.company_phone}</p>
-          )}
-          {settings?.company_email && (
-            <p className="text-base text-black" style={{ fontWeight: '900' }}>{settings.company_email}</p>
-          )}
-          {settings?.tax_id && (
-            <p className="text-base text-black" style={{ fontWeight: '900' }}>SIRET/TVA: {settings.tax_id}</p>
-          )}
+          <div className="space-y-1">
+            {settings?.company_address && (
+              <p className="text-base text-black leading-relaxed">{settings.company_address}</p>
+            )}
+            <div className="flex gap-6 text-base text-black mt-2">
+              {settings?.company_phone && <span>📞 {settings.company_phone}</span>}
+              {settings?.company_email && <span>✉ {settings.company_email}</span>}
+            </div>
+            {settings?.tax_id && (
+              <p className="text-sm text-black mt-2">SIRET/TVA: {settings.tax_id}</p>
+            )}
+          </div>
         </div>
+        
         <div className="text-right">
-          <h2 
-            className="text-3xl font-bold mb-2 text-black"
+          <div 
+            className="inline-block px-8 py-4 rounded-xl mb-4"
+            style={{ backgroundColor: primaryColor }}
           >
-            {settings?.invoice_title || 'FACTURE'}
-          </h2>
-          <p 
-            className="text-2xl text-black"
-            style={{ fontWeight: '900' }}
-          >
-            {invoice.invoice_number}
-          </p>
-          <p className="text-base text-black mt-2" style={{ fontWeight: '900' }}>Date: {formatDate(invoice.created_at)}</p>
+            <h2 className="text-3xl font-bold text-white">
+              {settings?.invoice_title || 'FACTURE'}
+            </h2>
+          </div>
+          <div className="bg-gray-100 p-5 rounded-xl">
+            <p className="text-xs text-black mb-2 uppercase tracking-wide">Numéro</p>
+            <p className="text-2xl font-bold text-black">{invoice.invoice_number}</p>
+            <p className="text-sm text-black mt-3">
+              {formatDate(invoice.created_at)}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Informations client */}
-      <div className="mb-8">
-        <h3 className="text-xl text-black mb-3" style={{ fontWeight: '900' }}>Facturé à:</h3>
-        <p className="text-lg text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>
+      <div className="bg-gray-50 p-6 rounded-xl mb-10">
+        <h3 className="text-sm font-semibold text-black mb-3 uppercase tracking-wide">Facturé à</h3>
+        <p className="text-xl font-bold text-black">
           {invoice.order?.customer_name || 'Client'}
         </p>
         {invoice.order?.customer_email && (
-          <p className="text-base text-black" style={{ fontWeight: '900' }}>{invoice.order.customer_email}</p>
+          <p className="text-base text-black mt-1">{invoice.order.customer_email}</p>
         )}
         {invoice.order?.customer_phone && (
-          <p className="text-base text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{invoice.order.customer_phone}</p>
+          <p className="text-base text-black">{invoice.order.customer_phone}</p>
         )}
         {servedBy && (
-          <p className="text-base text-black mt-2" style={{ fontWeight: '900' }}>Servi par: {servedBy}</p>
+          <p className="text-base text-black mt-3">
+            <span className="font-semibold">Servi par:</span> {servedBy}
+          </p>
         )}
       </div>
 
-      {/* Détails de la facture */}
-      <div className="mb-8">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border border-gray-300 px-6 py-4 text-left text-lg" style={{ fontWeight: '900' }}>Article</th>
-              <th className="border border-gray-300 px-6 py-4 text-center text-lg" style={{ fontWeight: '900' }}>Quantité</th>
-              <th className="border border-gray-300 px-6 py-4 text-right text-lg" style={{ fontWeight: '900' }}>Prix unitaire</th>
-              <th className="border border-gray-300 px-6 py-4 text-right text-lg" style={{ fontWeight: '900' }}>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoice.order?.items && Array.isArray(invoice.order.items) && invoice.order.items.length > 0 ? (
-              invoice.order.items.map((item: any, index: number) => (
-                <tr key={index}>
-                  <td className="border border-gray-300 px-6 py-4">
-                    <p className="text-base" style={{ fontWeight: '900' }}>{item.name}</p>
-                  </td>
-                  <td className="border border-gray-300 px-6 py-4 text-center text-base" style={{ fontWeight: '900' }}>
-                    {item.quantity}
-                  </td>
-                  <td className="border border-gray-300 px-6 py-4 text-right text-base" style={{ fontWeight: '900' }}>
-                    {item.price?.toLocaleString('fr-FR')} FCFA
-                  </td>
-                  <td className="border border-gray-300 px-6 py-4 text-right text-lg" style={{ fontWeight: '900' }}>
-                    {((item.price || 0) * (item.quantity || 0)).toLocaleString('fr-FR')} FCFA
+      {/* Tableau des articles */}
+      <div className="mb-10">
+        <div className="overflow-hidden rounded-xl border-2 border-gray-200">
+          <table className="w-full">
+            <thead>
+              <tr style={{ backgroundColor: primaryColor }}>
+                <th className="px-8 py-5 text-left text-base font-bold text-white">Article</th>
+                <th className="px-8 py-5 text-center text-base font-bold text-white">Qté</th>
+                <th className="px-8 py-5 text-right text-base font-bold text-white">P.U.</th>
+                <th className="px-8 py-5 text-right text-base font-bold text-white">Total</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white">
+              {invoice.order?.items && Array.isArray(invoice.order.items) && invoice.order.items.length > 0 ? (
+                invoice.order.items.map((item: any, index: number) => (
+                  <tr key={index} className="border-b border-gray-200">
+                    <td className="px-8 py-5">
+                      <p className="text-lg font-semibold text-black">{item.name}</p>
+                    </td>
+                    <td className="px-8 py-5 text-center text-lg font-semibold text-black">
+                      {item.quantity}
+                    </td>
+                    <td className="px-8 py-5 text-right text-lg text-black">
+                      {item.price?.toLocaleString('fr-FR')} FCFA
+                    </td>
+                    <td className="px-8 py-5 text-right text-xl font-bold text-black">
+                      {((item.price || 0) * (item.quantity || 0)).toLocaleString('fr-FR')} FCFA
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr className="border-b border-gray-200">
+                  <td colSpan={4} className="px-8 py-6">
+                    <p className="text-lg font-semibold text-black">Services et produits</p>
+                    {invoice.notes && (
+                      <p className="text-base text-black mt-2">{invoice.notes}</p>
+                    )}
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="border border-gray-300 px-6 py-4">
-                  <p className="text-base text-black" style={{ fontWeight: '900' }}>Services et produits</p>
-                  {invoice.notes && (
-                    <p className="text-base text-black mt-2" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{invoice.notes}</p>
-                  )}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Total */}
       <div className="flex justify-end mb-12">
-        <div className="w-80">
-          <div className="flex justify-between py-3 border-t-2 border-gray-300">
-            <span className="text-xl text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>TOTAL:</span>
-            <span 
-              className="text-2xl text-black"
-              style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}
-            >
-              {invoice.total_amount.toLocaleString('fr-FR')} FCFA
-            </span>
+        <div className="w-96">
+          <div 
+            className="p-8 rounded-xl text-white"
+            style={{ backgroundColor: primaryColor }}
+          >
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-bold">MONTANT TOTAL</span>
+              <span className="text-4xl font-bold">
+                {invoice.total_amount.toLocaleString('fr-FR')} FCFA
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Informations de paiement */}
-      <div className="mb-8 p-6 bg-gray-50 rounded">
-        <h3 className="text-xl text-black mb-4" style={{ fontWeight: '900' }}>Informations de paiement</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-base text-black" style={{ fontWeight: '900' }}>Statut:</p>
-            <p className="text-lg text-black" style={{ fontWeight: '900' }}>
-              {invoice.status === 'paid' ? 'PAYÉE' : 
-               invoice.status === 'unpaid' ? 'EN ATTENTE' : 'EN RETARD'}
-            </p>
-          </div>
-          {invoice.paid_date && (
-            <div>
-              <p className="text-base text-black" style={{ fontWeight: '900' }}>Date de paiement:</p>
-              <p className="text-lg text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{formatDate(invoice.paid_date)}</p>
-            </div>
-          )}
+      <div className="grid grid-cols-2 gap-8 mb-10">
+        <div className="bg-gray-50 p-6 rounded-xl">
+          <p className="text-sm text-black mb-2 uppercase tracking-wide">Statut du paiement</p>
+          <p className="text-2xl font-bold text-black">
+            {invoice.status === 'paid' ? 'PAYÉE' : 
+             invoice.status === 'unpaid' ? 'EN ATTENTE' : 'EN RETARD'}
+          </p>
         </div>
+        {invoice.paid_date && (
+          <div className="bg-gray-50 p-6 rounded-xl">
+            <p className="text-sm text-black mb-2 uppercase tracking-wide">Date de paiement</p>
+            <p className="text-2xl font-bold text-black">{formatDate(invoice.paid_date)}</p>
+          </div>
+        )}
       </div>
 
+      {/* Conditions de paiement */}
+      {settings?.payment_terms && (
+        <div className="border-t-2 pt-6 mb-6">
+          <h3 className="text-sm font-semibold text-black mb-3 uppercase tracking-wide">
+            Conditions de paiement
+          </h3>
+          <p className="text-base text-black leading-relaxed">
+            {settings.payment_terms}
+          </p>
+        </div>
+      )}
+
       {/* Footer */}
-      <div className="border-t-2 border-gray-300 pt-6 mt-12">
+      <div className="text-center mt-12 pt-8 border-t-2">
         {settings?.footer_note && (
-          <p className="text-sm text-black mb-4 whitespace-pre-line" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>
+          <p className="text-base text-black mb-4 leading-relaxed">
             {settings.footer_note}
           </p>
         )}
-        <p className="text-sm text-black text-center mt-8" style={{ fontWeight: '900' }}>
+        <p className="text-sm text-black font-semibold">
           Généré par QUEROX - Logiciel de gestion, automatisation et optimisation
         </p>
       </div>
