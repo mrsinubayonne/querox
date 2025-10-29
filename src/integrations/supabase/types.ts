@@ -278,6 +278,7 @@ export type Database = {
           order_id: string | null
           outlet_id: string | null
           paid_date: string | null
+          session_id: string | null
           status: string
           total_amount: number
           updated_at: string
@@ -292,6 +293,7 @@ export type Database = {
           order_id?: string | null
           outlet_id?: string | null
           paid_date?: string | null
+          session_id?: string | null
           status?: string
           total_amount?: number
           updated_at?: string
@@ -306,6 +308,7 @@ export type Database = {
           order_id?: string | null
           outlet_id?: string | null
           paid_date?: string | null
+          session_id?: string | null
           status?: string
           total_amount?: number
           updated_at?: string
@@ -473,6 +476,7 @@ export type Database = {
           notes: string | null
           order_type: string | null
           outlet_id: string | null
+          session_id: string | null
           status: string
           table_number: string | null
           total_amount: number
@@ -491,6 +495,7 @@ export type Database = {
           notes?: string | null
           order_type?: string | null
           outlet_id?: string | null
+          session_id?: string | null
           status?: string
           table_number?: string | null
           total_amount?: number
@@ -509,6 +514,7 @@ export type Database = {
           notes?: string | null
           order_type?: string | null
           outlet_id?: string | null
+          session_id?: string | null
           status?: string
           table_number?: string | null
           total_amount?: number
@@ -1025,6 +1031,51 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      table_sessions: {
+        Row: {
+          closed_at: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          number_of_guests: number | null
+          outlet_id: string | null
+          started_at: string
+          status: string
+          table_number: string
+          total_amount: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          number_of_guests?: number | null
+          outlet_id?: string | null
+          started_at?: string
+          status?: string
+          table_number: string
+          total_amount?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          number_of_guests?: number | null
+          outlet_id?: string | null
+          started_at?: string
+          status?: string
+          table_number?: string
+          total_amount?: number | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

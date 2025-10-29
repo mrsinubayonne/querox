@@ -9,7 +9,7 @@ export const ORDER_TYPE_OPTIONS = [
   { value: "sur_place", label: "À manger sur place" }
 ];
 
-export const TABLE_NUMBERS = Array.from({ length: 200 }, (_, i) => (i + 1).toString());
+export const TABLE_NUMBERS = Array.from({ length: 120 }, (_, i) => (i + 1).toString());
 
 export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOpenChange: (open: boolean) => void, onClearCart: () => void) {
   const [customerName, setCustomerName] = useState("");
