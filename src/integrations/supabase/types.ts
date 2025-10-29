@@ -271,9 +271,13 @@ export type Database = {
       invoices: {
         Row: {
           created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
           due_date: string | null
           id: string
           invoice_number: string
+          items: Json | null
           notes: string | null
           order_id: string | null
           outlet_id: string | null
@@ -286,9 +290,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           due_date?: string | null
           id?: string
           invoice_number: string
+          items?: Json | null
           notes?: string | null
           order_id?: string | null
           outlet_id?: string | null
@@ -301,9 +309,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           due_date?: string | null
           id?: string
           invoice_number?: string
+          items?: Json | null
           notes?: string | null
           order_id?: string | null
           outlet_id?: string | null

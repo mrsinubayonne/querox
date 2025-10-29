@@ -7,6 +7,7 @@ export interface Invoice {
   id: string;
   user_id: string;
   order_id: string | null;
+  session_id: string | null;
   invoice_number: string;
   total_amount: number;
   status: 'paid' | 'unpaid' | 'overdue';
@@ -15,12 +16,10 @@ export interface Invoice {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  order?: {
-    customer_name: string;
-    customer_email: string | null;
-    customer_phone: string | null;
-    items: any[];
-  };
+  customer_name: string;
+  customer_email: string | null;
+  customer_phone: string | null;
+  items: any[];
 }
 
 export const useInvoices = () => {
@@ -55,10 +54,7 @@ export const useInvoices = () => {
       
       const { data, error } = await supabase
         .from('invoices')
-        .select(`
-          id, user_id, order_id, invoice_number, total_amount, status, due_date, paid_date, notes, created_at, updated_at,
-          order:orders(customer_name, customer_email, customer_phone, items)
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .eq('outlet_id', outletId)
         .order('created_at', { ascending: false })

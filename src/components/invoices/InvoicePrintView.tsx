@@ -104,13 +104,13 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
       <div className="mb-8">
         <h3 className="text-xl text-black mb-3" style={{ fontWeight: '900' }}>Facturé à:</h3>
         <p className="text-lg text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>
-          {invoice.order?.customer_name || 'Client'}
+          {invoice.customer_name || 'Client'}
         </p>
-        {invoice.order?.customer_email && (
-          <p className="text-base text-black" style={{ fontWeight: '900' }}>{invoice.order.customer_email}</p>
+        {invoice.customer_email && (
+          <p className="text-base text-black" style={{ fontWeight: '900' }}>{invoice.customer_email}</p>
         )}
-        {invoice.order?.customer_phone && (
-          <p className="text-base text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{invoice.order.customer_phone}</p>
+        {invoice.customer_phone && (
+          <p className="text-base text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{invoice.customer_phone}</p>
         )}
         {servedBy && (
           <p className="text-base text-black mt-2" style={{ fontWeight: '900' }}>Servi par: {servedBy}</p>
@@ -129,8 +129,8 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
             </tr>
           </thead>
           <tbody>
-            {invoice.order?.items && Array.isArray(invoice.order.items) && invoice.order.items.length > 0 ? (
-              invoice.order.items.map((item: any, index: number) => (
+            {invoice.items && Array.isArray(invoice.items) && invoice.items.length > 0 ? (
+              invoice.items.map((item: any, index: number) => (
                 <tr key={index}>
                   <td className="border border-gray-300 px-6 py-4">
                     <p className="text-base" style={{ fontWeight: '900' }}>{item.name}</p>
