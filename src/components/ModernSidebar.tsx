@@ -40,10 +40,43 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
   const { profiles, selectedProfileId, selectProfile: selectUserProfile, canAddMoreProfiles, getProfileLimit } = useUserProfiles();
   const selectedProfile = profiles.find(p => p.id === selectedProfileId);
+  
   const handleProfileChange = async (profileId: string) => {
     await selectUserProfile(profileId);
     window.location.reload();
   };
+
+  const handleLogoutProfile = () => {
+    localStorage.removeItem('selectedProfileId');
+    navigate('/select-profile');
+  };
+
+  // Filter menu items based on profile
+  const getFilteredMenuItems = () => {
+    if (!selectedProfile) return menuItems;
+    
+    const title = selectedProfile.title;
+    
+    if (title === 'Admin') {
+      return menuItems; // Admin has access to everything
+    } else if (title === 'Caissier(e)') {
+      return menuItems.filter(item => 
+        ['Dashboard', 'Commandes', 'Tables', 'Factures', 'Réservations', 'Support'].includes(item.label)
+      );
+    } else if (title === 'Comptable') {
+      return menuItems.filter(item => 
+        ['Inventaire', 'Comptabilité', 'Statistiques'].includes(item.label)
+      );
+    } else if (title === 'Serveur') {
+      return menuItems.filter(item => 
+        ['Dashboard', 'Commandes', 'Tables'].includes(item.label)
+      );
+    }
+    
+    return menuItems;
+  };
+
+  const filteredMenuItems = getFilteredMenuItems();
 
   const handleOutletChange = async (outletId: string) => {
     await selectOutlet(outletId);
@@ -269,6 +302,14 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
                     : `Limite atteinte (${getProfileLimit()} max)`}
                 </span>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLogoutProfile}
+                className="flex items-center cursor-pointer text-red-600 hover:text-red-700"
+              >
+                <LogOut size={16} className="mr-2" />
+                <span>Fermer la session</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -330,7 +371,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-2">
-        {menuItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+        {filteredMenuItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
             <item.icon size={20} className="flex-shrink-0" />
             {!collapsed && <span className="ml-3">{item.label}</span>}
           </button>)}

@@ -67,14 +67,8 @@ export const useUserProfiles = () => {
           setSelectedProfileId(null);
         }
       } else {
-        // S'il n'y a rien en stockage, on sélectionne le profil par défaut s'il existe
-        const defaultProfile = data?.find(p => p.is_default);
-        if (defaultProfile) {
-          setSelectedProfileId(defaultProfile.id);
-          localStorage.setItem('selectedProfileId', defaultProfile.id);
-        } else {
-          setSelectedProfileId(null);
-        }
+        // Ne pas auto-sélectionner, forcer l'utilisateur à choisir
+        setSelectedProfileId(null);
       }
     } catch (error: any) {
       console.error('Error fetching profiles:', error);

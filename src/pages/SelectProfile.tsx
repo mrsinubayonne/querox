@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Plus } from 'lucide-react';
+import { User, Plus, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -11,8 +11,19 @@ import { useUserProfiles, ProfileTitle } from '@/hooks/useUserProfiles';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const PROFILE_TITLES: ProfileTitle[] = ['Admin', 'Caissier(e)', 'Comptable', 'Serveur'];
+const ADMIN_ACCESS_CODE = 'QRX-27A79';
 
 const SelectProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -26,6 +37,9 @@ const SelectProfile: React.FC = () => {
     getProfileLimit 
   } = useUserProfiles();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAccessCodeDialogOpen, setIsAccessCodeDialogOpen] = useState(false);
+  const [selectedProfileForAccess, setSelectedProfileForAccess] = useState<string | null>(null);
+  const [accessCode, setAccessCode] = useState('');
   const [formData, setFormData] = useState({
     title: '' as ProfileTitle | '',
     name: ''
@@ -63,8 +77,32 @@ const SelectProfile: React.FC = () => {
   };
 
   const handleSelectProfile = async (profileId: string) => {
+    const profile = profiles.find(p => p.id === profileId);
+    
+    // Si c'est un profil Admin, demander le code d'accès
+    if (profile?.title === 'Admin') {
+      setSelectedProfileForAccess(profileId);
+      setIsAccessCodeDialogOpen(true);
+      return;
+    }
+    
+    // Pour les autres profils (Caissier, Comptable, Serveur), accès libre
     selectProfile(profileId);
     navigate('/select-outlet');
+  };
+
+  const handleAccessCodeSubmit = () => {
+    if (accessCode.trim().toUpperCase() === ADMIN_ACCESS_CODE) {
+      if (selectedProfileForAccess) {
+        selectProfile(selectedProfileForAccess);
+        navigate('/select-outlet');
+      }
+      setIsAccessCodeDialogOpen(false);
+      setAccessCode('');
+      setSelectedProfileForAccess(null);
+    } else {
+      toast.error('Code d\'accès incorrect');
+    }
   };
 
   if (loading) {
@@ -205,6 +243,48 @@ const SelectProfile: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Access Code Dialog for Admin Profile */}
+        <AlertDialog open={isAccessCodeDialogOpen} onOpenChange={setIsAccessCodeDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-primary" />
+                Code d'accès requis
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Le profil Admin nécessite un code d'accès pour garantir la sécurité. Veuillez entrer le code d'accès.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+              <Label htmlFor="access-code">Code d'accès</Label>
+              <Input
+                id="access-code"
+                type="password"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
+                placeholder="Entrez le code d'accès"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAccessCodeSubmit();
+                  }
+                }}
+                className="mt-2"
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => {
+                setAccessCode('');
+                setSelectedProfileForAccess(null);
+              }}>
+                Annuler
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleAccessCodeSubmit}>
+                Confirmer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </SubscriptionGuard>
   );
