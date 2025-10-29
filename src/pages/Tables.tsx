@@ -8,6 +8,7 @@ import { OpenSessionModal } from "@/components/tables/OpenSessionModal";
 import { TableSessionModal } from "@/components/tables/TableSessionModal";
 import { useTableSessions, TableSession } from "@/hooks/useTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 const Tables: React.FC = () => {
   const {
@@ -28,7 +29,7 @@ const Tables: React.FC = () => {
   // Generate table numbers (default to 120 tables)
   const tableNumbers = Array.from({ length: 120 }, (_, i) => String(i + 1).padStart(2, "0"));
 
-  // Écouter les mises à jour de session depuis le modal
+  // Écouter les mises à jour de session depuis le modal et en temps réel
   useEffect(() => {
     const handleSessionUpdate = () => {
       refetch();
@@ -42,8 +43,26 @@ const Tables: React.FC = () => {
     };
 
     window.addEventListener("session-updated", handleSessionUpdate);
+    
+    // Écouter les changements en temps réel sur les sessions (nouvelles commandes créant des sessions)
+    const channel = supabase
+      .channel('table-sessions-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'table_sessions'
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
     return () => {
       window.removeEventListener("session-updated", handleSessionUpdate);
+      supabase.removeChannel(channel);
     };
   }, [refetch, selectedSession, sessions]);
 
