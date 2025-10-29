@@ -25,8 +25,8 @@ const Tables: React.FC = () => {
   const [selectedSession, setSelectedSession] = useState<TableSession | null>(null);
   const [creatingSession, setCreatingSession] = useState(false);
 
-  // Generate table numbers (you can customize this based on your needs)
-  const tableNumbers = Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, "0"));
+  // Generate table numbers (default to 200 tables)
+  const tableNumbers = Array.from({ length: 200 }, (_, i) => String(i + 1).padStart(2, "0"));
 
   const handleTableClick = (tableNumber: string, session: TableSession | null) => {
     setSelectedTable(tableNumber);
