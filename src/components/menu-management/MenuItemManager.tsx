@@ -40,9 +40,20 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   
-  const { items, categories, menus, loading, refetch } = useMenus();
+  const { items, categories, menus, loading, refetch, fetchAllMenus } = useMenus();
   const { toggleAvailability, deleteMenuItem, shareMenuItems, addMenuItem } = useMenuItems();
   const { outlets } = useOutlets();
+  
+  const [allMenus, setAllMenus] = useState<Menu[]>([]);
+
+  // Charger tous les menus pour le transfert
+  useEffect(() => {
+    const loadAllMenus = async () => {
+      const menusData = await fetchAllMenus();
+      setAllMenus(menusData || []);
+    };
+    loadAllMenus();
+  }, [fetchAllMenus]);
 
   const itemsToShow = activeMenuId
     ? items.filter((it) => {
@@ -402,7 +413,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
         onClose={() => setTransferringItem(null)}
         onConfirm={handleTransferConfirm}
         itemName={transferringItem?.name || ''}
-        menus={menus}
+        menus={allMenus}
         outlets={outlets}
         currentMenuId={transferringItem ? (categories.find(c => c.id === transferringItem.category_id)?.menu_id || '') : ''}
         currentOutletId={transferringItem ? (menus.find(m => categories.find(c => c.id === transferringItem.category_id)?.menu_id === m.id)?.outlet_id || '') : ''}
@@ -413,7 +424,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
         onClose={() => setShowBulkTransfer(false)}
         onConfirm={handleBulkTransferConfirm}
         itemName={`${selectedItems.size} plat${selectedItems.size > 1 ? 's' : ''}`}
-        menus={menus}
+        menus={allMenus}
         outlets={outlets}
         currentMenuId={activeMenuId || menus[0]?.id || ''}
         currentOutletId={menus.find(m => m.id === activeMenuId)?.outlet_id || menus[0]?.outlet_id || ''}
