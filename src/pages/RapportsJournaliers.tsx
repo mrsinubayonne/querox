@@ -13,6 +13,7 @@ import { useDetailedReports } from '@/hooks/useDetailedReports';
 import { DailyReportStats } from '@/components/reports/DailyReportStats';
 import { DailyReportTable } from '@/components/reports/DailyReportTable';
 import { DetailedTransactionsTable } from '@/components/reports/DetailedTransactionsTable';
+import { InvoicePaidCelebration } from '@/components/InvoicePaidCelebration';
 import { DateRange } from 'react-day-picker';
 import { format, subDays, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -101,6 +102,7 @@ const RapportsJournaliers: React.FC = () => {
 
   return (
     <PageWithSidebar>
+      <InvoicePaidCelebration />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -272,6 +274,14 @@ const RapportsJournaliers: React.FC = () => {
           </>
         ) : (
           <>
+            {/* Detailed Transactions Table - Show for active period or selected closed period */}
+            {(currentPeriod || selectedPeriodId) && (
+              <DetailedTransactionsTable 
+                transactions={transactions} 
+                loading={detailedLoading} 
+              />
+            )}
+
             {/* Closed Periods Table */}
             <Card>
               <CardHeader>
@@ -357,14 +367,6 @@ const RapportsJournaliers: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-
-            {/* Detailed Transactions Table - Show for active period or selected closed period */}
-            {(currentPeriod || selectedPeriodId) && (
-              <DetailedTransactionsTable 
-                transactions={transactions} 
-                loading={detailedLoading} 
-              />
-            )}
           </>
         )}
       </div>

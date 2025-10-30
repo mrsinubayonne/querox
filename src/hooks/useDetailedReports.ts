@@ -107,11 +107,12 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
 
       const allTransactions: DetailedTransaction[] = [];
 
-      // Fetch orders - STRICTEMENT pour ce PDV
+      // Fetch orders - STRICTEMENT pour ce PDV et SEULEMENT les commandes delivered/completed
       let ordersQuery = supabase
         .from('orders')
         .select('*')
         .eq('user_id', user.id)
+        .in('status', ['delivered', 'completed'])
         .gte('created_at', startISO)
         .lte('created_at', endISO)
         .order('created_at', { ascending: false });
