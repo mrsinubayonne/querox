@@ -15,6 +15,8 @@ interface Transaction {
   description?: string;
   created_at: string;
   user_id: string;
+  outlet_id?: string;
+  outlet_name?: string;
 }
 
 export const useTransactions = () => {
@@ -33,25 +35,16 @@ export const useTransactions = () => {
     try {
       setLoading(true);
       
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      const outletId = profile?.selected_outlet_id;
-      if (!outletId) {
-        setTransactions([]);
-        setLoading(false);
-        return;
-      }
-      
+      // Fetch all transactions for the user
       const { data, error } = await supabase
         .from('transactions')
-        .select('*')
+        .select(`
+          *,
+          outlets (
+            name
+          )
+        `)
         .eq('user_id', user.id)
-        .eq('outlet_id', outletId)
         .order('date', { ascending: false });
 
       if (error) {
@@ -74,6 +67,8 @@ export const useTransactions = () => {
           description: transaction.description,
           created_at: transaction.created_at,
           user_id: transaction.user_id,
+          outlet_id: transaction.outlet_id,
+          outlet_name: transaction.outlets?.name || 'Non défini',
         }));
         setTransactions(transformedTransactions);
       }

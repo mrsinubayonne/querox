@@ -3,12 +3,17 @@ import ModernSidebar from '@/components/ModernSidebar';
 import { useToast } from '@/hooks/use-toast';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useInvoices } from '@/hooks/useInvoices';
+import { useOutlets } from '@/hooks/useOutlets';
 import AccountingHeader from '@/components/accounting/AccountingHeader';
 import AccountingStats from '@/components/accounting/AccountingStats';
 import AccountingTabsContainer from '@/components/accounting/AccountingTabsContainer';
 import AccountingPeriodsTab from '@/components/accounting/AccountingPeriodsTab';
 import NewTransactionModal from '@/components/accounting/NewTransactionModal';
 import ExportModal from '@/components/accounting/ExportModal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 
 const Comptabilite = () => {
@@ -17,10 +22,12 @@ const Comptabilite = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewTransactionModal, setShowNewTransactionModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedOutletFilter, setSelectedOutletFilter] = useState<string>('all');
   const { toast } = useToast();
   
   const { transactions, loading, createTransaction, refetch: refetchTransactions } = useTransactions();
   const { invoices, loading: invoicesLoading, refetch: refetchInvoices } = useInvoices();
+  const { outlets } = useOutlets();
 
   // Rafraîchir les données régulièrement pour voir les factures payées
   useEffect(() => {
@@ -32,12 +39,20 @@ const Comptabilite = () => {
     return () => clearInterval(interval);
   }, [refetchInvoices, refetchTransactions]);
 
+  // Filtrer les transactions par outlet
+  const filteredByOutlet = useMemo(() => {
+    if (selectedOutletFilter === 'all') {
+      return transactions;
+    }
+    return transactions.filter(t => t.outlet_id === selectedOutletFilter);
+  }, [transactions, selectedOutletFilter]);
+
   const stats = useMemo(() => {
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     
-    // Stats du mois actuel - uniquement les transactions
-    const currentMonthStats = transactions.reduce((acc, transaction) => {
+    // Stats du mois actuel - uniquement les transactions filtrées
+    const currentMonthStats = filteredByOutlet.reduce((acc, transaction) => {
       const transactionDate = new Date(transaction.date);
       if (transactionDate.getMonth() === now.getMonth() && 
           transactionDate.getFullYear() === now.getFullYear() &&
@@ -52,7 +67,7 @@ const Comptabilite = () => {
     }, { recettes: 0, depenses: 0 });
 
     // Stats du mois dernier pour comparaison
-    const lastMonthStats = transactions.reduce((acc, transaction) => {
+    const lastMonthStats = filteredByOutlet.reduce((acc, transaction) => {
       const transactionDate = new Date(transaction.date);
       if (transactionDate.getMonth() === lastMonth.getMonth() && 
           transactionDate.getFullYear() === lastMonth.getFullYear() &&
@@ -121,7 +136,47 @@ const Comptabilite = () => {
         icon: "📊"
       }
     ];
-  }, [transactions]);
+  }, [filteredByOutlet]);
+
+  const handleDownloadByOutlet = () => {
+    const dataByOutlet = outlets.map(outlet => {
+      const outletTransactions = transactions.filter(t => t.outlet_id === outlet.id);
+      const recettes = outletTransactions
+        .filter(t => t.type === 'income' && t.status === 'completed')
+        .reduce((sum, t) => sum + t.amount, 0);
+      const depenses = outletTransactions
+        .filter(t => t.type === 'expense' && t.status === 'completed')
+        .reduce((sum, t) => sum + t.amount, 0);
+      const benefice = recettes - depenses;
+      
+      return {
+        'Point de vente': outlet.name,
+        'Recettes': recettes.toFixed(2),
+        'Dépenses': depenses.toFixed(2),
+        'Bénéfice': benefice.toFixed(2),
+        'Nombre de transactions': outletTransactions.length
+      };
+    });
+
+    // Ajouter le total
+    const total = {
+      'Point de vente': 'TOTAL',
+      'Recettes': dataByOutlet.reduce((sum, d) => sum + Number(d.Recettes), 0).toFixed(2),
+      'Dépenses': dataByOutlet.reduce((sum, d) => sum + Number(d.Dépenses), 0).toFixed(2),
+      'Bénéfice': dataByOutlet.reduce((sum, d) => sum + Number(d.Bénéfice), 0).toFixed(2),
+      'Nombre de transactions': dataByOutlet.reduce((sum, d) => sum + d['Nombre de transactions'], 0)
+    };
+
+    const worksheet = XLSX.utils.json_to_sheet([...dataByOutlet, total]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Totaux par PDV');
+    XLSX.writeFile(workbook, `comptabilite-pdv-${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast({
+      title: "Exportation réussie",
+      description: "Les données par PDV ont été exportées en Excel",
+    });
+  };
 
   const handleExport = (format: string, period: string) => {
     const formatMap = {
@@ -273,6 +328,30 @@ const Comptabilite = () => {
             onExport={() => setShowExportModal(true)}
             onNewTransaction={() => setShowNewTransactionModal(true)}
           />
+
+          {/* Filtre par PDV et Total */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-white p-4 rounded-lg border">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Filtrer par point de vente</label>
+              <Select value={selectedOutletFilter} onValueChange={setSelectedOutletFilter}>
+                <SelectTrigger className="w-full sm:w-64">
+                  <SelectValue placeholder="Tous les points de vente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les points de vente</SelectItem>
+                  {outlets.map(outlet => (
+                    <SelectItem key={outlet.id} value={outlet.id}>
+                      {outlet.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleDownloadByOutlet} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Exporter totaux par PDV
+            </Button>
+          </div>
 
           <AccountingStats
             stats={stats}
