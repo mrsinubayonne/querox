@@ -9,8 +9,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useDailyReports } from '@/hooks/useDailyReports';
 import { useBusinessPeriods } from '@/hooks/useBusinessPeriods';
+import { useDetailedReports } from '@/hooks/useDetailedReports';
 import { DailyReportStats } from '@/components/reports/DailyReportStats';
 import { DailyReportTable } from '@/components/reports/DailyReportTable';
+import { DetailedTransactionsTable } from '@/components/reports/DetailedTransactionsTable';
 import { DateRange } from 'react-day-picker';
 import { format, subDays, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -20,6 +22,7 @@ const RapportsJournaliers: React.FC = () => {
   const { user } = useAuth();
   const { outlets, selectedOutletId } = useOutlets();
   const [viewMode, setViewMode] = useState<'periods' | 'calendar'>('periods');
+  const [selectedPeriodId, setSelectedPeriodId] = useState<string | undefined>();
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
@@ -32,6 +35,11 @@ const RapportsJournaliers: React.FC = () => {
 
   const { currentPeriod, periods, loading: periodsLoading, closePeriod, startNewPeriod } = useBusinessPeriods({
     outletId: selectedOutletId || undefined,
+  });
+
+  const { transactions, loading: detailedLoading, downloadReport: downloadDetailedReport } = useDetailedReports({
+    outletId: selectedOutletId || undefined,
+    periodId: selectedPeriodId,
   });
 
   const { reports, loading, downloadReport } = useDailyReports({
@@ -284,7 +292,15 @@ const RapportsJournaliers: React.FC = () => {
                 ) : (
                   <div className="space-y-4">
                     {periods.map((period) => (
-                      <Card key={period.id} className="border-l-4 border-l-green-500">
+                      <Card 
+                        key={period.id} 
+                        className={`border-l-4 cursor-pointer transition-all ${
+                          selectedPeriodId === period.id 
+                            ? 'border-l-blue-500 bg-blue-50' 
+                            : 'border-l-green-500 hover:bg-gray-50'
+                        }`}
+                        onClick={() => setSelectedPeriodId(period.id)}
+                      >
                         <CardHeader>
                           <div className="flex items-center justify-between">
                             <div>
@@ -298,6 +314,19 @@ const RapportsJournaliers: React.FC = () => {
                                 {outlets?.find(o => o.id === period.outlet_id)?.name || 'Tous les points de vente'}
                               </CardDescription>
                             </div>
+                            {selectedPeriodId === period.id && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  downloadDetailedReport('pdf');
+                                }}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                PDF
+                              </Button>
+                            )}
                           </div>
                         </CardHeader>
                         <CardContent>
@@ -328,6 +357,14 @@ const RapportsJournaliers: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Detailed Transactions Table - Only show when a period is selected */}
+            {selectedPeriodId && (
+              <DetailedTransactionsTable 
+                transactions={transactions} 
+                loading={detailedLoading} 
+              />
+            )}
           </>
         )}
       </div>

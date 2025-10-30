@@ -46,6 +46,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         .not('ended_at', 'is', null)
         .order('ended_at', { ascending: false });
 
+      // IMPORTANT: Toujours filtrer par outlet_id si spécifié
       if (outletId) {
         query = query.eq('outlet_id', outletId);
       }
@@ -72,6 +73,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         .order('started_at', { ascending: false })
         .limit(1);
 
+      // IMPORTANT: Filtrer strictement par outlet_id
       if (outletId) {
         query = query.eq('outlet_id', outletId);
       }
@@ -147,7 +149,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       const startISO = targetPeriod.started_at;
       const endISO = new Date().toISOString();
 
-      // Fetch orders for this period
+      // Fetch orders for this period - STRICTEMENT pour ce PDV uniquement
       let ordersQuery = supabase
         .from('orders')
         .select('id, total_amount')
@@ -155,6 +157,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         .gte('created_at', startISO)
         .lte('created_at', endISO);
 
+      // CRITIQUE: Toujours filtrer par outlet si présent
       if (targetPeriod.outlet_id) {
         ordersQuery = ordersQuery.eq('outlet_id', targetPeriod.outlet_id);
       }
@@ -162,7 +165,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       const { data: orders, error: ordersError } = await ordersQuery;
       if (ordersError) throw ordersError;
 
-      // Fetch invoices for this period
+      // Fetch invoices for this period - STRICTEMENT pour ce PDV uniquement
       let invoicesQuery = supabase
         .from('invoices')
         .select('id, total_amount, status')
@@ -170,6 +173,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         .gte('created_at', startISO)
         .lte('created_at', endISO);
 
+      // CRITIQUE: Toujours filtrer par outlet si présent
       if (targetPeriod.outlet_id) {
         invoicesQuery = invoicesQuery.eq('outlet_id', targetPeriod.outlet_id);
       }
