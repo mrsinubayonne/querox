@@ -34,14 +34,23 @@ export const useInventory = () => {
     try {
       setLoading(true);
       
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
+      // Get selected outlet from localStorage
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId = null;
       
-      const outletId = profile?.selected_outlet_id;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id;
+      }
+      
+      if (!outletId) {
+        outletId = localStorage.getItem('selectedOutletId');
+      }
+      
       if (!outletId) {
         setItems([]);
         setLoading(false);
@@ -86,14 +95,23 @@ export const useInventory = () => {
     }
 
     try {
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
+      // Get selected outlet from localStorage
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId = null;
       
-      const outletId = profile?.selected_outlet_id;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id;
+      }
+      
+      if (!outletId) {
+        outletId = localStorage.getItem('selectedOutletId');
+      }
+      
       if (!outletId) {
         toast({
           title: "Erreur",

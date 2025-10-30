@@ -72,14 +72,22 @@ export const useMenus = () => {
 
       console.log('🔄 Fetching menus for user:', user.id);
 
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
+      // Get selected outlet from localStorage
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId = null;
       
-      const outletId = profile?.selected_outlet_id;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id;
+      }
+      
+      if (!outletId) {
+        outletId = localStorage.getItem('selectedOutletId');
+      }
 
       let query = supabase
         .from('menus')
@@ -197,14 +205,23 @@ export const useMenus = () => {
     try {
       console.log('🔧 Creating default menu for user:', user.id);
 
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
+      // Get selected outlet from localStorage
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId = null;
       
-      const outletId = profile?.selected_outlet_id;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id;
+      }
+      
+      if (!outletId) {
+        outletId = localStorage.getItem('selectedOutletId');
+      }
+      
       if (!outletId) {
         toast({
           title: "Erreur",

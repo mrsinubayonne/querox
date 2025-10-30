@@ -77,14 +77,23 @@ export const useOrders = () => {
     try {
       setLoading(true);
       
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
+      // Get selected outlet from localStorage
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId = null;
       
-      const outletId = profile?.selected_outlet_id;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id;
+      }
+      
+      if (!outletId) {
+        outletId = localStorage.getItem('selectedOutletId');
+      }
+      
       if (!outletId) {
         setOrders([]);
         setLoading(false);
