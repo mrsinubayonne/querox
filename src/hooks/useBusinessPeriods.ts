@@ -35,6 +35,39 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     }
   }, [user, outletId]);
 
+  // Écouter les changements en temps réel sur les périodes
+  useEffect(() => {
+    if (!user || !outletId) return;
+
+    const channel = supabase
+      .channel(`business-periods-${outletId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'business_periods',
+          filter: `user_id=eq.${user.id},outlet_id=eq.${outletId}`
+        },
+        (payload) => {
+          console.log('🔄 Changement détecté sur business_periods:', payload);
+          
+          // Rafraîchir les données
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            fetchCurrentPeriod();
+            fetchPeriods();
+          } else if (payload.eventType === 'DELETE') {
+            fetchPeriods();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, outletId]);
+
   const fetchPeriods = async () => {
     if (!user) return;
 

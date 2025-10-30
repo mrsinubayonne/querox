@@ -213,6 +213,25 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
     return (
       <>
         <div className="space-y-6">
+          {/* Barre de recherche proéminente */}
+          <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 rounded-lg border border-primary/20">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
+              <Input
+                type="search"
+                placeholder="🔍 Rechercher un plat par nom, description ou catégorie..."
+                className="pl-12 h-12 text-base bg-white shadow-sm border-primary/30 focus:border-primary"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            {searchTerm.trim() !== '' && (
+              <p className="text-sm text-muted-foreground mt-2 ml-1">
+                {filteredItems.length} résultat{filteredItems.length > 1 ? 's' : ''} trouvé{filteredItems.length > 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+
           <div className="flex justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <h2 className="text-2xl font-bold">Mes Plats ({itemsToShow.length})</h2>
@@ -238,17 +257,6 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                 Ajouter un plat
               </Button>
             </div>
-          </div>
-
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Rechercher un plat par nom, description ou catégorie..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
           </div>
 
           {filteredItems.length === 0 && searchTerm.trim() !== '' && (

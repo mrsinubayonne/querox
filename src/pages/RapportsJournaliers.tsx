@@ -10,6 +10,7 @@ import { useOutlets } from '@/hooks/useOutlets';
 import { useDailyReports } from '@/hooks/useDailyReports';
 import { useBusinessPeriods } from '@/hooks/useBusinessPeriods';
 import { useDetailedReports } from '@/hooks/useDetailedReports';
+import { useAutoStartPeriod } from '@/hooks/useAutoStartPeriod';
 import { DailyReportStats } from '@/components/reports/DailyReportStats';
 import { DailyReportTable } from '@/components/reports/DailyReportTable';
 import { DetailedTransactionsTable } from '@/components/reports/DetailedTransactionsTable';
@@ -37,6 +38,9 @@ const RapportsJournaliers: React.FC = () => {
   const { currentPeriod, periods, loading: periodsLoading, closePeriod, startNewPeriod } = useBusinessPeriods({
     outletId: selectedOutletId || undefined,
   });
+
+  // Hook pour démarrer automatiquement une période lors d'une transaction payée
+  useAutoStartPeriod(selectedOutletId || undefined);
 
   const { transactions, loading: detailedLoading, downloadReport: downloadDetailedReport } = useDetailedReports({
     outletId: selectedOutletId || undefined,
