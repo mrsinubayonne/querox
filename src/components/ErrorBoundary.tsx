@@ -9,15 +9,18 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  showDetails: boolean;
 }
 
 class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
+    error: undefined,
+    showDetails: false,
   };
 
   public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, showDetails: false };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -39,6 +42,9 @@ class ErrorBoundary extends Component<Props, State> {
               <p className="text-muted-foreground">
                 Désolé, quelque chose s'est mal passé. Veuillez rafraîchir la page ou contacter le support si le problème persiste.
               </p>
+              {this.state.error?.message && (
+                <p className="text-xs text-muted-foreground/80 break-words mt-2">Détail: {this.state.error.message}</p>
+              )}
             </div>
             <div className="flex gap-4 justify-center">
               <Button
