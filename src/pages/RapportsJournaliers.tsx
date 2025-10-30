@@ -81,9 +81,6 @@ const RapportsJournaliers: React.FC = () => {
 
   const handleClosePeriod = async () => {
     await closePeriod();
-    if (!currentPeriod && periods.length === 0) {
-      await startNewPeriod();
-    }
   };
 
   // Calculate current period stats (live)

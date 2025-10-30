@@ -61,7 +61,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     }
   };
 
-  // Initialize period: fetch active period or create one automatically
+  // Initialize period: fetch active period only (no auto-creation)
   const initializePeriod = async () => {
     if (!user || !outletId) return;
 
@@ -85,8 +85,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         // Store period ID in localStorage for persistence
         localStorage.setItem(`active_period_${outletId}`, activePeriod.id);
       } else {
-        // No active period found, create one automatically
-        await startNewPeriod();
+        setCurrentPeriod(null);
       }
     } catch (error) {
       console.error('Error initializing period:', error);
@@ -251,9 +250,6 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
 
       await fetchPeriods();
       toast.success('Journée bouclée avec succès');
-      
-      // Automatically start a new period for continuity
-      await startNewPeriod();
     } catch (error) {
       console.error('Error closing period:', error);
       toast.error('Erreur lors du bouclage de la journée');
