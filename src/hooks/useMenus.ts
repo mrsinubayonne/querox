@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useOutlets } from '@/hooks/useOutlets';
 
 export interface Menu {
   id: string;
@@ -50,6 +51,7 @@ export const useMenus = () => {
   
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { selectedOutletId } = useOutlets();
   const fetchingRef = useRef(false);
 
   const navigate = useNavigate();
@@ -72,25 +74,8 @@ export const useMenus = () => {
 
       console.log('🔄 Fetching menus for user:', user.id);
 
-      // Get selected outlet from localStorage
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId = null;
-      
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = userProfile?.selected_outlet_id;
-      }
-      
-      if (!outletId) {
-        outletId = localStorage.getItem('selectedOutletId');
-      }
-
       // Filter by outlet - strict filtering
-      if (!outletId) {
+      if (!selectedOutletId) {
         console.log('⚠️ No outlet selected, showing no menus');
         setMenus([]);
         setCategories([]);
@@ -99,11 +84,13 @@ export const useMenus = () => {
         return;
       }
 
+      console.log('📍 Loading menus for outlet:', selectedOutletId);
+
       let query = supabase
         .from('menus')
         .select('*')
         .eq('user_id', user.id)
-        .eq('outlet_id', outletId);
+        .eq('outlet_id', selectedOutletId);
 
       const { data: menusData, error: menusError } = await query
         .order('created_at', { ascending: true });
@@ -203,7 +190,7 @@ export const useMenus = () => {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [user?.id, toast, signOut, navigate]);
+  }, [user?.id, selectedOutletId, toast, signOut, navigate]);
 
   const createDefaultMenu = useCallback(async () => {
     if (!user) return null;
@@ -211,24 +198,7 @@ export const useMenus = () => {
     try {
       console.log('🔧 Creating default menu for user:', user.id);
 
-      // Get selected outlet from localStorage
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId = null;
-      
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = userProfile?.selected_outlet_id;
-      }
-      
-      if (!outletId) {
-        outletId = localStorage.getItem('selectedOutletId');
-      }
-      
-      if (!outletId) {
+      if (!selectedOutletId) {
         toast({
           title: "Erreur",
           description: "Aucun point de vente sélectionné",
@@ -243,7 +213,7 @@ export const useMenus = () => {
           name: 'Menu Principal',
           description: 'Votre menu principal',
           user_id: user.id,
-          outlet_id: outletId,
+          outlet_id: selectedOutletId,
           is_active: true
         })
         .select()
@@ -298,7 +268,7 @@ export const useMenus = () => {
       });
       return null;
     }
-  }, [user?.id, toast, fetchMenus]);
+  }, [user?.id, selectedOutletId, toast, fetchMenus]);
 
   const refetch = useCallback(() => {
     return fetchMenus();
@@ -347,7 +317,7 @@ export const useMenus = () => {
 
   useEffect(() => {
     if (user) fetchMenusRef.current();
-  }, [user?.id]);
+  }, [user?.id, selectedOutletId]);
 
   const fetchAllMenus = useCallback(async (): Promise<Menu[]> => {
     if (!user) return [];
