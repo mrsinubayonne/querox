@@ -55,7 +55,7 @@ const AccountingPeriodsTab: React.FC<AccountingPeriodsTabProps> = ({ transaction
   const periodStats = useMemo(() => {
     const { startDate, endDate } = getPeriodDates(selectedPeriod);
     
-    // Calculer les stats des transactions
+    // Calculer les stats des transactions uniquement
     const periodTransactions = transactions.filter(t => {
       const tDate = new Date(t.date);
       return tDate >= startDate && tDate <= endDate && t.status === 'completed';
@@ -69,15 +69,8 @@ const AccountingPeriodsTab: React.FC<AccountingPeriodsTabProps> = ({ transaction
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Ajouter les factures payées
-    const paidInvoices = invoices.filter(inv => {
-      if (inv.status !== 'paid' || !inv.paid_date) return false;
-      const paidDate = new Date(inv.paid_date);
-      return paidDate >= startDate && paidDate <= endDate;
-    });
-
-    const recettesFactures = paidInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
-    const totalRecettes = recettes + recettesFactures;
+    // Note: Les recettes incluent déjà les factures payées converties en transactions
+    const totalRecettes = recettes;
     const benefice = totalRecettes - depenses;
     const marge = totalRecettes > 0 ? (benefice / totalRecettes) * 100 : 0;
 
@@ -87,10 +80,10 @@ const AccountingPeriodsTab: React.FC<AccountingPeriodsTabProps> = ({ transaction
       benefice,
       marge,
       transactionCount: periodTransactions.length,
-      invoiceCount: paidInvoices.length,
-      paidInvoices
+      invoiceCount: 0,
+      paidInvoices: []
     };
-  }, [selectedPeriod, transactions, invoices]);
+  }, [selectedPeriod, transactions]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';

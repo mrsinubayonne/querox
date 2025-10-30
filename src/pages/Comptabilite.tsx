@@ -36,7 +36,7 @@ const Comptabilite = () => {
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     
-    // Stats du mois actuel
+    // Stats du mois actuel - uniquement les transactions
     const currentMonthStats = transactions.reduce((acc, transaction) => {
       const transactionDate = new Date(transaction.date);
       if (transactionDate.getMonth() === now.getMonth() && 
@@ -66,16 +66,8 @@ const Comptabilite = () => {
       return acc;
     }, { recettes: 0, depenses: 0 });
 
-    // Ajouter les factures payées au mois actuel
-    const paidInvoicesThisMonth = invoices.filter(inv => {
-      if (inv.status !== 'paid' || !inv.paid_date) return false;
-      const paidDate = new Date(inv.paid_date);
-      return paidDate.getMonth() === now.getMonth() && paidDate.getFullYear() === now.getFullYear();
-    });
-
-    const recettesFactures = paidInvoicesThisMonth.reduce((sum, inv) => sum + inv.total_amount, 0);
-    const totalRecettes = currentMonthStats.recettes + recettesFactures;
-
+    // Note: Les recettes des transactions incluent déjà les factures payées converties en transactions
+    const totalRecettes = currentMonthStats.recettes;
     const benefice = totalRecettes - currentMonthStats.depenses;
     const marge = totalRecettes > 0 ? (benefice / totalRecettes) * 100 : 0;
 
@@ -129,7 +121,7 @@ const Comptabilite = () => {
         icon: "📊"
       }
     ];
-  }, [transactions, invoices]);
+  }, [transactions]);
 
   const handleExport = (format: string, period: string) => {
     const formatMap = {

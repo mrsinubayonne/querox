@@ -2,13 +2,20 @@ import React, { useState, useEffect } from "react";
 import PageWithSidebar from "@/components/PageWithSidebar";
 import SubscriptionGuard from "@/components/SubscriptionGuard";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Plus } from "lucide-react";
+import { RefreshCw, Plus, UserPlus } from "lucide-react";
 import { TableGrid } from "@/components/tables/TableGrid";
 import { CreateSessionWithOrderModal } from "@/components/tables/CreateSessionWithOrderModal";
+import { AddOrderFromCustomerModal } from "@/components/tables/AddOrderFromCustomerModal";
 import { TableSessionModal } from "@/components/tables/TableSessionModal";
 import { useTableSessions, TableSession } from "@/hooks/useTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Tables: React.FC = () => {
   const {
@@ -21,6 +28,7 @@ const Tables: React.FC = () => {
   } = useTableSessions();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAddOrderModal, setShowAddOrderModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<TableSession | null>(null);
@@ -110,9 +118,29 @@ const Tables: React.FC = () => {
               </p>
             </div>
 
-            <Button onClick={refetch} variant="outline" size="icon" disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={refetch} variant="outline" size="icon" disabled={loading}>
+                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button disabled={loading}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nouvelle commande
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => {
+                    setSelectedTable(null);
+                    setShowAddOrderModal(true);
+                  }}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Client existant
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {/* Stats */}
@@ -178,6 +206,16 @@ const Tables: React.FC = () => {
               tableNumber={selectedTable}
             />
           )}
+
+          <AddOrderFromCustomerModal
+            isOpen={showAddOrderModal}
+            onClose={() => {
+              setShowAddOrderModal(false);
+              setSelectedTable(null);
+            }}
+            onSuccess={handleCreateSuccess}
+            tableNumber={selectedTable || "01"}
+          />
 
           <TableSessionModal
             isOpen={showSessionModal}
