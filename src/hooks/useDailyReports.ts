@@ -68,6 +68,10 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
       const outletNameById = new Map<string, string>();
       (outlets || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
+      const timeLabel = timeRange && (timeRange.start !== '00:00' || timeRange.end !== '23:59') 
+        ? `${timeRange.start}-${timeRange.end}`
+        : undefined;
+
       // Orders
       let ordersQuery = supabase
         .from('orders')
@@ -104,15 +108,12 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
       (orders || []).forEach((order: any) => {
         const orderDate = new Date(order.created_at);
         const dateKey = format(orderDate, 'yyyy-MM-dd');
-        const timeKey = timeRange ? format(orderDate, 'HH:mm') : undefined;
-        const outletKey = timeRange 
-          ? `${dateKey}-${timeKey}-${order.outlet_id}`
-          : `${dateKey}-${order.outlet_id}`;
+        const outletKey = `${dateKey}-${order.outlet_id}`;
 
         if (!reportsMap.has(outletKey)) {
           reportsMap.set(outletKey, {
             date: dateKey,
-            time: timeKey,
+            time: timeRange ? `${timeRange.start}-${timeRange.end}` : undefined,
             outlet_id: order.outlet_id,
             outlet_name: outletNameById.get(order.outlet_id) || 'Non défini',
             total_orders: 0,
@@ -133,15 +134,12 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
       (invoices || []).forEach((invoice: any) => {
         const invoiceDate = new Date(invoice.created_at);
         const dateKey = format(invoiceDate, 'yyyy-MM-dd');
-        const timeKey = timeRange ? format(invoiceDate, 'HH:mm') : undefined;
-        const outletKey = timeRange 
-          ? `${dateKey}-${timeKey}-${invoice.outlet_id}`
-          : `${dateKey}-${invoice.outlet_id}`;
+        const outletKey = `${dateKey}-${invoice.outlet_id}`;
 
         if (!reportsMap.has(outletKey)) {
           reportsMap.set(outletKey, {
             date: dateKey,
-            time: timeKey,
+            time: timeRange ? `${timeRange.start}-${timeRange.end}` : undefined,
             outlet_id: invoice.outlet_id,
             outlet_name: outletNameById.get(invoice.outlet_id) || 'Non défini',
             total_orders: 0,
@@ -198,11 +196,11 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
             Heure: report.time || '-',
             'Point de vente': report.outlet_name,
             'Commandes': report.total_orders,
-            'Chiffre d\'affaires': `${report.total_revenue.toFixed(2)} CFA`,
+            'CA (CFA)': Number(report.total_revenue.toFixed(2)),
             'Factures': report.total_invoices,
-            'Factures payées': report.paid_invoices,
-            'Factures impayées': report.unpaid_invoices,
-            'Panier moyen': `${report.average_order_value.toFixed(2)} CFA`,
+            'Payées': report.paid_invoices,
+            'Impayées': report.unpaid_invoices,
+            'Panier moyen (CFA)': Number(report.average_order_value.toFixed(2)),
           }))
         );
 
@@ -223,7 +221,14 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         
         // Add date
         doc.setFontSize(11);
-        doc.text(`Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm')}`, 14, 30);
+        doc.text(`Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm')}`, 14, 28);
+
+        // Add selected period and time
+        const periodText = `Période: ${dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : ''} - ${dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : ''}`;
+        doc.text(periodText, 14, 36);
+        if (timeRange) {
+          doc.text(`Heures: ${timeRange.start} - ${timeRange.end}`, 14, 42);
+        }
 
         // Prepare table data
         const tableData = reports.map((report) => [
@@ -262,7 +267,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         autoTable(doc, {
           head: [['Date', 'Heure', 'Point de vente', 'Commandes', 'CA', 'Factures', 'Payées', 'Impayées', 'Panier moyen']],
           body: tableData,
-          startY: 40,
+          startY: timeRange ? 48 : 44,
           theme: 'grid',
           headStyles: { fillColor: [59, 130, 246] },
           styles: { fontSize: 8 },
