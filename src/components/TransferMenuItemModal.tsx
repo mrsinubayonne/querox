@@ -17,18 +17,19 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 
-interface Outlet {
+interface Menu {
   id: string;
   name: string;
+  outlet_id?: string;
 }
 
 interface TransferMenuItemModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (outletIds: string[]) => Promise<void>;
+  onConfirm: (menuIds: string[]) => Promise<void>;
   itemName: string;
-  outlets: Outlet[];
-  currentOutletId: string;
+  menus: Menu[];
+  currentMenuId: string;
   isBulkTransfer?: boolean;
 }
 
@@ -37,36 +38,36 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
   onClose,
   onConfirm,
   itemName,
-  outlets,
-  currentOutletId,
+  menus,
+  currentMenuId,
   isBulkTransfer = false,
 }) => {
-  const [selectedOutletIds, setSelectedOutletIds] = useState<Set<string>>(new Set());
+  const [selectedMenuIds, setSelectedMenuIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
 
-  const availableOutlets = useMemo(() => {
-    return outlets.filter(outlet => outlet.id !== currentOutletId);
-  }, [outlets, currentOutletId]);
+  const availableMenus = useMemo(() => {
+    return menus.filter(menu => menu.id !== currentMenuId);
+  }, [menus, currentMenuId]);
 
-  const toggleOutlet = (outletId: string) => {
-    setSelectedOutletIds(prev => {
+  const toggleMenu = (menuId: string) => {
+    setSelectedMenuIds(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(outletId)) {
-        newSet.delete(outletId);
+      if (newSet.has(menuId)) {
+        newSet.delete(menuId);
       } else {
-        newSet.add(outletId);
+        newSet.add(menuId);
       }
       return newSet;
     });
   };
 
   const handleConfirm = async () => {
-    if (selectedOutletIds.size === 0) return;
+    if (selectedMenuIds.size === 0) return;
     
     setIsLoading(true);
     try {
-      await onConfirm(Array.from(selectedOutletIds));
-      setSelectedOutletIds(new Set());
+      await onConfirm(Array.from(selectedMenuIds));
+      setSelectedMenuIds(new Set());
       onClose();
     } finally {
       setIsLoading(false);
@@ -74,7 +75,7 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
   };
 
   const handleClose = () => {
-    setSelectedOutletIds(new Set());
+    setSelectedMenuIds(new Set());
     onClose();
   };
 
@@ -85,8 +86,8 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
           <DialogTitle>Partager {isBulkTransfer ? 'les plats' : 'le plat'}</DialogTitle>
           <DialogDescription>
             {isBulkTransfer 
-              ? "Copier les plats sélectionnés dans les mêmes catégories des autres points de vente"
-              : `Copier "${itemName}" dans la même catégorie des autres points de vente`
+              ? "Copier les plats sélectionnés vers les menus de votre choix"
+              : `Copier "${itemName}" vers les menus de votre choix`
             }
           </DialogDescription>
         </DialogHeader>
@@ -94,33 +95,33 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
         <div className="space-y-4 py-4">
           <div>
             <Label className="text-sm font-medium mb-3 block">
-              Sélectionner les points de vente
+              Sélectionner les menus de destination
             </Label>
             <div className="space-y-2 max-h-[300px] overflow-y-auto">
-              {availableOutlets.length === 0 ? (
+              {availableMenus.length === 0 ? (
                 <div className="p-4 text-sm text-muted-foreground text-center">
-                  Aucun autre point de vente disponible
+                  Aucun autre menu disponible
                 </div>
               ) : (
-                availableOutlets.map((outlet) => (
+                availableMenus.map((menu) => (
                   <label
-                    key={outlet.id}
+                    key={menu.id}
                     className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors"
                   >
                     <input
                       type="checkbox"
-                      checked={selectedOutletIds.has(outlet.id)}
-                      onChange={() => toggleOutlet(outlet.id)}
+                      checked={selectedMenuIds.has(menu.id)}
+                      onChange={() => toggleMenu(menu.id)}
                       className="w-4 h-4 rounded border-gray-300"
                     />
-                    <span className="text-sm font-medium">{outlet.name}</span>
+                    <span className="text-sm font-medium">{menu.name}</span>
                   </label>
                 ))
               )}
             </div>
-            {selectedOutletIds.size > 0 && (
+            {selectedMenuIds.size > 0 && (
               <p className="text-xs text-muted-foreground mt-2">
-                {selectedOutletIds.size} point{selectedOutletIds.size > 1 ? 's' : ''} de vente sélectionné{selectedOutletIds.size > 1 ? 's' : ''}
+                {selectedMenuIds.size} menu{selectedMenuIds.size > 1 ? 's' : ''} sélectionné{selectedMenuIds.size > 1 ? 's' : ''}
               </p>
             )}
           </div>
@@ -132,7 +133,7 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
           </Button>
           <Button 
             onClick={handleConfirm} 
-            disabled={selectedOutletIds.size === 0 || isLoading}
+            disabled={selectedMenuIds.size === 0 || isLoading}
           >
             {isLoading ? 'Partage...' : 'Partager'}
           </Button>

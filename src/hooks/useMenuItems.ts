@@ -258,7 +258,7 @@ export const useMenuItems = () => {
     return await updateMenuItem(id, { is_available: isAvailable });
   }, [updateMenuItem]);
 
-  const shareMenuItems = useCallback(async (itemIds: string[], targetOutletIds: string[]): Promise<boolean> => {
+  const shareMenuItems = useCallback(async (itemIds: string[], targetMenuIds: string[]): Promise<boolean> => {
     if (!user) {
       toast({
         title: "Erreur",
@@ -270,9 +270,9 @@ export const useMenuItems = () => {
 
     setLoading(true);
     try {
-      console.log('🔄 Sharing menu items:', itemIds, 'to outlets:', targetOutletIds);
+      console.log('🔄 Sharing menu items:', itemIds, 'to menus:', targetMenuIds);
 
-      // Récupérer les données complètes des items à partager avec leurs catégories et menus
+      // Récupérer les données complètes des items à partager
       const { data: items, error: itemsError } = await supabase
         .from('menu_items')
         .select(`
@@ -282,15 +282,7 @@ export const useMenuItems = () => {
             name,
             description,
             order_index,
-            menus!inner(
-              id,
-              name,
-              description,
-              logo_url,
-              header_image_url,
-              outlet_id,
-              user_id
-            )
+            menus!inner(user_id)
           )
         `)
         .in('id', itemIds)
@@ -306,76 +298,34 @@ export const useMenuItems = () => {
         return false;
       }
 
-      // Récupérer tous les menus et catégories des outlets de destination
-      const { data: existingMenus, error: menusError } = await supabase
+      // Récupérer les menus de destination avec leurs catégories
+      const { data: targetMenus, error: menusError } = await supabase
         .from('menus')
         .select(`
           id,
           name,
-          outlet_id,
-          created_at,
-          is_active,
           menu_categories(id, name)
         `)
-        .in('outlet_id', targetOutletIds)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .in('id', targetMenuIds)
+        .eq('user_id', user.id);
 
-      if (menusError) {
+      if (menusError || !targetMenus || targetMenus.length === 0) {
         console.error('Target menus fetch error:', menusError);
         toast({
           title: "Erreur",
-          description: "Impossible de récupérer les menus de destination",
+          description: "Menus de destination non trouvés",
           variant: "destructive",
         });
         return false;
       }
 
-      // Créer les nouveaux items (copie vers chaque outlet)
       const itemsToInsert = [];
       
       for (const item of items) {
         const sourceCategory = item.menu_categories;
-        const sourceMenu = sourceCategory.menus;
         
-        // Pour chaque outlet de destination
-        for (const outletId of targetOutletIds) {
-          // Trouver ou créer le menu dans l'outlet de destination
-          const outletMenus = (existingMenus || []).filter(m => m.outlet_id === outletId);
-          let targetMenu = outletMenus.find(
-            m => m.name === sourceMenu.name
-          ) || outletMenus[0];
-
-          // Si le menu n'existe pas, le créer
-          if (!targetMenu) {
-            console.log(`📋 Création du menu "${sourceMenu.name}" pour l'outlet ${outletId}`);
-            const { data: newMenu, error: menuCreateError } = await supabase
-              .from('menus')
-              .insert({
-                user_id: user.id,
-                outlet_id: outletId,
-                name: sourceMenu.name,
-                description: sourceMenu.description,
-                logo_url: sourceMenu.logo_url,
-                header_image_url: sourceMenu.header_image_url,
-                is_active: true
-              })
-              .select('id, name, outlet_id')
-              .single();
-
-            if (menuCreateError || !newMenu) {
-              console.error('Error creating menu:', menuCreateError);
-              continue;
-            }
-
-            targetMenu = { 
-              ...newMenu, 
-              created_at: new Date().toISOString(), 
-              is_active: true, 
-              menu_categories: [] 
-            } as any;
-          }
-
+        // Pour chaque menu de destination
+        for (const targetMenu of targetMenus) {
           // Trouver ou créer la catégorie dans le menu de destination
           let targetCategory = targetMenu.menu_categories?.find(
             c => c.name === sourceCategory.name
@@ -400,31 +350,29 @@ export const useMenuItems = () => {
             }
 
             targetCategory = newCategory;
-            // Garder la catégorie en mémoire pour éviter des duplications pendant cette exécution
+            // Garder en mémoire pour éviter des duplications
             const existingList = (targetMenu as any).menu_categories || [];
             (targetMenu as any).menu_categories = [...existingList, newCategory];
           }
 
-          // Vérifier que l'item n'existe pas déjà dans cette catégorie
-          if (targetCategory.id !== item.category_id) {
-            itemsToInsert.push({
-              name: item.name,
-              description: item.description,
-              price: item.price,
-              category_id: targetCategory.id,
-              image_url: item.image_url,
-              is_available: item.is_available,
-              allergens: item.allergens,
-              order_index: item.order_index || 0,
-            });
-          }
+          // Ajouter le plat à copier
+          itemsToInsert.push({
+            name: item.name,
+            description: item.description,
+            price: item.price,
+            category_id: targetCategory.id,
+            image_url: item.image_url,
+            is_available: item.is_available,
+            allergens: item.allergens,
+            order_index: item.order_index || 0,
+          });
         }
       }
 
       if (itemsToInsert.length === 0) {
         toast({
           title: "Information",
-          description: "Les plats existent déjà dans les points de vente sélectionnés",
+          description: "Aucun plat à partager",
         });
         return true;
       }
