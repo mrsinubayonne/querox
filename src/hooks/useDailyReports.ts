@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { DateRange } from 'react-day-picker';
-import { format } from 'date-fns';
+import { format, endOfDay, startOfDay } from 'date-fns';
 import * as XLSX from 'xlsx';
 
 export interface DailyReport {
@@ -41,51 +41,52 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
 
     setLoading(true);
     try {
-      // Build query for orders
+      const start = startOfDay(dateRange.from).toISOString();
+      const end = endOfDay(dateRange.to).toISOString();
+
+      // Fetch outlets map for names
+      const { data: outlets, error: outletsError } = await supabase
+        .from('outlets')
+        .select('id, name')
+        .eq('user_id', user.id);
+      if (outletsError) throw outletsError;
+      const outletNameById = new Map<string, string>();
+      (outlets || []).forEach((o: any) => outletNameById.set(o.id, o.name));
+
+      // Orders
       let ordersQuery = supabase
         .from('orders')
-        .select(`
-          id,
-          total_amount,
-          created_at,
-          outlet_id,
-          customer_name,
-          outlets (
-            name
-          )
-        `)
+        .select('id, total_amount, created_at, outlet_id, customer_name')
         .eq('user_id', user.id)
-        .gte('created_at', dateRange.from.toISOString())
-        .lte('created_at', dateRange.to.toISOString());
+        .gte('created_at', start)
+        .lte('created_at', end);
 
       if (outletId) {
         ordersQuery = ordersQuery.eq('outlet_id', outletId);
       }
 
       const { data: orders, error: ordersError } = await ordersQuery;
-
       if (ordersError) throw ordersError;
 
-      // Build query for invoices
+      // Invoices
       let invoicesQuery = supabase
         .from('invoices')
         .select('id, total_amount, status, created_at, outlet_id')
         .eq('user_id', user.id)
-        .gte('created_at', dateRange.from.toISOString())
-        .lte('created_at', dateRange.to.toISOString());
+        .gte('created_at', start)
+        .lte('created_at', end);
 
       if (outletId) {
         invoicesQuery = invoicesQuery.eq('outlet_id', outletId);
       }
 
       const { data: invoices, error: invoicesError } = await invoicesQuery;
-
       if (invoicesError) throw invoicesError;
 
-      // Process data into daily reports
+      // Build reports
       const reportsMap = new Map<string, DailyReport>();
 
-      orders?.forEach((order: any) => {
+      (orders || []).forEach((order: any) => {
         const dateKey = format(new Date(order.created_at), 'yyyy-MM-dd');
         const outletKey = `${dateKey}-${order.outlet_id}`;
 
@@ -93,7 +94,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
           reportsMap.set(outletKey, {
             date: dateKey,
             outlet_id: order.outlet_id,
-            outlet_name: order.outlets?.name || 'Non défini',
+            outlet_name: outletNameById.get(order.outlet_id) || 'Non défini',
             total_orders: 0,
             total_revenue: 0,
             total_invoices: 0,
@@ -109,7 +110,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
         report.total_revenue += Number(order.total_amount);
       });
 
-      invoices?.forEach((invoice: any) => {
+      (invoices || []).forEach((invoice: any) => {
         const dateKey = format(new Date(invoice.created_at), 'yyyy-MM-dd');
         const outletKey = `${dateKey}-${invoice.outlet_id}`;
 
@@ -117,7 +118,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
           reportsMap.set(outletKey, {
             date: dateKey,
             outlet_id: invoice.outlet_id,
-            outlet_name: 'Non défini',
+            outlet_name: outletNameById.get(invoice.outlet_id) || 'Non défini',
             total_orders: 0,
             total_revenue: 0,
             total_invoices: 0,
@@ -144,7 +145,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
         }
       });
 
-      const reportsArray = Array.from(reportsMap.values()).sort((a, b) => 
+      const reportsArray = Array.from(reportsMap.values()).sort((a, b) =>
         b.date.localeCompare(a.date)
       );
 
