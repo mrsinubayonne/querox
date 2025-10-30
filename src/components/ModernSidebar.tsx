@@ -512,7 +512,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
           </button>
         ))}
 
-        {/* Logout Button */}
+        {/* Logout/Close Session Button */}
         <button
           onClick={() => {
             if (isProfileAuthenticated()) {
@@ -526,7 +526,11 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
           className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50"
         >
           <LogOut size={20} className="flex-shrink-0" />
-          {!collapsed && <span className="ml-3">Déconnexion</span>}
+          {!collapsed && (
+            <span className="ml-3">
+              {selectedProfile?.title === 'Admin' ? 'Déconnexion' : 'Fermer la session'}
+            </span>
+          )}
         </button>
       </div>
 
