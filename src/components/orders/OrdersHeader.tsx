@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Package, Plus, SquareArrowOutUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import AddOrderModal from './AddOrderModal';
+import { AddOrderFromCustomerModal } from '@/components/tables/AddOrderFromCustomerModal';
 import { useNavigate } from 'react-router-dom';
 
 interface OrdersHeaderProps {
@@ -34,7 +34,12 @@ export const OrdersHeader: React.FC<OrdersHeaderProps> = ({ onOrderCreated }) =>
           Nouvelle commande
         </Button>
       </div>
-      <AddOrderModal open={open} onOpenChange={setOpen} onOrderCreated={onOrderCreated} />
+      <AddOrderFromCustomerModal 
+        isOpen={open} 
+        onClose={() => setOpen(false)} 
+        onSuccess={onOrderCreated}
+        tableNumber="01"
+      />
     </div>
   );
 };
