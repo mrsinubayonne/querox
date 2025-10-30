@@ -19,6 +19,7 @@ import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2 } from "
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import QuickAddOrderToSessionModal from "./QuickAddOrderToSessionModal";
 
 interface Order {
   id: string;
@@ -47,6 +48,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -167,21 +169,8 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     }
   };
 
-  const handleAddOrder = async () => {
-    if (!session || !user) return;
-    
-    // Get the user's active menu
-    const { data: menus } = await supabase
-      .from("menus")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .limit(1);
-
-    if (menus && menus.length > 0) {
-      // Redirect to public menu with table number pre-filled
-      window.open(`/menu/${user.id}?table=${session.table_number}`, '_blank');
-    }
+  const handleAddOrder = () => {
+    setShowQuickAddModal(true);
   };
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -399,6 +388,15 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <QuickAddOrderToSessionModal
+        isOpen={showQuickAddModal}
+        onClose={() => setShowQuickAddModal(false)}
+        onSuccess={() => {
+          setShowQuickAddModal(false);
+        }}
+        sessionId={session.id}
+        tableNumber={session.table_number}
+      />
     </Dialog>
   );
 };
