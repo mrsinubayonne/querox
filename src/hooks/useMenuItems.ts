@@ -313,10 +313,13 @@ export const useMenuItems = () => {
           id,
           name,
           outlet_id,
+          created_at,
+          is_active,
           menu_categories(id, name)
         `)
         .in('outlet_id', targetOutletIds)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (menusError) {
         console.error('Target menus fetch error:', menusError);
@@ -338,9 +341,10 @@ export const useMenuItems = () => {
         // Pour chaque outlet de destination
         for (const outletId of targetOutletIds) {
           // Trouver ou créer le menu dans l'outlet de destination
-          let targetMenu = existingMenus?.find(
-            m => m.outlet_id === outletId && m.name === sourceMenu.name
-          );
+          const outletMenus = (existingMenus || []).filter(m => m.outlet_id === outletId);
+          let targetMenu = outletMenus.find(
+            m => m.name === sourceMenu.name
+          ) || outletMenus[0];
 
           // Si le menu n'existe pas, le créer
           if (!targetMenu) {
@@ -364,7 +368,12 @@ export const useMenuItems = () => {
               continue;
             }
 
-            targetMenu = { ...newMenu, menu_categories: [] };
+            targetMenu = { 
+              ...newMenu, 
+              created_at: new Date().toISOString(), 
+              is_active: true, 
+              menu_categories: [] 
+            } as any;
           }
 
           // Trouver ou créer la catégorie dans le menu de destination
@@ -391,6 +400,9 @@ export const useMenuItems = () => {
             }
 
             targetCategory = newCategory;
+            // Garder la catégorie en mémoire pour éviter des duplications pendant cette exécution
+            const existingList = (targetMenu as any).menu_categories || [];
+            (targetMenu as any).menu_categories = [...existingList, newCategory];
           }
 
           // Vérifier que l'item n'existe pas déjà dans cette catégorie
