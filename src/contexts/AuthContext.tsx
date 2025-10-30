@@ -27,12 +27,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth event:', event);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Auto-refresh token when it's about to expire
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed successfully');
+        }
+        
+        // Handle signed out event
+        if (event === 'SIGNED_OUT') {
+          localStorage.clear(); // Clear all local data on sign out
+        }
       }
     );
 
@@ -72,6 +83,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    // Clear all localStorage data before signing out
+    localStorage.clear();
     await supabase.auth.signOut();
   };
 
