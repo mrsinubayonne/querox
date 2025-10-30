@@ -22,11 +22,13 @@ const RapportsJournaliers: React.FC = () => {
     from: new Date(),
     to: new Date()
   });
+  const [timeRange, setTimeRange] = useState<{ start: string; end: string } | undefined>();
 
   const { reports, loading, downloadReport } = useDailyReports({
     outletId: selectedOutletId || undefined,
     dateRange,
-    reportType
+    reportType,
+    timeRange
   });
 
   const handleQuickDate = (type: 'today' | 'yesterday' | 'week' | 'month' | 'year') => {
@@ -81,7 +83,7 @@ const RapportsJournaliers: React.FC = () => {
             <CardDescription>Sélectionnez la période et le type de rapport</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Report Type */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Type de rapport</label>
@@ -102,6 +104,37 @@ const RapportsJournaliers: React.FC = () => {
               <div className="lg:col-span-2">
                 <label className="text-sm font-medium mb-2 block">Période</label>
                 <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+              </div>
+
+              {/* Time Range */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Plage horaire (optionnel)</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="time"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={timeRange?.start || ''}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setTimeRange(prev => ({ start: e.target.value, end: prev?.end || '23:59' }));
+                      } else {
+                        setTimeRange(undefined);
+                      }
+                    }}
+                  />
+                  <span className="text-muted-foreground">à</span>
+                  <input
+                    type="time"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={timeRange?.end || ''}
+                    onChange={(e) => {
+                      if (e.target.value && timeRange?.start) {
+                        setTimeRange(prev => ({ start: prev!.start, end: e.target.value }));
+                      }
+                    }}
+                    disabled={!timeRange?.start}
+                  />
+                </div>
               </div>
 
               {/* Download Buttons */}

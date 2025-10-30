@@ -3,11 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { DateRange } from 'react-day-picker';
-import { format, endOfDay, startOfDay } from 'date-fns';
+import { format, endOfDay, startOfDay, setHours, setMinutes } from 'date-fns';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export interface DailyReport {
   date: string;
+  time?: string;
   outlet_id: string;
   outlet_name: string;
   total_orders: number;
@@ -23,9 +26,10 @@ interface UseDailyReportsProps {
   outletId?: string;
   dateRange?: DateRange;
   reportType: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  timeRange?: { start: string; end: string };
 }
 
-export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyReportsProps) => {
+export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: UseDailyReportsProps) => {
   const { user } = useAuth();
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,15 +38,26 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
     if (user && dateRange?.from && dateRange?.to) {
       fetchReports();
     }
-  }, [user, outletId, dateRange, reportType]);
+  }, [user, outletId, dateRange, reportType, timeRange]);
 
   const fetchReports = async () => {
     if (!user || !dateRange?.from || !dateRange?.to) return;
 
     setLoading(true);
     try {
-      const start = startOfDay(dateRange.from).toISOString();
-      const end = endOfDay(dateRange.to).toISOString();
+      let start = startOfDay(dateRange.from);
+      let end = endOfDay(dateRange.to);
+
+      // Apply time range if specified
+      if (timeRange) {
+        const [startHour, startMinute] = timeRange.start.split(':').map(Number);
+        const [endHour, endMinute] = timeRange.end.split(':').map(Number);
+        start = setMinutes(setHours(start, startHour), startMinute);
+        end = setMinutes(setHours(end, endHour), endMinute);
+      }
+
+      const startISO = start.toISOString();
+      const endISO = end.toISOString();
 
       // Fetch outlets map for names
       const { data: outlets, error: outletsError } = await supabase
@@ -58,8 +73,8 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
         .from('orders')
         .select('id, total_amount, created_at, outlet_id, customer_name')
         .eq('user_id', user.id)
-        .gte('created_at', start)
-        .lte('created_at', end);
+        .gte('created_at', startISO)
+        .lte('created_at', endISO);
 
       if (outletId) {
         ordersQuery = ordersQuery.eq('outlet_id', outletId);
@@ -73,8 +88,8 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
         .from('invoices')
         .select('id, total_amount, status, created_at, outlet_id')
         .eq('user_id', user.id)
-        .gte('created_at', start)
-        .lte('created_at', end);
+        .gte('created_at', startISO)
+        .lte('created_at', endISO);
 
       if (outletId) {
         invoicesQuery = invoicesQuery.eq('outlet_id', outletId);
@@ -87,12 +102,17 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
       const reportsMap = new Map<string, DailyReport>();
 
       (orders || []).forEach((order: any) => {
-        const dateKey = format(new Date(order.created_at), 'yyyy-MM-dd');
-        const outletKey = `${dateKey}-${order.outlet_id}`;
+        const orderDate = new Date(order.created_at);
+        const dateKey = format(orderDate, 'yyyy-MM-dd');
+        const timeKey = timeRange ? format(orderDate, 'HH:mm') : undefined;
+        const outletKey = timeRange 
+          ? `${dateKey}-${timeKey}-${order.outlet_id}`
+          : `${dateKey}-${order.outlet_id}`;
 
         if (!reportsMap.has(outletKey)) {
           reportsMap.set(outletKey, {
             date: dateKey,
+            time: timeKey,
             outlet_id: order.outlet_id,
             outlet_name: outletNameById.get(order.outlet_id) || 'Non défini',
             total_orders: 0,
@@ -111,12 +131,17 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
       });
 
       (invoices || []).forEach((invoice: any) => {
-        const dateKey = format(new Date(invoice.created_at), 'yyyy-MM-dd');
-        const outletKey = `${dateKey}-${invoice.outlet_id}`;
+        const invoiceDate = new Date(invoice.created_at);
+        const dateKey = format(invoiceDate, 'yyyy-MM-dd');
+        const timeKey = timeRange ? format(invoiceDate, 'HH:mm') : undefined;
+        const outletKey = timeRange 
+          ? `${dateKey}-${timeKey}-${invoice.outlet_id}`
+          : `${dateKey}-${invoice.outlet_id}`;
 
         if (!reportsMap.has(outletKey)) {
           reportsMap.set(outletKey, {
             date: dateKey,
+            time: timeKey,
             outlet_id: invoice.outlet_id,
             outlet_name: outletNameById.get(invoice.outlet_id) || 'Non défini',
             total_orders: 0,
@@ -170,13 +195,14 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
         const worksheet = XLSX.utils.json_to_sheet(
           reports.map((report) => ({
             Date: report.date,
+            Heure: report.time || '-',
             'Point de vente': report.outlet_name,
             'Commandes': report.total_orders,
-            'Chiffre d\'affaires': `${report.total_revenue.toFixed(2)} €`,
+            'Chiffre d\'affaires': `${report.total_revenue.toFixed(2)} CFA`,
             'Factures': report.total_invoices,
             'Factures payées': report.paid_invoices,
             'Factures impayées': report.unpaid_invoices,
-            'Panier moyen': `${report.average_order_value.toFixed(2)} €`,
+            'Panier moyen': `${report.average_order_value.toFixed(2)} CFA`,
           }))
         );
 
@@ -186,10 +212,66 @@ export const useDailyReports = ({ outletId, dateRange, reportType }: UseDailyRep
         const fileName = `rapport_${reportType}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
         XLSX.writeFile(workbook, fileName);
         
-        toast.success('Rapport téléchargé avec succès');
+        toast.success('Rapport Excel téléchargé avec succès');
       } else if (downloadFormat === 'pdf') {
-        // For PDF, we would need a library like jsPDF
-        toast.info('La génération PDF est en cours de développement');
+        // Generate PDF
+        const doc = new jsPDF();
+        
+        // Add title
+        doc.setFontSize(18);
+        doc.text(`Rapport ${reportType}`, 14, 20);
+        
+        // Add date
+        doc.setFontSize(11);
+        doc.text(`Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm')}`, 14, 30);
+
+        // Prepare table data
+        const tableData = reports.map((report) => [
+          report.date,
+          report.time || '-',
+          report.outlet_name,
+          report.total_orders.toString(),
+          `${report.total_revenue.toLocaleString()} CFA`,
+          report.total_invoices.toString(),
+          report.paid_invoices.toString(),
+          report.unpaid_invoices.toString(),
+          `${report.average_order_value.toLocaleString()} CFA`,
+        ]);
+
+        // Add totals row
+        const totalOrders = reports.reduce((sum, r) => sum + r.total_orders, 0);
+        const totalRevenue = reports.reduce((sum, r) => sum + r.total_revenue, 0);
+        const totalInvoices = reports.reduce((sum, r) => sum + r.total_invoices, 0);
+        const totalPaid = reports.reduce((sum, r) => sum + r.paid_invoices, 0);
+        const totalUnpaid = reports.reduce((sum, r) => sum + r.unpaid_invoices, 0);
+        const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+        tableData.push([
+          'Total',
+          '',
+          '',
+          totalOrders.toString(),
+          `${totalRevenue.toLocaleString()} CFA`,
+          totalInvoices.toString(),
+          totalPaid.toString(),
+          totalUnpaid.toString(),
+          `${avgOrder.toLocaleString()} CFA`,
+        ]);
+
+        // Create table
+        autoTable(doc, {
+          head: [['Date', 'Heure', 'Point de vente', 'Commandes', 'CA', 'Factures', 'Payées', 'Impayées', 'Panier moyen']],
+          body: tableData,
+          startY: 40,
+          theme: 'grid',
+          headStyles: { fillColor: [59, 130, 246] },
+          styles: { fontSize: 8 },
+        });
+
+        const fileName = `rapport_${reportType}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+        doc.save(fileName);
+        
+        toast.success('Rapport PDF téléchargé avec succès');
       }
     } catch (error) {
       console.error('Error downloading report:', error);

@@ -81,6 +81,7 @@ export const DailyReportTable: React.FC<DailyReportTableProps> = ({
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
+                {reports.some(r => r.time) && <TableHead>Heure</TableHead>}
                 <TableHead>Point de vente</TableHead>
                 <TableHead className="text-right">Commandes</TableHead>
                 <TableHead className="text-right">CA</TableHead>
@@ -92,10 +93,13 @@ export const DailyReportTable: React.FC<DailyReportTableProps> = ({
             </TableHeader>
             <TableBody>
               {reports.map((report, index) => (
-                <TableRow key={`${report.date}-${report.outlet_id}-${index}`}>
+                <TableRow key={`${report.date}-${report.time || ''}-${report.outlet_id}-${index}`}>
                   <TableCell className="font-medium">
                     {formatDate(report.date)}
                   </TableCell>
+                  {reports.some(r => r.time) && (
+                    <TableCell>{report.time || '-'}</TableCell>
+                  )}
                   <TableCell>{report.outlet_name}</TableCell>
                   <TableCell className="text-right">{report.total_orders}</TableCell>
                   <TableCell className="text-right font-medium text-green-600">
@@ -115,7 +119,7 @@ export const DailyReportTable: React.FC<DailyReportTableProps> = ({
               ))}
               {/* Total Row */}
               <TableRow className="bg-muted/50 font-bold">
-                <TableCell colSpan={2}>Total</TableCell>
+                <TableCell colSpan={reports.some(r => r.time) ? 3 : 2}>Total</TableCell>
                 <TableCell className="text-right">
                   {reports.reduce((sum, r) => sum + r.total_orders, 0)}
                 </TableCell>
