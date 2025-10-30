@@ -146,7 +146,7 @@ const RapportsJournaliers: React.FC = () => {
               <Button
                 onClick={handleClosePeriod}
                 disabled={periodsLoading}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-red-600 hover:bg-red-700 text-white"
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
                 Boucler la journée
