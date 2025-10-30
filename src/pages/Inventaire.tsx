@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Package, Plus, AlertTriangle, TrendingDown, TrendingUp, Users, Trash2, Download } from 'lucide-react';
+import { Package, Plus, AlertTriangle, TrendingDown, TrendingUp, Users, Trash2, Download, Edit } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
@@ -82,6 +82,28 @@ const Inventaire: React.FC = () => {
   const handleDeleteSupplier = async (id: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce fournisseur ?')) {
       await deleteSupplier(id);
+    }
+  };
+
+  const handleEditItem = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    
+    const formData = new FormData(e.currentTarget);
+    
+    const itemData = {
+      name: formData.get('name') as string,
+      category: formData.get('category') as string,
+      current_stock: parseInt(formData.get('current_stock') as string) || 0,
+      min_stock: parseInt(formData.get('min_stock') as string) || 0,
+      unit: formData.get('unit') as string,
+      unit_price: parseFloat(formData.get('unit_price') as string) || 0,
+      supplier_id: formData.get('supplier_id') as string || undefined,
+    };
+
+    const success = await updateItem(editingItem.id, itemData);
+    if (success) {
+      setEditingItem(null);
     }
   };
 
@@ -311,6 +333,9 @@ const Inventaire: React.FC = () => {
                               <Button size="sm" variant="outline" onClick={() => handleUpdateStock(item.id, 1, item.current_stock)}>
                                 <TrendingUp className="h-4 w-4" />
                               </Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditingItem(item)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
                               <Button size="sm" variant="destructive" onClick={() => handleDeleteItem(item.id)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -420,6 +445,85 @@ const Inventaire: React.FC = () => {
               )}
             </TabsContent>
           </Tabs>
+
+          {/* Edit Item Dialog */}
+          <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Modifier l'article</DialogTitle>
+                <DialogDescription>Modifiez les informations de l'article</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleEditItem} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">Nom *</Label>
+                    <Input id="edit-name" name="name" defaultValue={editingItem?.name} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-category">Catégorie *</Label>
+                    <Select name="category" defaultValue={editingItem?.category} required>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Ingrédients">Ingrédients</SelectItem>
+                        <SelectItem value="Boissons">Boissons</SelectItem>
+                        <SelectItem value="Matériel">Matériel</SelectItem>
+                        <SelectItem value="Produits d'entretien">Produits d'entretien</SelectItem>
+                        <SelectItem value="Emballages">Emballages</SelectItem>
+                        <SelectItem value="Autres">Autres</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-current_stock">Stock actuel *</Label>
+                    <Input id="edit-current_stock" name="current_stock" type="number" min="0" defaultValue={editingItem?.current_stock} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-min_stock">Stock minimum *</Label>
+                    <Input id="edit-min_stock" name="min_stock" type="number" min="0" defaultValue={editingItem?.min_stock} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-unit">Unité *</Label>
+                    <Select name="unit" defaultValue={editingItem?.unit} required>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="kg">kg</SelectItem>
+                        <SelectItem value="g">g</SelectItem>
+                        <SelectItem value="l">l</SelectItem>
+                        <SelectItem value="ml">ml</SelectItem>
+                        <SelectItem value="pcs">pcs</SelectItem>
+                        <SelectItem value="units">unités</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-unit_price">Prix unitaire (CFA)</Label>
+                    <Input id="edit-unit_price" name="unit_price" type="number" min="0" step="0.01" defaultValue={editingItem?.unit_price} />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="edit-supplier_id">Fournisseur</Label>
+                    <Select name="supplier_id" defaultValue={editingItem?.supplier_id}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un fournisseur" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit">Enregistrer</Button>
+                  <Button type="button" variant="outline" onClick={() => setEditingItem(null)}>Annuler</Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </PageWithSidebar>
     </SubscriptionGuard>

@@ -92,7 +92,7 @@ function App() {
               <Route path="/site-web-container" element={<ProtectedRoute><SiteWebContainer /></ProtectedRoute>} />
               <Route path="/site-web-benefits" element={<ProtectedRoute><SiteWebBenefits /></ProtectedRoute>} />
               <Route path="/statistiques" element={<ProtectedRoute><StatistiquesProtected /></ProtectedRoute>} />
-              <Route path="/rapports-journaliers" element={<ProtectedRoute><RapportsJournaliers /></ProtectedRoute>} />
+              <Route path="/rapports" element={<ProtectedRoute><RapportsJournaliers /></ProtectedRoute>} />
               <Route path="/parametres" element={<ProtectedRoute><ParametresProtected /></ProtectedRoute>} />
               <Route path="/abonnement" element={<ProtectedRoute><Abonnement /></ProtectedRoute>} />
               <Route path="/comptabilite" element={<ProtectedRoute><ComptabiliteProtected /></ProtectedRoute>} />

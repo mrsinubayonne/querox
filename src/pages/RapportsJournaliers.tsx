@@ -66,7 +66,7 @@ const RapportsJournaliers: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
               <FileText className="h-8 w-8 text-primary" />
-              Rapports Journaliers
+              Rapports
             </h1>
             <p className="text-muted-foreground mt-2">
               Consultez et téléchargez vos rapports d'activité

@@ -18,7 +18,7 @@ export const DailyReportStats: React.FC<DailyReportStatsProps> = ({ reports, loa
   const stats = [
     {
       title: 'Chiffre d\'affaires',
-      value: `${totalRevenue.toFixed(2)} €`,
+      value: `${totalRevenue.toLocaleString()} CFA`,
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
@@ -39,7 +39,7 @@ export const DailyReportStats: React.FC<DailyReportStatsProps> = ({ reports, loa
     },
     {
       title: 'Panier moyen',
-      value: `${averageOrderValue.toFixed(2)} €`,
+      value: `${averageOrderValue.toLocaleString()} CFA`,
       icon: TrendingUp,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',

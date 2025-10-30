@@ -99,7 +99,7 @@ export const DailyReportTable: React.FC<DailyReportTableProps> = ({
                   <TableCell>{report.outlet_name}</TableCell>
                   <TableCell className="text-right">{report.total_orders}</TableCell>
                   <TableCell className="text-right font-medium text-green-600">
-                    {report.total_revenue.toFixed(2)} €
+                    {report.total_revenue.toLocaleString()} CFA
                   </TableCell>
                   <TableCell className="text-right">{report.total_invoices}</TableCell>
                   <TableCell className="text-right text-green-600">
@@ -109,7 +109,7 @@ export const DailyReportTable: React.FC<DailyReportTableProps> = ({
                     {report.unpaid_invoices}
                   </TableCell>
                   <TableCell className="text-right">
-                    {report.average_order_value.toFixed(2)} €
+                    {report.average_order_value.toLocaleString()} CFA
                   </TableCell>
                 </TableRow>
               ))}
@@ -120,7 +120,7 @@ export const DailyReportTable: React.FC<DailyReportTableProps> = ({
                   {reports.reduce((sum, r) => sum + r.total_orders, 0)}
                 </TableCell>
                 <TableCell className="text-right text-green-600">
-                  {reports.reduce((sum, r) => sum + r.total_revenue, 0).toFixed(2)} €
+                  {reports.reduce((sum, r) => sum + r.total_revenue, 0).toLocaleString()} CFA
                 </TableCell>
                 <TableCell className="text-right">
                   {reports.reduce((sum, r) => sum + r.total_invoices, 0)}
@@ -133,7 +133,7 @@ export const DailyReportTable: React.FC<DailyReportTableProps> = ({
                 </TableCell>
                 <TableCell className="text-right">
                   {(reports.reduce((sum, r) => sum + r.total_revenue, 0) / 
-                    reports.reduce((sum, r) => sum + r.total_orders, 0) || 0).toFixed(2)} €
+                    reports.reduce((sum, r) => sum + r.total_orders, 0) || 0).toLocaleString()} CFA
                 </TableCell>
               </TableRow>
             </TableBody>

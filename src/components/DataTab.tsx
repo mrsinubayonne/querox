@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Upload, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +23,7 @@ export const DataTab: React.FC = () => {
   const [autoBackup, setAutoBackup] = useState(true);
   const [backupFrequency, setBackupFrequency] = useState("daily");
   const [sectionToDelete, setSectionToDelete] = useState<string | null>(null);
+  const [password, setPassword] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportData = async () => {
@@ -144,16 +147,32 @@ export const DataTab: React.FC = () => {
   };
 
   const handleDeleteSection = async () => {
-    if (!sectionToDelete) return;
+    if (!sectionToDelete || !password) return;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user || !user.email) {
         toast({
           title: "Erreur",
           description: "Vous devez être connecté",
           variant: "destructive"
         });
+        return;
+      }
+
+      // Vérifier le mot de passe
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: password
+      });
+
+      if (authError) {
+        toast({
+          title: "Erreur",
+          description: "Mot de passe incorrect",
+          variant: "destructive"
+        });
+        setPassword('');
         return;
       }
 
@@ -225,6 +244,7 @@ export const DataTab: React.FC = () => {
       });
 
       setSectionToDelete(null);
+      setPassword('');
     } catch (error) {
       console.error('Delete error:', error);
       toast({
@@ -340,7 +360,10 @@ export const DataTab: React.FC = () => {
         </div>
       </div>
 
-      <AlertDialog open={!!sectionToDelete} onOpenChange={() => setSectionToDelete(null)}>
+      <AlertDialog open={!!sectionToDelete} onOpenChange={() => {
+        setSectionToDelete(null);
+        setPassword('');
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
@@ -349,10 +372,21 @@ export const DataTab: React.FC = () => {
               Cette action est irréversible et supprimera définitivement toutes les données associées.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2 py-4">
+            <Label htmlFor="password">Mot de passe</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Entrez votre mot de passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setPassword('')}>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteSection}
+              disabled={!password}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Supprimer définitivement
