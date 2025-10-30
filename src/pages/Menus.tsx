@@ -46,7 +46,7 @@ const Menus: React.FC = () => {
         .select('*')
         .eq('user_id', user.id)
         .eq('outlet_id', selectedOutletId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) {
         toast({
