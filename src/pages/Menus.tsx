@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useProfile } from '@/hooks/useProfile';
+import { useOutlets } from '@/hooks/useOutlets';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import EmptyState from '@/components/EmptyState';
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
@@ -27,12 +27,14 @@ const Menus: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { user } = useAuth();
-  const { profile } = useProfile();
+  const { selectedOutletId } = useOutlets();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const fetchMenus = async () => {
-    if (!user || !profile?.selected_outlet_id) {
+    if (!user || !selectedOutletId) {
+      setMenus([]);
+      setActiveMenu(null);
       setLoading(false);
       return;
     }
@@ -43,7 +45,8 @@ const Menus: React.FC = () => {
         .from('menus')
         .select('*')
         .eq('user_id', user.id)
-        .eq('outlet_id', profile.selected_outlet_id);
+        .eq('outlet_id', selectedOutletId)
+        .order('created_at', { ascending: true });
 
       if (error) {
         toast({
@@ -53,9 +56,12 @@ const Menus: React.FC = () => {
         });
       } else {
         setMenus(data || []);
-        // Ne définir activeMenu que si aucun n'est déjà sélectionné
-        if (!activeMenu && data && data.length > 0) {
-          setActiveMenu(data[0]);
+        // Réinitialiser le menu actif si il ne correspond pas au nouvel outlet
+        if (data && data.length > 0) {
+          const stillValid = activeMenu && data.some(m => m.id === activeMenu.id);
+          if (!stillValid) setActiveMenu(data[0]);
+        } else {
+          setActiveMenu(null);
         }
       }
     } finally {
@@ -64,8 +70,10 @@ const Menus: React.FC = () => {
   };
 
   useEffect(() => {
+    // Quand l'outlet change, on réinitialise le menu actif et on recharge
+    setActiveMenu(null);
     fetchMenus();
-  }, [user?.id, profile?.selected_outlet_id]);
+  }, [user?.id, selectedOutletId]);
 
   const handleMenuChange = (menuId: string) => {
     const selectedMenu = menus.find(menu => menu.id === menuId);
