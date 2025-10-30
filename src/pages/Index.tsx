@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import LandingNavigation from '../components/landing/LandingNavigation';
 import SalesFunnelHero from '../components/landing/SalesFunnelHero';
 import ProblemSolution from '../components/landing/ProblemSolution';
@@ -12,11 +13,27 @@ import LandingPricing from '../components/landing/LandingPricing';
 import FAQ from '../components/landing/FAQ';
 import FinalCTA from '../components/landing/FinalCTA';
 import LandingFooter from '../components/landing/LandingFooter';
+import { useUserProfiles } from '@/hooks/useUserProfiles';
+import { useOutlets } from '@/hooks/useOutlets';
 
 const Index: React.FC = () => {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
+  const { selectedProfileId } = useUserProfiles();
+  const { selectedOutletId } = useOutlets();
+  const navigate = useNavigate();
 
-  // Removed automatic redirect - users can now return to landing page even when logged in
+  // Rediriger automatiquement les utilisateurs authentifiés vers leur flux
+  useEffect(() => {
+    if (!loading && user) {
+      if (!selectedProfileId) {
+        navigate('/select-profile', { replace: true });
+      } else if (!selectedOutletId) {
+        navigate('/select-outlet', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
+    }
+  }, [loading, user, selectedProfileId, selectedOutletId, navigate]);
 
   // Afficher le loader pendant la vérification de l'authentification
   if (loading) {
