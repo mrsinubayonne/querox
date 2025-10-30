@@ -53,6 +53,59 @@ export type Database = {
         }
         Relationships: []
       }
+      business_periods: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          outlet_id: string | null
+          paid_invoices: number | null
+          started_at: string
+          total_invoices: number | null
+          total_orders: number | null
+          total_revenue: number | null
+          unpaid_invoices: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          outlet_id?: string | null
+          paid_invoices?: number | null
+          started_at?: string
+          total_invoices?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+          unpaid_invoices?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          outlet_id?: string | null
+          paid_invoices?: number | null
+          started_at?: string
+          total_invoices?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+          unpaid_invoices?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_periods_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string
@@ -692,6 +745,33 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      profile_access_codes: {
+        Row: {
+          access_code: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          profile_title: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_code: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          profile_title: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_code?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          profile_title?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1878,6 +1958,10 @@ export type Database = {
           profile_name: string
           role: Database["public"]["Enums"]["outlet_role"]
         }[]
+      }
+      verify_profile_access_code: {
+        Args: { _access_code: string; _profile_title: string }
+        Returns: boolean
       }
       verify_team_access: {
         Args: { _access_code: string; _email: string }

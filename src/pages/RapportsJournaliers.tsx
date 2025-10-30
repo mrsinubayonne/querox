@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Download, Calendar, TrendingUp, DollarSign, ShoppingBag, Users } from 'lucide-react';
+import { FileText, Download, Calendar, TrendingUp, DollarSign, ShoppingBag, Users, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,15 +8,18 @@ import PageWithSidebar from '@/components/PageWithSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useDailyReports } from '@/hooks/useDailyReports';
+import { useBusinessPeriods } from '@/hooks/useBusinessPeriods';
 import { DailyReportStats } from '@/components/reports/DailyReportStats';
 import { DailyReportTable } from '@/components/reports/DailyReportTable';
 import { DateRange } from 'react-day-picker';
 import { format, subDays, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const RapportsJournaliers: React.FC = () => {
   const { user } = useAuth();
   const { outlets, selectedOutletId } = useOutlets();
+  const [viewMode, setViewMode] = useState<'periods' | 'calendar'>('periods');
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
@@ -25,6 +28,10 @@ const RapportsJournaliers: React.FC = () => {
   const [timeRange, setTimeRange] = useState<{ start: string; end: string }>({
     start: '00:00',
     end: '23:59'
+  });
+
+  const { currentPeriod, periods, loading: periodsLoading, closePeriod, startNewPeriod } = useBusinessPeriods({
+    outletId: selectedOutletId || undefined,
   });
 
   const { reports, loading, downloadReport } = useDailyReports({
@@ -63,6 +70,27 @@ const RapportsJournaliers: React.FC = () => {
     await downloadReport(format);
   };
 
+  const handleClosePeriod = async () => {
+    await closePeriod();
+    if (!currentPeriod && periods.length === 0) {
+      await startNewPeriod();
+    }
+  };
+
+  // Calculate current period stats (live)
+  const currentPeriodStats = currentPeriod ? {
+    date: format(new Date(currentPeriod.started_at), 'dd/MM/yyyy HH:mm'),
+    outlet_id: currentPeriod.outlet_id || '',
+    outlet_name: outlets?.find(o => o.id === currentPeriod.outlet_id)?.name || 'Tous les points de vente',
+    total_orders: 0,
+    total_revenue: 0,
+    total_invoices: 0,
+    paid_invoices: 0,
+    unpaid_invoices: 0,
+    total_customers: 0,
+    average_order_value: 0,
+  } : null;
+
   return (
     <PageWithSidebar>
       <div className="space-y-6">
@@ -79,13 +107,64 @@ const RapportsJournaliers: React.FC = () => {
           </div>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Filtres</CardTitle>
-            <CardDescription>Sélectionnez la période et le type de rapport</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        {/* View Mode Toggle */}
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === 'periods' ? 'default' : 'outline'}
+            onClick={() => setViewMode('periods')}
+          >
+            Par périodes d'activité
+          </Button>
+          <Button
+            variant={viewMode === 'calendar' ? 'default' : 'outline'}
+            onClick={() => setViewMode('calendar')}
+          >
+            Par dates calendaires
+          </Button>
+        </div>
+
+        {/* Current Period Alert */}
+        {viewMode === 'periods' && currentPeriod && (
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertDescription className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-blue-900">Période en cours</p>
+                <p className="text-sm text-blue-700">
+                  Démarrée le {format(new Date(currentPeriod.started_at), 'dd/MM/yyyy à HH:mm', { locale: fr })}
+                </p>
+              </div>
+              <Button
+                onClick={handleClosePeriod}
+                disabled={periodsLoading}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Boucler la journée
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* No Current Period Alert */}
+        {viewMode === 'periods' && !currentPeriod && (
+          <Alert>
+            <AlertDescription className="flex items-center justify-between">
+              <p className="text-sm">Aucune période active. Démarrez une nouvelle période pour commencer à enregistrer l'activité.</p>
+              <Button onClick={startNewPeriod} disabled={periodsLoading}>
+                Démarrer une période
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Filters - Only show for calendar mode */}
+        {viewMode === 'calendar' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Filtres</CardTitle>
+              <CardDescription>Sélectionnez la période et le type de rapport</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Report Type */}
               <div>
@@ -175,12 +254,82 @@ const RapportsJournaliers: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Stats Cards */}
-        <DailyReportStats reports={reports} loading={loading} />
-
-        {/* Report Table */}
-        <DailyReportTable reports={reports} loading={loading} reportType={reportType} />
+        {viewMode === 'calendar' ? (
+          <>
+            <DailyReportStats reports={reports} loading={loading} />
+            <DailyReportTable reports={reports} loading={loading} reportType={reportType} />
+          </>
+        ) : (
+          <>
+            {/* Closed Periods Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Historique des périodes bouclées</CardTitle>
+                <CardDescription>
+                  Liste de toutes les journées bouclées
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {periodsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  </div>
+                ) : periods.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Aucune période bouclée pour le moment</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {periods.map((period) => (
+                      <Card key={period.id} className="border-l-4 border-l-green-500">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="text-lg">
+                                {format(new Date(period.started_at), 'dd MMMM yyyy', { locale: fr })}
+                              </CardTitle>
+                              <CardDescription>
+                                {format(new Date(period.started_at), 'HH:mm', { locale: fr })} -{' '}
+                                {period.ended_at && format(new Date(period.ended_at), 'HH:mm', { locale: fr })}
+                                {' • '}
+                                {outlets?.find(o => o.id === period.outlet_id)?.name || 'Tous les points de vente'}
+                              </CardDescription>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">Commandes</p>
+                              <p className="text-2xl font-bold">{period.total_orders}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Chiffre d'affaires</p>
+                              <p className="text-2xl font-bold text-green-600">
+                                {Number(period.total_revenue).toLocaleString()} CFA
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Factures payées</p>
+                              <p className="text-2xl font-bold text-green-600">{period.paid_invoices}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Factures impayées</p>
+                              <p className="text-2xl font-bold text-orange-600">{period.unpaid_invoices}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
     </PageWithSidebar>
   );
