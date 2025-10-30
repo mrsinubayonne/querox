@@ -89,15 +89,21 @@ export const useMenus = () => {
         outletId = localStorage.getItem('selectedOutletId');
       }
 
+      // Filter by outlet - strict filtering
+      if (!outletId) {
+        console.log('⚠️ No outlet selected, showing no menus');
+        setMenus([]);
+        setCategories([]);
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+
       let query = supabase
         .from('menus')
         .select('*')
-        .eq('user_id', user.id);
-
-      // Filter by outlet - strict filtering, no legacy support
-      if (outletId) {
-        query = query.eq('outlet_id', outletId);
-      }
+        .eq('user_id', user.id)
+        .eq('outlet_id', outletId);
 
       const { data: menusData, error: menusError } = await query
         .order('created_at', { ascending: true });
