@@ -145,7 +145,15 @@ export const useOutlets = () => {
   }, [selectedProfileId, user?.id]);
 
   const createOutlet = async (outletData: CreateOutletData): Promise<Outlet | undefined> => {
-    if (!user?.id) return undefined;
+    // Determine which user_id to use
+    let userId = user?.id;
+    
+    // If team member, use owner_id instead
+    if (isTeamMember && teamMemberSession) {
+      userId = teamMemberSession.ownerId;
+    }
+
+    if (!userId) return undefined;
 
     if (!canAddMoreOutlets()) {
       const limit = getOutletLimit();
@@ -159,7 +167,7 @@ export const useOutlets = () => {
       const { data, error } = await supabase
         .from('outlets')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           name: outletData.name,
           address: outletData.address,
           phone: outletData.phone
