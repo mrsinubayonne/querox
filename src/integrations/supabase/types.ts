@@ -1855,18 +1855,6 @@ export type Database = {
           permission_name: string
         }[]
       }
-      get_user_outlet_role: {
-        Args: { _outlet_id: string; _user_id: string }
-        Returns: Database["public"]["Enums"]["outlet_role"]
-      }
-      has_outlet_role: {
-        Args: {
-          _outlet_id: string
-          _role: Database["public"]["Enums"]["outlet_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
