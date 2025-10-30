@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
-import { RestaurantProvider } from '@/contexts/RestaurantContext';
 
 import PublicMenuHeader from '@/components/public-menu/PublicMenuHeader';
 import MenuItemList from '@/components/public-menu/MenuItemList';
@@ -61,8 +60,7 @@ const PublicMenu: React.FC = () => {
   }
 
   return (
-    <RestaurantProvider restaurantUserId={restaurantUserId}>
-      <div className="min-h-screen w-full bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex flex-col">
+    <div className="min-h-screen w-full bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex flex-col">
         <PublicMenuHeader 
           totalItems={getTotalItems()} 
           onCartToggle={() => setShowCart(!showCart)}
@@ -124,6 +122,7 @@ const PublicMenu: React.FC = () => {
                     onRemoveFromCart={removeFromCart}
                     onClearCart={clearCart}
                     totalPrice={getTotalPrice()}
+                    restaurantUserId={restaurantUserId}
                   />
                 </div>
               </div>
@@ -141,13 +140,13 @@ const PublicMenu: React.FC = () => {
                 onRemoveFromCart={removeFromCart}
                 onClearCart={clearCart}
                 totalPrice={getTotalPrice()}
+                restaurantUserId={restaurantUserId}
                 className="p-0 shadow-none border-0 bg-transparent h-full sticky top-0"
               />
             </SheetContent>
           </Sheet>
         </div>
       </div>
-    </RestaurantProvider>
   );
 };
 

@@ -1,7 +1,6 @@
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { RestaurantProvider } from '@/contexts/RestaurantContext';
 
 // Import des pages
 import Index from '@/pages/Index';
@@ -63,9 +62,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 
 function App() {
   return (
-    <RestaurantProvider restaurantUserId={null}>
-        <Router>
-          <div className="min-h-screen bg-background">
+    <Router>
+      <div className="min-h-screen bg-background">
             <Routes>
               {/* Routes publiques */}
               <Route path="/" element={<Index />} />
@@ -131,7 +129,6 @@ function App() {
           <Toaster />
           <Sonner />
         </Router>
-      </RestaurantProvider>
   );
 }
 

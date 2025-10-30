@@ -11,6 +11,7 @@ import { useUserProfiles, ProfileTitle } from '@/hooks/useUserProfiles';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,14 +24,6 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const PROFILE_TITLES: ProfileTitle[] = ['Admin', 'Caissier(e)', 'Comptable', 'Serveur'];
-
-// Codes d'accès pour chaque type de profil
-const ACCESS_CODES: Record<ProfileTitle, string[]> = {
-  'Admin': ['QRX-27A79'],
-  'Comptable': ['QRX-C8218'],
-  'Caissier(e)': ['QRX-B2A15', 'QRX-CAS77'],
-  'Serveur': ['QRX-B2A15', 'QRX-CAS77']
-};
 
 const SelectProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -96,7 +89,7 @@ const SelectProfile: React.FC = () => {
     }
   };
 
-  const handleAccessCodeSubmit = () => {
+  const handleAccessCodeSubmit = async () => {
     const profile = profiles.find(p => p.id === selectedProfileForAccess);
     
     if (!profile) {
@@ -104,19 +97,35 @@ const SelectProfile: React.FC = () => {
       return;
     }
 
-    const validCodes = ACCESS_CODES[profile.title];
     const enteredCode = accessCode.trim().toUpperCase();
 
-    if (validCodes.includes(enteredCode)) {
-      if (selectedProfileForAccess) {
-        selectProfile(selectedProfileForAccess);
-        navigate('/select-outlet');
+    try {
+      // Validate access code server-side using RPC
+      const { data: isValid, error } = await supabase.rpc('verify_profile_access_code', {
+        _profile_title: profile.title,
+        _access_code: enteredCode
+      });
+
+      if (error) {
+        console.error('Error verifying access code:', error);
+        toast.error('Erreur lors de la vérification du code');
+        return;
       }
-      setIsAccessCodeDialogOpen(false);
-      setAccessCode('');
-      setSelectedProfileForAccess(null);
-    } else {
-      toast.error('Code d\'accès incorrect');
+
+      if (isValid) {
+        if (selectedProfileForAccess) {
+          selectProfile(selectedProfileForAccess);
+          navigate('/select-outlet');
+        }
+        setIsAccessCodeDialogOpen(false);
+        setAccessCode('');
+        setSelectedProfileForAccess(null);
+      } else {
+        toast.error('Code d\'accès incorrect');
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error('Une erreur est survenue');
     }
   };
 

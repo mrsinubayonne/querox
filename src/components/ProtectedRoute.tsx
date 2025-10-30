@@ -49,12 +49,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
 
     // Étape 3: Vérifier qu'un outlet est sélectionné (seulement après avoir un profil)
+    // Permettre la sélection d'outlet même sans abonnement actif
     if (
       !profilesLoading && 
-      !subscriptionLoading && 
+      !outletsLoading &&
       user && 
-      selectedProfileId &&
-      isSubscriptionActive
+      selectedProfileId
     ) {
       if (!selectedOutletId) {
         navigate('/select-outlet');

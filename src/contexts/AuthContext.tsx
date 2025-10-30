@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -25,6 +27,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const jwtErrorHandled = useRef(false);
+
+  // Centralized JWT expiration handler
+  const handleJWTExpiration = async () => {
+    if (jwtErrorHandled.current) return;
+    
+    jwtErrorHandled.current = true;
+    toast({
+      title: "Session expirée",
+      description: "Votre session a expiré. Veuillez vous reconnecter.",
+      variant: "destructive",
+    });
+    
+    try {
+      await signOut();
+    } finally {
+      navigate('/auth');
+      // Reset after a delay to allow new session
+      setTimeout(() => {
+        jwtErrorHandled.current = false;
+      }, 2000);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
@@ -33,6 +60,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Reset JWT error flag on successful auth
+        if (session) {
+          jwtErrorHandled.current = false;
+        }
       }
     );
 
