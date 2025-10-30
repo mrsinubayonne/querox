@@ -29,6 +29,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return;
     }
 
+    // Récupérer les sélections depuis localStorage en secours (évite les courses entre hooks)
+    const localProfileId = typeof window !== 'undefined' ? localStorage.getItem('selectedProfileId') : null;
+    const localOutletId = typeof window !== 'undefined' ? localStorage.getItem('selectedOutletId') : null;
+    const effectiveProfileId = selectedProfileId || localProfileId;
+    const effectiveOutletId = selectedOutletId || localOutletId;
+
     // Ne pas rediriger si on est déjà sur les pages de sélection ou d'abonnement
     if (
       location.pathname === '/select-profile' || 
@@ -39,14 +45,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
 
     // Étape 2: Vérifier qu'un profil est sélectionné (OBLIGATOIRE avant outlet)
-    if (!profilesLoading && user && !selectedProfileId) {
+    if (!profilesLoading && user && !effectiveProfileId) {
       navigate('/select-profile');
       return;
     }
 
     // Étape 3: Vérifier qu'un outlet est sélectionné (seulement après avoir un profil)
-    if (!profilesLoading && user && selectedProfileId) {
-      if (!outletsLoading && !selectedOutletId) {
+    if (!profilesLoading && user && effectiveProfileId) {
+      if (!outletsLoading && !effectiveOutletId) {
         navigate('/select-outlet');
         return;
       }
