@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 // Import des pages
@@ -62,9 +62,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-background">
-            <Routes>
+    <div className="min-h-screen bg-background">
+      <Routes>
               {/* Routes publiques */}
               <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
@@ -124,11 +123,10 @@ function App() {
 
               {/* Redirection par défaut */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </div>
-          <Toaster />
-          <Sonner />
-        </Router>
+      </Routes>
+      <Toaster />
+      <Sonner />
+    </div>
   );
 }
 
