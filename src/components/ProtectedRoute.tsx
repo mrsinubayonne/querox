@@ -2,7 +2,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProfile } from '@/hooks/useProfile';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useUserProfiles } from '@/hooks/useUserProfiles';
 import { useOutlets } from '@/hooks/useOutlets';
@@ -17,14 +16,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiresSubscription = false 
 }) => {
   const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useProfile();
   const { isSubscriptionActive, loading: subscriptionLoading } = useSubscription();
   const { selectedProfileId, profiles, loading: profilesLoading } = useUserProfiles();
   const { selectedOutletId, loading: outletsLoading } = useOutlets();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const loading = authLoading || (user && (profileLoading || subscriptionLoading || profilesLoading || outletsLoading));
+  const loading = authLoading || (user && (subscriptionLoading || profilesLoading || outletsLoading));
 
   useEffect(() => {
     // Étape 1: Vérifier l'authentification
@@ -61,7 +59,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return;
       }
     }
-  }, [user, authLoading, profile, profileLoading, isSubscriptionActive, subscriptionLoading, selectedProfileId, profiles, profilesLoading, selectedOutletId, outletsLoading, navigate, location.pathname]);
+  }, [user, authLoading, isSubscriptionActive, subscriptionLoading, selectedProfileId, profilesLoading, selectedOutletId, outletsLoading, navigate, location.pathname]);
 
   // Show loading state while checking authentication
   if (loading) {
