@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useDeferredValue } from 'react';
 import EmptyState from '@/components/EmptyState';
 import AddMenuItemModal from '@/components/AddMenuItemModal';
 import EditMenuItemModal from '@/components/EditMenuItemModal';
@@ -37,6 +37,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [showBulkTransfer, setShowBulkTransfer] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   
@@ -65,15 +66,15 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
 
   // Filtrer par recherche avec useMemo pour éviter les re-calculs
   const filteredItems = useMemo(() => {
-    if (searchTerm.trim() === '') return itemsToShow;
-    
-    const lowerSearch = searchTerm.toLowerCase();
-    return itemsToShow.filter(item => 
-      item.name.toLowerCase().includes(lowerSearch) ||
-      (item.description && item.description.toLowerCase().includes(lowerSearch)) ||
-      item.category_name.toLowerCase().includes(lowerSearch)
+    const query = deferredSearchTerm.trim().toLowerCase();
+    if (query === '') return itemsToShow;
+
+    return itemsToShow.filter(item =>
+      item.name.toLowerCase().includes(query) ||
+      (item.description && item.description.toLowerCase().includes(query)) ||
+      item.category_name.toLowerCase().includes(query)
     );
-  }, [itemsToShow, searchTerm]);
+  }, [itemsToShow, deferredSearchTerm]);
 
   // Pagination avec useMemo
   const totalPages = useMemo(() => Math.ceil(filteredItems.length / itemsPerPage), [filteredItems.length]);
