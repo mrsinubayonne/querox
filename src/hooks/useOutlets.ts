@@ -184,9 +184,14 @@ export const useOutlets = () => {
       await selectOutlet(data.id, true);
       
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating outlet:', error);
-      toast.error('Erreur lors de la création du point de vente');
+      const msg = typeof error?.message === 'string' ? error.message : '';
+      if (msg.toLowerCase().includes('row-level security') || error?.code === '42501') {
+        toast.error("Accès refusé: vérifiez que vous êtes connecté avec le compte propriétaire ou que votre invitation d'équipe est acceptée.");
+      } else {
+        toast.error(`Erreur lors de la création du point de vente${msg ? `: ${msg}` : ''}`);
+      }
       return undefined;
     }
   };
