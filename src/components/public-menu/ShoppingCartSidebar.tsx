@@ -15,7 +15,6 @@ interface ShoppingCartProps {
   onClearCart: () => void;
   totalPrice: number;
   className?: string;
-  restaurantUserId: string | null;
 }
 const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
   cart,
@@ -23,8 +22,7 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
   onRemoveFromCart,
   onClearCart,
   totalPrice,
-  className,
-  restaurantUserId,
+  className
 }) => {
   const [showCheckout, setShowCheckout] = useState(false);
 
@@ -87,7 +85,6 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
             cart={cart}
             totalPrice={totalPrice}
             onClearCart={onClearCart}
-            restaurantUserId={restaurantUserId}
           />
         </>
       )}

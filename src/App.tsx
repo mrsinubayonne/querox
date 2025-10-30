@@ -1,6 +1,7 @@
 
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { RestaurantProvider } from '@/contexts/RestaurantContext';
 
 // Import des pages
 import Index from '@/pages/Index';
@@ -62,8 +63,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 
 function App() {
   return (
-    <div className="min-h-screen bg-background">
-      <Routes>
+    <RestaurantProvider restaurantUserId={null}>
+        <Router>
+          <div className="min-h-screen bg-background">
+            <Routes>
               {/* Routes publiques */}
               <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
@@ -123,10 +126,12 @@ function App() {
 
               {/* Redirection par défaut */}
               <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster />
-      <Sonner />
-    </div>
+            </Routes>
+          </div>
+          <Toaster />
+          <Sonner />
+        </Router>
+      </RestaurantProvider>
   );
 }
 

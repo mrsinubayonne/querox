@@ -21,7 +21,6 @@ type CheckoutOrderModalProps = {
   cart: CartItem[];
   totalPrice: number;
   onClearCart: () => void;
-  restaurantUserId: string | null;
 };
 
 const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
@@ -30,7 +29,6 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
   cart,
   totalPrice,
   onClearCart,
-  restaurantUserId,
 }) => {
   const {
     customerName,
@@ -49,7 +47,8 @@ const CheckoutOrderModal: React.FC<CheckoutOrderModalProps> = ({
     setNumberOfPeople,
     loading,
     handleSubmit,
-  } = useCheckoutOrderModal(cart, totalPrice, onOpenChange, onClearCart, restaurantUserId);
+    restaurantUserId,
+  } = useCheckoutOrderModal(cart, totalPrice, onOpenChange, onClearCart);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

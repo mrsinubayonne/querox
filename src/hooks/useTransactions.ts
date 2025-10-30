@@ -84,21 +84,11 @@ export const useTransactions = () => {
     if (!user) return false;
 
     try {
-      // Get selected outlet from user_profiles
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      if (!selectedProfileId) {
-        toast({
-          title: "Erreur",
-          description: "Aucun profil sélectionné",
-          variant: "destructive"
-        });
-        return false;
-      }
-
+      // Get selected outlet
       const { data: profile } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('selected_outlet_id')
-        .eq('id', selectedProfileId)
+        .eq('id', user.id)
         .maybeSingle();
       
       const outletId = profile?.selected_outlet_id;

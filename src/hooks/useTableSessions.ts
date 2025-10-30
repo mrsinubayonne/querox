@@ -8,7 +8,7 @@ export interface TableSession {
   user_id: string;
   outlet_id: string | null;
   table_number: string;
-  status: string;
+  status: "active" | "closed" | "paid";
   started_at: string;
   closed_at: string | null;
   number_of_guests: number | null;
@@ -17,10 +17,6 @@ export interface TableSession {
   created_at: string;
   updated_at: string;
 }
-
-const isValidStatus = (status: string): status is "active" | "closed" | "paid" => {
-  return ["active", "closed", "paid"].includes(status);
-};
 
 export function useTableSessions() {
   const [sessions, setSessions] = useState<TableSession[]>([]);
@@ -47,10 +43,10 @@ export function useTableSessions() {
       const outletId = profile?.selected_outlet_id;
 
       let query = supabase
-        .from("table_sessions")
+        .from("table_sessions" as any)
         .select("*")
         .eq("user_id", user.id)
-        .order("started_at", { ascending: false });
+        .order("started_at", { ascending: false }) as any;
 
       if (outletId) {
         query = query.eq("outlet_id", outletId);
@@ -60,12 +56,7 @@ export function useTableSessions() {
 
       if (error) throw error;
 
-      // Cast and validate data
-      const validSessions = (data || []).filter((session): session is TableSession => {
-        return isValidStatus(session.status);
-      });
-
-      setSessions(validSessions);
+      setSessions((data as any) || []);
     } catch (error: any) {
       console.error("Error fetching table sessions:", error);
       toast({
@@ -100,7 +91,7 @@ export function useTableSessions() {
         const outletId = profile?.selected_outlet_id;
 
         const { data, error } = await supabase
-          .from("table_sessions")
+          .from("table_sessions" as any)
           .insert([
             {
               user_id: user.id,
@@ -140,7 +131,7 @@ export function useTableSessions() {
     async (sessionId: string) => {
       try {
         const { error } = await supabase
-          .from("table_sessions")
+          .from("table_sessions" as any)
           .update({
             status: "closed",
             closed_at: new Date().toISOString(),
@@ -171,7 +162,7 @@ export function useTableSessions() {
     async (sessionId: string) => {
       try {
         const { error } = await supabase
-          .from("table_sessions")
+          .from("table_sessions" as any)
           .update({ status: "paid" })
           .eq("id", sessionId);
 
@@ -209,7 +200,7 @@ export function useTableSessions() {
         const outletId = profile?.selected_outlet_id;
 
         const { data, error } = await supabase
-          .from("table_sessions")
+          .from("table_sessions" as any)
           .select("*")
           .eq("user_id", user.id)
           .eq("table_number", tableNumber)
@@ -219,7 +210,7 @@ export function useTableSessions() {
 
         if (error && error.code !== "PGRST116") throw error;
 
-        return data;
+        return data as any;
       } catch (error: any) {
         console.error("Error checking active session:", error);
         return null;

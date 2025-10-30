@@ -154,40 +154,16 @@ export const useSubscription = () => {
     }
   }, [user, isAdminUser]);
 
-  // Fetch initial data
   useEffect(() => {
     fetchUserRole();
-  }, [fetchUserRole]);
-
-  useEffect(() => {
     fetchSubscription();
-  }, [fetchSubscription]);
-
-  // Separate effect for realtime subscription
-  useEffect(() => {
-    if (!user?.id || userRole?.role === 'admin') return;
-
-    // Subscribe to realtime changes for non-admins
-    const channel = supabase
-      .channel(`subscription-changes-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'subscribers',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          fetchSubscription();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, userRole?.role, fetchSubscription]);
+    
+    if (user && userRole?.role !== 'admin') {
+      // Rafraîchir les données toutes les 30 secondes seulement pour les non-admins
+      const interval = setInterval(fetchSubscription, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [fetchSubscription, fetchUserRole, user, userRole]);
 
 
   const isSubscriptionActive = useCallback(() => {

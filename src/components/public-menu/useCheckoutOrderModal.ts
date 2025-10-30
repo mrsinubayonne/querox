@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { CartItem } from "@/types/menu";
+import { useRestaurant } from "@/contexts/RestaurantContext";
 import { useLocation } from "react-router-dom";
 
 export const ORDER_TYPE_OPTIONS = [
@@ -11,7 +12,7 @@ export const ORDER_TYPE_OPTIONS = [
 
 export const TABLE_NUMBERS = Array.from({ length: 120 }, (_, i) => (i + 1).toString().padStart(2, '0'));
 
-export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOpenChange: (open: boolean) => void, onClearCart: () => void, restaurantUserId: string | null) {
+export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOpenChange: (open: boolean) => void, onClearCart: () => void) {
   const location = useLocation();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -22,6 +23,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const [numberOfPeople, setNumberOfPeople] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { restaurantUserId } = useRestaurant();
 
   // Pre-fill table number from URL parameter
   useEffect(() => {
@@ -81,7 +83,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       let sessionId = null;
       if (orderType === "sur_place" && tableNumber) {
         const { data: existingSession, error: checkError } = await supabase
-          .from("table_sessions")
+          .from("table_sessions" as any)
           .select("id")
           .eq("user_id", restaurantUserId)
           .eq("outlet_id", outletId)
@@ -90,11 +92,11 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
           .maybeSingle();
 
         if (!checkError && existingSession) {
-          sessionId = existingSession.id;
+          sessionId = (existingSession as any).id;
         } else {
           // Create new session for this table
           const { data: newSession, error: sessionError } = await supabase
-            .from("table_sessions")
+            .from("table_sessions" as any)
             .insert([{
               user_id: restaurantUserId,
               outlet_id: outletId,
@@ -106,7 +108,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
             .single();
 
           if (!sessionError && newSession) {
-            sessionId = newSession.id;
+            sessionId = (newSession as any).id;
           }
         }
       }

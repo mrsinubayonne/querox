@@ -4,7 +4,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useOutlets } from '@/hooks/useOutlets';
-import { supabase } from '@/integrations/supabase/client';
 import AccountingHeader from '@/components/accounting/AccountingHeader';
 import AccountingStats from '@/components/accounting/AccountingStats';
 import AccountingTabsContainer from '@/components/accounting/AccountingTabsContainer';
@@ -30,43 +29,14 @@ const Comptabilite = () => {
   const { invoices, loading: invoicesLoading, refetch: refetchInvoices } = useInvoices();
   const { outlets } = useOutlets();
 
-  // S'abonner aux changements en temps réel via Supabase Realtime
+  // Rafraîchir les données régulièrement pour voir les factures payées
   useEffect(() => {
-    const transactionsChannel = supabase
-      .channel('comptabilite-transactions')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'transactions'
-        },
-        () => {
-          refetchTransactions();
-        }
-      )
-      .subscribe();
+    const interval = setInterval(() => {
+      refetchInvoices();
+      refetchTransactions();
+    }, 30000); // Toutes les 30 secondes
 
-    const invoicesChannel = supabase
-      .channel('comptabilite-invoices')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'invoices',
-          filter: 'status=eq.paid'
-        },
-        () => {
-          refetchInvoices();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(transactionsChannel);
-      supabase.removeChannel(invoicesChannel);
-    };
+    return () => clearInterval(interval);
   }, [refetchInvoices, refetchTransactions]);
 
   // Filtrer les transactions par outlet

@@ -695,33 +695,6 @@ export type Database = {
         }
         Relationships: []
       }
-      profile_access_codes: {
-        Row: {
-          access_code: string
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          profile_title: string
-          updated_at: string | null
-        }
-        Insert: {
-          access_code: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          profile_title: string
-          updated_at?: string | null
-        }
-        Update: {
-          access_code?: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          profile_title?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1905,10 +1878,6 @@ export type Database = {
           profile_name: string
           role: Database["public"]["Enums"]["outlet_role"]
         }[]
-      }
-      verify_profile_access_code: {
-        Args: { _access_code: string; _profile_title: string }
-        Returns: boolean
       }
       verify_team_access: {
         Args: { _access_code: string; _email: string }

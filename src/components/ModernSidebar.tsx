@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, UserCircle, Utensils } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useOutlets } from '@/hooks/useOutlets';
@@ -57,6 +56,13 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const [isAccessCodeDialogOpen, setIsAccessCodeDialogOpen] = useState(false);
   const [selectedProfileForAccess, setSelectedProfileForAccess] = useState<{ id: string; title: ProfileTitle } | null>(null);
   const [accessCode, setAccessCode] = useState('');
+
+  const ACCESS_CODES: Record<ProfileTitle, string[]> = {
+    'Admin': ['QRX-27A79'],
+    'Comptable': ['QRX-C8218'],
+    'Caissier(e)': ['QRX-B2A15', 'QRX-CAS77'],
+    'Serveur': ['QRX-B2A15', 'QRX-CAS77'],
+  };
   
   const handleProfileChange = (profileId: string) => {
     const profile = profiles.find(p => p.id === profileId);
@@ -69,27 +75,14 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const handleAccessCodeSubmit = async () => {
     if (!selectedProfileForAccess) return;
 
-    try {
-      // Verify access code using database
-      const { data, error } = await supabase.rpc('verify_profile_access_code', {
-        _profile_title: selectedProfileForAccess.title,
-        _access_code: accessCode.toUpperCase()
-      });
-
-      if (error) throw error;
-
-      if (data) {
-        await selectUserProfile(selectedProfileForAccess.id);
-        setIsAccessCodeDialogOpen(false);
-        setAccessCode('');
-        setSelectedProfileForAccess(null);
-        // Refetch data instead of reload
-        window.location.href = window.location.pathname;
-      } else {
-        toast.error('Code d\'accès incorrect');
-      }
-    } catch (error) {
-      console.error('Error verifying access code:', error);
+    const validCodes = ACCESS_CODES[selectedProfileForAccess.title];
+    if (validCodes.includes(accessCode.toUpperCase())) {
+      await selectUserProfile(selectedProfileForAccess.id);
+      setIsAccessCodeDialogOpen(false);
+      setAccessCode('');
+      setSelectedProfileForAccess(null);
+      window.location.reload();
+    } else {
       toast.error('Code d\'accès incorrect');
     }
   };
@@ -101,8 +94,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
   const handleOutletChange = async (outletId: string) => {
     await selectOutlet(outletId);
-    // Navigate to same route to refresh data
-    window.location.href = window.location.pathname;
+    window.location.reload(); // Recharger la page pour rafraîchir toutes les données
   };
 
   // Define menuItems FIRST before using it

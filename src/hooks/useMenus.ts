@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { useOutlets } from '@/hooks/useOutlets';
 
 export interface Menu {
@@ -48,11 +49,13 @@ export const useMenus = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
   const { selectedOutletId } = useOutlets();
   const fetchingRef = useRef(false);
 
+  const navigate = useNavigate();
+  const tokenExpiredHandledRef = useRef(false);
   const fetchMenus = useCallback(async () => {
     if (!user || fetchingRef.current) {
       if (!user) {
@@ -69,14 +72,19 @@ export const useMenus = () => {
       setLoading(true);
       setError(null);
 
+      console.log('🔄 Fetching menus for user:', user.id);
+
       // Filter by outlet - strict filtering
       if (!selectedOutletId) {
+        console.log('⚠️ No outlet selected, showing no menus');
         setMenus([]);
         setCategories([]);
         setItems([]);
         setLoading(false);
         return;
       }
+
+      console.log('📍 Loading menus for outlet:', selectedOutletId);
 
       let query = supabase
         .from('menus')
@@ -88,9 +96,11 @@ export const useMenus = () => {
         .order('created_at', { ascending: true });
 
       if (menusError) {
+        console.error('Error fetching menus:', menusError);
         throw menusError;
       }
 
+      console.log('📋 Menus found:', menusData?.length || 0);
       setMenus(menusData || []);
 
       // Si aucun menu, ne pas continuer
@@ -110,9 +120,11 @@ export const useMenus = () => {
         .order('order_index', { ascending: true });
 
       if (categoriesError) {
+        console.error('Error fetching categories:', categoriesError);
         throw categoriesError;
       }
 
+      console.log('📂 Categories found:', categoriesData?.length || 0);
       setCategories(categoriesData || []);
 
       // Récupérer les items pour toutes les catégories
@@ -131,6 +143,7 @@ export const useMenus = () => {
           .order('name');
 
         if (itemsError) {
+          console.error('Error fetching menu items:', itemsError);
           throw itemsError;
         }
 
@@ -140,29 +153,51 @@ export const useMenus = () => {
           category_name: item.menu_categories?.name || 'Sans catégorie'
         }));
 
+        console.log('🍽️ Menu items found:', transformedItems.length);
         setItems(transformedItems);
       } else {
         setItems([]);
       }
 
     } catch (error: any) {
-      const message = error?.message || 'Erreur lors du chargement des menus';
-      setError(message);
+      console.error('🚨 Error in fetchMenus:', error);
+      const code = error?.code;
+      const message = error?.message || '';
+      // Gestion spécifique de l'expiration du JWT
+      if ((code === 'PGRST301' || message.includes('JWT expired')) && !tokenExpiredHandledRef.current) {
+        tokenExpiredHandledRef.current = true;
+        toast({
+          title: "Session expirée",
+          description: "Votre session a expiré. Veuillez vous reconnecter.",
+          variant: "destructive",
+        });
+        try {
+          await signOut();
+        } finally {
+          navigate('/auth');
+        }
+        return;
+      }
+
+      const errorMessage = message || 'Erreur lors du chargement des menus';
+      setError(errorMessage);
       toast({
         title: "Erreur",
-        description: message,
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [user?.id, selectedOutletId, toast]);
+  }, [user?.id, selectedOutletId, toast, signOut, navigate]);
 
   const createDefaultMenu = useCallback(async () => {
     if (!user) return null;
 
     try {
+      console.log('🔧 Creating default menu for user:', user.id);
+
       if (!selectedOutletId) {
         toast({
           title: "Erreur",
@@ -185,8 +220,11 @@ export const useMenus = () => {
         .single();
 
       if (menuError) {
+        console.error('Error creating default menu:', menuError);
         throw menuError;
       }
+
+      console.log('✅ Default menu created:', menu.id);
 
       // Créer les catégories par défaut
       const defaultCategories = [
@@ -206,8 +244,11 @@ export const useMenus = () => {
         .insert(categoriesToInsert);
 
       if (categoriesError) {
+        console.error('Error creating default categories:', categoriesError);
         throw categoriesError;
       }
+
+      console.log('✅ Default categories created');
 
       toast({
         title: "Menu créé",
@@ -219,6 +260,7 @@ export const useMenus = () => {
       return menu.id;
 
     } catch (error: any) {
+      console.error('🚨 Error creating default menu:', error);
       toast({
         title: "Erreur",
         description: "Impossible de créer le menu par défaut",
@@ -241,6 +283,7 @@ export const useMenus = () => {
         .eq('user_id', user?.id);
 
       if (error) {
+        console.error('Error transferring menu:', error);
         toast({
           title: "Erreur",
           description: "Impossible de transférer le menu",
@@ -256,6 +299,7 @@ export const useMenus = () => {
       await fetchMenus();
       return true;
     } catch (error) {
+      console.error('Error transferring menu:', error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors du transfert",
@@ -288,6 +332,7 @@ export const useMenus = () => {
       if (error) throw error;
       return data || [];
     } catch (error) {
+      console.error('Error fetching all menus:', error);
       return [];
     }
   }, [user?.id]);
@@ -313,6 +358,7 @@ export const useMenus = () => {
       if (error) throw error;
       return data || [];
     } catch (error) {
+      console.error('Error fetching all categories:', error);
       return [];
     }
   }, [user?.id]);
