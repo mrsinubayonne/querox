@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import EmptyState from '@/components/EmptyState';
 import AddMenuItemModal from '@/components/AddMenuItemModal';
 import EditMenuItemModal from '@/components/EditMenuItemModal';
@@ -55,60 +55,65 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
     loadAllMenus();
   }, [fetchAllMenus]);
 
-  const itemsToShow = activeMenuId
-    ? items.filter((it) => {
-        const cat = categories.find((c) => c.id === it.category_id);
-        return cat?.menu_id === activeMenuId;
-      })
-    : items;
+  const itemsToShow = useMemo(() => {
+    if (!activeMenuId) return items;
+    return items.filter((it) => {
+      const cat = categories.find((c) => c.id === it.category_id);
+      return cat?.menu_id === activeMenuId;
+    });
+  }, [items, categories, activeMenuId]);
 
-  // Filtrer par recherche
-  const filteredItems = searchTerm.trim() === '' 
-    ? itemsToShow 
-    : itemsToShow.filter(item => 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        item.category_name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  // Filtrer par recherche avec useMemo pour éviter les re-calculs
+  const filteredItems = useMemo(() => {
+    if (searchTerm.trim() === '') return itemsToShow;
+    
+    const lowerSearch = searchTerm.toLowerCase();
+    return itemsToShow.filter(item => 
+      item.name.toLowerCase().includes(lowerSearch) ||
+      (item.description && item.description.toLowerCase().includes(lowerSearch)) ||
+      item.category_name.toLowerCase().includes(lowerSearch)
+    );
+  }, [itemsToShow, searchTerm]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+  // Pagination avec useMemo
+  const totalPages = useMemo(() => Math.ceil(filteredItems.length / itemsPerPage), [filteredItems.length]);
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredItems, currentPage]);
 
   // Reset page when search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const handleAddItem = () => {
+  const handleAddItem = useCallback(() => {
     setShowAddModal(true);
-  };
+  }, []);
 
-  const handleModalSuccess = async () => {
+  const handleModalSuccess = useCallback(async () => {
     setShowAddModal(false);
     await refetch();
-  };
+  }, [refetch]);
 
-  const handleEditSuccess = async () => {
+  const handleEditSuccess = useCallback(async () => {
     setEditingItem(null);
     await refetch();
-  };
+  }, [refetch]);
 
-  const handleToggleAvailability = async (id: string, isActive: boolean) => {
+  const handleToggleAvailability = useCallback(async (id: string, isActive: boolean) => {
     await toggleAvailability(id, !isActive);
     await refetch();
-  };
+  }, [toggleAvailability, refetch]);
 
-  const handleDeleteItem = async (id: string) => {
+  const handleDeleteItem = useCallback(async (id: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) {
       await deleteMenuItem(id);
       await refetch();
     }
-  };
+  }, [deleteMenuItem, refetch]);
 
-  const handleEditItem = (item: MenuItem) => {
-    // Transform the item to match EditableMenuItem interface
+  const handleEditItem = useCallback((item: MenuItem) => {
     const editableItem: EditableMenuItem = {
       id: item.id,
       name: item.name,
@@ -120,53 +125,55 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
       is_available: item.is_available
     };
     setEditingItem(editableItem);
-  };
+  }, []);
 
-  const handleTransferClick = (item: MenuItem) => {
+  const handleTransferClick = useCallback((item: MenuItem) => {
     setTransferringItem(item);
-  };
+  }, []);
 
-  const handleTransferConfirm = async (menuIds: string[]) => {
+  const handleTransferConfirm = useCallback(async (menuIds: string[]) => {
     if (!transferringItem) return;
     const success = await shareMenuItems([transferringItem.id], menuIds);
     if (success) {
       setTransferringItem(null);
       await refetch();
     }
-  };
+  }, [transferringItem, shareMenuItems, refetch]);
 
-  const handleSelectItem = (itemId: string, checked: boolean) => {
-    const newSelected = new Set(selectedItems);
-    if (checked) {
-      newSelected.add(itemId);
-    } else {
-      newSelected.delete(itemId);
-    }
-    setSelectedItems(newSelected);
-  };
+  const handleSelectItem = useCallback((itemId: string, checked: boolean) => {
+    setSelectedItems(prev => {
+      const newSelected = new Set(prev);
+      if (checked) {
+        newSelected.add(itemId);
+      } else {
+        newSelected.delete(itemId);
+      }
+      return newSelected;
+    });
+  }, []);
 
-  const handleSelectAll = (checked: boolean) => {
+  const handleSelectAll = useCallback((checked: boolean) => {
     if (checked) {
       setSelectedItems(new Set(paginatedItems.map(item => item.id)));
     } else {
       setSelectedItems(new Set());
     }
-  };
+  }, [paginatedItems]);
 
-  const handleBulkTransferClick = () => {
+  const handleBulkTransferClick = useCallback(() => {
     setShowBulkTransfer(true);
-  };
+  }, []);
 
-  const handleBulkTransferConfirm = async (menuIds: string[]) => {
+  const handleBulkTransferConfirm = useCallback(async (menuIds: string[]) => {
     const success = await shareMenuItems(Array.from(selectedItems), menuIds);
     if (success) {
       setSelectedItems(new Set());
       setShowBulkTransfer(false);
       await refetch();
     }
-  };
+  }, [selectedItems, shareMenuItems, refetch]);
 
-  const handleDuplicateItem = async (item: MenuItem) => {
+  const handleDuplicateItem = useCallback(async (item: MenuItem) => {
     const success = await addMenuItem({
       name: `${item.name} (copie)`,
       description: item.description,
@@ -180,7 +187,12 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
     if (success) {
       await refetch();
     }
-  };
+  }, [addMenuItem, refetch]);
+
+  // Handler pour le changement de recherche
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
 
   if (loading) {
     return (
@@ -222,7 +234,8 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                 placeholder="🔍 Rechercher un plat par nom, description ou catégorie..."
                 className="pl-12 h-12 text-base bg-white shadow-sm border-primary/30 focus:border-primary"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
+                autoComplete="off"
               />
             </div>
             {searchTerm.trim() !== '' && (
