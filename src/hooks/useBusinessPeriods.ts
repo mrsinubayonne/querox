@@ -29,9 +29,9 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && outletId) {
+      initializePeriod();
       fetchPeriods();
-      fetchCurrentPeriod();
     }
   }, [user, outletId]);
 
@@ -58,6 +58,41 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     } catch (error) {
       console.error('Error fetching periods:', error);
       toast.error('Erreur lors du chargement des périodes');
+    }
+  };
+
+  // Initialize period: fetch active period or create one automatically
+  const initializePeriod = async () => {
+    if (!user || !outletId) return;
+
+    setLoading(true);
+    try {
+      // Try to fetch existing active period
+      const { data: activePeriod, error } = await supabase
+        .from('business_periods')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
+        .is('ended_at', null)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (activePeriod) {
+        setCurrentPeriod(activePeriod);
+        // Store period ID in localStorage for persistence
+        localStorage.setItem(`active_period_${outletId}`, activePeriod.id);
+      } else {
+        // No active period found, create one automatically
+        await startNewPeriod();
+      }
+    } catch (error) {
+      console.error('Error initializing period:', error);
+      toast.error('Erreur lors de l\'initialisation de la période');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,7 +123,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
   };
 
   const startNewPeriod = async () => {
-    if (!user) return;
+    if (!user || !outletId) return;
 
     try {
       // Check if there's already an open period for this outlet
@@ -124,7 +159,12 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       if (error) throw error;
 
       setCurrentPeriod(data);
+      // Store period ID in localStorage for persistence across disconnections
+      if (outletId) {
+        localStorage.setItem(`active_period_${outletId}`, data.id);
+      }
       toast.success('Nouvelle période démarrée');
+      fetchPeriods();
     } catch (error) {
       console.error('Error starting new period:', error);
       toast.error('Erreur lors du démarrage de la période');
@@ -203,9 +243,17 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
 
       if (updateError) throw updateError;
 
+      setCurrentPeriod(null);
+      // Clear localStorage when period is closed
+      if (targetPeriod.outlet_id) {
+        localStorage.removeItem(`active_period_${targetPeriod.outlet_id}`);
+      }
+
       await fetchPeriods();
-      await fetchCurrentPeriod();
       toast.success('Journée bouclée avec succès');
+      
+      // Automatically start a new period for continuity
+      await startNewPeriod();
     } catch (error) {
       console.error('Error closing period:', error);
       toast.error('Erreur lors du bouclage de la journée');
@@ -221,8 +269,10 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     startNewPeriod,
     closePeriod,
     refetch: () => {
+      if (outletId) {
+        initializePeriod();
+      }
       fetchPeriods();
-      fetchCurrentPeriod();
     },
   };
 };
