@@ -42,29 +42,16 @@ export const useProfile = () => {
         .single();
 
       if (error) {
-        console.error('Error fetching profile:', error);
-        
-        // Si le JWT a expiré, déconnecter l'utilisateur
-        if (error.code === 'PGRST301' || error.message?.includes('JWT expired')) {
-          toast({
-            title: "Session expirée",
-            description: "Votre session a expiré. Veuillez vous reconnecter.",
-            variant: "destructive",
-          });
-          await signOut();
-          navigate('/auth');
-        } else {
-          toast({
-            title: "Erreur",
-            description: "Impossible de charger le profil",
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger le profil",
+          variant: "destructive",
+        });
       } else {
         setProfile(data);
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      // Silent fail
     } finally {
       setLoading(false);
     }
@@ -100,7 +87,6 @@ export const useProfile = () => {
         return true;
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue",

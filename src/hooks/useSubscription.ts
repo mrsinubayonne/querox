@@ -159,9 +159,26 @@ export const useSubscription = () => {
     fetchSubscription();
     
     if (user && userRole?.role !== 'admin') {
-      // Rafraîchir les données toutes les 30 secondes seulement pour les non-admins
-      const interval = setInterval(fetchSubscription, 30000);
-      return () => clearInterval(interval);
+      // Subscribe to realtime changes for non-admins
+      const subscription = supabase
+        .channel('subscription-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'subscribers',
+            filter: `user_id=eq.${user.id}`
+          },
+          () => {
+            fetchSubscription();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
     }
   }, [fetchSubscription, fetchUserRole, user, userRole]);
 
