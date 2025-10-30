@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOutlets } from '@/hooks/useOutlets';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ const CreateMenuModal: React.FC<CreateMenuModalProps> = ({
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+  const { selectedOutletId } = useOutlets();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,15 +54,7 @@ const CreateMenuModal: React.FC<CreateMenuModalProps> = ({
 
     setLoading(true);
     try {
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      const outletId = profile?.selected_outlet_id;
-      if (!outletId) {
+      if (!selectedOutletId) {
         toast({
           title: "Erreur",
           description: "Aucun point de vente sélectionné",
@@ -70,7 +64,7 @@ const CreateMenuModal: React.FC<CreateMenuModalProps> = ({
         return;
       }
 
-      console.log('🔥 Création du menu:', { name, description, isActive, outletId });
+      console.log('🔥 Création du menu:', { name, description, isActive, outletId: selectedOutletId });
 
       const { data: menu, error: menuError } = await supabase
         .from('menus')
@@ -78,7 +72,7 @@ const CreateMenuModal: React.FC<CreateMenuModalProps> = ({
           name: name.trim(),
           description: description.trim() || null,
           user_id: user.id,
-          outlet_id: outletId,
+          outlet_id: selectedOutletId,
           is_active: isActive
         })
         .select()
