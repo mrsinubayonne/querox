@@ -403,7 +403,9 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
         onConfirm={handleTransferConfirm}
         itemName={transferringItem?.name || ''}
         menus={menus}
+        outlets={outlets}
         currentMenuId={transferringItem ? (categories.find(c => c.id === transferringItem.category_id)?.menu_id || '') : ''}
+        currentOutletId={transferringItem ? (menus.find(m => categories.find(c => c.id === transferringItem.category_id)?.menu_id === m.id)?.outlet_id || '') : ''}
       />
 
       <TransferMenuItemModal
@@ -412,7 +414,9 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
         onConfirm={handleBulkTransferConfirm}
         itemName={`${selectedItems.size} plat${selectedItems.size > 1 ? 's' : ''}`}
         menus={menus}
+        outlets={outlets}
         currentMenuId={activeMenuId || menus[0]?.id || ''}
+        currentOutletId={menus.find(m => m.id === activeMenuId)?.outlet_id || menus[0]?.outlet_id || ''}
         isBulkTransfer
       />
     </>

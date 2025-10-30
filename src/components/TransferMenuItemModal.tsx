@@ -23,13 +23,20 @@ interface Menu {
   outlet_id?: string;
 }
 
+interface Outlet {
+  id: string;
+  name: string;
+}
+
 interface TransferMenuItemModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (menuIds: string[]) => Promise<void>;
   itemName: string;
   menus: Menu[];
+  outlets: Outlet[];
   currentMenuId: string;
+  currentOutletId: string;
   isBulkTransfer?: boolean;
 }
 
@@ -39,35 +46,67 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
   onConfirm,
   itemName,
   menus,
+  outlets,
   currentMenuId,
+  currentOutletId,
   isBulkTransfer = false,
 }) => {
-  const [selectedMenuIds, setSelectedMenuIds] = useState<Set<string>>(new Set());
+  const [selectedOutletIds, setSelectedOutletIds] = useState<Set<string>>(new Set());
+  const [selectedMenuByOutlet, setSelectedMenuByOutlet] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
 
-  const availableMenus = useMemo(() => {
-    return menus.filter(menu => menu.id !== currentMenuId);
-  }, [menus, currentMenuId]);
+  const availableOutlets = useMemo(() => {
+    return outlets.filter(outlet => outlet.id !== currentOutletId);
+  }, [outlets, currentOutletId]);
 
-  const toggleMenu = (menuId: string) => {
-    setSelectedMenuIds(prev => {
+  const getMenusForOutlet = (outletId: string) => {
+    return menus.filter(menu => menu.outlet_id === outletId);
+  };
+
+  const toggleOutlet = (outletId: string) => {
+    setSelectedOutletIds(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(menuId)) {
-        newSet.delete(menuId);
+      if (newSet.has(outletId)) {
+        newSet.delete(outletId);
+        // Retirer aussi le menu sélectionné pour cet outlet
+        setSelectedMenuByOutlet(prevMap => {
+          const newMap = new Map(prevMap);
+          newMap.delete(outletId);
+          return newMap;
+        });
       } else {
-        newSet.add(menuId);
+        newSet.add(outletId);
       }
       return newSet;
     });
   };
 
+  const handleMenuSelect = (outletId: string, menuId: string) => {
+    setSelectedMenuByOutlet(prev => {
+      const newMap = new Map(prev);
+      newMap.set(outletId, menuId);
+      return newMap;
+    });
+  };
+
+  const canConfirm = useMemo(() => {
+    if (selectedOutletIds.size === 0) return false;
+    // Vérifier que chaque outlet sélectionné a un menu choisi
+    for (const outletId of Array.from(selectedOutletIds)) {
+      if (!selectedMenuByOutlet.has(outletId)) return false;
+    }
+    return true;
+  }, [selectedOutletIds, selectedMenuByOutlet]);
+
   const handleConfirm = async () => {
-    if (selectedMenuIds.size === 0) return;
+    if (!canConfirm) return;
     
     setIsLoading(true);
     try {
-      await onConfirm(Array.from(selectedMenuIds));
-      setSelectedMenuIds(new Set());
+      const menuIds = Array.from(selectedMenuByOutlet.values());
+      await onConfirm(menuIds);
+      setSelectedOutletIds(new Set());
+      setSelectedMenuByOutlet(new Map());
       onClose();
     } finally {
       setIsLoading(false);
@@ -75,7 +114,8 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
   };
 
   const handleClose = () => {
-    setSelectedMenuIds(new Set());
+    setSelectedOutletIds(new Set());
+    setSelectedMenuByOutlet(new Map());
     onClose();
   };
 
@@ -86,8 +126,8 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
           <DialogTitle>Partager {isBulkTransfer ? 'les plats' : 'le plat'}</DialogTitle>
           <DialogDescription>
             {isBulkTransfer 
-              ? "Copier les plats sélectionnés vers les menus de votre choix"
-              : `Copier "${itemName}" vers les menus de votre choix`
+              ? "Sélectionnez les outlets et leurs menus de destination"
+              : `Sélectionnez où copier "${itemName}"`
             }
           </DialogDescription>
         </DialogHeader>
@@ -95,33 +135,66 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
         <div className="space-y-4 py-4">
           <div>
             <Label className="text-sm font-medium mb-3 block">
-              Sélectionner les menus de destination
+              1. Sélectionner les points de vente
             </Label>
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
-              {availableMenus.length === 0 ? (
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {availableOutlets.length === 0 ? (
                 <div className="p-4 text-sm text-muted-foreground text-center">
-                  Aucun autre menu disponible
+                  Aucun autre point de vente disponible
                 </div>
               ) : (
-                availableMenus.map((menu) => (
-                  <label
-                    key={menu.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedMenuIds.has(menu.id)}
-                      onChange={() => toggleMenu(menu.id)}
-                      className="w-4 h-4 rounded border-gray-300"
-                    />
-                    <span className="text-sm font-medium">{menu.name}</span>
-                  </label>
-                ))
+                availableOutlets.map((outlet) => {
+                  const outletMenus = getMenusForOutlet(outlet.id);
+                  const isSelected = selectedOutletIds.has(outlet.id);
+                  
+                  return (
+                    <div key={outlet.id} className="space-y-2">
+                      <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleOutlet(outlet.id)}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <span className="text-sm font-medium">{outlet.name}</span>
+                      </label>
+                      
+                      {isSelected && (
+                        <div className="ml-7 space-y-2">
+                          <Label className="text-xs text-muted-foreground">
+                            2. Choisir le menu de destination
+                          </Label>
+                          {outletMenus.length === 0 ? (
+                            <p className="text-xs text-muted-foreground italic">
+                              Aucun menu disponible pour ce point de vente
+                            </p>
+                          ) : (
+                            <Select
+                              value={selectedMenuByOutlet.get(outlet.id) || ''}
+                              onValueChange={(value) => handleMenuSelect(outlet.id, value)}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Sélectionner un menu" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {outletMenus.map((menu) => (
+                                  <SelectItem key={menu.id} value={menu.id}>
+                                    {menu.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
-            {selectedMenuIds.size > 0 && (
+            {selectedOutletIds.size > 0 && (
               <p className="text-xs text-muted-foreground mt-2">
-                {selectedMenuIds.size} menu{selectedMenuIds.size > 1 ? 's' : ''} sélectionné{selectedMenuIds.size > 1 ? 's' : ''}
+                {selectedOutletIds.size} point{selectedOutletIds.size > 1 ? 's' : ''} de vente sélectionné{selectedOutletIds.size > 1 ? 's' : ''}
               </p>
             )}
           </div>
@@ -133,7 +206,7 @@ const TransferMenuItemModal: React.FC<TransferMenuItemModalProps> = ({
           </Button>
           <Button 
             onClick={handleConfirm} 
-            disabled={selectedMenuIds.size === 0 || isLoading}
+            disabled={!canConfirm || isLoading}
           >
             {isLoading ? 'Partage...' : 'Partager'}
           </Button>
