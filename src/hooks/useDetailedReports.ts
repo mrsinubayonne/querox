@@ -37,6 +37,48 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
     }
   }, [user, outletId, periodId]);
 
+  // Real-time updates for orders and invoices
+  useEffect(() => {
+    if (!user || !periodId) return;
+
+    const ordersChannel = supabase
+      .channel('orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchTransactions();
+        }
+      )
+      .subscribe();
+
+    const invoicesChannel = supabase
+      .channel('invoices-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'invoices',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchTransactions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(invoicesChannel);
+    };
+  }, [user, periodId]);
+
   const fetchTransactions = async () => {
     if (!user || !periodId) return;
 
@@ -99,11 +141,12 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         });
       });
 
-      // Fetch invoices - STRICTEMENT pour ce PDV
+      // Fetch invoices - STRICTEMENT pour ce PDV et SEULEMENT les factures payées
       let invoicesQuery = supabase
         .from('invoices')
         .select('*')
         .eq('user_id', user.id)
+        .eq('status', 'paid')
         .gte('created_at', startISO)
         .lte('created_at', endISO)
         .order('created_at', { ascending: false });

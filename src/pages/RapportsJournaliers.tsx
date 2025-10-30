@@ -39,7 +39,7 @@ const RapportsJournaliers: React.FC = () => {
 
   const { transactions, loading: detailedLoading, downloadReport: downloadDetailedReport } = useDetailedReports({
     outletId: selectedOutletId || undefined,
-    periodId: selectedPeriodId,
+    periodId: selectedPeriodId || currentPeriod?.id,
   });
 
   const { reports, loading, downloadReport } = useDailyReports({
@@ -358,8 +358,8 @@ const RapportsJournaliers: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Detailed Transactions Table - Only show when a period is selected */}
-            {selectedPeriodId && (
+            {/* Detailed Transactions Table - Show for active period or selected closed period */}
+            {(currentPeriod || selectedPeriodId) && (
               <DetailedTransactionsTable 
                 transactions={transactions} 
                 loading={detailedLoading} 
