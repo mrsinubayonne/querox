@@ -154,33 +154,40 @@ export const useSubscription = () => {
     }
   }, [user, isAdminUser]);
 
+  // Fetch initial data
   useEffect(() => {
     fetchUserRole();
-    fetchSubscription();
-    
-    if (user && userRole?.role !== 'admin') {
-      // Subscribe to realtime changes for non-admins
-      const subscription = supabase
-        .channel('subscription-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'subscribers',
-            filter: `user_id=eq.${user.id}`
-          },
-          () => {
-            fetchSubscription();
-          }
-        )
-        .subscribe();
+  }, [fetchUserRole]);
 
-      return () => {
-        subscription.unsubscribe();
-      };
-    }
-  }, [fetchSubscription, fetchUserRole, user, userRole]);
+  useEffect(() => {
+    fetchSubscription();
+  }, [fetchSubscription]);
+
+  // Separate effect for realtime subscription
+  useEffect(() => {
+    if (!user?.id || userRole?.role === 'admin') return;
+
+    // Subscribe to realtime changes for non-admins
+    const channel = supabase
+      .channel(`subscription-changes-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'subscribers',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchSubscription();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, userRole?.role, fetchSubscription]);
 
 
   const isSubscriptionActive = useCallback(() => {

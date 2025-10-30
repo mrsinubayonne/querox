@@ -153,10 +153,10 @@ export const useOrders = () => {
 
   useEffect(() => {
     // Écouter les nouvelles commandes en temps réel
-    if (!user) return;
+    if (!user?.id) return;
 
     const channel = supabase
-      .channel('orders-changes')
+      .channel(`orders-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
