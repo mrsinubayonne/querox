@@ -197,7 +197,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
   const filteredMenuItems = getFilteredMenuItems();
 
-  const marketingItems = hasPermission('marketing') ? [{
+  const marketingItems = hasPermission('marketing') && selectedProfile?.title === 'Admin' ? [{
     icon: TrendingUp,
     label: 'Aperçu Marketing',
     path: '/marketing'
@@ -215,7 +215,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/publicite-facebook'
   }] : [];
 
-  const servicesItems = [{
+  const servicesItems = selectedProfile?.title === 'Admin' ? [{
     icon: Headphones,
     label: 'Aperçu Services',
     path: '/services'
@@ -223,7 +223,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     icon: UserCheck,
     label: 'Consulting',
     path: '/consulting'
-  }];
+  }] : [];
 
   const adminItems = [{
     icon: Crown,
@@ -244,21 +244,21 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   }];
 
   const bottomMenuItems = [
-    ...(hasPermission('settings') ? [{
+    ...(hasPermission('settings') && selectedProfile?.title === 'Admin' ? [{
       icon: Settings,
       label: 'Paramètres',
       path: '/parametres'
     }] : []),
-    ...(hasPermission('team') ? [{
+    ...(hasPermission('team') && selectedProfile?.title === 'Admin' ? [{
       icon: Users,
       label: 'Équipe',
       path: '/parametres?tab=equipe'
     }] : []),
-    {
+    ...(selectedProfile?.title === 'Admin' ? [{
       icon: CreditCard,
       label: 'Abonnement',
       path: '/abonnement'
-    }
+    }] : [])
   ];
 
   const handleNavigation = (path: string) => {
