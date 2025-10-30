@@ -8,11 +8,21 @@ import PageWithSidebar from '@/components/PageWithSidebar';
 import EmptyState from '@/components/EmptyState';
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
 import CreateMenuModal from '@/components/CreateMenuModal';
-import { Menu, Eye } from 'lucide-react';
+import { Menu, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { APP_CONFIG } from '@/config/app.config';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface MenuType {
   id: string;
@@ -26,6 +36,7 @@ const Menus: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<MenuType | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [menuToDelete, setMenuToDelete] = useState<MenuType | null>(null);
   const { user } = useAuth();
   const { selectedOutletId } = useOutlets();
   const { toast } = useToast();
@@ -101,6 +112,59 @@ const Menus: React.FC = () => {
     // Ouvrir la version publique dans l'application pour éviter les blocages de pop-up en preview
     navigate(`/menu/${activeMenu.id}`);
   };
+
+  const handleDeleteMenu = async () => {
+    if (!menuToDelete || !user) return;
+
+    try {
+      // Supprimer les items du menu d'abord
+      const { data: categories } = await supabase
+        .from('menu_categories')
+        .select('id')
+        .eq('menu_id', menuToDelete.id);
+
+      if (categories && categories.length > 0) {
+        const categoryIds = categories.map(c => c.id);
+        
+        // Supprimer les items
+        await supabase
+          .from('menu_items')
+          .delete()
+          .in('category_id', categoryIds);
+        
+        // Supprimer les catégories
+        await supabase
+          .from('menu_categories')
+          .delete()
+          .eq('menu_id', menuToDelete.id);
+      }
+
+      // Supprimer le menu
+      const { error } = await supabase
+        .from('menus')
+        .delete()
+        .eq('id', menuToDelete.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Menu supprimé",
+        description: "Le menu a été supprimé avec succès",
+      });
+
+      setMenuToDelete(null);
+      fetchMenus();
+    } catch (error) {
+      console.error('Error deleting menu:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le menu",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <PageWithSidebar>
       <div className="space-y-8">
@@ -152,6 +216,14 @@ const Menus: React.FC = () => {
                   </Badge>
                   <span>•</span>
                   <span>{new Date(activeMenu.created_at).toLocaleDateString()}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMenuToDelete(activeMenu)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               )}
             </div>
@@ -177,6 +249,29 @@ const Menus: React.FC = () => {
           onClose={() => setShowCreateModal(false)}
           onSuccess={handleCreateMenuSuccess}
         />
+
+        {/* Dialog de confirmation de suppression */}
+        <AlertDialog open={!!menuToDelete} onOpenChange={() => setMenuToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+              <AlertDialogDescription>
+                Êtes-vous sûr de vouloir supprimer le menu "{menuToDelete?.name}" ? 
+                Cette action supprimera également toutes les catégories et plats associés.
+                Cette action est irréversible.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteMenu}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </PageWithSidebar>
   );

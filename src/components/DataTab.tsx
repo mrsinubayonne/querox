@@ -3,13 +3,24 @@ import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload } from "lucide-react";
+import { Download, Upload, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const DataTab: React.FC = () => {
   const [autoBackup, setAutoBackup] = useState(true);
   const [backupFrequency, setBackupFrequency] = useState("daily");
+  const [sectionToDelete, setSectionToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportData = async () => {
@@ -132,6 +143,123 @@ export const DataTab: React.FC = () => {
     }
   };
 
+  const handleDeleteSection = async () => {
+    if (!sectionToDelete) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Erreur",
+          description: "Vous devez être connecté",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      let error = null;
+      
+      // Suppressions spéciales pour les menus
+      if (sectionToDelete === 'menus') {
+        const { data: menus } = await supabase
+          .from('menus')
+          .select('id')
+          .eq('user_id', user.id);
+
+        if (menus && menus.length > 0) {
+          const menuIds = menus.map(m => m.id);
+          
+          const { data: categories } = await supabase
+            .from('menu_categories')
+            .select('id')
+            .in('menu_id', menuIds);
+
+          if (categories && categories.length > 0) {
+            const categoryIds = categories.map(c => c.id);
+            
+            await supabase
+              .from('menu_items')
+              .delete()
+              .in('category_id', categoryIds);
+            
+            await supabase
+              .from('menu_categories')
+              .delete()
+              .in('menu_id', menuIds);
+          }
+        }
+
+        const result = await supabase
+          .from('menus')
+          .delete()
+          .eq('user_id', user.id);
+        error = result.error;
+      } else if (sectionToDelete === 'orders') {
+        const result = await supabase.from('orders').delete().eq('user_id', user.id);
+        error = result.error;
+      } else if (sectionToDelete === 'customers') {
+        const result = await supabase.from('customers').delete().eq('user_id', user.id);
+        error = result.error;
+      } else if (sectionToDelete === 'inventory') {
+        const result = await supabase.from('inventory_items').delete().eq('user_id', user.id);
+        error = result.error;
+      } else if (sectionToDelete === 'transactions') {
+        const result = await supabase.from('transactions').delete().eq('user_id', user.id);
+        error = result.error;
+      } else if (sectionToDelete === 'invoices') {
+        const result = await supabase.from('invoices').delete().eq('user_id', user.id);
+        error = result.error;
+      } else if (sectionToDelete === 'reservations') {
+        const result = await supabase.from('reservations').delete().eq('user_id', user.id);
+        error = result.error;
+      } else if (sectionToDelete === 'events') {
+        const result = await supabase.from('events').delete().eq('user_id', user.id);
+        error = result.error;
+      }
+
+      if (error) throw error;
+
+      toast({
+        title: "Suppression réussie",
+        description: `Toutes les données de la section ${getSectionLabel(sectionToDelete)} ont été supprimées`
+      });
+
+      setSectionToDelete(null);
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer les données",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getSectionLabel = (section: string): string => {
+    const labels: { [key: string]: string } = {
+      orders: 'Commandes',
+      customers: 'Clients',
+      inventory: 'Inventaire',
+      transactions: 'Transactions',
+      invoices: 'Factures',
+      menus: 'Menus',
+      reservations: 'Réservations',
+      events: 'Événements'
+    };
+    return labels[section] || section;
+  };
+
+  const sections = [
+    { id: 'menus', label: 'Menus' },
+    { id: 'orders', label: 'Commandes' },
+    { id: 'customers', label: 'Clients' },
+    { id: 'inventory', label: 'Inventaire' },
+    { id: 'transactions', label: 'Transactions' },
+    { id: 'invoices', label: 'Factures' },
+    { id: 'reservations', label: 'Réservations' },
+    { id: 'events', label: 'Événements' }
+  ];
+
   return (
     <div className="space-y-6 p-6 bg-card rounded-lg border border-border">
       <div>
@@ -190,7 +318,48 @@ export const DataTab: React.FC = () => {
             className="hidden"
           />
         </div>
+
+        <div className="border-t pt-6 mt-6">
+          <h3 className="text-sm font-semibold mb-4 text-destructive">Zone dangereuse</h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Supprimez les données par section. Cette action est irréversible.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {sections.map(section => (
+              <Button
+                key={section.id}
+                variant="outline"
+                className="flex items-center justify-between gap-2 text-destructive border-destructive/50 hover:bg-destructive/10"
+                onClick={() => setSectionToDelete(section.id)}
+              >
+                <span>{section.label}</span>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            ))}
+          </div>
+        </div>
       </div>
+
+      <AlertDialog open={!!sectionToDelete} onOpenChange={() => setSectionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer toutes les données de la section "{sectionToDelete ? getSectionLabel(sectionToDelete) : ''}" ?
+              Cette action est irréversible et supprimera définitivement toutes les données associées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSection}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
