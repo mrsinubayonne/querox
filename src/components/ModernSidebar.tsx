@@ -180,7 +180,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       return menuItems; // Admin has access to everything
     } else if (title === 'Caissier(e)') {
       return menuItems.filter(item => 
-        ['Dashboard', 'Commandes', 'Tables', 'Factures', 'Réservations', 'Rapports', 'Support'].includes(item.label)
+        ['Commandes', 'Tables', 'Factures', 'Réservations', 'Rapports', 'Support'].includes(item.label)
       );
     } else if (title === 'Comptable') {
       return menuItems.filter(item => 
@@ -188,7 +188,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       );
     } else if (title === 'Serveur') {
       return menuItems.filter(item => 
-        ['Dashboard', 'Commandes', 'Tables'].includes(item.label)
+        ['Commandes', 'Tables', 'Rapports'].includes(item.label)
       );
     }
     

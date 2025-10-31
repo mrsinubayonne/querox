@@ -110,7 +110,12 @@ const SelectProfile: React.FC = () => {
     if (validCodes.includes(enteredCode)) {
       if (selectedProfileForAccess) {
         selectProfile(selectedProfileForAccess);
-        navigate('/select-outlet');
+        // Rediriger vers les rapports pour Serveur et Caissier
+        if (profile.title === 'Serveur' || profile.title === 'Caissier(e)') {
+          navigate('/rapports');
+        } else {
+          navigate('/select-outlet');
+        }
       }
       setIsAccessCodeDialogOpen(false);
       setAccessCode('');
