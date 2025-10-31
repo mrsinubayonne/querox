@@ -135,13 +135,27 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
     try {
       if (!user) throw new Error("Non authentifié");
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("selected_outlet_id")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const outletId = profile?.selected_outlet_id;
+      // Get selected outlet from user_profiles first, then fallback to profiles
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId = null;
+      
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id;
+      }
+      
+      if (!outletId) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("selected_outlet_id")
+          .eq("id", user.id)
+          .maybeSingle();
+        outletId = profile?.selected_outlet_id;
+      }
 
       const orderItems = cart.map((item) => ({
         id: item.id,

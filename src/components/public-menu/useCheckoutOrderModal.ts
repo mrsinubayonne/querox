@@ -61,7 +61,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     setLoading(true);
 
     try {
-      // Get the outlet_id for the restaurant
+      // Get the outlet_id for the restaurant - use profiles table for restaurant owner
       const { data: profile } = await supabase
         .from('profiles')
         .select('selected_outlet_id')
