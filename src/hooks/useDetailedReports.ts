@@ -229,6 +229,19 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
 
         doc.setFontSize(11);
         doc.text(`Généré le ${formatDate(new Date(), 'dd/MM/yyyy à HH:mm')}`, 14, 28);
+        
+        // Calculate total amount
+        const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+        
+        // Get period info if available
+        const firstTransaction = transactions[0];
+        const lastTransaction = transactions[transactions.length - 1];
+        const periodText = firstTransaction && lastTransaction && firstTransaction.date !== lastTransaction.date
+          ? `Période: ${firstTransaction.date} au ${lastTransaction.date}`
+          : `Date: ${firstTransaction?.date || formatDate(new Date(), 'dd/MM/yyyy')}`;
+        
+        doc.setFontSize(10);
+        doc.text(periodText, 14, 34);
 
         const tableData = transactions.map((t) => [
           t.date,
@@ -244,11 +257,17 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         autoTable(doc, {
           head: [['Date', 'Heure', 'PDV', 'Type', 'Référence', 'Client', 'Montant', 'Statut']],
           body: tableData,
-          startY: 36,
+          startY: 40,
           theme: 'grid',
           headStyles: { fillColor: [59, 130, 246] },
           styles: { fontSize: 8 },
         });
+
+        // Add total row
+        const finalY = (doc as any).lastAutoTable.finalY || 40;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`TOTAL du ${periodText.split(': ')[1]}: ${totalAmount.toLocaleString()} CFA`, 14, finalY + 10);
 
         const fileName = `rapport_detaille_${formatDate(new Date(), 'yyyy-MM-dd')}.pdf`;
         doc.save(fileName);

@@ -14,7 +14,6 @@ import { useAutoStartPeriod } from '@/hooks/useAutoStartPeriod';
 import { DailyReportStats } from '@/components/reports/DailyReportStats';
 import { DailyReportTable } from '@/components/reports/DailyReportTable';
 import { DetailedTransactionsTable } from '@/components/reports/DetailedTransactionsTable';
-import { InvoicePaidCelebration } from '@/components/InvoicePaidCelebration';
 import { DateRange } from 'react-day-picker';
 import { format, subDays, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -103,7 +102,6 @@ const RapportsJournaliers: React.FC = () => {
 
   return (
     <PageWithSidebar>
-      <InvoicePaidCelebration />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -158,10 +156,15 @@ const RapportsJournaliers: React.FC = () => {
 
         {/* No Current Period Alert */}
         {viewMode === 'periods' && !currentPeriod && (
-          <Alert>
+          <Alert className="bg-green-50 border-green-200">
             <AlertDescription className="flex items-center justify-between">
-              <p className="text-sm">Aucune période active. Démarrez une nouvelle période pour commencer à enregistrer l'activité.</p>
-              <Button onClick={startNewPeriod} disabled={periodsLoading}>
+              <p className="text-sm font-medium text-green-900">Aucune période active. Démarrez une nouvelle période pour commencer à enregistrer l'activité.</p>
+              <Button 
+                onClick={startNewPeriod} 
+                disabled={periodsLoading}
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow-lg"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
                 Démarrer une période
               </Button>
             </AlertDescription>

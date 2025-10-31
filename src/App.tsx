@@ -60,6 +60,7 @@ import SelectProfile from '@/pages/SelectProfile';
 import ProfileLogin from '@/pages/ProfileLogin';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
 
 function App() {
   return (
@@ -130,6 +131,7 @@ function App() {
           </div>
           <Toaster />
           <Sonner />
+          <InvoicePaidCelebration />
         </Router>
       </RestaurantProvider>
   );
