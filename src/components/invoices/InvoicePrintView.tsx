@@ -71,55 +71,55 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
             <img 
               src={settings?.logo_url || website?.logo_url} 
               alt="Logo" 
-              className="h-20 mb-4" 
+              className="h-24 mb-4" 
             />
           )}
-          <h1 className="text-2xl font-bold text-black mb-2">
+          <h1 className="text-3xl font-bold text-black mb-2">
             {settings?.company_name || website?.name || 'Mon Restaurant'}
           </h1>
           {settings?.company_address && (
-            <p className="text-sm text-black whitespace-pre-line" style={{ fontWeight: '900' }}>{settings.company_address}</p>
+            <p className="text-base text-black whitespace-pre-line" style={{ fontWeight: '900' }}>{settings.company_address}</p>
           )}
           {settings?.company_phone && (
-            <p className="text-sm text-black mt-1" style={{ fontWeight: '900' }}>Tél: {settings.company_phone}</p>
+            <p className="text-base text-black mt-1" style={{ fontWeight: '900' }}>Tél: {settings.company_phone}</p>
           )}
           {settings?.company_email && (
-            <p className="text-sm text-black" style={{ fontWeight: '900' }}>{settings.company_email}</p>
+            <p className="text-base text-black" style={{ fontWeight: '900' }}>{settings.company_email}</p>
           )}
           {settings?.tax_id && (
-            <p className="text-sm text-black" style={{ fontWeight: '900' }}>SIRET/TVA: {settings.tax_id}</p>
+            <p className="text-base text-black" style={{ fontWeight: '900' }}>SIRET/TVA: {settings.tax_id}</p>
           )}
         </div>
         <div className="text-right">
           <h2 
-            className="text-xl font-bold mb-2 text-black"
+            className="text-2xl font-bold mb-2 text-black"
           >
             {settings?.invoice_title || 'FACTURE'}
           </h2>
           <p 
-            className="text-lg text-black"
+            className="text-xl text-black"
             style={{ fontWeight: '900' }}
           >
             {invoice.invoice_number}
           </p>
-          <p className="text-sm text-black mt-2" style={{ fontWeight: '900' }}>Date: {formatDate(invoice.created_at)}</p>
+          <p className="text-base text-black mt-2" style={{ fontWeight: '900' }}>Date: {formatDate(invoice.created_at)}</p>
         </div>
       </div>
 
       {/* Informations client */}
       <div className="mb-6">
-        <h3 className="text-base text-black mb-2" style={{ fontWeight: '900' }}>Facturé à:</h3>
-        <p className="text-sm text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>
+        <h3 className="text-lg font-bold text-black mb-2" style={{ fontWeight: '900' }}>Facturé à:</h3>
+        <p className="text-base text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>
           {invoice.customer_name || 'Client'}
         </p>
         {invoice.customer_email && (
-          <p className="text-xs text-black" style={{ fontWeight: '900' }}>{invoice.customer_email}</p>
+          <p className="text-sm text-black" style={{ fontWeight: '900' }}>{invoice.customer_email}</p>
         )}
         {invoice.customer_phone && (
-          <p className="text-xs text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{invoice.customer_phone}</p>
+          <p className="text-sm text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{invoice.customer_phone}</p>
         )}
         {servedBy && (
-          <p className="text-xs text-black mt-2" style={{ fontWeight: '900' }}>Servi par: {servedBy}</p>
+          <p className="text-sm text-black mt-2" style={{ fontWeight: '900' }}>Servi par: {servedBy}</p>
         )}
       </div>
 
@@ -128,36 +128,36 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-100">
-              <th className="border border-gray-300 px-3 py-2 text-left text-sm" style={{ fontWeight: '900' }}>Article</th>
-              <th className="border border-gray-300 px-3 py-2 text-center text-sm" style={{ fontWeight: '900' }}>Quantité</th>
-              <th className="border border-gray-300 px-3 py-2 text-right text-sm" style={{ fontWeight: '900' }}>Prix unitaire</th>
-              <th className="border border-gray-300 px-3 py-2 text-right text-sm" style={{ fontWeight: '900' }}>Total</th>
+              <th className="border border-gray-300 px-4 py-3 text-left text-base" style={{ fontWeight: '900' }}>Article</th>
+              <th className="border border-gray-300 px-4 py-3 text-center text-base" style={{ fontWeight: '900' }}>Quantité</th>
+              <th className="border border-gray-300 px-4 py-3 text-right text-base" style={{ fontWeight: '900' }}>Prix unitaire</th>
+              <th className="border border-gray-300 px-4 py-3 text-right text-base" style={{ fontWeight: '900' }}>Total</th>
             </tr>
           </thead>
           <tbody>
             {invoice.items && Array.isArray(invoice.items) && invoice.items.length > 0 ? (
               invoice.items.map((item: any, index: number) => (
                 <tr key={index}>
-                  <td className="border border-gray-300 px-3 py-2">
-                    <p className="text-xs" style={{ fontWeight: '900' }}>{item.name}</p>
+                  <td className="border border-gray-300 px-4 py-3">
+                    <p className="text-sm" style={{ fontWeight: '900' }}>{item.name}</p>
                   </td>
-                  <td className="border border-gray-300 px-3 py-2 text-center text-xs" style={{ fontWeight: '900' }}>
+                  <td className="border border-gray-300 px-4 py-3 text-center text-sm" style={{ fontWeight: '900' }}>
                     {item.quantity}
                   </td>
-                  <td className="border border-gray-300 px-3 py-2 text-right text-xs" style={{ fontWeight: '900' }}>
+                  <td className="border border-gray-300 px-4 py-3 text-right text-sm" style={{ fontWeight: '900' }}>
                     {item.price?.toLocaleString('fr-FR')} FCFA
                   </td>
-                  <td className="border border-gray-300 px-3 py-2 text-right text-sm" style={{ fontWeight: '900' }}>
+                  <td className="border border-gray-300 px-4 py-3 text-right text-base" style={{ fontWeight: '900' }}>
                     {((item.price || 0) * (item.quantity || 0)).toLocaleString('fr-FR')} FCFA
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="border border-gray-300 px-3 py-2">
-                  <p className="text-xs text-black" style={{ fontWeight: '900' }}>Services et produits</p>
+                <td colSpan={4} className="border border-gray-300 px-4 py-3">
+                  <p className="text-sm text-black" style={{ fontWeight: '900' }}>Services et produits</p>
                   {invoice.notes && (
-                    <p className="text-xs text-black mt-2" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{invoice.notes}</p>
+                    <p className="text-sm text-black mt-2" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>{invoice.notes}</p>
                   )}
                 </td>
               </tr>
@@ -169,10 +169,10 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
       {/* Total */}
       <div className="flex justify-end mb-8">
         <div className="w-64">
-          <div className="flex justify-between py-2 border-t-2 border-gray-300">
-            <span className="text-sm text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>TOTAL:</span>
+          <div className="flex justify-between py-3 border-t-2 border-gray-300">
+            <span className="text-lg text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>TOTAL:</span>
             <span 
-              className="text-base text-black"
+              className="text-xl text-black"
               style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}
             >
               {invoice.total_amount.toLocaleString('fr-FR')} FCFA
@@ -185,11 +185,11 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
       {/* Footer */}
       <div className="border-t-2 border-gray-300 pt-4 mt-8">
         {settings?.footer_note && (
-          <p className="text-xs text-black mb-3 whitespace-pre-line" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>
+          <p className="text-sm text-black mb-3 whitespace-pre-line" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900 !important' }}>
             {settings.footer_note}
           </p>
         )}
-        <p className="text-xs text-black text-center mt-6" style={{ fontWeight: '900' }}>
+        <p className="text-sm text-black text-center mt-6" style={{ fontWeight: '900' }}>
           Généré par QUEROX - Logiciel de gestion, automatisation et optimisation
         </p>
       </div>
