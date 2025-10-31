@@ -50,7 +50,7 @@ export const OpenSessionModal: React.FC<OpenSessionModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="guests">Nombre de personnes</Label>
+            <Label htmlFor="guests">Nombre de personnes (optionnel)</Label>
             <Input
               id="guests"
               type="number"
@@ -58,7 +58,6 @@ export const OpenSessionModal: React.FC<OpenSessionModalProps> = ({
               placeholder="Ex: 4"
               value={numberOfGuests}
               onChange={(e) => setNumberOfGuests(e.target.value)}
-              required
             />
           </div>
 

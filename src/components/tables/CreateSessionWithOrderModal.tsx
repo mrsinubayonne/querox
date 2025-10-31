@@ -226,7 +226,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           <div className="space-y-4 pb-4">
             {/* Nombre de personnes */}
             <div className="space-y-2">
-              <Label htmlFor="guests">Nombre de personnes *</Label>
+              <Label htmlFor="guests">Nombre de personnes (optionnel)</Label>
               <Input
                 id="guests"
                 type="number"
@@ -234,7 +234,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                 placeholder="Ex: 4"
                 value={numberOfGuests}
                 onChange={(e) => setNumberOfGuests(e.target.value)}
-                required
               />
             </div>
 
