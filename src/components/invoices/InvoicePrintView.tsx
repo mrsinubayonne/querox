@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Invoice } from '@/hooks/useInvoices';
 import { useInvoiceSettings } from '@/hooks/useInvoiceSettings';
 import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
@@ -23,30 +24,31 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
     });
   };
 
-  return (
-    <div className="print-only fixed inset-0 bg-white z-[9999] p-8" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}>
+  // Créer un portail qui s'attache directement au body pour l'impression
+  return createPortal(
+    <div id="invoice-print-portal" className="invoice-print-container" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}>
       <style>{`
-        * {
-          font-family: 'Arial Black', sans-serif !important;
-          font-weight: 900 !important;
-        }
-        p, span, td, th, div, h1, h2, h3, h4, h5, h6 {
-          font-family: 'Arial Black', sans-serif !important;
-          font-weight: 900 !important;
-        }
+        /* Masquer tout le contenu normal et n'afficher que la facture */
         @media print {
-          /* Masquer tout le reste du DOM sauf la facture */
-          body > *:not(.print-only) {
+          body > *:not(#invoice-print-portal) {
             display: none !important;
           }
-          .print-only {
-            position: static !important;
+          #invoice-print-portal {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: white !important;
+            z-index: 99999 !important;
+          }
+          .invoice-print-container {
+            padding: 8mm !important;
             width: 148mm !important;
             max-width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
+            height: auto !important;
+            overflow: hidden !important;
           }
-          /* Empêcher la répétition et pagination */
           * {
             page-break-inside: avoid !important;
             page-break-after: avoid !important;
@@ -54,15 +56,17 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
           }
           @page {
             size: A5 portrait;
-            margin: 8mm;
+            margin: 0;
           }
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            font-family: 'Arial Black', sans-serif !important;
+            font-weight: 900 !important;
           }
         }
         @media screen {
-          .print-only {
+          #invoice-print-portal {
             display: none;
           }
         }
@@ -197,7 +201,8 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
           Généré par QUEROX - Logiciel de gestion, automatisation et optimisation
         </p>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
