@@ -1,19 +1,50 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Invoice } from '@/hooks/useInvoices';
-import { useInvoiceSettings } from '@/hooks/useInvoiceSettings';
-import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
-import { useProfile } from '@/hooks/useProfile';
+import { supabase } from '@/integrations/supabase/client';
+import { InvoiceSettings } from '@/hooks/useInvoiceSettings';
 
 interface InvoicePrintViewProps {
   invoice: Invoice;
   servedBy?: string;
 }
 
+interface OutletData {
+  name: string;
+  address: string | null;
+  phone: string | null;
+}
+
 const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }) => {
-  const { settings } = useInvoiceSettings();
-  const { website } = useRestaurantSettings();
-  const { profile } = useProfile();
+  const [settings, setSettings] = useState<InvoiceSettings | null>(null);
+  const [outlet, setOutlet] = useState<OutletData | null>(null);
+
+  useEffect(() => {
+    const fetchInvoiceData = async () => {
+      // Récupérer les paramètres de facturation pour cet outlet
+      if (invoice.outlet_id) {
+        const { data: settingsData } = await supabase
+          .from('invoice_settings')
+          .select('*')
+          .eq('user_id', invoice.user_id)
+          .eq('outlet_id', invoice.outlet_id)
+          .maybeSingle();
+        
+        setSettings(settingsData);
+
+        // Récupérer les infos du point de vente
+        const { data: outletData } = await supabase
+          .from('outlets')
+          .select('name, address, phone')
+          .eq('id', invoice.outlet_id)
+          .single();
+        
+        setOutlet(outletData);
+      }
+    };
+
+    fetchInvoiceData();
+  }, [invoice.outlet_id, invoice.user_id]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -75,21 +106,27 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
       {/* En-tête */}
       <div className="flex justify-between items-start mb-2 pb-1 border-b border-gray-300">
         <div>
-          {(settings?.logo_url || website?.logo_url) && (
+          {settings?.logo_url && (
             <img 
-              src={settings?.logo_url || website?.logo_url} 
+              src={settings.logo_url} 
               alt="Logo" 
               className="h-12 mb-1" 
             />
           )}
           <h1 className="text-xl font-bold text-black mb-0">
-            {settings?.company_name || website?.name || 'Mon Restaurant'}
+            {settings?.company_name || outlet?.name || 'Mon Restaurant'}
           </h1>
           {settings?.company_address && (
             <p className="text-xs text-black whitespace-pre-line">{settings.company_address}</p>
           )}
+          {!settings?.company_address && outlet?.address && (
+            <p className="text-xs text-black whitespace-pre-line">{outlet.address}</p>
+          )}
           {settings?.company_phone && (
             <p className="text-xs text-black">Tél: {settings.company_phone}</p>
+          )}
+          {!settings?.company_phone && outlet?.phone && (
+            <p className="text-xs text-black">Tél: {outlet.phone}</p>
           )}
           {settings?.company_email && (
             <p className="text-xs text-black">{settings.company_email}</p>

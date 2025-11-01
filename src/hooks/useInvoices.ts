@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface Invoice {
   id: string;
   user_id: string;
+  outlet_id: string | null;
   order_id: string | null;
   session_id: string | null;
   invoice_number: string;
