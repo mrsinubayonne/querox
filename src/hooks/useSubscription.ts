@@ -181,6 +181,12 @@ export const useSubscription = () => {
       return false;
     }
     
+    // If status says active, trust it
+    if (subscription.subscription_status === 'active') {
+      return true;
+    }
+    
+    // Fallbacks for legacy rows
     if (!subscription.subscribed) {
       return false;
     }
@@ -191,7 +197,7 @@ export const useSubscription = () => {
     
     const endDate = new Date(subscription.subscription_end);
     const now = new Date();
-      return endDate > now;
+    return endDate > now;
   }, [subscription, userRole]);
 
   const getDaysRemaining = () => {
