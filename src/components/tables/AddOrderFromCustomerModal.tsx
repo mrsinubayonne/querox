@@ -55,9 +55,9 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
       if (!user) return;
       
       const { data: profile } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .select("selected_outlet_id")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       const outletId = profile?.selected_outlet_id;
@@ -172,9 +172,9 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
       if (!user) throw new Error("Non authentifié");
 
       const { data: profile } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .select("selected_outlet_id")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       const outletId = profile?.selected_outlet_id;

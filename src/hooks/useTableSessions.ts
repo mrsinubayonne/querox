@@ -35,9 +35,9 @@ export function useTableSessions() {
 
       // Get user's selected outlet
       const { data: profile } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .select("selected_outlet_id")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       const outletId = profile?.selected_outlet_id;
@@ -83,9 +83,9 @@ export function useTableSessions() {
       try {
         // Get user's selected outlet
         const { data: profile } = await supabase
-          .from("profiles")
+          .from("user_profiles")
           .select("selected_outlet_id")
-          .eq("id", user.id)
+          .eq("user_id", user.id)
           .maybeSingle();
 
         const outletId = profile?.selected_outlet_id;
@@ -192,9 +192,9 @@ export function useTableSessions() {
 
       try {
         const { data: profile } = await supabase
-          .from("profiles")
+          .from("user_profiles")
           .select("selected_outlet_id")
-          .eq("id", user.id)
+          .eq("user_id", user.id)
           .maybeSingle();
 
         const outletId = profile?.selected_outlet_id;

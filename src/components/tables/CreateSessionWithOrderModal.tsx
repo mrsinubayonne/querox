@@ -53,9 +53,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       if (!user) return;
       
       const { data: profile } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .select("selected_outlet_id")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       const outletId = profile?.selected_outlet_id;
@@ -82,7 +82,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const { menuItems } = useMenuData(activeMenuId);
 
   const filteredItems = useMemo(() => {
-    if (!searchTerm.trim()) return [];
+    if (!searchTerm.trim()) return menuItems;
     const term = searchTerm.toLowerCase();
     return menuItems.filter(
       (item) =>
@@ -142,9 +142,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       if (!user) throw new Error("Non authentifié");
 
       const { data: profile } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .select("selected_outlet_id")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       const outletId = profile?.selected_outlet_id;
@@ -252,7 +252,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                   className="pl-10"
                 />
               </div>
-              {searchTerm && filteredItems.length > 0 && (
+              {filteredItems.length > 0 && (
                 <ScrollArea className="h-32 border rounded-md">
                   <div className="p-2 space-y-1">
                     {filteredItems.slice(0, 5).map((item) => (
@@ -270,6 +270,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                     ))}
                   </div>
                 </ScrollArea>
+              )}
+              {filteredItems.length === 0 && activeMenuId && (
+                <p className="text-sm text-muted-foreground">Aucun plat trouvé</p>
               )}
             </div>
           </div>

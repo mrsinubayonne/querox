@@ -51,9 +51,9 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       if (!user) return;
 
       const { data: profile } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .select("selected_outlet_id")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       const outletId = profile?.selected_outlet_id;
@@ -80,7 +80,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
   const { menuItems } = useMenuData(activeMenuId);
 
   const filteredItems = useMemo(() => {
-    if (!searchTerm.trim()) return [] as typeof menuItems;
+    if (!searchTerm.trim()) return menuItems;
     const term = searchTerm.toLowerCase();
     return menuItems.filter(
       (item) =>
@@ -150,9 +150,9 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       
       if (!outletId) {
         const { data: profile } = await supabase
-          .from("profiles")
+          .from("user_profiles")
           .select("selected_outlet_id")
-          .eq("id", user.id)
+          .eq("user_id", user.id)
           .maybeSingle();
         outletId = profile?.selected_outlet_id;
       }
@@ -225,7 +225,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                   autoFocus
                 />
               </div>
-              {searchTerm && filteredItems.length > 0 && (
+              {filteredItems.length > 0 && (
                 <ScrollArea className="h-48 border rounded-md">
                   <div className="p-2 space-y-1">
                     {filteredItems.map((item) => (
@@ -248,6 +248,9 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                     ))}
                   </div>
                 </ScrollArea>
+              )}
+              {filteredItems.length === 0 && activeMenuId && (
+                <p className="text-sm text-muted-foreground">Aucun plat trouvé</p>
               )}
             </div>
           </div>
