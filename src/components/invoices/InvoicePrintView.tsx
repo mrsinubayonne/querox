@@ -35,22 +35,27 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
           font-weight: 900 !important;
         }
         @media print {
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          /* Masquer tout le reste du DOM pour éviter plusieurs pages */
           body * {
-            visibility: hidden !important;
+            display: none !important;
           }
           .print-only, .print-only * {
+            display: block !important;
             visibility: visible !important;
           }
+          /* Empêcher la répétition du contenu et cibler A5 */
           .print-only {
-            position: fixed !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            height: auto !important;
+            position: static !important;
+            width: 148mm !important;
+            max-width: 100% !important;
           }
           @page {
-            margin: 1cm;
-            size: A5;
+            size: A5 portrait;
+            margin: 8mm;
           }
           * {
             -webkit-print-color-adjust: exact !important;
