@@ -230,6 +230,14 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         doc.setFontSize(11);
         doc.text(`Généré le ${formatDate(new Date(), 'dd/MM/yyyy à HH:mm')}`, 14, 28);
         
+        // Small helpers to ensure clean text in PDF (avoid non‑breaking spaces rendering issues)
+        const sanitize = (s: string) => s
+          .replace(/[\u202F\u00A0\u2007\u2060]/g, ' ') // replace non-breaking/narrow spaces
+          .replace(/\s+/g, ' ')                           // collapse multiple spaces
+          .trim();
+        const formatFCFA = (value: number) =>
+          `${new Intl.NumberFormat('fr-FR', { useGrouping: true, maximumFractionDigits: 0 }).format(Math.round(Number(value) || 0))} FCFA`;
+        
         // Calculate total amount
         const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
         
@@ -250,9 +258,12 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
           t.type === 'order' ? 'CMD' : 'FAC',
           t.reference,
           t.customer_name,
-          `${t.amount.toLocaleString()} CFA`,
+          sanitize(formatFCFA(t.amount)),
           t.status,
         ]);
+
+        // Ensure base font is set for table content
+        doc.setFont('helvetica', 'normal');
 
         autoTable(doc, {
           head: [['Date', 'Heure', 'PDV', 'Type', 'Référence', 'Client', 'Montant', 'Statut']],
@@ -261,13 +272,14 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
           theme: 'grid',
           headStyles: { fillColor: [59, 130, 246] },
           styles: { fontSize: 8 },
+          columnStyles: { 6: { halign: 'right' } },
         });
 
         // Add total row
         const finalY = (doc as any).lastAutoTable.finalY || 40;
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text(`TOTAL du ${periodText.split(': ')[1]}: ${totalAmount.toLocaleString()} CFA`, 14, finalY + 10);
+        doc.text(`TOTAL ${periodText.split(': ')[1]}: ${sanitize(formatFCFA(totalAmount))}` as string, 14, finalY + 10);
 
         const fileName = `rapport_detaille_${formatDate(new Date(), 'yyyy-MM-dd')}.pdf`;
         doc.save(fileName);
