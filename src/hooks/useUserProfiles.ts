@@ -73,11 +73,17 @@ export const useUserProfiles = () => {
       }
     } catch (error: any) {
       console.error('Error fetching profiles:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les profils',
-        variant: 'destructive',
-      });
+      // Éviter de spammer l'utilisateur pour des erreurs bénignes (ex: 406, aucune ligne unique)
+      const code = error?.code || error?.details || '';
+      const status = error?.status;
+      const isBenign = status === 406 || code === 'PGRST116';
+      if (!isBenign) {
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les profils',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }

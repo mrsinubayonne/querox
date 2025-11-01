@@ -16,7 +16,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   children, 
   feature = "cette fonctionnalité" 
 }) => {
-  const { isSubscriptionActive, loading, refetch, isAdmin } = useSubscription();
+  const { isSubscriptionActive, loading, refetch, isAdmin, subscription } = useSubscription();
   const navigate = useNavigate();
   const { isTeamMember } = useTeamPermissions();
 
@@ -55,7 +55,11 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     );
   }
 
-  if (isSubscriptionActive) {
+  if (
+    isSubscriptionActive ||
+    (subscription?.subscription_status === 'active') ||
+    (subscription?.subscribed && (!subscription?.subscription_end || new Date(subscription.subscription_end) > new Date()))
+  ) {
     return <>{children}</>;
   }
 

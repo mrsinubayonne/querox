@@ -46,14 +46,15 @@ export const useSubscription = () => {
         .select('role')
         .eq('user_id', user.id)
         .eq('role', 'admin')
-        .maybeSingle();
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
       if (error) {
         console.error('Error checking admin role:', error);
         return false;
       }
 
-      return !!data;
+      return Array.isArray(data) && data.length > 0;
     } catch (error) {
       console.error('Error in isAdminUser:', error);
       return false;
@@ -73,13 +74,14 @@ export const useSubscription = () => {
         .from('user_roles')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching user role:', error);
         setUserRole(null);
       } else {
-        setUserRole(data);
+        setUserRole(Array.isArray(data) && data.length > 0 ? (data[0] as UserRole) : null);
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
