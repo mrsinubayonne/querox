@@ -120,38 +120,50 @@ export const useSubscription = () => {
     }
 
     try {
-      // Chercher d'abord par user_id, puis par email
-      let { data, error } = await supabase
+      // Chercher d'abord par user_id (évite les erreurs 406 en cas de doublons)
+      const { data: byUser, error: userErr } = await supabase
         .from('subscribers')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
-      if (!data && !error) {
-        const { data: emailData, error: emailError } = await supabase
+      let record = (byUser && byUser.length > 0) ? byUser[0] : null;
+
+      // Si rien par user_id, tenter par email (même logique, sans 406)
+      if (!record) {
+        const { data: byEmail, error: emailErr } = await supabase
           .from('subscribers')
           .select('*')
           .eq('email', user.email)
-          .maybeSingle();
-        
-        data = emailData;
-        error = emailError;
-        
-        if (data && !data.user_id) {
-          await supabase
-            .from('subscribers')
-            .update({ user_id: user.id })
-            .eq('id', data.id);
-          
-          data.user_id = user.id;
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (emailErr && emailErr.code !== 'PGRST116') {
+          console.error('Erreur récupération abonnement (email):', emailErr);
+        }
+
+        record = (byEmail && byEmail.length > 0) ? byEmail[0] : null;
+
+        // Si trouvé par email mais sans user_id, lier le compte
+        if (record && !record.user_id) {
+          try {
+            await supabase
+              .from('subscribers')
+              .update({ user_id: user.id })
+              .eq('id', record.id);
+            record.user_id = user.id;
+          } catch (linkErr) {
+            console.warn('Impossible de lier user_id au subscriber:', linkErr);
+          }
         }
       }
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Erreur récupération abonnement:', error);
+      if (userErr && userErr.code !== 'PGRST116') {
+        console.error('Erreur récupération abonnement (user_id):', userErr);
       }
 
-      setSubscription(data);
+      setSubscription(record);
     } catch (error) {
       console.error('Erreur fetchSubscription:', error);
       setSubscription(null);
