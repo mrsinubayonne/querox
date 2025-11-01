@@ -230,13 +230,11 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         doc.setFontSize(11);
         doc.text(`Généré le ${formatDate(new Date(), 'dd/MM/yyyy à HH:mm')}`, 14, 28);
         
-        // Small helpers to ensure clean text in PDF (avoid non‑breaking spaces rendering issues)
-        const sanitize = (s: string) => s
-          .replace(/[\u202F\u00A0\u2007\u2060]/g, ' ') // replace non-breaking/narrow spaces
-          .replace(/\s+/g, ' ')                           // collapse multiple spaces
-          .trim();
-        const formatFCFA = (value: number) =>
-          `${new Intl.NumberFormat('fr-FR', { useGrouping: true, maximumFractionDigits: 0 }).format(Math.round(Number(value) || 0))} FCFA`;
+        // Format FCFA avec espace normal comme séparateur de milliers
+        const formatFCFA = (value: number) => {
+          const rounded = Math.round(Number(value) || 0);
+          return `${rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} FCFA`;
+        };
         
         // Calculate total amount
         const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -258,7 +256,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
           t.type === 'order' ? 'CMD' : 'FAC',
           t.reference,
           t.customer_name,
-          sanitize(formatFCFA(t.amount)),
+          formatFCFA(t.amount),
           t.status,
         ]);
 
@@ -279,7 +277,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         const finalY = (doc as any).lastAutoTable.finalY || 40;
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text(`TOTAL ${periodText.split(': ')[1]}: ${sanitize(formatFCFA(totalAmount))}` as string, 14, finalY + 10);
+        doc.text(`TOTAL ${periodText.split(': ')[1]}: ${formatFCFA(totalAmount)}`, 14, finalY + 10);
 
         const fileName = `rapport_detaille_${formatDate(new Date(), 'yyyy-MM-dd')}.pdf`;
         doc.save(fileName);
