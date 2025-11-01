@@ -35,23 +35,22 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
           font-weight: 900 !important;
         }
         @media print {
-          html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          /* Masquer tout le reste du DOM pour éviter plusieurs pages */
-          body * {
+          /* Masquer tout le reste du DOM sauf la facture */
+          body > *:not(.print-only) {
             display: none !important;
           }
-          .print-only, .print-only * {
-            display: block !important;
-            visibility: visible !important;
-          }
-          /* Empêcher la répétition du contenu et cibler A5 */
           .print-only {
             position: static !important;
             width: 148mm !important;
             max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          /* Empêcher la répétition et pagination */
+          * {
+            page-break-inside: avoid !important;
+            page-break-after: avoid !important;
+            page-break-before: avoid !important;
           }
           @page {
             size: A5 portrait;
