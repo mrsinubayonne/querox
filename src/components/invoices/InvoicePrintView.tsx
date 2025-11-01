@@ -50,7 +50,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
           }
           @page {
             margin: 1cm;
-            size: A4;
+            size: A5;
           }
           * {
             -webkit-print-color-adjust: exact !important;
