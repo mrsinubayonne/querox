@@ -98,7 +98,7 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
   }, [customers, customerSearch]);
 
   const filteredMenuItems = useMemo(() => {
-    if (!menuSearchTerm.trim()) return [];
+    if (!menuSearchTerm.trim()) return menuItems;
     const term = menuSearchTerm.toLowerCase();
     return menuItems.filter(
       (item) =>
@@ -332,10 +332,10 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
                     className="pl-10"
                   />
                 </div>
-                {menuSearchTerm && filteredMenuItems.length > 0 && (
+                {filteredMenuItems.length > 0 && (
                   <ScrollArea className="h-32 border rounded-md">
                     <div className="p-2 space-y-1">
-                      {filteredMenuItems.slice(0, 5).map((item) => (
+                      {filteredMenuItems.slice(0, 10).map((item) => (
                         <button
                           key={item.id}
                           type="button"
@@ -350,6 +350,9 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
                       ))}
                     </div>
                   </ScrollArea>
+                )}
+                {filteredMenuItems.length === 0 && activeMenuId && (
+                  <p className="text-sm text-muted-foreground">Aucun plat trouvé</p>
                 )}
               </div>
             )}
