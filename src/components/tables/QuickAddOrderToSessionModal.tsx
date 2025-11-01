@@ -50,13 +50,24 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
     const fetchActiveMenu = async () => {
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("selected_outlet_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
 
-      const outletId = profile?.selected_outlet_id;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = (userProfile as any)?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = (profile as any)?.selected_outlet_id ?? null;
+      }
 
       const { data: menus } = await supabase
         .from("menus")

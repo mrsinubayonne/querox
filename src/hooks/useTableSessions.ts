@@ -33,14 +33,24 @@ export function useTableSessions() {
     try {
       setLoading(true);
 
-      // Get user's selected outlet
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("selected_outlet_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const outletId = profile?.selected_outlet_id;
+      // Get selected outlet: prefer selectedProfileId in localStorage, fallback to user profile
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = (userProfile as any)?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = (profile as any)?.selected_outlet_id ?? null;
+      }
 
       let query = supabase
         .from("table_sessions" as any)
@@ -81,14 +91,24 @@ export function useTableSessions() {
       }
 
       try {
-        // Get user's selected outlet
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("selected_outlet_id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        const outletId = profile?.selected_outlet_id;
+        // Get selected outlet: prefer selectedProfileId in localStorage, fallback to user profile
+        const selectedProfileId = localStorage.getItem('selectedProfileId');
+        let outletId: string | null = null;
+        if (selectedProfileId) {
+          const { data: userProfile } = await supabase
+            .from('user_profiles')
+            .select('selected_outlet_id')
+            .eq('id', selectedProfileId)
+            .maybeSingle();
+          outletId = (userProfile as any)?.selected_outlet_id ?? null;
+        } else {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('selected_outlet_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          outletId = (profile as any)?.selected_outlet_id ?? null;
+        }
 
         const { data, error } = await supabase
           .from("table_sessions" as any)
@@ -191,22 +211,37 @@ export function useTableSessions() {
       if (!user) return null;
 
       try {
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("selected_outlet_id")
-          .eq("user_id", user.id)
-          .maybeSingle();
+        const selectedProfileId = localStorage.getItem('selectedProfileId');
+        let outletId: string | null = null;
 
-        const outletId = profile?.selected_outlet_id;
+        if (selectedProfileId) {
+          const { data: userProfile } = await supabase
+            .from('user_profiles')
+            .select('selected_outlet_id')
+            .eq('id', selectedProfileId)
+            .maybeSingle();
+          outletId = (userProfile as any)?.selected_outlet_id ?? null;
+        } else {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('selected_outlet_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          outletId = (profile as any)?.selected_outlet_id ?? null;
+        }
 
-        const { data, error } = await supabase
-          .from("table_sessions" as any)
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("table_number", tableNumber)
-          .eq("status", "active")
-          .eq("outlet_id", outletId)
-          .maybeSingle();
+        let query = supabase
+          .from('table_sessions' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('table_number', tableNumber)
+          .eq('status', 'active') as any;
+
+        if (outletId) {
+          query = query.eq('outlet_id', outletId);
+        }
+
+        const { data, error } = await query.maybeSingle();
 
         if (error && error.code !== "PGRST116") throw error;
 

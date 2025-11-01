@@ -52,13 +52,23 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
     const fetchActiveMenu = async () => {
       if (!user) return;
       
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("selected_outlet_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const outletId = profile?.selected_outlet_id;
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = (userProfile as any)?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = (profile as any)?.selected_outlet_id ?? null;
+      }
 
       const { data: menus } = await supabase
         .from("menus")
@@ -141,13 +151,23 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
     try {
       if (!user) throw new Error("Non authentifié");
 
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("selected_outlet_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const outletId = profile?.selected_outlet_id;
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = (userProfile as any)?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = (profile as any)?.selected_outlet_id ?? null;
+      }
 
       // 1. Créer la session
       const { data: session, error: sessionError } = await supabase

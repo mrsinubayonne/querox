@@ -54,13 +54,23 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
     const fetchActiveMenu = async () => {
       if (!user) return;
       
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("selected_outlet_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const outletId = profile?.selected_outlet_id;
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = (userProfile as any)?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = (profile as any)?.selected_outlet_id ?? null;
+      }
 
       const { data: menus } = await supabase
         .from("menus")
@@ -171,21 +181,35 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
     try {
       if (!user) throw new Error("Non authentifié");
 
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("selected_outlet_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const outletId = profile?.selected_outlet_id;
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = (userProfile as any)?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = (profile as any)?.selected_outlet_id ?? null;
+      }
 
       // Vérifier s'il y a déjà une session pour cette table
-      const { data: existingSession } = await supabase
-        .from("table_sessions")
-        .select("id")
-        .eq("table_number", tableNumber)
-        .eq("status", "active")
-        .maybeSingle();
+      let sessionQuery = supabase
+        .from('table_sessions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('table_number', tableNumber)
+        .eq('status', 'active') as any;
+      if (outletId) {
+        sessionQuery = sessionQuery.eq('outlet_id', outletId);
+      }
+      const { data: existingSession } = await sessionQuery.maybeSingle();
 
       const sessionId = existingSession?.id;
 
