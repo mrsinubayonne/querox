@@ -34,6 +34,7 @@ export const useSubscription = () => {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingRole, setLoadingRole] = useState(true);
 
   // Check if current user is admin using the new role system
   const isAdminUser = useCallback(async () => {
@@ -62,9 +63,11 @@ export const useSubscription = () => {
   const fetchUserRole = useCallback(async () => {
     if (!user) {
       setUserRole(null);
+      setLoadingRole(false);
       return;
     }
 
+    setLoadingRole(true);
     try {
       const { data, error } = await supabase
         .from('user_roles')
@@ -74,12 +77,15 @@ export const useSubscription = () => {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching user role:', error);
-        return;
+        setUserRole(null);
+      } else {
+        setUserRole(data);
       }
-
-      setUserRole(data);
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
+      setUserRole(null);
+    } finally {
+      setLoadingRole(false);
     }
   }, [user]);
 
@@ -201,7 +207,7 @@ export const useSubscription = () => {
 
   return {
     subscription,
-    loading,
+    loading: loading || loadingRole,
     isSubscriptionActive: isSubscriptionActive(),
     daysRemaining: getDaysRemaining(),
     refetch: fetchSubscription,
