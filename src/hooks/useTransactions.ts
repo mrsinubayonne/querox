@@ -35,7 +35,22 @@ export const useTransactions = () => {
     try {
       setLoading(true);
       
-      // Fetch all transactions for the user
+      // Fetch transactions for the selected outlet only
+      // Get selected outlet
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_outlet_id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const outletId = profile?.selected_outlet_id;
+
+      if (!outletId) {
+        setTransactions([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('transactions')
         .select(`
@@ -45,6 +60,7 @@ export const useTransactions = () => {
           )
         `)
         .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
         .order('date', { ascending: false });
 
       if (error) {

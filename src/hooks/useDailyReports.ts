@@ -59,11 +59,25 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
       const startISO = start.toISOString();
       const endISO = end.toISOString();
 
-      // Fetch outlets map for names
-      const { data: outlets, error: outletsError } = await supabase
+      // Determine the outlet to scope data
+      let scopedOutletId = outletId;
+      if (!scopedOutletId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('selected_outlet_id')
+          .eq('id', user.id)
+          .maybeSingle();
+        scopedOutletId = profile?.selected_outlet_id || undefined;
+      }
+
+      // Fetch outlets map for names (only the scoped outlet for efficiency)
+      let outletsQuery = supabase
         .from('outlets')
         .select('id, name')
         .eq('user_id', user.id);
+      if (scopedOutletId) outletsQuery = outletsQuery.eq('id', scopedOutletId);
+
+      const { data: outlets, error: outletsError } = await outletsQuery;
       if (outletsError) throw outletsError;
       const outletNameById = new Map<string, string>();
       (outlets || []).forEach((o: any) => outletNameById.set(o.id, o.name));
@@ -80,8 +94,8 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         .gte('created_at', startISO)
         .lte('created_at', endISO);
 
-      if (outletId) {
-        ordersQuery = ordersQuery.eq('outlet_id', outletId);
+      if (scopedOutletId) {
+        ordersQuery = ordersQuery.eq('outlet_id', scopedOutletId);
       }
 
       const { data: orders, error: ordersError } = await ordersQuery;
@@ -95,8 +109,8 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         .gte('created_at', startISO)
         .lte('created_at', endISO);
 
-      if (outletId) {
-        invoicesQuery = invoicesQuery.eq('outlet_id', outletId);
+      if (scopedOutletId) {
+        invoicesQuery = invoicesQuery.eq('outlet_id', scopedOutletId);
       }
 
       const { data: invoices, error: invoicesError } = await invoicesQuery;
