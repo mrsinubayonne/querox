@@ -69,7 +69,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         outletId = (profile as any)?.selected_outlet_id ?? null;
       }
 
-      const { data: menus } = await supabase
+      let { data: menus } = await supabase
         .from("menus")
         .select("id")
         .eq("user_id", user.id)
@@ -78,7 +78,18 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         .limit(1)
         .maybeSingle();
 
-      if (menus) setActiveMenuId(menus.id);
+      if (!menus) {
+        const fallback = await supabase
+          .from("menus")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .limit(1)
+          .maybeSingle();
+        menus = fallback.data as any;
+      }
+
+      if (menus) setActiveMenuId((menus as any).id); else setActiveMenuId(null);
     };
 
     if (isOpen) {
