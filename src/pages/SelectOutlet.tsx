@@ -200,7 +200,6 @@ const SelectOutlet: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
   );
 };
 
