@@ -17,14 +17,16 @@ export const useActivePeriod = (outletId?: string) => {
     const checkActivePeriod = async () => {
       try {
         // Try to get from localStorage first
-        const storedPeriodId = localStorage.getItem(`active_period_${outletId}`);
+        const storedPeriodId = localStorage.getItem(`active_period_${user.id}_${outletId}`);
         
         if (storedPeriodId) {
-          // Verify that this period is still active in the database
+          // Verify that this period is still active in the database AND belongs to current user/outlet
           const { data, error } = await supabase
             .from('business_periods')
             .select('id')
             .eq('id', storedPeriodId)
+            .eq('user_id', user.id)
+            .eq('outlet_id', outletId)
             .is('ended_at', null)
             .maybeSingle();
 
@@ -33,7 +35,7 @@ export const useActivePeriod = (outletId?: string) => {
             return;
           } else {
             // Period is closed or doesn't exist, clear localStorage
-            localStorage.removeItem(`active_period_${outletId}`);
+            localStorage.removeItem(`active_period_${user.id}_${outletId}`);
           }
         }
 
@@ -55,7 +57,7 @@ export const useActivePeriod = (outletId?: string) => {
 
         if (activePeriod) {
           setActivePeriodId(activePeriod.id);
-          localStorage.setItem(`active_period_${outletId}`, activePeriod.id);
+          localStorage.setItem(`active_period_${user.id}_${outletId}`, activePeriod.id);
         }
       } catch (error) {
         console.error('Error checking active period:', error);
@@ -66,24 +68,24 @@ export const useActivePeriod = (outletId?: string) => {
 
     // Listen for period changes in real-time
     const channel = supabase
-      .channel('active-period-changes')
+      .channel(`active-period-changes-${user.id}-${outletId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'business_periods',
-          filter: `outlet_id=eq.${outletId}`,
+          filter: `user_id=eq.${user.id},outlet_id=eq.${outletId}`,
         },
         (payload: any) => {
-          if (payload.new?.ended_at === null) {
-            // New period started
+          if (payload.new?.ended_at === null && payload.new?.outlet_id === outletId) {
+            // New period started for this outlet
             setActivePeriodId(payload.new.id);
-            localStorage.setItem(`active_period_${outletId}`, payload.new.id);
+            localStorage.setItem(`active_period_${user.id}_${outletId}`, payload.new.id);
           } else if (payload.new?.ended_at !== null && payload.new?.id === activePeriodId) {
             // Current period was closed
             setActivePeriodId(null);
-            localStorage.removeItem(`active_period_${outletId}`);
+            localStorage.removeItem(`active_period_${user.id}_${outletId}`);
           }
         }
       )

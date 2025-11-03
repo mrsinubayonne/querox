@@ -40,8 +40,8 @@ export const useAutoStartPeriod = (outletId?: string) => {
           if (error) throw error;
 
           if (newPeriod) {
-            // Stocker l'ID de la période dans localStorage
-            localStorage.setItem(`active_period_${outletId}`, newPeriod.id);
+            // Stocker l'ID de la période dans localStorage avec user_id pour éviter les conflits
+            localStorage.setItem(`active_period_${user.id}_${outletId}`, newPeriod.id);
             
             toast.success('Période d\'activité démarrée automatiquement', {
               description: 'Une nouvelle période a été créée pour enregistrer cette transaction.',
@@ -55,18 +55,20 @@ export const useAutoStartPeriod = (outletId?: string) => {
 
     // Écouter les nouvelles factures payées
     const invoiceChannel = supabase
-      .channel('auto-start-period-invoices')
+      .channel(`auto-start-period-invoices-${user.id}-${outletId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'invoices',
-          filter: `user_id=eq.${user.id},outlet_id=eq.${outletId},status=eq.paid`
+          filter: `user_id=eq.${user.id}`
         },
-        async () => {
-          console.log('📋 Facture payée détectée - Vérification de la période...');
-          await checkAndStartPeriod();
+        async (payload) => {
+          if (payload.new?.outlet_id === outletId && payload.new?.status === 'paid') {
+            console.log('📋 Facture payée détectée - Vérification de la période...');
+            await checkAndStartPeriod();
+          }
         }
       )
       .on(
@@ -75,11 +77,11 @@ export const useAutoStartPeriod = (outletId?: string) => {
           event: 'UPDATE',
           schema: 'public',
           table: 'invoices',
-          filter: `user_id=eq.${user.id},outlet_id=eq.${outletId}`
+          filter: `user_id=eq.${user.id}`
         },
         async (payload) => {
-          // Si la facture vient d'être marquée comme payée
-          if (payload.new.status === 'paid' && payload.old.status !== 'paid') {
+          // Si la facture vient d'être marquée comme payée ET appartient au bon outlet
+          if (payload.new?.outlet_id === outletId && payload.new?.status === 'paid' && payload.old?.status !== 'paid') {
             console.log('📋 Facture mise à jour comme payée - Vérification de la période...');
             await checkAndStartPeriod();
           }
@@ -89,18 +91,20 @@ export const useAutoStartPeriod = (outletId?: string) => {
 
     // Écouter les nouvelles transactions avec statut completed
     const transactionChannel = supabase
-      .channel('auto-start-period-transactions')
+      .channel(`auto-start-period-transactions-${user.id}-${outletId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'transactions',
-          filter: `user_id=eq.${user.id},outlet_id=eq.${outletId},status=eq.completed`
+          filter: `user_id=eq.${user.id}`
         },
-        async () => {
-          console.log('💰 Transaction complétée détectée - Vérification de la période...');
-          await checkAndStartPeriod();
+        async (payload) => {
+          if (payload.new?.outlet_id === outletId && payload.new?.status === 'completed') {
+            console.log('💰 Transaction complétée détectée - Vérification de la période...');
+            await checkAndStartPeriod();
+          }
         }
       )
       .on(
@@ -109,11 +113,11 @@ export const useAutoStartPeriod = (outletId?: string) => {
           event: 'UPDATE',
           schema: 'public',
           table: 'transactions',
-          filter: `user_id=eq.${user.id},outlet_id=eq.${outletId}`
+          filter: `user_id=eq.${user.id}`
         },
         async (payload) => {
-          // Si la transaction vient d'être marquée comme complétée
-          if (payload.new.status === 'completed' && payload.old.status !== 'completed') {
+          // Si la transaction vient d'être marquée comme complétée ET appartient au bon outlet
+          if (payload.new?.outlet_id === outletId && payload.new?.status === 'completed' && payload.old?.status !== 'completed') {
             console.log('💰 Transaction mise à jour comme complétée - Vérification de la période...');
             await checkAndStartPeriod();
           }
@@ -123,18 +127,20 @@ export const useAutoStartPeriod = (outletId?: string) => {
 
     // Écouter les nouvelles commandes
     const orderChannel = supabase
-      .channel('auto-start-period-orders')
+      .channel(`auto-start-period-orders-${user.id}-${outletId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'orders',
-          filter: `user_id=eq.${user.id},outlet_id=eq.${outletId}`
+          filter: `user_id=eq.${user.id}`
         },
-        async () => {
-          console.log('🛒 Nouvelle commande détectée - Vérification de la période...');
-          await checkAndStartPeriod();
+        async (payload) => {
+          if (payload.new?.outlet_id === outletId) {
+            console.log('🛒 Nouvelle commande détectée - Vérification de la période...');
+            await checkAndStartPeriod();
+          }
         }
       )
       .subscribe();

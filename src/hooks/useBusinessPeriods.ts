@@ -115,8 +115,8 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
 
       if (activePeriod) {
         setCurrentPeriod(activePeriod);
-        // Store period ID in localStorage for persistence
-        localStorage.setItem(`active_period_${outletId}`, activePeriod.id);
+        // Store period ID in localStorage for persistence with user_id
+        localStorage.setItem(`active_period_${user.id}_${outletId}`, activePeriod.id);
       } else {
         setCurrentPeriod(null);
       }
@@ -191,9 +191,9 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       if (error) throw error;
 
       setCurrentPeriod(data);
-      // Store period ID in localStorage for persistence across disconnections
+      // Store period ID in localStorage for persistence across disconnections with user_id
       if (outletId) {
-        localStorage.setItem(`active_period_${outletId}`, data.id);
+        localStorage.setItem(`active_period_${user.id}_${outletId}`, data.id);
       }
       toast.success('Nouvelle période démarrée');
       fetchPeriods();
@@ -276,9 +276,9 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       if (updateError) throw updateError;
 
       setCurrentPeriod(null);
-      // Clear localStorage when period is closed
+      // Clear localStorage when period is closed with user_id
       if (targetPeriod.outlet_id) {
-        localStorage.removeItem(`active_period_${targetPeriod.outlet_id}`);
+        localStorage.removeItem(`active_period_${user.id}_${targetPeriod.outlet_id}`);
       }
 
       await fetchPeriods();
