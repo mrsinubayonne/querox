@@ -13,6 +13,7 @@ import { Loader2, Mail, Lock } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { supabase } from '@/integrations/supabase/client';
+import { Switch } from "@/components/ui/switch";
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -27,6 +28,7 @@ interface LoginFormProps {
 
 const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
   const [loading, setLoading] = useState(false);
+  const [useAccessCode, setUseAccessCode] = useState(false);
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -43,15 +45,21 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
     try {
       setLoading(true);
       
-      // Check if password looks like an access code (6 alphanumeric characters)
-      const isAccessCode = /^[A-Z0-9]{6}$/i.test(data.password.trim());
-      
-      if (isAccessCode) {
+      if (useAccessCode) {
+        const code = data.password.trim().toUpperCase();
+        if (!/^[A-Z0-9]{6}$/.test(code)) {
+          toast({
+            title: "Code invalide",
+            description: "Le code d'accès doit contenir 6 caractères alphanumériques",
+            variant: "destructive",
+          });
+          return;
+        }
         // Team member login with access code
         const { data: memberData, error: verifyError } = await supabase
           .rpc('verify_team_access', {
             _email: data.email,
-            _access_code: data.password.toUpperCase()
+            _access_code: code
           });
 
         if (verifyError) {
@@ -172,6 +180,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
                 </FormItem>
               )}
             />
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Je suis membre d'équipe (code d'accès)</span>
+              <Switch checked={useAccessCode} onCheckedChange={setUseAccessCode} />
+            </div>
 
             <FormField
               control={form.control}
