@@ -23,17 +23,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const loading = authLoading || (user && (profilesLoading || outletsLoading));
 
   useEffect(() => {
-    // Étape 1: Vérifier l'authentification
-    if (!authLoading && !user) {
-      navigate('/auth');
+    // Ne rien faire pendant le chargement
+    if (authLoading || profilesLoading || outletsLoading) {
       return;
     }
 
-    // Récupérer les sélections depuis localStorage en secours (évite les courses entre hooks)
-    const localProfileId = typeof window !== 'undefined' ? localStorage.getItem('selectedProfileId') : null;
-    const localOutletId = typeof window !== 'undefined' ? localStorage.getItem('selectedOutletId') : null;
-    const effectiveProfileId = selectedProfileId || localProfileId;
-    const effectiveOutletId = selectedOutletId || localOutletId;
+    // Étape 1: Vérifier l'authentification
+    if (!user) {
+      navigate('/auth', { replace: true });
+      return;
+    }
 
     // Ne pas rediriger si on est déjà sur les pages de sélection ou d'abonnement
     if (
@@ -44,18 +43,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return;
     }
 
-    // Étape 2: Vérifier qu'un profil est sélectionné (OBLIGATOIRE avant outlet)
-    if (!profilesLoading && user && !effectiveProfileId) {
-      navigate('/select-profile');
+    // Récupérer les sélections depuis localStorage
+    const localProfileId = localStorage.getItem('selectedProfileId');
+    const localOutletId = localStorage.getItem('selectedOutletId');
+    const effectiveProfileId = selectedProfileId || localProfileId;
+    const effectiveOutletId = selectedOutletId || localOutletId;
+
+    // Étape 2: Vérifier qu'un profil est sélectionné
+    if (!effectiveProfileId) {
+      navigate('/select-profile', { replace: true });
       return;
     }
 
-    // Étape 3: Vérifier qu'un outlet est sélectionné (seulement après avoir un profil)
-    if (!profilesLoading && user && effectiveProfileId) {
-      if (!outletsLoading && !effectiveOutletId) {
-        navigate('/select-outlet');
-        return;
-      }
+    // Étape 3: Vérifier qu'un outlet est sélectionné
+    if (!effectiveOutletId) {
+      navigate('/select-outlet', { replace: true });
+      return;
     }
   }, [user, authLoading, selectedProfileId, profilesLoading, selectedOutletId, outletsLoading, navigate, location.pathname]);
 
