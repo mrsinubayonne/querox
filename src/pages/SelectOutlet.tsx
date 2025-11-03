@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import SubscriptionGuard from '@/components/SubscriptionGuard';
 
 const SelectOutlet: React.FC = () => {
   const navigate = useNavigate();
@@ -68,9 +67,8 @@ const SelectOutlet: React.FC = () => {
   }
 
   return (
-    <SubscriptionGuard feature="créer ou sélectionner un point de vente">
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 py-12 px-4">
-        <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 py-12 px-4">
+      <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-6">
               <Building2 className="w-8 h-8 text-white" />
@@ -202,7 +200,7 @@ const SelectOutlet: React.FC = () => {
           )}
         </div>
       </div>
-    </SubscriptionGuard>
+    </div>
   );
 };
 
