@@ -171,7 +171,7 @@ const Factures: React.FC = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-3">
                 <CardDescription>Total des factures</CardDescription>
@@ -191,14 +191,6 @@ const Factures: React.FC = () => {
                 <CardDescription>En attente</CardDescription>
                 <CardTitle className="text-3xl text-orange-600">
                   {invoices.filter(i => i.status === 'unpaid').length}
-                </CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardDescription>Montant total</CardDescription>
-                <CardTitle className="text-3xl text-blue-600">
-                  {invoices.reduce((sum, i) => sum + i.total_amount, 0).toLocaleString('fr-FR')} FCFA
                 </CardTitle>
               </CardHeader>
             </Card>
