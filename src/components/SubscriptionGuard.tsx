@@ -29,8 +29,9 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     return <>{children}</>;
   }
 
-  // Loading state
-  if (loading) {
+  // Loading state: only block UI on first load (to avoid flicker on refetches)
+  const isInitialLoading = loading && !subscription && !isAdmin && !isTeamMember();
+  if (isInitialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

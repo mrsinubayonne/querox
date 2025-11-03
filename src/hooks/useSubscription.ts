@@ -176,14 +176,17 @@ export const useSubscription = () => {
 
   useEffect(() => {
     fetchUserRole();
+  }, [fetchUserRole, user]);
+
+  useEffect(() => {
     fetchSubscription();
-    
-    if (user && userRole?.role !== 'admin') {
-      // Rafraîchir les données toutes les 30 secondes seulement pour les non-admins
+
+    // Rafraîchir les données toutes les 30 secondes (suffit pour tous les rôles)
+    if (user) {
       const interval = setInterval(fetchSubscription, 30000);
       return () => clearInterval(interval);
     }
-  }, [fetchSubscription, fetchUserRole, user, userRole]);
+  }, [fetchSubscription, user]);
 
 
   const isSubscriptionActive = useCallback(() => {
