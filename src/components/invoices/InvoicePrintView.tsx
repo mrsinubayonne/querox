@@ -18,29 +18,57 @@ interface OutletData {
 const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }) => {
   const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [outlet, setOutlet] = useState<OutletData | null>(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
     const fetchInvoiceData = async () => {
-      // Récupérer les paramètres de facturation pour cet outlet
+      console.log('🔍 Fetching invoice data for:', {
+        outlet_id: invoice.outlet_id,
+        user_id: invoice.user_id
+      });
+
+      // Récupérer les infos du point de vente (toujours nécessaire)
       if (invoice.outlet_id) {
-        const { data: settingsData } = await supabase
+        const { data: outletData, error: outletError } = await supabase
+          .from('outlets')
+          .select('name, address, phone')
+          .eq('id', invoice.outlet_id)
+          .single();
+        
+        console.log('📍 Outlet data:', outletData, 'Error:', outletError);
+        setOutlet(outletData);
+
+        // Récupérer les paramètres de facturation
+        // D'abord essayer avec outlet_id spécifique
+        let { data: settingsData, error: settingsError } = await supabase
           .from('invoice_settings')
           .select('*')
           .eq('user_id', invoice.user_id)
           .eq('outlet_id', invoice.outlet_id)
           .maybeSingle();
         
-        setSettings(settingsData);
-
-        // Récupérer les infos du point de vente
-        const { data: outletData } = await supabase
-          .from('outlets')
-          .select('name, address, phone')
-          .eq('id', invoice.outlet_id)
-          .single();
+        // Si pas trouvé avec outlet_id, essayer les paramètres globaux
+        if (!settingsData) {
+          console.log('⚠️ No outlet-specific settings, trying global settings...');
+          const globalResult = await supabase
+            .from('invoice_settings')
+            .select('*')
+            .eq('user_id', invoice.user_id)
+            .is('outlet_id', null)
+            .maybeSingle();
+          
+          settingsData = globalResult.data;
+          settingsError = globalResult.error;
+        }
         
-        setOutlet(outletData);
+        console.log('⚙️ Settings data:', settingsData, 'Error:', settingsError);
+        setSettings(settingsData);
+      } else {
+        console.warn('⚠️ No outlet_id found on invoice');
       }
+      
+      // Marquer les données comme chargées
+      setDataLoaded(true);
     };
 
     fetchInvoiceData();
@@ -48,13 +76,16 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
 
   // Déclencher l'impression automatiquement après le chargement des données
   useEffect(() => {
-    // Attendre que le composant soit monté et les données chargées
-    const timer = setTimeout(() => {
-      window.print();
-    }, 500);
+    if (dataLoaded) {
+      console.log('✅ Data loaded, triggering print...');
+      // Attendre un peu pour que le rendu soit complet
+      const timer = setTimeout(() => {
+        window.print();
+      }, 300);
 
-    return () => clearTimeout(timer);
-  }, [settings, outlet]);
+      return () => clearTimeout(timer);
+    }
+  }, [dataLoaded]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
