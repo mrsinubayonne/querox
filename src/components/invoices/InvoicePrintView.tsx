@@ -46,6 +46,16 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
     fetchInvoiceData();
   }, [invoice.outlet_id, invoice.user_id]);
 
+  // Déclencher l'impression automatiquement après le chargement des données
+  useEffect(() => {
+    // Attendre que le composant soit monté et les données chargées
+    const timer = setTimeout(() => {
+      window.print();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [settings, outlet]);
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('fr-FR', {

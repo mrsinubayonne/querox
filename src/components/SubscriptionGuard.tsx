@@ -24,24 +24,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     await refetch();
   };
 
-  // Allow team members to bypass subscription checks
-  if (isTeamMember()) {
-    return <>{children}</>;
-  }
-
-  // Loading state: only block UI on first load (to avoid flicker on refetches)
-  const isInitialLoading = loading && !subscription && !isAdmin && !isTeamMember();
-  if (isInitialLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Vérification de l'abonnement...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Si admin, pas besoin de vérifier l'abonnement
   if (isAdmin) {
     return (
       <div className="relative">
@@ -56,6 +39,25 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     );
   }
 
+  // Allow team members to bypass subscription checks (after admin check)
+  if (isTeamMember()) {
+    return <>{children}</>;
+  }
+
+  // Loading state: only block UI on first load (to avoid flicker on refetches)
+  const isInitialLoading = loading && !subscription && !isAdmin;
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Vérification de l'abonnement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Vérifier l'abonnement
   if (
     isSubscriptionActive ||
     (subscription?.subscription_status === 'active') ||

@@ -107,7 +107,12 @@ export const useTeamPermissions = () => {
   };
 
   const isTeamMember = (): boolean => {
-    return teamMember !== null;
+    // Vérifier qu'il y a bien un teamMember dans le state
+    // ET que ce n'est pas juste des données corrompues dans localStorage
+    if (!teamMember) return false;
+    
+    // S'assurer que les données sont valides (memberId et ownerId existent)
+    return !!(teamMember.memberId && teamMember.ownerId);
   };
 
   const logActivity = async (actionType: string, description: string, entityType?: string, entityId?: string) => {
