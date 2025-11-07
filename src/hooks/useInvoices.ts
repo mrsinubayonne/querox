@@ -39,14 +39,24 @@ export const useInvoices = () => {
     try {
       setLoading(true);
       
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      const outletId = profile?.selected_outlet_id;
+      // Get selected outlet: prefer selectedProfileId in localStorage, fallback to user profile
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = profile?.selected_outlet_id ?? null;
+      }
       if (!outletId) {
         setInvoices([]);
         setLoading(false);
@@ -88,14 +98,24 @@ export const useInvoices = () => {
     if (!user) return;
 
     try {
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      const outletId = profile?.selected_outlet_id;
+      // Get selected outlet: prefer selectedProfileId in localStorage, fallback to user profile
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = profile?.selected_outlet_id ?? null;
+      }
       if (!outletId) {
         toast({
           title: "Erreur",

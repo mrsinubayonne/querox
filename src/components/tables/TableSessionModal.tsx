@@ -7,10 +7,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { TableSession } from "@/hooks/useTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -20,6 +32,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import QuickAddOrderToSessionModal from "./QuickAddOrderToSessionModal";
+import InvoicePrintView from "@/components/invoices/InvoicePrintView";
+import { Invoice } from "@/hooks/useInvoices";
 
 interface Order {
   id: string;
@@ -49,6 +63,9 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
+  const [servedBy, setServedBy] = useState("");
+  const [invoiceToPrint, setInvoiceToPrint] = useState<Invoice | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -230,153 +247,28 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         return;
       }
 
-      // Fetch invoice settings
-      const { data: settings } = await supabase
-        .from("invoice_settings" as any)
-        .select("*")
-        .eq("user_id", user?.id)
-        .maybeSingle();
-
-      // Open print window
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        toast({
-          title: "Erreur",
-          description: "Impossible d'ouvrir la fenêtre d'impression.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const invoiceData = invoice as any;
-      const settingsData = settings as any;
-      const items = invoiceData.items || [];
-      const itemsHtml = items.map((item: any) => `
-        <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${item.name}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(item.price)}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(item.price * item.quantity)}</td>
-        </tr>
-      `).join('');
-
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Facture - ${invoiceData.invoice_number}</title>
-            <style>
-              @media print {
-                body { margin: 0; }
-                @page { margin: 1cm; }
-              }
-              body {
-                font-family: Arial, sans-serif;
-                padding: 20px;
-                max-width: 800px;
-                margin: 0 auto;
-              }
-              .header {
-                text-align: center;
-                margin-bottom: 30px;
-                border-bottom: 2px solid #3b82f6;
-                padding-bottom: 20px;
-              }
-              .info-section {
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 30px;
-              }
-              table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 20px;
-              }
-              th {
-                background: #f3f4f6;
-                padding: 12px 8px;
-                text-align: left;
-                font-weight: bold;
-              }
-              .total-section {
-                text-align: right;
-                margin-top: 20px;
-                padding-top: 20px;
-                border-top: 2px solid #3b82f6;
-              }
-              .total {
-                font-size: 20px;
-                font-weight: bold;
-                color: #3b82f6;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1 style="color: #3b82f6; margin: 0;">${settingsData?.invoice_title || 'FACTURE'}</h1>
-              <p style="margin: 5px 0;">N° ${invoiceData.invoice_number}</p>
-              <p style="margin: 5px 0;">Table ${session.table_number}</p>
-            </div>
-
-            <div class="info-section">
-              <div>
-                <h3>De:</h3>
-                <p><strong>${settingsData?.company_name || 'Restaurant'}</strong></p>
-                ${settingsData?.company_address ? `<p>${settingsData.company_address}</p>` : ''}
-                ${settingsData?.company_phone ? `<p>Tél: ${settingsData.company_phone}</p>` : ''}
-                ${settingsData?.company_email ? `<p>Email: ${settingsData.company_email}</p>` : ''}
-              </div>
-              <div style="text-align: right;">
-                <h3>Date:</h3>
-                <p>${format(new Date(invoiceData.created_at), 'dd/MM/yyyy HH:mm', { locale: fr })}</p>
-              </div>
-            </div>
-
-            <table>
-              <thead>
-                <tr>
-                  <th>Article</th>
-                  <th style="text-align: center;">Quantité</th>
-                  <th style="text-align: right;">Prix unitaire</th>
-                  <th style="text-align: right;">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsHtml}
-              </tbody>
-            </table>
-
-            <div class="total-section">
-              <p class="total">Total: ${formatCurrency(invoiceData.total_amount)}</p>
-              <p style="margin-top: 10px; color: #6b7280;">
-                ${invoiceData.status === 'paid' ? '✅ Payée' : '⏳ En attente de paiement'}
-              </p>
-            </div>
-
-            ${settingsData?.footer_note ? `
-              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280;">
-                <p>${settingsData.footer_note}</p>
-              </div>
-            ` : ''}
-          </body>
-        </html>
-      `);
-
-      printWindow.document.close();
-      printWindow.focus();
-      
-      setTimeout(() => {
-        printWindow.print();
-      }, 250);
-
+      // Show dialog to ask for "served by" information
+      setInvoiceToPrint(invoice as any as Invoice);
+      setShowPrintDialog(true);
     } catch (error) {
-      console.error("Error printing:", error);
+      console.error("Error fetching invoice:", error);
       toast({
         title: "Erreur",
-        description: "Impossible d'imprimer la facture.",
+        description: "Impossible de récupérer la facture.",
         variant: "destructive",
       });
     }
+  };
+
+  const handleConfirmPrint = () => {
+    setShowPrintDialog(false);
+    // The InvoicePrintView component will handle the actual printing
+  };
+
+  const handleClosePrintDialog = () => {
+    setShowPrintDialog(false);
+    setInvoiceToPrint(null);
+    setServedBy("");
   };
 
   if (!session) return null;
@@ -576,6 +468,39 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         sessionId={session.id}
         tableNumber={session.table_number}
       />
+
+      {/* Print Dialog */}
+      <AlertDialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Imprimer la facture</AlertDialogTitle>
+            <AlertDialogDescription>
+              Souhaitez-vous indiquer qui a servi cette table ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="served-by">Servi par (optionnel)</Label>
+            <Input
+              id="served-by"
+              placeholder="Ex: Jean, Marie..."
+              value={servedBy}
+              onChange={(e) => setServedBy(e.target.value)}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleClosePrintDialog}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmPrint}>Imprimer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Invoice Print View */}
+      {invoiceToPrint && !showPrintDialog && (
+        <InvoicePrintView 
+          invoice={invoiceToPrint} 
+          servedBy={servedBy || undefined}
+        />
+      )}
     </Dialog>
   );
 };
