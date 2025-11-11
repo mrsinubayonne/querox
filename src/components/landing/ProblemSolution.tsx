@@ -39,10 +39,10 @@ const ProblemSolution: React.FC = () => {
             <span className="text-sm font-semibold">Vous reconnaissez ces problèmes ?</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground mb-6">
-            La réalité des restaurateurs aujourd'hui
+            La réalité de votre établissement aujourd'hui
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            95% des restaurants rencontrent ces défis quotidiennement. Et si nous vous disions qu'il existe une solution ?
+            95% des restaurants, VIP, terrasses et night clubs rencontrent ces défis quotidiennement. Et si nous vous disions qu'il existe une solution ?
           </p>
         </div>
 
@@ -109,7 +109,7 @@ const ProblemSolution: React.FC = () => {
         {/* CTA */}
         <div className="text-center mt-16">
           <p className="text-2xl font-bold text-foreground mb-6">
-            Prêt à rejoindre les 500+ restaurants qui ont transformé leur business ?
+            Prêt à rejoindre les 500+ établissements qui ont transformé leur business ?
           </p>
           <a 
             href="#pricing"

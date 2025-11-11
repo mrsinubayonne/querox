@@ -34,7 +34,7 @@ const SalesFunnelHero: React.FC = () => {
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 rounded-full px-4 py-2">
               <Zap className="h-4 w-4 text-primary" />
               <span className="text-sm font-semibold text-foreground">
-                Plus de 500+ restaurants nous font confiance
+                Plus de 500+ établissements nous font confiance
               </span>
             </div>
 
@@ -48,8 +48,8 @@ const SalesFunnelHero: React.FC = () => {
 
             {/* Sub-headline */}
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl">
-              La seule plateforme tout-en-un dont vous avez besoin pour gérer, automatiser 
-              et développer votre restaurant. <span className="font-semibold text-foreground">Sans compétences techniques.</span>
+              La seule plateforme tout-en-un pour restaurants, VIP, terrasses et night clubs. Gérez, automatisez 
+              et développez votre établissement. <span className="font-semibold text-foreground">Sans compétences techniques.</span>
             </p>
 
             {/* Benefits Checklist */}
@@ -75,7 +75,7 @@ const SalesFunnelHero: React.FC = () => {
                   {[1, 2, 3, 4].map(i => <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-purple-600 border-2 border-background"></div>)}
                 </div>
                 <span className="text-sm font-medium text-muted-foreground">
-                  <span className="text-foreground font-bold">500+</span> restaurateurs satisfaits
+                  <span className="text-foreground font-bold">500+</span> établissements satisfaits
                 </span>
               </div>
               <div className="flex items-center gap-2">

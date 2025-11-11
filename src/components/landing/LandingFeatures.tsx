@@ -142,8 +142,8 @@ const LandingFeatures: React.FC = () => {
               Tout ce dont vous avez besoin
             </h2>
             <p className="max-w-3xl mx-auto text-lg sm:text-xl text-muted-foreground leading-relaxed">
-              Une plateforme complète et intuitive pour gérer tous les aspects de votre restaurant,
-              de la cuisine au service client.
+              Une plateforme complète et intuitive pour gérer tous les aspects de votre établissement :
+              restaurant, VIP, terrasse ou night club.
             </p>
           </div>
           
@@ -195,8 +195,8 @@ const LandingFeatures: React.FC = () => {
               Allez plus loin avec nos experts
             </h2>
             <p className="max-w-3xl mx-auto text-lg sm:text-xl text-muted-foreground leading-relaxed">
-              Nos services professionnels vous accompagnent pour développer votre restaurant
-              et maximiser votre succès.
+              Nos services professionnels vous accompagnent pour développer votre établissement
+              et maximiser votre succès, quel que soit votre concept.
             </p>
           </div>
           
