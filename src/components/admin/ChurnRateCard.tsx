@@ -37,21 +37,21 @@ const ChurnRateCard: React.FC<ChurnRateCardProps> = ({ data, period }) => {
   };
 
   return (
-    <Card>
+    <Card className="border border-border bg-card">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Taux d'attrition (Churn Rate)</span>
+        <CardTitle className="flex items-center justify-between text-foreground">
+          <span>Taux d'attrition</span>
           {isImproving ? (
-            <TrendingDown className="w-5 h-5 text-green-600" />
+            <TrendingDown className="w-5 h-5 text-success" />
           ) : (
-            <TrendingUp className="w-5 h-5 text-red-600" />
+            <TrendingUp className="w-5 h-5 text-destructive" />
           )}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div>
-            <div className="text-3xl font-bold">
+            <div className="text-3xl font-bold text-foreground">
               {currentPeriod.churn_rate.toFixed(1)}%
             </div>
             <p className="text-sm text-muted-foreground">
@@ -62,16 +62,16 @@ const ChurnRateCard: React.FC<ChurnRateCardProps> = ({ data, period }) => {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Clients actifs</p>
-              <p className="font-semibold">{currentPeriod.active_start}</p>
+              <p className="font-semibold text-foreground">{currentPeriod.active_start}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Clients perdus</p>
-              <p className="font-semibold">{currentPeriod.churned}</p>
+              <p className="font-semibold text-foreground">{currentPeriod.churned}</p>
             </div>
           </div>
 
           {previousPeriod && (
-            <div className={`text-sm ${isImproving ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`text-sm font-medium ${isImproving ? 'text-success' : 'text-destructive'}`}>
               {isImproving ? '↓' : '↑'} 
               {Math.abs(trend).toFixed(1)}% vs période précédente
             </div>
