@@ -36,9 +36,9 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ data, period }) => {
   };
 
   return (
-    <Card>
+    <Card className="border border-border bg-card">
       <CardHeader>
-        <CardTitle>Évolution du chiffre d'affaires</CardTitle>
+        <CardTitle className="text-foreground">Évolution du chiffre d'affaires</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-80">
@@ -46,30 +46,36 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ data, period }) => {
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis 
                 dataKey="month" 
                 tickFormatter={formatMonth}
-                stroke="#64748b"
+                stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
               />
               <YAxis 
                 tickFormatter={formatValue}
-                stroke="#64748b"
+                stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
               />
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <Tooltip 
                 formatter={(value: number) => [formatValue(value), "Revenus"]}
                 labelFormatter={(label) => formatMonth(label)}
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
+                }}
               />
               <Area
                 type="monotone"
                 dataKey="revenue"
-                stroke="#3b82f6"
+                stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#revenueGradient)"

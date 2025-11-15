@@ -89,12 +89,12 @@ const AdminDashboard: React.FC = () => {
 
   if (authLoading || revenueLoading) {
     return (
-      <div className="flex h-screen bg-gray-50">
+      <div className="flex h-screen bg-background">
         <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-600">Chargement du tableau de bord...</p>
+            <p className="mt-2 text-sm text-muted-foreground">Chargement du tableau de bord...</p>
           </div>
         </div>
       </div>
@@ -103,7 +103,7 @@ const AdminDashboard: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <div className="flex h-screen bg-gray-50">
+      <div className="flex h-screen bg-background">
         <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
         <UnauthorizedAccess userEmail={user?.email} />
       </div>
@@ -116,55 +116,55 @@ const AdminDashboard: React.FC = () => {
   const growthRate = getGrowthRate();
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background">
       <ModernSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       
       <div className="flex-1 overflow-auto">
-        <div className="p-8">
-          <div className="flex justify-between items-center mb-8">
-            <AdminHeader userEmail={user?.email} />
-            <PeriodSelector value={selectedPeriod} onChange={setSelectedPeriod} />
+        <div className="p-4 md:p-8 space-y-8">
+          {/* Modern Header */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/60 rounded-xl flex items-center justify-center shadow-lg">
+                <TrendingUp className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Dashboard Administrateur</h1>
+                <p className="text-sm text-muted-foreground">Connecté en tant qu'administrateur: {user?.email}</p>
+              </div>
+            </div>
           </div>
-          
-          {/* Statistiques principales */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
+          {/* Key Metrics - Hero Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <ModernStatCard
-              title="Chiffre d'affaires total"
-              value={`${totalRevenue.toFixed(2)} €`}
+              title="Revenus totaux"
+              value={new Intl.NumberFormat('fr-FR', {
+                style: 'currency',
+                currency: 'EUR',
+                minimumFractionDigits: 0,
+              }).format(totalRevenue)}
               icon={<DollarSign className="w-6 h-6" />}
               color="green"
               change={{
-                value: `${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}%`,
-                label: "vs mois précédent",
-                isPositive: growthRate >= 0
+                value: `${growthRate.toFixed(1)}%`,
+                label: "vs mois dernier",
+                isPositive: growthRate > 0
               }}
-              trend={growthRate >= 0 ? "up" : "down"}
+              trend={growthRate > 0 ? 'up' : growthRate < 0 ? 'down' : 'neutral'}
             />
-
+            
             <ModernStatCard
-              title="Restaurants actifs"
-              value={activeRestaurants.toLocaleString()}
+              title="Établissements actifs"
+              value={activeRestaurants}
               icon={<Building2 className="w-6 h-6" />}
               color="blue"
-              change={{
-                value: "Abonnements payants",
-                label: "Utilisateurs QUEROX",
-                isPositive: true
-              }}
-              trend="up"
             />
 
             <ModernStatCard
               title="Utilisateurs totaux"
-              value={stats.totalUsers.toLocaleString()}
+              value={stats.totalUsers}
               icon={<Users className="w-6 h-6" />}
               color="purple"
-              change={{
-                value: "Total des comptes",
-                label: "Base utilisateurs",
-                isPositive: true
-              }}
-              trend="up"
             />
 
             <ModernStatCard
@@ -172,129 +172,161 @@ const AdminDashboard: React.FC = () => {
               value={`${stats.totalUsers > 0 ? ((activeRestaurants / stats.totalUsers) * 100).toFixed(1) : 0}%`}
               icon={<Target className="w-6 h-6" />}
               color="orange"
-              change={{
-                value: "Abonnés/Inscrits",
-                label: "Performance commerciale",
-                isPositive: true
-              }}
-              trend="up"
             />
           </div>
 
-          {/* Graphiques et analyse */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="lg:col-span-2">
+          {/* Main Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-foreground">Évolution des revenus</h3>
+                <PeriodSelector 
+                  value={selectedPeriod}
+                  onChange={setSelectedPeriod}
+                />
+              </div>
               <RevenueChart data={chartData} period={selectedPeriod} />
             </div>
+            
             <div>
               <ChurnRateCard data={churnData} period={selectedPeriod} />
             </div>
           </div>
 
-          {/* Statistiques complémentaires */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <ModernStatCard
-              title="Plats créés"
-              value={stats.totalDishes.toLocaleString()}
-              icon={<ChefHat className="w-6 h-6" />}
-              color="orange"
-              change={{
-                value: "Dans tous les menus",
-                label: "Contenu plateforme",
-                isPositive: true
-              }}
-              trend="neutral"
-            />
+          {/* Business Metrics */}
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Métriques business</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              <Card className="border border-border bg-card">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Croissance MoM</span>
+                    <TrendingUp className="w-4 h-4 text-success" />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {growthRate > 0 ? '+' : ''}{growthRate.toFixed(1)}%
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Par rapport au mois dernier</p>
+                </CardContent>
+              </Card>
 
-            <ModernStatCard
-              title="Commandes totales"
-              value={stats.totalOrders.toLocaleString()}
-              icon={<ShoppingCart className="w-6 h-6" />}
-              color="purple"
-              change={{
-                value: "Volume d'activité",
-                label: "Utilisation plateforme",
-                isPositive: true
-              }}
-              trend="up"
-            />
+              <Card className="border border-border bg-card">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Valeur vie client</span>
+                    <DollarSign className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {activeRestaurants > 0 
+                      ? new Intl.NumberFormat('fr-FR', {
+                          style: 'currency',
+                          currency: 'EUR',
+                          minimumFractionDigits: 0,
+                        }).format((totalRevenue / activeRestaurants) * 12)
+                      : '0 €'
+                    }
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Estimation annuelle moyenne</p>
+                </CardContent>
+              </Card>
 
-            <ModernStatCard
-              title="Revenus moyens/restaurant"
-              value={`${activeRestaurants > 0 ? (totalRevenue / activeRestaurants).toFixed(2) : 0} €`}
-              icon={<TrendingUp className="w-6 h-6" />}
-              color="green"
-              change={{
-                value: "ARPU mensuel",
-                label: "Revenue par utilisateur",
-                isPositive: true
-              }}
-              trend="up"
-            />
+              <Card className="border border-border bg-card">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Revenu moyen / resto</span>
+                    <Target className="w-4 h-4 text-accent" />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {activeRestaurants > 0 
+                      ? new Intl.NumberFormat('fr-FR', {
+                          style: 'currency',
+                          currency: 'EUR',
+                          minimumFractionDigits: 0,
+                        }).format(totalRevenue / activeRestaurants)
+                      : '0 €'
+                    }
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Revenus par établissement</p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
-          {/* Actions rapides */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions rapides</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <button
-                  onClick={() => window.location.href = '/admin/subscriptions'}
-                  className="w-full p-4 text-left bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    <CreditCard className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <h3 className="font-medium text-blue-900">Gestion des abonnements</h3>
-                      <p className="text-sm text-blue-600">Gérer les abonnements utilisateurs</p>
+          {/* Platform Statistics */}
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Statistiques plateforme</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              <ModernStatCard
+                title="Plats créés"
+                value={stats.totalDishes}
+                icon={<ChefHat className="w-6 h-6" />}
+                color="blue"
+              />
+              
+              <ModernStatCard
+                title="Commandes totales"
+                value={stats.totalOrders}
+                icon={<ShoppingCart className="w-6 h-6" />}
+                color="green"
+              />
+
+              <ModernStatCard
+                title="Taux d'adoption"
+                value={`${stats.totalUsers > 0 ? ((activeRestaurants / stats.totalUsers) * 100).toFixed(1) : 0}%`}
+                icon={<Target className="w-6 h-6" />}
+                color="purple"
+              />
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Actions rapides</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <Card 
+                className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 bg-gradient-to-br from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/20"
+                onClick={() => window.location.href = '/admin/subscriptions'}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">
+                      <CreditCard className="w-7 h-7 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-base text-foreground mb-1">Gérer les abonnements</h4>
+                      <p className="text-sm text-muted-foreground">Modifier les plans et statuts</p>
+                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium">
+                        Ouvrir →
+                      </div>
                     </div>
                   </div>
-                </button>
+                </CardContent>
+              </Card>
 
-                <button
-                  onClick={() => window.location.href = '/admin/roles'}
-                  className="w-full p-4 text-left bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    <Users className="w-5 h-5 text-purple-600" />
-                    <div>
-                      <h3 className="font-medium text-purple-900">Gestion des rôles</h3>
-                      <p className="text-sm text-purple-600">Assigner des rôles admin/éditeur</p>
+              <Card 
+                className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 bg-gradient-to-br from-accent/5 to-accent/10 hover:from-accent/10 hover:to-accent/20"
+                onClick={() => window.location.href = '/admin/roles'}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-accent/10 rounded-xl group-hover:bg-accent/20 transition-colors">
+                      <Users className="w-7 h-7 text-accent-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-base text-foreground mb-1">Gérer les rôles</h4>
+                      <p className="text-sm text-muted-foreground">Configurer les permissions</p>
+                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium">
+                        Ouvrir →
+                      </div>
                     </div>
                   </div>
-                </button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Analyse de croissance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">Croissance mensuelle</span>
-                    <span className={`font-medium ${growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {growthRate > 0 ? '+' : ''}{growthRate.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">Taux d'attrition actuel</span>
-                    <span className="font-medium text-orange-600">
-                      {churnData[0]?.churn_rate?.toFixed(1) || 0}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">Revenus moyens par utilisateur</span>
-                    <span className="font-medium text-blue-600">
-                      {activeRestaurants > 0 ? (totalRevenue / activeRestaurants).toFixed(2) : 0} €
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
