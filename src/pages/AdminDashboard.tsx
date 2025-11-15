@@ -45,6 +45,7 @@ const AdminDashboard: React.FC = () => {
   const {
     revenueStats,
     churnData,
+    restaurantRevenue,
     loading: revenueLoading,
     processDataByPeriod,
     getTotalRevenue,
@@ -137,12 +138,10 @@ const AdminDashboard: React.FC = () => {
           {/* Key Metrics - Hero Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <ModernStatCard
-              title="Revenus totaux"
+              title="Revenus Querox"
               value={new Intl.NumberFormat('fr-FR', {
-                style: 'currency',
-                currency: 'EUR',
                 minimumFractionDigits: 0,
-              }).format(totalRevenue)}
+              }).format(totalRevenue) + ' FCFA'}
               icon={<DollarSign className="w-6 h-6" />}
               color="green"
               change={{
@@ -168,8 +167,13 @@ const AdminDashboard: React.FC = () => {
             />
 
             <ModernStatCard
-              title="Taux de conversion"
-              value={`${stats.totalUsers > 0 ? ((activeRestaurants / stats.totalUsers) * 100).toFixed(1) : 0}%`}
+              title="CA Restaurants"
+              value={restaurantRevenue 
+                ? new Intl.NumberFormat('fr-FR', {
+                    minimumFractionDigits: 0,
+                  }).format(restaurantRevenue.combined_revenue) + ' FCFA'
+                : '0 FCFA'
+              }
               icon={<Target className="w-6 h-6" />}
               color="orange"
             />
@@ -219,11 +223,9 @@ const AdminDashboard: React.FC = () => {
                   <div className="text-2xl font-bold text-foreground">
                     {activeRestaurants > 0 
                       ? new Intl.NumberFormat('fr-FR', {
-                          style: 'currency',
-                          currency: 'EUR',
                           minimumFractionDigits: 0,
-                        }).format((totalRevenue / activeRestaurants) * 12)
-                      : '0 €'
+                        }).format((totalRevenue / activeRestaurants) * 12) + ' FCFA'
+                      : '0 FCFA'
                     }
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">Estimation annuelle moyenne</p>
@@ -239,11 +241,9 @@ const AdminDashboard: React.FC = () => {
                   <div className="text-2xl font-bold text-foreground">
                     {activeRestaurants > 0 
                       ? new Intl.NumberFormat('fr-FR', {
-                          style: 'currency',
-                          currency: 'EUR',
                           minimumFractionDigits: 0,
-                        }).format(totalRevenue / activeRestaurants)
-                      : '0 €'
+                        }).format(totalRevenue / activeRestaurants) + ' FCFA'
+                      : '0 FCFA'
                     }
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">Revenus par établissement</p>
