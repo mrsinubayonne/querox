@@ -26,10 +26,17 @@ interface ChurnRateData {
   churn_rate: number;
 }
 
+interface SubscribersByPlan {
+  starter: number;
+  premium: number;
+  pro: number;
+}
+
 export const useAdminRevenue = () => {
   const [revenueStats, setRevenueStats] = useState<RevenueStats[]>([]);
   const [churnData, setChurnData] = useState<ChurnRateData[]>([]);
   const [restaurantRevenue, setRestaurantRevenue] = useState<RestaurantRevenueData | null>(null);
+  const [subscribersByPlan, setSubscribersByPlan] = useState<SubscribersByPlan>({ starter: 0, premium: 0, pro: 0 });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -124,6 +131,50 @@ export const useAdminRevenue = () => {
     }
   };
 
+  const fetchSubscribersByPlan = async () => {
+    try {
+      console.log("👥 Récupération des abonnés par plan...");
+      
+      const { data, error } = await supabase
+        .from('subscribers')
+        .select('subscription_tier')
+        .eq('subscribed', true)
+        .eq('subscription_status', 'active');
+      
+      if (error) {
+        console.error("❌ Erreur lors de la récupération des abonnés:", error);
+        throw error;
+      }
+      
+      const counts = {
+        starter: 0,
+        premium: 0,
+        pro: 0
+      };
+      
+      data?.forEach(subscriber => {
+        const tier = subscriber.subscription_tier?.toLowerCase();
+        if (tier === 'starter') {
+          counts.starter++;
+        } else if (tier === 'premium') {
+          counts.premium++;
+        } else if (tier === 'pro' || tier === 'entreprise') {
+          counts.pro++;
+        }
+      });
+      
+      console.log("✅ Abonnés par plan:", counts);
+      setSubscribersByPlan(counts);
+    } catch (error: any) {
+      console.error('💥 Erreur dans fetchSubscribersByPlan:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les abonnés par plan",
+        variant: "destructive",
+      });
+    }
+  };
+
   const processDataByPeriod = (period: 'monthly' | 'quarterly' | 'yearly') => {
     if (period === 'monthly') {
       return revenueStats.map(stat => ({
@@ -203,7 +254,9 @@ export const useAdminRevenue = () => {
       setLoading(true);
       await Promise.all([
         fetchRevenueStats(),
-        fetchChurnRate(6)
+        fetchChurnRate(6),
+        fetchRestaurantRevenue(),
+        fetchSubscribersByPlan()
       ]);
       setLoading(false);
     };
@@ -215,6 +268,7 @@ export const useAdminRevenue = () => {
     revenueStats,
     churnData,
     restaurantRevenue,
+    subscribersByPlan,
     loading,
     processDataByPeriod,
     getActiveRestaurants,
@@ -223,6 +277,7 @@ export const useAdminRevenue = () => {
       fetchRevenueStats();
       fetchChurnRate(6);
       fetchRestaurantRevenue();
+      fetchSubscribersByPlan();
     }
   };
 };
