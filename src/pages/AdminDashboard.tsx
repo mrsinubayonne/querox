@@ -56,6 +56,8 @@ const AdminDashboard: React.FC = () => {
   // Tout à zéro - ne compte que les nouveaux abonnements à partir de maintenant
   const totalRevenueSinceBeginning = 0;
   const currentMonthRevenue = 0;
+  const activeRestaurants = 0;
+  const growthRate = 0;
 
   useEffect(() => {
     if (isAdmin) {
@@ -116,8 +118,6 @@ const AdminDashboard: React.FC = () => {
   }
 
   const chartData = processDataByPeriod(selectedPeriod);
-  const activeRestaurants = getActiveRestaurants();
-  const growthRate = getGrowthRate();
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -178,12 +178,7 @@ const AdminDashboard: React.FC = () => {
 
             <ModernStatCard
               title="CA Restaurants"
-              value={restaurantRevenue 
-                ? new Intl.NumberFormat('fr-FR', {
-                    minimumFractionDigits: 0,
-                  }).format(restaurantRevenue.combined_revenue) + ' FCFA'
-                : '0 FCFA'
-              }
+              value="0 FCFA"
               icon={<Target className="w-6 h-6" />}
               color="orange"
             />
