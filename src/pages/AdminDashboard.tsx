@@ -47,6 +47,7 @@ const AdminDashboard: React.FC = () => {
     revenueStats,
     churnData,
     restaurantRevenue,
+    subscribersByPlan,
     loading: revenueLoading,
     processDataByPeriod,
     getActiveRestaurants,
@@ -329,6 +330,57 @@ const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Subscribers by Plan */}
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Utilisateurs actifs par plan</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              <Card className="border border-border bg-card">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Plan Starter</span>
+                    <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs font-medium">
+                      35 000 FCFA
+                    </div>
+                  </div>
+                  <div className="text-3xl font-bold text-foreground">
+                    {subscribersByPlan.starter}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">abonnés actifs</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-border bg-card">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Plan Premium</span>
+                    <div className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-xs font-medium">
+                      65 000 FCFA
+                    </div>
+                  </div>
+                  <div className="text-3xl font-bold text-foreground">
+                    {subscribersByPlan.premium}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">abonnés actifs</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-border bg-card">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Plan Pro / Entreprise</span>
+                    <div className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded text-xs font-medium">
+                      91 000 FCFA
+                    </div>
+                  </div>
+                  <div className="text-3xl font-bold text-foreground">
+                    {subscribersByPlan.pro}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">abonnés actifs</p>
                 </CardContent>
               </Card>
             </div>
