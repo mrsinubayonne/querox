@@ -181,9 +181,6 @@ export const useAdminRevenue = () => {
     return [];
   };
 
-  const getTotalRevenue = () => {
-    return revenueStats.reduce((sum, stat) => sum + Number(stat.monthly_revenue || 0), 0);
-  };
 
   const getActiveRestaurants = () => {
     const latest = revenueStats[0];
@@ -220,7 +217,6 @@ export const useAdminRevenue = () => {
     restaurantRevenue,
     loading,
     processDataByPeriod,
-    getTotalRevenue,
     getActiveRestaurants,
     getGrowthRate,
     refetch: () => {
