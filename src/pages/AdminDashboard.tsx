@@ -13,6 +13,7 @@ import ModernStatCard from '@/components/ModernStatCard';
 import RevenueChart from '@/components/admin/RevenueChart';
 import ChurnRateCard from '@/components/admin/ChurnRateCard';
 import PeriodSelector from '@/components/admin/PeriodSelector';
+import { RevenueProjectionCalculator } from '@/components/admin/RevenueProjectionCalculator';
 import { 
   DollarSign, 
   Users, 
@@ -52,9 +53,9 @@ const AdminDashboard: React.FC = () => {
     getGrowthRate
   } = useAdminRevenue();
 
-  // Calculate total revenue since beginning and current month
-  const totalRevenueSinceBeginning = revenueStats.reduce((sum, stat) => sum + Number(stat.monthly_revenue || 0), 0);
-  const currentMonthRevenue = revenueStats.length > 0 ? Number(revenueStats[0].monthly_revenue || 0) : 0;
+  // Tout à zéro - ne compte que les nouveaux abonnements à partir de maintenant
+  const totalRevenueSinceBeginning = 0;
+  const currentMonthRevenue = 0;
 
   useEffect(() => {
     if (isAdmin) {
@@ -336,6 +337,11 @@ const AdminDashboard: React.FC = () => {
                 </CardContent>
               </Card>
             </div>
+          </div>
+
+          {/* Revenue Projection Calculator */}
+          <div>
+            <RevenueProjectionCalculator />
           </div>
         </div>
       </div>
