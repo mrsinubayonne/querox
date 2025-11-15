@@ -48,10 +48,13 @@ const AdminDashboard: React.FC = () => {
     restaurantRevenue,
     loading: revenueLoading,
     processDataByPeriod,
-    getTotalRevenue,
     getActiveRestaurants,
     getGrowthRate
   } = useAdminRevenue();
+
+  // Calculate total revenue since beginning and current month
+  const totalRevenueSinceBeginning = revenueStats.reduce((sum, stat) => sum + Number(stat.monthly_revenue || 0), 0);
+  const currentMonthRevenue = revenueStats.length > 0 ? Number(revenueStats[0].monthly_revenue || 0) : 0;
 
   useEffect(() => {
     if (isAdmin) {
@@ -112,7 +115,6 @@ const AdminDashboard: React.FC = () => {
   }
 
   const chartData = processDataByPeriod(selectedPeriod);
-  const totalRevenue = getTotalRevenue();
   const activeRestaurants = getActiveRestaurants();
   const growthRate = getGrowthRate();
 
@@ -138,10 +140,10 @@ const AdminDashboard: React.FC = () => {
           {/* Key Metrics - Hero Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <ModernStatCard
-              title="Revenus Querox"
+              title="Total encaissé (début)"
               value={new Intl.NumberFormat('fr-FR', {
                 minimumFractionDigits: 0,
-              }).format(totalRevenue) + ' FCFA'}
+              }).format(totalRevenueSinceBeginning) + ' FCFA'}
               icon={<DollarSign className="w-6 h-6" />}
               color="green"
               change={{
@@ -160,10 +162,17 @@ const AdminDashboard: React.FC = () => {
             />
 
             <ModernStatCard
-              title="Utilisateurs totaux"
-              value={stats.totalUsers}
-              icon={<Users className="w-6 h-6" />}
+              title="Encaissé ce mois"
+              value={new Intl.NumberFormat('fr-FR', {
+                minimumFractionDigits: 0,
+              }).format(currentMonthRevenue) + ' FCFA'}
+              icon={<TrendingUp className="w-6 h-6" />}
               color="purple"
+              change={{
+                value: `${activeRestaurants}`,
+                label: "abonnés actifs",
+                isPositive: true
+              }}
             />
 
             <ModernStatCard
@@ -224,7 +233,7 @@ const AdminDashboard: React.FC = () => {
                     {activeRestaurants > 0 
                       ? new Intl.NumberFormat('fr-FR', {
                           minimumFractionDigits: 0,
-                        }).format((totalRevenue / activeRestaurants) * 12) + ' FCFA'
+                        }).format((totalRevenueSinceBeginning / activeRestaurants) * 12) + ' FCFA'
                       : '0 FCFA'
                     }
                   </div>
@@ -242,7 +251,7 @@ const AdminDashboard: React.FC = () => {
                     {activeRestaurants > 0 
                       ? new Intl.NumberFormat('fr-FR', {
                           minimumFractionDigits: 0,
-                        }).format(totalRevenue / activeRestaurants) + ' FCFA'
+                        }).format(totalRevenueSinceBeginning / activeRestaurants) + ' FCFA'
                       : '0 FCFA'
                     }
                   </div>
