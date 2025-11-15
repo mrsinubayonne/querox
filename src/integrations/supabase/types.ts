@@ -1927,12 +1927,31 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_restaurants_total_revenue: {
+        Args: never
+        Returns: {
+          combined_revenue: number
+          total_invoices_revenue: number
+          total_orders_revenue: number
+          total_restaurants: number
+        }[]
+      }
       get_role_permissions: {
         Args: { _role_name: string }
         Returns: {
           permission_category: string
           permission_description: string
           permission_name: string
+        }[]
+      }
+      get_subscription_revenue_stats: {
+        Args: never
+        Returns: {
+          active_subscribers: number
+          churned_subscribers: number
+          month: string
+          monthly_revenue: number
+          new_subscribers: number
         }[]
       }
       has_role: {

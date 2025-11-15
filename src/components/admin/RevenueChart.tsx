@@ -17,10 +17,8 @@ interface RevenueChartProps {
 const RevenueChart: React.FC<RevenueChartProps> = ({ data, period }) => {
   const formatValue = (value: number) => {
     return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
       minimumFractionDigits: 0,
-    }).format(value);
+    }).format(value) + ' FCFA';
   };
 
   const formatMonth = (dateStr: string) => {

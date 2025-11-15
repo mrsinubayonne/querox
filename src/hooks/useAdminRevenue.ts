@@ -11,6 +11,13 @@ interface RevenueStats {
   churned_subscribers: number;
 }
 
+interface RestaurantRevenueData {
+  total_orders_revenue: number;
+  total_invoices_revenue: number;
+  combined_revenue: number;
+  total_restaurants: number;
+}
+
 interface ChurnRateData {
   period_start: string;
   period_end: string;
@@ -22,6 +29,7 @@ interface ChurnRateData {
 export const useAdminRevenue = () => {
   const [revenueStats, setRevenueStats] = useState<RevenueStats[]>([]);
   const [churnData, setChurnData] = useState<ChurnRateData[]>([]);
+  const [restaurantRevenue, setRestaurantRevenue] = useState<RestaurantRevenueData | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -29,9 +37,9 @@ export const useAdminRevenue = () => {
     try {
       console.log('📊 Récupération des statistiques de revenus sécurisées...');
       
-      // Use the secure function instead of direct table access
+      // Use the new subscription revenue function with FCFA prices
       const { data, error } = await supabase
-        .rpc('get_admin_revenue_stats');
+        .rpc('get_subscription_revenue_stats');
 
       if (error) {
         console.error('❌ Erreur lors de la récupération des statistiques:', error);
@@ -85,6 +93,32 @@ export const useAdminRevenue = () => {
       toast({
         title: "Erreur",
         description: "Impossible de calculer le taux d'attrition",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchRestaurantRevenue = async () => {
+    try {
+      console.log('💰 Récupération du CA des restaurants...');
+      
+      const { data, error } = await supabase
+        .rpc('get_restaurants_total_revenue');
+
+      if (error) {
+        console.error('❌ Erreur lors de la récupération du CA des restaurants:', error);
+        throw error;
+      }
+
+      console.log('✅ CA des restaurants récupéré:', data);
+      if (data && data.length > 0) {
+        setRestaurantRevenue(data[0]);
+      }
+    } catch (error: any) {
+      console.error('💥 Erreur dans fetchRestaurantRevenue:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger le CA des restaurants",
         variant: "destructive",
       });
     }
@@ -183,6 +217,7 @@ export const useAdminRevenue = () => {
   return {
     revenueStats,
     churnData,
+    restaurantRevenue,
     loading,
     processDataByPeriod,
     getTotalRevenue,
@@ -191,6 +226,7 @@ export const useAdminRevenue = () => {
     refetch: () => {
       fetchRevenueStats();
       fetchChurnRate(6);
+      fetchRestaurantRevenue();
     }
   };
 };
