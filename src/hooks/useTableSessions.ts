@@ -149,20 +149,78 @@ export function useTableSessions() {
 
   const closeSession = useCallback(
     async (sessionId: string) => {
+      if (!user) return;
+
       try {
-        const { error } = await supabase
+        // Récupérer la session pour obtenir toutes les infos
+        const { data: sessionData, error: sessionError } = await supabase
+          .from("table_sessions" as any)
+          .select("*")
+          .eq("id", sessionId)
+          .single();
+
+        if (sessionError || !sessionData) throw sessionError || new Error("Session not found");
+        
+        const session: any = sessionData;
+
+        // Récupérer toutes les commandes de cette session
+        const { data: ordersData, error: ordersError } = await supabase
+          .from("orders" as any)
+          .select("*")
+          .eq("session_id", sessionId);
+
+        if (ordersError) throw ordersError;
+        
+        const orders: any[] = ordersData || [];
+
+        // Calculer le montant total et préparer les items
+        const items = orders.flatMap((order) => order.items || []);
+        const totalAmount = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+
+        // Générer un numéro de facture
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        const invoiceNumber = `INV-${year}${month}-${random}`;
+
+        // Obtenir le nom du client depuis la première commande ou utiliser le numéro de table
+        const customerName = (orders.length > 0 && orders[0].customer_name) 
+          ? orders[0].customer_name 
+          : `Table ${session.table_number}`;
+
+        // Créer la facture avec le même outlet_id que la session
+        const { error: invoiceError } = await supabase
+          .from("invoices" as any)
+          .insert({
+            user_id: user.id,
+            outlet_id: session.outlet_id || null, // Important : utiliser l'outlet_id de la session
+            session_id: sessionId,
+            invoice_number: invoiceNumber,
+            total_amount: totalAmount,
+            status: 'unpaid',
+            items: items,
+            customer_name: customerName,
+            created_at: new Date().toISOString(),
+          });
+
+        if (invoiceError) throw invoiceError;
+
+        // Fermer la session
+        const { error: updateError } = await supabase
           .from("table_sessions" as any)
           .update({
             status: "closed",
             closed_at: new Date().toISOString(),
+            total_amount: totalAmount,
           })
           .eq("id", sessionId);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
 
         toast({
           title: "Session fermée",
-          description: "La facture a été générée automatiquement.",
+          description: `Facture ${invoiceNumber} générée avec succès.`,
         });
 
         await fetchSessions();
@@ -175,7 +233,7 @@ export function useTableSessions() {
         });
       }
     },
-    [toast, fetchSessions]
+    [user, toast, fetchSessions]
   );
 
   const markSessionAsPaid = useCallback(
