@@ -27,56 +27,45 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         user_id: invoice.user_id
       });
 
-      // Récupérer les infos du point de vente
-      let outletData = null;
+      // Récupérer les infos du point de vente (toujours nécessaire)
       if (invoice.outlet_id) {
-        const { data, error: outletError } = await supabase
+        const { data: outletData, error: outletError } = await supabase
           .from('outlets')
           .select('name, address, phone')
           .eq('id', invoice.outlet_id)
           .single();
         
-        console.log('📍 Outlet data:', data, 'Error:', outletError);
-        outletData = data;
-      } else {
-        // Si pas d'outlet_id, prendre le premier outlet de l'utilisateur
-        console.log('⚠️ No outlet_id, fetching first outlet for user');
-        const { data } = await supabase
-          .from('outlets')
-          .select('name, address, phone')
-          .eq('user_id', invoice.user_id)
-          .order('created_at', { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        
-        outletData = data;
-      }
-      
-      setOutlet(outletData);
+        console.log('📍 Outlet data:', outletData, 'Error:', outletError);
+        setOutlet(outletData);
 
-      // Récupérer les paramètres de facturation
-      let { data: settingsData } = await supabase
-        .from('invoice_settings')
-        .select('*')
-        .eq('user_id', invoice.user_id)
-        .eq('outlet_id', invoice.outlet_id || '')
-        .maybeSingle();
-      
-      // Si pas trouvé avec outlet_id, essayer les paramètres globaux
-      if (!settingsData) {
-        console.log('⚠️ No outlet-specific settings, trying global settings...');
-        const globalResult = await supabase
+        // Récupérer les paramètres de facturation
+        // D'abord essayer avec outlet_id spécifique
+        let { data: settingsData, error: settingsError } = await supabase
           .from('invoice_settings')
           .select('*')
           .eq('user_id', invoice.user_id)
-          .is('outlet_id', null)
+          .eq('outlet_id', invoice.outlet_id)
           .maybeSingle();
         
-        settingsData = globalResult.data;
+        // Si pas trouvé avec outlet_id, essayer les paramètres globaux
+        if (!settingsData) {
+          console.log('⚠️ No outlet-specific settings, trying global settings...');
+          const globalResult = await supabase
+            .from('invoice_settings')
+            .select('*')
+            .eq('user_id', invoice.user_id)
+            .is('outlet_id', null)
+            .maybeSingle();
+          
+          settingsData = globalResult.data;
+          settingsError = globalResult.error;
+        }
+        
+        console.log('⚙️ Settings data:', settingsData, 'Error:', settingsError);
+        setSettings(settingsData);
+      } else {
+        console.warn('⚠️ No outlet_id found on invoice');
       }
-      
-      console.log('⚙️ Settings data:', settingsData);
-      setSettings(settingsData);
       
       // Marquer les données comme chargées
       setDataLoaded(true);
