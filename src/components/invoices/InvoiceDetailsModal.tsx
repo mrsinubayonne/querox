@@ -67,7 +67,13 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   const confirmPrint = () => {
     setShowServerDialog(false);
     setIsPrinting(true);
-    // L'impression sera gérée automatiquement par InvoicePrintView après chargement des données
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        setIsPrinting(false);
+        setServedBy('');
+      }, 100);
+    }, 100);
   };
 
   return (

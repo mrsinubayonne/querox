@@ -82,7 +82,13 @@ const Factures: React.FC = () => {
 
   const confirmPrint = () => {
     setShowServerDialog(false);
-    // L'impression sera gérée automatiquement par InvoicePrintView après chargement des données
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        setPrintInvoice(null);
+        setServedBy('');
+      }, 100);
+    }, 100);
   };
 
   const handleDeleteClick = (invoice: Invoice) => {
@@ -359,7 +365,7 @@ const Factures: React.FC = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {printInvoice && !showServerDialog && <InvoicePrintView invoice={printInvoice} servedBy={servedBy} />}
+        {printInvoice && <InvoicePrintView invoice={printInvoice} servedBy={servedBy} />}
       </PageWithSidebar>
     </SubscriptionGuard>
   );
