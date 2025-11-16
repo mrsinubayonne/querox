@@ -49,10 +49,10 @@ const GuaranteesTestimonials: React.FC = () => {
           <div className="bg-gray-50 p-6 rounded-xl">
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-black">
-                AL
+                PM
               </div>
               <div className="ml-4">
-                <h4 className="font-black">Antoine Laurent</h4>
+                <h4 className="font-black">Patrice Mobutu</h4>
                 <p className="text-gray-600 text-sm">Restaurant Le Gourmet</p>
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
@@ -66,10 +66,10 @@ const GuaranteesTestimonials: React.FC = () => {
           <div className="bg-gray-50 p-6 rounded-xl">
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-black">
-                SC
+                FB
               </div>
               <div className="ml-4">
-                <h4 className="font-black">Sophie Chen</h4>
+                <h4 className="font-black">Fatima Benali</h4>
                 <p className="text-gray-600 text-sm">Bistrot moderne</p>
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
