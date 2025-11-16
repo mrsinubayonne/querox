@@ -4,25 +4,25 @@ import { Star, Quote } from 'lucide-react';
 
 const testimonials = [
   {
-    name: "Marie Dubois",
+    name: "Amina El Fassi",
     role: "Propriétaire, Le Petit Bistrot",
-    image: "MD",
+    image: "AE",
     rating: 5,
     text: "En 3 mois, j'ai augmenté mes revenus de 92% et je passe 4h de moins par jour sur l'administratif. QUEROX a complètement transformé mon restaurant.",
     result: "+92% de CA"
   },
   {
-    name: "Jean-Claude Martin",
+    name: "Mamadou Diop",
     role: "Gérant, Chez Jean",
-    image: "JC",
+    image: "MD",
     rating: 5,
     text: "Avant je perdais plus de 5000€ par mois en stocks. Maintenant tout est sous contrôle et mes pertes ont diminué de 85%. Un investissement qui s'est payé en 2 semaines.",
     result: "-85% de pertes"
   },
   {
-    name: "Sophie Laurent",
+    name: "Layla Khoury",
     role: "Chef & Propriétaire, La Table",
-    image: "SL",
+    image: "LK",
     rating: 5,
     text: "Interface ultra intuitive. Même mon équipe qui n'est pas à l'aise avec la tech l'utilise sans problème. Et le support répond en moins de 2h à chaque fois !",
     result: "Setup en 10min"
