@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { dataService } from '@/services/DataService';
+import { syncService } from '@/services/SyncService';
 
 interface OrderItem {
   id: string;
@@ -100,18 +102,11 @@ export const useOrders = () => {
         return;
       }
       
-      const { data, error } = await supabase
-        .from('orders')
-        .select('id, customer_name, customer_email, customer_phone, items, total_amount, status, notes, delivery_address, delivery_time, created_at, table_number, order_type, user_id')
-        .eq('user_id', user.id)
-        .eq('outlet_id', outletId)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) {
-        console.error('Error fetching orders:', error);
-        throw error;
-      }
+      // Utiliser le DataService qui gère automatiquement online/offline
+      const data = await dataService.getAll<any>('orders', {
+        user_id: user.id,
+        outlet_id: outletId
+      });
 
       const transformedOrders: Order[] = (data || []).map(order => ({
         id: order.id,

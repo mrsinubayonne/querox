@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, UserCircle, Utensils, UserPlus, Award } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, UserCircle, Utensils, UserPlus, Award, RefreshCw, HelpCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -8,6 +8,7 @@ import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
 import { useUserProfiles, ProfileTitle } from '@/hooks/useUserProfiles';
 import { Button } from '@/components/ui/button';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -183,6 +184,16 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: 'Support',
     path: '/support',
     permission: 'support'
+  }, {
+    icon: RefreshCw,
+    label: 'Synchronisation',
+    path: '/sync-status',
+    permission: 'dashboard'
+  }, {
+    icon: HelpCircle,
+    label: 'Aide Mode Offline',
+    path: '/offline-help',
+    permission: 'dashboard'
   }].filter(item => hasPermission(item.permission as any));
 
   // Filter menu items based on profile (AFTER menuItems is defined)
@@ -309,11 +320,14 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
   return <div className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col ${collapsed ? 'w-16' : 'w-64'}`}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        {!collapsed && <h2 className="text-xl font-bold text-gray-800">Querox</h2>}
-        <button onClick={() => setCollapsed(!collapsed)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-        </button>
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          {!collapsed && <h2 className="text-xl font-bold text-gray-800">Querox</h2>}
+          <button onClick={() => setCollapsed(!collapsed)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
+        </div>
+        {!collapsed && <OfflineIndicator />}
       </div>
 
       {/* Profile Selector */}

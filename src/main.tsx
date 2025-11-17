@@ -4,6 +4,9 @@ import './index.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import { initDB } from '@/lib/offlineDB'
+import { syncService } from '@/services/SyncService'
+import { dataService } from '@/services/DataService'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,6 +17,24 @@ const queryClient = new QueryClient({
     },
   },
 })
+
+// Initialiser les services offline
+const initializeOfflineServices = async () => {
+  try {
+    console.log('🚀 Initialisation du mode offline...');
+    await initDB();
+    syncService.startAutoSync(30); // Sync toutes les 30 secondes
+    
+    // Nettoyer les anciennes données au démarrage
+    await dataService.cleanupOldData(7); // Garder 7 jours
+    
+    console.log('✅ Mode offline initialisé avec succès');
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'initialisation du mode offline:', error);
+  }
+};
+
+initializeOfflineServices();
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
