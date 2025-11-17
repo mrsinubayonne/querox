@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { dataService } from '@/services/DataService';
 import { syncService } from '@/services/SyncService';
+import notificationSound from '@/assets/notification-sound.mp3';
 
 interface OrderItem {
   id: string;
@@ -29,34 +30,14 @@ interface Order {
   order_type?: string | null;
 }
 
-// Fonction pour jouer un son de notification agréable
+// Fonction pour jouer un son de notification personnalisé
 const playNotificationSound = () => {
   try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    // Créer un son plus agréable avec deux tonalités
-    const playTone = (frequency: number, startTime: number, duration: number) => {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      oscillator.frequency.value = frequency;
-      oscillator.type = 'sine';
-
-      gainNode.gain.setValueAtTime(0.4, startTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-
-      oscillator.start(startTime);
-      oscillator.stop(startTime + duration);
-    };
-
-    // Jouer deux tons ascendants pour une notification agréable
-    const now = audioContext.currentTime;
-    playTone(587.33, now, 0.15); // D5
-    playTone(783.99, now + 0.15, 0.2); // G5
-    
+    const audio = new Audio(notificationSound);
+    audio.volume = 0.5; // Volume à 50%
+    audio.play().catch(error => {
+      console.error('Erreur lors de la lecture du son:', error);
+    });
     console.log('🔔 Son de notification joué');
   } catch (error) {
     console.error('Erreur lors de la lecture du son:', error);
