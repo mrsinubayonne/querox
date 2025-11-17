@@ -2,7 +2,7 @@ import { getDB } from '@/lib/offlineDB';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
-type StoreName = 'menus' | 'menu_categories' | 'menu_items' | 'orders' | 'customers' | 'invoices' | 'table_sessions' | 'inventory' | 'settings';
+type StoreName = 'menus' | 'menu_categories' | 'menu_items' | 'orders' | 'customers' | 'invoices' | 'table_sessions' | 'inventory' | 'settings' | 'reservations' | 'events';
 
 class DataService {
   private static instance: DataService;
@@ -184,7 +184,7 @@ class DataService {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
     
-    const stores: StoreName[] = ['orders', 'invoices', 'table_sessions'];
+    const stores: StoreName[] = ['orders', 'invoices', 'table_sessions', 'reservations', 'events'];
     
     for (const store of stores) {
       const tx = db.transaction(store as any, 'readwrite');
