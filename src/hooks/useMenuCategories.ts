@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { MenuCategory } from './useMenus';
+import { dataService } from '@/services/DataService';
 
 export interface CategoryInput {
   name: string;
@@ -54,31 +55,17 @@ export const useMenuCategories = () => {
         return null;
       }
 
-      const { data, error } = await supabase
-        .from('menu_categories')
-        .insert([{
-          ...categoryData,
-          order_index: categoryData.order_index ?? 0
-        }])
-        .select()
-        .single();
+      const newCategory = await dataService.create<MenuCategory>('menu_categories', {
+        ...categoryData,
+        order_index: categoryData.order_index ?? 0
+      });
 
-      if (error) {
-        console.error('Error adding category:', error);
-        toast({
-          title: "Erreur",
-          description: error.message || "Impossible d'ajouter la catégorie",
-          variant: "destructive",
-        });
-        return null;
-      }
-
-      console.log('✅ Category added successfully:', data.id);
+      console.log('✅ Category added successfully:', newCategory.id);
       toast({
         title: "Succès",
         description: "Catégorie ajoutée avec succès",
       });
-      return data;
+      return newCategory;
 
     } catch (error: any) {
       console.error('🚨 Error adding category:', error);

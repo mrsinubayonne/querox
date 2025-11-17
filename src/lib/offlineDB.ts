@@ -88,6 +88,26 @@ interface QueroxDB extends DBSchema {
       lastSync: Date;
     };
   };
+  reservations: {
+    key: string;
+    value: {
+      id: string;
+      data: any;
+      status: 'pending' | 'synced';
+      lastSync: Date;
+    };
+    indexes: { 'by-status': string; 'by-lastSync': Date };
+  };
+  events: {
+    key: string;
+    value: {
+      id: string;
+      data: any;
+      status: 'pending' | 'synced';
+      lastSync: Date;
+    };
+    indexes: { 'by-status': string; 'by-lastSync': Date };
+  };
   sync_queue: {
     key: string;
     value: {
@@ -181,6 +201,20 @@ export const initDB = async (): Promise<IDBPDatabase<QueroxDB>> => {
       // Settings store
       if (!db.objectStoreNames.contains('settings')) {
         db.createObjectStore('settings', { keyPath: 'key' });
+      }
+
+      // Reservations store
+      if (!db.objectStoreNames.contains('reservations')) {
+        const reservationsStore = db.createObjectStore('reservations', { keyPath: 'id' });
+        reservationsStore.createIndex('by-status', 'status');
+        reservationsStore.createIndex('by-lastSync', 'lastSync');
+      }
+
+      // Events store
+      if (!db.objectStoreNames.contains('events')) {
+        const eventsStore = db.createObjectStore('events', { keyPath: 'id' });
+        eventsStore.createIndex('by-status', 'status');
+        eventsStore.createIndex('by-lastSync', 'lastSync');
       }
 
       // Sync queue store
