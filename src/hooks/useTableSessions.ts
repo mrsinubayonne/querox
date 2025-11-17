@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { dataService } from "@/services/DataService";
 
 export interface TableSession {
   id: string;
@@ -58,15 +59,13 @@ export function useTableSessions() {
         .eq("user_id", user.id)
         .order("started_at", { ascending: false }) as any;
 
+      const filters: any = { user_id: user.id };
       if (outletId) {
-        query = query.eq("outlet_id", outletId);
+        filters.outlet_id = outletId;
       }
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      setSessions((data as any) || []);
+      const data = await dataService.getAll<TableSession>('table_sessions', filters);
+      setSessions(data);
     } catch (error: any) {
       console.error("Error fetching table sessions:", error);
       toast({
@@ -110,22 +109,16 @@ export function useTableSessions() {
           outletId = (profile as any)?.selected_outlet_id ?? null;
         }
 
-        const { data, error } = await supabase
-          .from("table_sessions" as any)
-          .insert([
-            {
-              user_id: user.id,
-              outlet_id: outletId,
-              table_number: tableNumber,
-              number_of_guests: numberOfGuests,
-              notes: notes,
-              status: "active",
-            },
-          ])
-          .select()
-          .single();
+        const sessionData = {
+          user_id: user.id,
+          outlet_id: outletId,
+          table_number: tableNumber,
+          number_of_guests: numberOfGuests,
+          notes: notes,
+          status: "active" as const,
+        };
 
-        if (error) throw error;
+        const newSession = await dataService.create<TableSession>('table_sessions', sessionData);
 
         toast({
           title: "Session ouverte",
@@ -133,7 +126,7 @@ export function useTableSessions() {
         });
 
         await fetchSessions();
-        return data;
+        return newSession;
       } catch (error: any) {
         console.error("Error creating session:", error);
         toast({
@@ -150,15 +143,10 @@ export function useTableSessions() {
   const closeSession = useCallback(
     async (sessionId: string) => {
       try {
-        const { error } = await supabase
-          .from("table_sessions" as any)
-          .update({
-            status: "closed",
-            closed_at: new Date().toISOString(),
-          })
-          .eq("id", sessionId);
-
-        if (error) throw error;
+        await dataService.update<TableSession>('table_sessions', sessionId, {
+          status: "closed",
+          closed_at: new Date().toISOString(),
+        });
 
         toast({
           title: "Session fermée",
@@ -181,12 +169,9 @@ export function useTableSessions() {
   const markSessionAsPaid = useCallback(
     async (sessionId: string) => {
       try {
-        const { error } = await supabase
-          .from("table_sessions" as any)
-          .update({ status: "paid" })
-          .eq("id", sessionId);
-
-        if (error) throw error;
+        await dataService.update<TableSession>('table_sessions', sessionId, {
+          status: "paid"
+        });
 
         toast({
           title: "Paiement enregistré",
