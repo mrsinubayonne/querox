@@ -98,7 +98,7 @@ interface QueroxDB extends DBSchema {
     };
     indexes: { 'by-status': string; 'by-lastSync': Date };
   };
-  events: {
+  business_periods: {
     key: string;
     value: {
       id: string;
@@ -215,6 +215,13 @@ export const initDB = async (): Promise<IDBPDatabase<QueroxDB>> => {
         const eventsStore = db.createObjectStore('events', { keyPath: 'id' });
         eventsStore.createIndex('by-status', 'status');
         eventsStore.createIndex('by-lastSync', 'lastSync');
+      }
+
+      // Business periods store
+      if (!db.objectStoreNames.contains('business_periods')) {
+        const periodsStore = db.createObjectStore('business_periods', { keyPath: 'id' });
+        periodsStore.createIndex('by-status', 'status');
+        periodsStore.createIndex('by-lastSync', 'lastSync');
       }
 
       // Sync queue store
