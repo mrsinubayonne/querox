@@ -34,7 +34,7 @@ interface Order {
 const playNotificationSound = () => {
   try {
     const audio = new Audio(notificationSound);
-    audio.volume = 0.5; // Volume à 50%
+    audio.volume = 1.0; // Volume à 100%
     audio.play().catch(error => {
       console.error('Erreur lors de la lecture du son:', error);
     });
