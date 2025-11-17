@@ -98,6 +98,16 @@ interface QueroxDB extends DBSchema {
     };
     indexes: { 'by-status': string; 'by-lastSync': Date };
   };
+  events: {
+    key: string;
+    value: {
+      id: string;
+      data: any;
+      status: 'pending' | 'synced';
+      lastSync: Date;
+    };
+    indexes: { 'by-status': string; 'by-lastSync': Date };
+  };
   business_periods: {
     key: string;
     value: {
