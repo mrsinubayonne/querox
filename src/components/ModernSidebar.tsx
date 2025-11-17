@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, UserCircle, Utensils } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, UserCircle, Utensils, UserPlus, Award } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -129,6 +129,21 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/inventaire',
     permission: 'inventory'
   }, {
+    icon: UserPlus,
+    label: 'Clients (CRM)',
+    path: '/clients',
+    permission: 'customers'
+  }, {
+    icon: Users,
+    label: 'Équipe',
+    path: '/equipe',
+    permission: 'team'
+  }, {
+    icon: Award,
+    label: 'Performance Personnel',
+    path: '/performance-personnel',
+    permission: 'team'
+  }, {
     icon: Users,
     label: 'Mise à disposition du personnel',
     path: '/staff-request',
@@ -180,7 +195,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       return menuItems; // Admin has access to everything
     } else if (title === 'Caissier(e)') {
       return menuItems.filter(item => 
-        ['Commandes', 'Tables', 'Factures', 'Réservations', 'Rapports', 'Support'].includes(item.label)
+        ['Commandes', 'Tables', 'Factures', 'Clients (CRM)', 'Réservations', 'Rapports', 'Support'].includes(item.label)
       );
     } else if (title === 'Comptable') {
       return menuItems.filter(item => 
@@ -188,7 +203,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       );
     } else if (title === 'Serveur') {
       return menuItems.filter(item => 
-        ['Commandes', 'Tables', 'Rapports'].includes(item.label)
+        ['Commandes', 'Tables', 'Clients (CRM)', 'Rapports'].includes(item.label)
       );
     }
     
