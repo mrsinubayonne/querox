@@ -18,7 +18,14 @@ import {
   Clock,
   Shield,
   Zap,
-  ArrowRight
+  ArrowRight,
+  Utensils,
+  ShoppingCart,
+  Receipt,
+  UserCog,
+  Bell,
+  Gift,
+  Building2
 } from "lucide-react";
 
 const mainFeatures = [
@@ -57,6 +64,48 @@ const mainFeatures = [
     title: "Comptabilité",
     description: "Automatisez votre comptabilité et générez vos rapports financiers en un clic.",
     gradient: "from-teal-500 to-green-500"
+  },
+  {
+    icon: Utensils,
+    title: "Gestion des Tables",
+    description: "Organisez vos tables et sessions en temps réel avec un système intuitif et performant.",
+    gradient: "from-amber-500 to-orange-500"
+  },
+  {
+    icon: ShoppingCart,
+    title: "Commandes en Ligne",
+    description: "Acceptez les commandes en ligne, en livraison et click & collect directement depuis votre menu QR.",
+    gradient: "from-cyan-500 to-blue-500"
+  },
+  {
+    icon: Receipt,
+    title: "Factures Automatisées",
+    description: "Générez et envoyez vos factures professionnelles automatiquement avec suivi des paiements.",
+    gradient: "from-slate-600 to-gray-700"
+  },
+  {
+    icon: UserCog,
+    title: "Gestion d'Équipe",
+    description: "Gérez les permissions, suivez les performances et optimisez la productivité de votre équipe.",
+    gradient: "from-indigo-500 to-purple-600"
+  },
+  {
+    icon: Bell,
+    title: "Notifications Temps Réel",
+    description: "Recevez des alertes instantanées pour les commandes, ruptures de stock et événements critiques.",
+    gradient: "from-red-500 to-pink-500"
+  },
+  {
+    icon: Gift,
+    title: "Programme de Fidélité",
+    description: "Créez des programmes de points et récompenses pour fidéliser et faire revenir vos clients.",
+    gradient: "from-yellow-500 to-amber-500"
+  },
+  {
+    icon: Building2,
+    title: "Multi-Établissements",
+    description: "Gérez plusieurs points de vente depuis une seule interface avec rapports consolidés.",
+    gradient: "from-emerald-600 to-teal-600"
   }
 ];
 
