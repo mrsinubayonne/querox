@@ -36,8 +36,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return;
     }
 
-    // Si l'utilisateur est admin, bypasser la sélection de profil et outlet
+    // Si l'utilisateur est admin, rediriger vers /admin si on est sur une page de sélection
     if (isAdmin) {
+      if (location.pathname === '/select-profile' || location.pathname === '/select-outlet') {
+        navigate('/admin', { replace: true });
+      }
       return;
     }
 
