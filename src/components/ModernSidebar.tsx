@@ -522,7 +522,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
                 {/* Admin Submenu */}
                 {adminExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
-                    {adminItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-red-100 text-red-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
+                    {adminItems.map(item => <button key={item.label} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-red-100 text-red-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
                         <item.icon size={16} className="flex-shrink-0" />
                         <span className="ml-3">{item.label}</span>
                       </button>)}
