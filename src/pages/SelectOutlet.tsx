@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const SelectOutlet: React.FC = () => {
   const navigate = useNavigate();
@@ -22,9 +23,25 @@ const SelectOutlet: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth', { replace: true });
-    }
+    const checkAdminAndRedirect = async () => {
+      if (!user) {
+        navigate('/auth', { replace: true });
+        return;
+      }
+
+      // Vérifier si l'utilisateur est admin
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (userRole?.role === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
+      }
+    };
+
+    checkAdminAndRedirect();
   }, [user, navigate]);
 
   const handleCreateOutlet = async (e: React.FormEvent) => {
