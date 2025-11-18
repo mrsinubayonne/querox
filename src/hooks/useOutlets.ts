@@ -5,11 +5,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useSubscription } from './useSubscription';
 
-const OUTLET_LIMITS = {
+const OUTLET_LIMITS: Record<string, number> = {
   'starter': 1,
+  'basic': 1,
   'premium': 2,
   'pro': 3,
-  'entreprise': 3
+  'business': 3,
+  'entreprise': 5,
+  'admin': 999 // Unlimited pour les admins
 };
 
 export interface Outlet {
@@ -51,7 +54,8 @@ export const useOutlets = () => {
 
   const getOutletLimit = () => {
     const tier = subscription?.subscription_tier || 'starter';
-    return OUTLET_LIMITS[tier as keyof typeof OUTLET_LIMITS] || 1;
+    const limit = OUTLET_LIMITS[tier];
+    return limit !== undefined ? limit : 1;
   };
 
   const canAddMoreOutlets = () => {
