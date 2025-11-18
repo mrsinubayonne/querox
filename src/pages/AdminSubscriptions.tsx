@@ -12,7 +12,6 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import SubscriptionForm from '@/components/admin/SubscriptionForm';
 import SubscriptionsList from '@/components/admin/SubscriptionsList';
 import UnauthorizedAccess from '@/components/admin/UnauthorizedAccess';
-import UsersList from '@/components/admin/UsersList';
 
 interface Subscription {
   id: string;
@@ -32,18 +31,7 @@ const AdminSubscriptions: React.FC = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [fetchingSubscriptions, setFetchingSubscriptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedUserEmail, setSelectedUserEmail] = useState('');
-  const [selectedUserName, setSelectedUserName] = useState<string | null>(null);
   const { toast } = useToast();
-
-  const handleSelectUser = (email: string, fullName: string | null) => {
-    setSelectedUserEmail(email);
-    setSelectedUserName(fullName);
-    toast({
-      title: "Utilisateur sélectionné",
-      description: `${fullName || email} sélectionné pour attribution d'abonnement`,
-    });
-  };
 
   useEffect(() => {
     if (isAdmin) {
@@ -138,14 +126,9 @@ const AdminSubscriptions: React.FC = () => {
             </Card>
           )}
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <UsersList onSelectUser={handleSelectUser} />
-            <SubscriptionForm 
-              onSubscriptionCreated={fetchSubscriptions}
-              prefilledEmail={selectedUserEmail}
-              prefilledName={selectedUserName}
-            />
-          </div>
+          <SubscriptionForm 
+            onSubscriptionCreated={fetchSubscriptions}
+          />
 
           <div className="mb-4 flex justify-between items-center">
             <div className="flex items-center space-x-2">
