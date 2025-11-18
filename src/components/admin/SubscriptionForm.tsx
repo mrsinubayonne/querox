@@ -12,14 +12,27 @@ import { Label } from '@/components/ui/label';
 
 interface SubscriptionFormProps {
   onSubscriptionCreated: () => void;
+  prefilledEmail?: string;
+  prefilledName?: string | null;
 }
 
-const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreated }) => {
-  const [searchEmail, setSearchEmail] = useState('');
+const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ 
+  onSubscriptionCreated,
+  prefilledEmail = '',
+  prefilledName = null
+}) => {
+  const [searchEmail, setSearchEmail] = useState(prefilledEmail);
   const [selectedTier, setSelectedTier] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('30');
   const [isLifetime, setIsLifetime] = useState(false);
   const { toast } = useToast();
+
+  // Update email when prefilled value changes
+  React.useEffect(() => {
+    if (prefilledEmail) {
+      setSearchEmail(prefilledEmail);
+    }
+  }, [prefilledEmail]);
 
   const createOrUpdateSubscription = async () => {
     if (!searchEmail || !selectedTier) {
