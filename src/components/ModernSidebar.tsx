@@ -241,19 +241,19 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const adminItems = [{
     icon: Crown,
     label: 'Tableau de Bord',
-    path: '/admin/dashboard'
+    path: '/admin'
   }, {
     icon: CreditCard,
     label: 'Abonnements',
-    path: '/admin/subscriptions'
+    path: '/admin'
   }, {
     icon: UserCog,
     label: 'Gestion des Rôles',
-    path: '/admin/roles'
+    path: '/admin'
   }, {
     icon: Shield,
     label: 'Codes d\'Accès',
-    path: '/admin/access-codes'
+    path: '/admin'
   }];
 
   const bottomMenuItems = [
