@@ -6,27 +6,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { 
-  LayoutDashboard, 
-  Users, 
-  CreditCard, 
-  Shield, 
-  Key,
-  Settings,
-  LogOut,
-  TrendingUp,
-  DollarSign,
-  UserCheck,
-  Activity
+  LayoutDashboard, Users, CreditCard, Shield, Key, Settings, LogOut,
+  TrendingUp, DollarSign, UserCheck, Activity, ShoppingBag, Building2,
+  Menu, Package, FileText, BarChart3, AlertTriangle, Download, FileBarChart,
+  Server, Calendar, Handshake
 } from 'lucide-react';
-import AdminHeader from '@/components/admin/AdminHeader';
 import UnauthorizedAccess from '@/components/admin/UnauthorizedAccess';
 
-// Import des tabs
+// Import des 19 tabs admin
 import { AdminOverviewTab } from '@/components/admin/tabs/AdminOverviewTab';
 import { AdminUsersTab } from '@/components/admin/tabs/AdminUsersTab';
 import { AdminSubscriptionsTab } from '@/components/admin/tabs/AdminSubscriptionsTab';
 import { AdminRolesTab } from '@/components/admin/tabs/AdminRolesTab';
 import { AdminAccessCodesTab } from '@/components/admin/tabs/AdminAccessCodesTab';
+import { AdminOrdersTab } from '@/components/admin/tabs/AdminOrdersTab';
+import { AdminOutletsTab } from '@/components/admin/tabs/AdminOutletsTab';
+import { AdminMenusTab } from '@/components/admin/tabs/AdminMenusTab';
+import { AdminInventoryTab } from '@/components/admin/tabs/AdminInventoryTab';
+import { AdminInvoicesTab } from '@/components/admin/tabs/AdminInvoicesTab';
+import { AdminAnalyticsTab } from '@/components/admin/tabs/AdminAnalyticsTab';
+import { AdminRevenueTab } from '@/components/admin/tabs/AdminRevenueTab';
+import { AdminAuditLogsTab } from '@/components/admin/tabs/AdminAuditLogsTab';
+import { AdminAlertsTab } from '@/components/admin/tabs/AdminAlertsTab';
+import { AdminExportTab } from '@/components/admin/tabs/AdminExportTab';
+import { AdminReportsTab } from '@/components/admin/tabs/AdminReportsTab';
+import { AdminSystemTab } from '@/components/admin/tabs/AdminSystemTab';
+import { AdminReservationsTab } from '@/components/admin/tabs/AdminReservationsTab';
+import { AdminPartnersTab } from '@/components/admin/tabs/AdminPartnersTab';
 
 const AdminPanel: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -80,29 +86,30 @@ const AdminPanel: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-[1600px] mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* Navigation Tabs */}
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid bg-white p-1 rounded-xl shadow-sm">
-            <TabsTrigger value="overview" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <LayoutDashboard className="w-4 h-4" />
-              <span className="hidden sm:inline">Vue d'ensemble</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Utilisateurs</span>
-            </TabsTrigger>
-            <TabsTrigger value="subscriptions" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <CreditCard className="w-4 h-4" />
-              <span className="hidden sm:inline">Abonnements</span>
-            </TabsTrigger>
-            <TabsTrigger value="roles" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <UserCheck className="w-4 h-4" />
-              <span className="hidden sm:inline">Rôles</span>
-            </TabsTrigger>
-            <TabsTrigger value="access" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <Key className="w-4 h-4" />
-              <span className="hidden sm:inline">Codes d'accès</span>
-            </TabsTrigger>
-          </TabsList>
+          {/* Navigation Tabs - 19 Fonctionnalités */}
+          <div className="bg-white p-2 rounded-xl shadow-sm overflow-x-auto">
+            <TabsList className="inline-flex gap-2 flex-wrap">
+              <TabsTrigger value="overview"><LayoutDashboard className="w-4 h-4 mr-2" />Vue d'ensemble</TabsTrigger>
+              <TabsTrigger value="users"><Users className="w-4 h-4 mr-2" />Utilisateurs</TabsTrigger>
+              <TabsTrigger value="subscriptions"><CreditCard className="w-4 h-4 mr-2" />Abonnements</TabsTrigger>
+              <TabsTrigger value="orders"><ShoppingBag className="w-4 h-4 mr-2" />Commandes</TabsTrigger>
+              <TabsTrigger value="outlets"><Building2 className="w-4 h-4 mr-2" />Points de Vente</TabsTrigger>
+              <TabsTrigger value="menus"><Menu className="w-4 h-4 mr-2" />Menus</TabsTrigger>
+              <TabsTrigger value="inventory"><Package className="w-4 h-4 mr-2" />Inventaire</TabsTrigger>
+              <TabsTrigger value="invoices"><FileText className="w-4 h-4 mr-2" />Factures</TabsTrigger>
+              <TabsTrigger value="reservations"><Calendar className="w-4 h-4 mr-2" />Réservations</TabsTrigger>
+              <TabsTrigger value="analytics"><BarChart3 className="w-4 h-4 mr-2" />Analytics</TabsTrigger>
+              <TabsTrigger value="revenue"><DollarSign className="w-4 h-4 mr-2" />Revenus</TabsTrigger>
+              <TabsTrigger value="reports"><FileBarChart className="w-4 h-4 mr-2" />Rapports</TabsTrigger>
+              <TabsTrigger value="partners"><Handshake className="w-4 h-4 mr-2" />Partenaires</TabsTrigger>
+              <TabsTrigger value="audit"><Activity className="w-4 h-4 mr-2" />Logs Audit</TabsTrigger>
+              <TabsTrigger value="alerts"><AlertTriangle className="w-4 h-4 mr-2" />Alertes</TabsTrigger>
+              <TabsTrigger value="export"><Download className="w-4 h-4 mr-2" />Export</TabsTrigger>
+              <TabsTrigger value="system"><Server className="w-4 h-4 mr-2" />Système</TabsTrigger>
+              <TabsTrigger value="roles"><Shield className="w-4 h-4 mr-2" />Rôles</TabsTrigger>
+              <TabsTrigger value="access"><Key className="w-4 h-4 mr-2" />Codes d'Accès</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Tab Contents */}
           <TabsContent value="overview" className="space-y-6">
