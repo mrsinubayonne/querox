@@ -22,10 +22,13 @@ export interface TeamMember {
   actions_count: number;
 }
 
-const TEAM_LIMITS = {
-  'starter': 3,
-  'pro': 10,
-  'entreprise': 10
+const TEAM_LIMITS: Record<string, number> = {
+  'starter': 3,      // Plan Starter - 3 membres
+  'premium': 10,     // Plan Professionnel - 10 membres
+  'pro': 50,         // Plan Entreprise - 50 membres
+  'business': 100,   // Plan Business - 100 membres
+  'licence': 999,    // Plan Licence - Illimité
+  'admin': 999       // Admin - Illimité
 };
 
 export const useTeamMembers = () => {

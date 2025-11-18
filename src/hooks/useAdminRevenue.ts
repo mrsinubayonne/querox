@@ -149,7 +149,9 @@ export const useAdminRevenue = () => {
       const counts = {
         starter: 0,
         premium: 0,
-        pro: 0
+        pro: 0,
+        business: 0,
+        licence: 0
       };
       
       data?.forEach(subscriber => {
@@ -158,8 +160,12 @@ export const useAdminRevenue = () => {
           counts.starter++;
         } else if (tier === 'premium') {
           counts.premium++;
-        } else if (tier === 'pro' || tier === 'entreprise') {
+        } else if (tier === 'pro') {
           counts.pro++;
+        } else if (tier === 'business') {
+          counts.business++;
+        } else if (tier === 'licence') {
+          counts.licence++;
         }
       });
       
