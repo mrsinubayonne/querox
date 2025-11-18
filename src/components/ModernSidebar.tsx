@@ -130,11 +130,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/inventaire',
     permission: 'inventory'
   }, {
-    icon: UserPlus,
-    label: 'Clients (CRM)',
-    path: '/clients',
-    permission: 'customers'
-  }, {
     icon: Users,
     label: 'Équipe',
     path: '/equipe',
@@ -184,16 +179,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: 'Support',
     path: '/support',
     permission: 'support'
-  }, {
-    icon: RefreshCw,
-    label: 'Synchronisation',
-    path: '/sync-status',
-    permission: 'dashboard'
-  }, {
-    icon: HelpCircle,
-    label: 'Aide Mode Offline',
-    path: '/offline-help',
-    permission: 'dashboard'
   }].filter(item => hasPermission(item.permission as any));
 
   // Filter menu items based on profile (AFTER menuItems is defined)
@@ -206,7 +191,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       return menuItems; // Admin has access to everything
     } else if (title === 'Caissier(e)') {
       return menuItems.filter(item => 
-        ['Commandes', 'Tables', 'Factures', 'Clients (CRM)', 'Réservations', 'Rapports', 'Support'].includes(item.label)
+        ['Commandes', 'Tables', 'Factures', 'Réservations', 'Rapports', 'Support'].includes(item.label)
       );
     } else if (title === 'Comptable') {
       return menuItems.filter(item => 
@@ -214,7 +199,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       );
     } else if (title === 'Serveur') {
       return menuItems.filter(item => 
-        ['Commandes', 'Tables', 'Clients (CRM)', 'Rapports'].includes(item.label)
+        ['Commandes', 'Tables', 'Rapports'].includes(item.label)
       );
     }
     
