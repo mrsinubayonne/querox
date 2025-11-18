@@ -18,10 +18,12 @@ interface Subscription {
   user_id: string;
   email: string;
   subscribed: boolean;
-  subscription_tier: string;
+  subscription_tier: string | null;
   subscription_end: string | null;
   created_at: string;
   updated_at: string;
+  subscriber_id: string | null;
+  full_name: string | null;
 }
 
 const AdminSubscriptions: React.FC = () => {
@@ -44,22 +46,52 @@ const AdminSubscriptions: React.FC = () => {
     setError(null);
     
     try {
+      // Récupérer tous les profils avec leurs abonnements (LEFT JOIN)
       const { data, error } = await supabase
-        .from('subscribers')
-        .select('*', { count: 'exact' })
+        .from('profiles')
+        .select(`
+          id,
+          email,
+          full_name,
+          created_at,
+          updated_at
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
         throw error;
       }
 
-      setSubscriptions(data || []);
+      // Récupérer tous les subscribers
+      const { data: subscribersData } = await supabase
+        .from('subscribers')
+        .select('*');
+
+      // Mapper les données pour créer la liste complète
+      const mappedData = (data || []).map(profile => {
+        const subscriber = subscribersData?.find(s => s.user_id === profile.id);
+        
+        return {
+          id: profile.id,
+          user_id: profile.id,
+          email: profile.email || 'Email non défini',
+          full_name: profile.full_name,
+          subscribed: subscriber?.subscribed || false,
+          subscription_tier: subscriber?.subscription_tier || null,
+          subscription_end: subscriber?.subscription_end || null,
+          created_at: profile.created_at,
+          updated_at: profile.updated_at,
+          subscriber_id: subscriber?.id || null,
+        };
+      });
+
+      setSubscriptions(mappedData);
       
     } catch (error: any) {
       setError(error.message || 'Erreur inconnue');
       toast({
         title: "Erreur",
-        description: `Impossible de charger les abonnements: ${error.message}`,
+        description: `Impossible de charger les inscrits: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -132,7 +164,7 @@ const AdminSubscriptions: React.FC = () => {
 
           <div className="mb-4 flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <h2 className="text-xl font-semibold">Abonnements</h2>
+              <h2 className="text-xl font-semibold">Liste des inscrits ({subscriptions.length})</h2>
               {fetchingSubscriptions && (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
               )}
