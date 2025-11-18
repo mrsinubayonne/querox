@@ -12,7 +12,6 @@ import NewTransactionModal from '@/components/accounting/NewTransactionModal';
 import ExportModal from '@/components/accounting/ExportModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -418,7 +417,6 @@ const Comptabilite = () => {
         onClose={() => setShowExportModal(false)}
         onExport={handleExport}
       />
-      <SubscriptionPopup />
     </div>
   );
 };

@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { dataService } from '@/services/DataService';
 
 interface Customer {
   id: string;
@@ -48,13 +47,20 @@ export const useCustomers = () => {
         return;
       }
       
-      const filters: any = { user_id: user.id };
-      if (outletId) {
-        filters.outlet_id = outletId;
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, name, email, phone, total_visits, total_spent, last_visit, status, created_at, updated_at, user_id')
+        .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
+        .order('name')
+        .limit(200);
+
+      if (error) {
+        console.error('Error fetching customers:', error);
+        throw error;
       }
 
-      const data = await dataService.getAll<Customer>('customers', filters);
-      setCustomers(data);
+      setCustomers(data || []);
     } catch (error: any) {
       console.error('Customers fetch error:', error);
       toast({

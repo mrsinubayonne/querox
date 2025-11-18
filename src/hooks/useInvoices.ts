@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { dataService } from '@/services/DataService';
 
 export interface Invoice {
   id: string;
@@ -40,24 +39,42 @@ export const useInvoices = () => {
     try {
       setLoading(true);
       
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      const outletId = profile?.selected_outlet_id;
-
-      const filters: any = { user_id: user.id };
-      if (outletId) {
-        filters.outlet_id = outletId;
+      // Get selected outlet: prefer selectedProfileId in localStorage, fallback to user profile
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = profile?.selected_outlet_id ?? null;
       }
+      if (!outletId) {
+        setInvoices([]);
+        setLoading(false);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
+        .order('created_at', { ascending: false })
+        .limit(100);
 
-      const data = await dataService.getAll<Invoice>('invoices', filters);
-      setInvoices(data);
+      if (error) throw error;
+      setInvoices((data || []) as Invoice[]);
     } catch (error: any) {
-      console.error('Invoices fetch error:', error);
+      console.error('Error fetching invoices:', error);
       toast({
         title: "Erreur",
         description: "Impossible de charger les factures",

@@ -24,6 +24,3 @@ createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </ErrorBoundary>
 );
-
-// Le mode offline s'initialise automatiquement via le hook useOfflineMode
-// uniquement pour les utilisateurs authentifiés

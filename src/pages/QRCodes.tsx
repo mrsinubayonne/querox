@@ -10,7 +10,6 @@ import { QrCode as QrCodeIcon, Menu, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { APP_CONFIG } from '@/config/app.config';
 
 interface MenuType {
@@ -240,7 +239,6 @@ const QRCodes: React.FC = () => {
           </Card>
         </main>
       </div>
-      <SubscriptionPopup />
     </div>
   );
 };

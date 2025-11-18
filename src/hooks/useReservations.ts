@@ -2,12 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { dataService } from '@/services/DataService';
 
 export interface Reservation {
   id: string;
   user_id: string;
-  outlet_id?: string | null;
   customer_name: string;
   customer_email?: string;
   customer_phone: string;
@@ -51,13 +49,17 @@ export const useReservations = () => {
         return;
       }
       
-      const filters: any = { user_id: user.id };
-      if (outletId) {
-        filters.outlet_id = outletId;
-      }
+      const { data, error } = await supabase
+        .from('reservations')
+        .select('id, user_id, customer_name, customer_email, customer_phone, reservation_date, reservation_time, party_size, status, table_number, special_requests, created_at, updated_at')
+        .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
+        .order('reservation_date', { ascending: true })
+        .order('reservation_time', { ascending: true })
+        .limit(200);
 
-      const data = await dataService.getAll<Reservation>('reservations', filters);
-      setReservations(data);
+      if (error) throw error;
+      setReservations((data || []) as Reservation[]);
     } catch (error: any) {
       console.error('Reservations fetch error:', error);
       toast({
@@ -92,19 +94,21 @@ export const useReservations = () => {
         return false;
       }
       
-      await dataService.create<Reservation>('reservations', {
-        ...reservationData,
-        user_id: user.id,
-        outlet_id: outletId,
-      });
+      const { data, error } = await supabase
+        .from('reservations')
+        .insert({ ...reservationData, user_id: user.id, outlet_id: outletId })
+        .select()
+        .single();
 
+      if (error) throw error;
+
+      setReservations(prev => [...prev, data as Reservation]);
       toast({
         title: "Succès",
         description: "Réservation créée avec succès"
       });
 
-      await fetchReservations();
-      return true;
+      return data;
     } catch (error: any) {
       console.error('Reservation creation error:', error);
       toast({
@@ -120,15 +124,21 @@ export const useReservations = () => {
     if (!user) return false;
 
     try {
-      await dataService.update<Reservation>('reservations', id, updates);
+      const { data, error } = await supabase
+        .from('reservations')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
 
+      if (error) throw error;
+
+      setReservations(prev => prev.map(r => r.id === id ? data as Reservation : r));
       toast({
         title: "Succès",
         description: "Réservation mise à jour"
       });
-
-      await fetchReservations();
-      return true;
+      return data;
     } catch (error: any) {
       console.error('Update error:', error);
       toast({
@@ -144,14 +154,18 @@ export const useReservations = () => {
     if (!user) return false;
 
     try {
-      await dataService.delete('reservations', id);
+      const { error } = await supabase
+        .from('reservations')
+        .delete()
+        .eq('id', id);
 
+      if (error) throw error;
+
+      setReservations(prev => prev.filter(r => r.id !== id));
       toast({
         title: "Succès",
         description: "Réservation supprimée avec succès"
       });
-
-      await fetchReservations();
       return true;
     } catch (error: any) {
       console.error('Delete error:', error);

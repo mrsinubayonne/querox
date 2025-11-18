@@ -2,7 +2,6 @@
 import React from 'react';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
-import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { OrdersHeader } from '@/components/orders/OrdersHeader';
 import { OrdersList } from '@/components/orders/OrdersList';
 import { useOrders } from '@/hooks/useOrders';
@@ -18,7 +17,6 @@ const Commandes: React.FC = () => {
           <OrdersList orders={orders} loading={loading} refetch={refetch} />
         </div>
       </PageWithSidebar>
-      <SubscriptionPopup />
     </SubscriptionGuard>
   );
 };

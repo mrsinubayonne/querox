@@ -4,7 +4,6 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Key, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getPlanBadgeClass, getPlanDisplayName } from '@/utils/subscriptionPlans';
 
 interface AccessCodeRecord {
   id: string;
@@ -96,7 +95,14 @@ const AccessCodesManager: React.FC = () => {
   };
 
   const getTierBadgeColor = (tier?: string) => {
-    return getPlanBadgeClass(tier);
+    switch (tier) {
+      case 'trial': return 'bg-gray-100 text-gray-800';
+      case 'starter': return 'bg-blue-100 text-blue-800';
+      case 'premium': return 'bg-purple-100 text-purple-800';
+      case 'pro': return 'bg-green-100 text-green-800';
+      case 'licence': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (loading) {
@@ -130,7 +136,7 @@ const AccessCodesManager: React.FC = () => {
                   <h3 className="font-semibold text-lg">{record.email || 'Email non disponible'}</h3>
                   {record.subscription_tier && (
                     <Badge className={getTierBadgeColor(record.subscription_tier)}>
-                      {getPlanDisplayName(record.subscription_tier)}
+                      {record.subscription_tier}
                     </Badge>
                   )}
                   {record.subscription_status && (

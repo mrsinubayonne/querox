@@ -12,7 +12,6 @@ import { Menu, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { APP_CONFIG } from '@/config/app.config';
 import {
   AlertDialog,
@@ -274,7 +273,6 @@ const Menus: React.FC = () => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-      <SubscriptionPopup />
     </PageWithSidebar>
   );
 };

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -26,7 +27,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Palette } from 'lucide-react';
-import { getPlanDisplayName } from '@/utils/subscriptionPlans';
 
 const formSchema = z.object({
   restaurantName: z.string().min(2, 'Nom du restaurant requis'),
@@ -141,7 +141,7 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
 
         {/* Affichage des limites selon le plan */}
         <div className="mb-4 p-4 rounded-lg border">
-          <h3 className="font-semibold mb-2">Votre plan : {getPlanDisplayName(subscription?.subscription_tier)}</h3>
+          <h3 className="font-semibold mb-2">Votre plan : {subscription?.subscription_tier === 'premium' ? 'Professionnel' : subscription?.subscription_tier === 'pro' ? 'Entreprise' : subscription?.subscription_tier === 'licence' ? 'Licence' : subscription?.subscription_tier}</h3>
           {canUseService ? (
             <div className="flex items-center space-x-2 text-green-600">
               <span>✅ Designs autorisés : {designLimit === 999 ? 'Illimité' : designLimit}</span>

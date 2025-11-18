@@ -9,7 +9,6 @@ import { AddOrderFromCustomerModal } from "@/components/tables/AddOrderFromCusto
 import { TableSessionModal } from "@/components/tables/TableSessionModal";
 import { useTableSessions, TableSession } from "@/hooks/useTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
-import SubscriptionPopup from "@/components/SubscriptionPopup";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
@@ -229,7 +228,6 @@ const Tables: React.FC = () => {
             onMarkAsPaid={handleMarkAsPaid}
           />
         </div>
-        <SubscriptionPopup />
       </PageWithSidebar>
     </SubscriptionGuard>
   );

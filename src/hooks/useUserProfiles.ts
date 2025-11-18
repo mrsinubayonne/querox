@@ -33,15 +33,9 @@ export const useUserProfiles = () => {
 
   const getProfileLimit = (): number => {
     const tier = subscription?.subscription_tier || 'starter';
-    const limits: Record<string, number> = {
-      'starter': 2,      // Plan Starter - 2 profils
-      'premium': 5,      // Plan Professionnel - 5 profils
-      'pro': 10,         // Plan Entreprise - 10 profils
-      'business': 15,    // Plan Business - 15 profils
-      'licence': 999,    // Plan Licence - Illimité
-      'admin': 999       // Admin - Illimité
-    };
-    return limits[tier] || 2;
+    if (tier === 'pro') return 7;
+    if (tier === 'premium') return 3;
+    return 1; // starter tier
   };
 
   const canAddMoreProfiles = (): boolean => {

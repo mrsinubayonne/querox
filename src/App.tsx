@@ -60,17 +60,11 @@ import PerformancePersonnel from '@/pages/PerformancePersonnel';
 import SelectOutlet from '@/pages/SelectOutlet';
 import SelectProfile from '@/pages/SelectProfile';
 import ProfileLogin from '@/pages/ProfileLogin';
-import SyncStatus from '@/pages/SyncStatus';
-import OfflineHelp from '@/pages/OfflineHelp';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
-import { useOfflineMode } from "@/hooks/useOfflineMode";
 
 function App() {
-  // Mode offline désactivé par défaut - priorisation du mode en ligne
-  // useOfflineMode();
-  
   return (
     <RestaurantProvider restaurantUserId={null}>
         <Router>
@@ -130,14 +124,10 @@ function App() {
               <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
               <Route path="/factures" element={<ProtectedRoute><Factures /></ProtectedRoute>} />
-              <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
+          <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
           <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
           <Route path="/performance-personnel" element={<ProtectedRoute><PerformancePersonnel /></ProtectedRoute>} />
           <Route path="/staff-request" element={<ProtectedRoute><StaffRequest /></ProtectedRoute>} />
-          
-              {/* Routes Offline */}
-              <Route path="/sync-status" element={<ProtectedRoute><SyncStatus /></ProtectedRoute>} />
-              <Route path="/offline-help" element={<ProtectedRoute><OfflineHelp /></ProtectedRoute>} />
 
               {/* Redirection par défaut */}
               <Route path="*" element={<NotFound />} />

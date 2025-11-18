@@ -17,7 +17,6 @@ import { DetailedTransactionsTable } from '@/components/reports/DetailedTransact
 import { DateRange } from 'react-day-picker';
 import { format, subDays, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const RapportsJournaliers: React.FC = () => {
@@ -375,7 +374,6 @@ const RapportsJournaliers: React.FC = () => {
           </>
         )}
       </div>
-      <SubscriptionPopup />
     </PageWithSidebar>
   );
 };

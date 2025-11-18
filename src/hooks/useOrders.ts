@@ -3,9 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { dataService } from '@/services/DataService';
-import { syncService } from '@/services/SyncService';
-import notificationSound from '@/assets/notification-sound.mp3';
 
 interface OrderItem {
   id: string;
@@ -30,14 +27,34 @@ interface Order {
   order_type?: string | null;
 }
 
-// Fonction pour jouer un son de notification personnalisé
+// Fonction pour jouer un son de notification agréable
 const playNotificationSound = () => {
   try {
-    const audio = new Audio(notificationSound);
-    audio.volume = 1.0; // Volume à 100%
-    audio.play().catch(error => {
-      console.error('Erreur lors de la lecture du son:', error);
-    });
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Créer un son plus agréable avec deux tonalités
+    const playTone = (frequency: number, startTime: number, duration: number) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0.4, startTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    };
+
+    // Jouer deux tons ascendants pour une notification agréable
+    const now = audioContext.currentTime;
+    playTone(587.33, now, 0.15); // D5
+    playTone(783.99, now + 0.15, 0.2); // G5
+    
     console.log('🔔 Son de notification joué');
   } catch (error) {
     console.error('Erreur lors de la lecture du son:', error);
@@ -83,11 +100,18 @@ export const useOrders = () => {
         return;
       }
       
-      // Utiliser le DataService qui gère automatiquement online/offline
-      const data = await dataService.getAll<any>('orders', {
-        user_id: user.id,
-        outlet_id: outletId
-      });
+      const { data, error } = await supabase
+        .from('orders')
+        .select('id, customer_name, customer_email, customer_phone, items, total_amount, status, notes, delivery_address, delivery_time, created_at, table_number, order_type, user_id')
+        .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error('Error fetching orders:', error);
+        throw error;
+      }
 
       const transformedOrders: Order[] = (data || []).map(order => ({
         id: order.id,

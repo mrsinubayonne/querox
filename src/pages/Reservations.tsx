@@ -12,7 +12,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import SubscriptionPopup from '@/components/SubscriptionPopup';
 import EmptyState from '@/components/EmptyState';
 
 const Reservations: React.FC = () => {
@@ -308,7 +307,6 @@ const Reservations: React.FC = () => {
             </div>
           )}
         </div>
-        <SubscriptionPopup />
       </PageWithSidebar>
     </SubscriptionGuard>
   );

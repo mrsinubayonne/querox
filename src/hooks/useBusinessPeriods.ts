@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { dataService } from '@/services/DataService';
 
 export interface BusinessPeriod {
   id: string;
@@ -73,31 +72,50 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     if (!user) return;
 
     try {
-      const filters: any = { user_id: user.id };
+      let query = supabase
+        .from('business_periods')
+        .select('*')
+        .eq('user_id', user.id)
+        .not('ended_at', 'is', null)
+        .order('ended_at', { ascending: false });
+
+      // IMPORTANT: Toujours filtrer par outlet_id si spécifié
       if (outletId) {
-        filters.outlet_id = outletId;
+        query = query.eq('outlet_id', outletId);
       }
 
-      const allPeriods = await dataService.getAll<BusinessPeriod>('business_periods', filters);
-      const closedPeriods = allPeriods.filter(p => p.ended_at !== null);
-      setPeriods(closedPeriods);
+      const { data, error } = await query;
+      if (error) throw error;
+
+      setPeriods(data || []);
     } catch (error) {
       console.error('Error fetching periods:', error);
       toast.error('Erreur lors du chargement des périodes');
     }
   };
 
+  // Initialize period: fetch active period only (no auto-creation)
   const initializePeriod = async () => {
     if (!user || !outletId) return;
 
     setLoading(true);
     try {
-      const filters: any = { user_id: user.id, outlet_id: outletId };
-      const allPeriods = await dataService.getAll<BusinessPeriod>('business_periods', filters);
-      const activePeriod = allPeriods.find(p => p.ended_at === null);
+      // Try to fetch existing active period
+      const { data: activePeriod, error } = await supabase
+        .from('business_periods')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('outlet_id', outletId)
+        .is('ended_at', null)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
 
       if (activePeriod) {
         setCurrentPeriod(activePeriod);
+        // Store period ID in localStorage for persistence with user_id
         localStorage.setItem(`active_period_${user.id}_${outletId}`, activePeriod.id);
       } else {
         setCurrentPeriod(null);
@@ -140,37 +158,47 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     if (!user || !outletId) return;
 
     try {
-      // Check existing active periods
-      const filters: any = { user_id: user.id, outlet_id: outletId };
-      const allPeriods = await dataService.getAll<BusinessPeriod>('business_periods', filters);
-      const existingActive = allPeriods.find(p => p.ended_at === null);
+      // Check if there's already an open period for this outlet
+      let checkQuery = supabase
+        .from('business_periods')
+        .select('id')
+        .eq('user_id', user.id)
+        .is('ended_at', null);
 
-      if (existingActive) {
+      if (outletId) {
+        checkQuery = checkQuery.eq('outlet_id', outletId);
+      }
+
+      const { data: existingPeriods, error: checkError } = await checkQuery;
+      if (checkError) throw checkError;
+
+      if (existingPeriods && existingPeriods.length > 0) {
         toast.error('Une période est déjà en cours. Veuillez la boucler d\'abord.');
         return;
       }
 
-      const periodData = {
-        user_id: user.id,
-        outlet_id: outletId || null,
-        started_at: new Date().toISOString(),
-        total_orders: 0,
-        total_revenue: 0,
-        total_invoices: 0,
-        paid_invoices: 0,
-        unpaid_invoices: 0,
-      };
+      // Create new period
+      const { data, error } = await supabase
+        .from('business_periods')
+        .insert({
+          user_id: user.id,
+          outlet_id: outletId || null,
+          started_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
 
-      const newPeriod = await dataService.create<BusinessPeriod>('business_periods', periodData);
+      if (error) throw error;
 
-      setCurrentPeriod(newPeriod);
+      setCurrentPeriod(data);
+      // Store period ID in localStorage for persistence across disconnections with user_id
       if (outletId) {
-        localStorage.setItem(`active_period_${user.id}_${outletId}`, newPeriod.id);
+        localStorage.setItem(`active_period_${user.id}_${outletId}`, data.id);
       }
       toast.success('Nouvelle période démarrée');
       fetchPeriods();
     } catch (error) {
-      console.error('Error starting period:', error);
+      console.error('Error starting new period:', error);
       toast.error('Erreur lors du démarrage de la période');
     }
   };
