@@ -68,8 +68,8 @@ import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
 import { useOfflineMode } from "@/hooks/useOfflineMode";
 
 function App() {
-  // Initialiser le mode offline uniquement pour les utilisateurs authentifiés
-  useOfflineMode();
+  // Mode offline désactivé par défaut - priorisation du mode en ligne
+  // useOfflineMode();
   
   return (
     <RestaurantProvider restaurantUserId={null}>
