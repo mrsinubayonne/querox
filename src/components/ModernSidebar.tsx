@@ -144,11 +144,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/performance-personnel',
     permission: 'team'
   }, {
-    icon: Users,
-    label: 'Mise à disposition du personnel',
-    path: '/staff-request',
-    permission: 'staff_request'
-  }, {
     icon: QrCode,
     label: 'QR Codes',
     path: '/qr-codes',
