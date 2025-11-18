@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { X, Crown, Calendar, TrendingUp } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
+import { getPlanDisplayName, getNextPlan, getPlanColor } from '@/utils/subscriptionPlans';
 
 const SubscriptionPopup: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -53,48 +54,37 @@ const SubscriptionPopup: React.FC = () => {
 
   const getUpgradeInfo = () => {
     const tier = subscription?.subscription_tier;
+    const nextPlan = getNextPlan(tier);
     
-    switch (tier) {
-      case 'trial':
-      case 'starter':
-        return {
-          currentPlan: tier === 'trial' ? 'Essai gratuit' : 'Starter',
-          targetPlan: 'Professionnel',
-          benefits: [
-            'Catégories illimitées',
-            'Gestion des stocks',
-            'Site web personnalisé',
-            'Support prioritaire'
-          ],
-          color: 'from-blue-600 to-purple-600'
-        };
-      case 'premium':
-        return {
-          currentPlan: 'Professionnel',
-          targetPlan: 'Entreprise',
-          benefits: [
-            'Multi-établissements',
-            'API personnalisée',
-            'Formations personnalisées',
-            'Support dédié 24/7'
-          ],
-          color: 'from-purple-600 to-pink-600'
-        };
-      case 'pro':
-        return {
-          currentPlan: 'Entreprise',
-          targetPlan: 'Licence QUEROX',
-          benefits: [
-            'Licence perpétuelle',
-            'Installation sur vos serveurs',
-            'Personnalisation complète',
-            'Pas d\'abonnement mensuel'
-          ],
-          color: 'from-yellow-600 to-orange-600'
-        };
-      default:
-        return null;
-    }
+    if (!nextPlan) return null;
+    
+    const benefitsByPlan: Record<string, string[]> = {
+      premium: [
+        'Catégories illimitées',
+        'Gestion des stocks',
+        'Site web personnalisé',
+        'Support prioritaire'
+      ],
+      pro: [
+        'Multi-établissements',
+        'API personnalisée',
+        'Formations personnalisées',
+        'Support dédié 24/7'
+      ],
+      licence: [
+        'Licence perpétuelle',
+        'Installation sur vos serveurs',
+        'Personnalisation complète',
+        'Pas d\'abonnement mensuel'
+      ]
+    };
+    
+    return {
+      currentPlan: getPlanDisplayName(tier),
+      targetPlan: getPlanDisplayName(nextPlan.id),
+      benefits: benefitsByPlan[nextPlan.id] || [],
+      color: getPlanColor(nextPlan.id)
+    };
   };
 
   const upgradeInfo = getUpgradeInfo();
