@@ -65,8 +65,12 @@ import OfflineHelp from '@/pages/OfflineHelp';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
+import { useOfflineMode } from "@/hooks/useOfflineMode";
 
 function App() {
+  // Initialiser le mode offline uniquement pour les utilisateurs authentifiés
+  useOfflineMode();
+  
   return (
     <RestaurantProvider restaurantUserId={null}>
         <Router>

@@ -25,22 +25,5 @@ createRoot(document.getElementById("root")!).render(
   </ErrorBoundary>
 );
 
-// Initialiser les services offline après le montage de React
-(async () => {
-  try {
-    const { initDB } = await import('@/lib/offlineDB');
-    const { syncService } = await import('@/services/SyncService');
-    const { dataService } = await import('@/services/DataService');
-    
-    console.log('🚀 Initialisation du mode offline...');
-    await initDB();
-    syncService.startAutoSync(30); // Sync toutes les 30 secondes
-    
-    // Nettoyer les anciennes données au démarrage
-    await dataService.cleanupOldData(7); // Garder 7 jours
-    
-    console.log('✅ Mode offline initialisé avec succès');
-  } catch (error) {
-    console.error('❌ Erreur lors de l\'initialisation du mode offline:', error);
-  }
-})();
+// Le mode offline s'initialise automatiquement via le hook useOfflineMode
+// uniquement pour les utilisateurs authentifiés
