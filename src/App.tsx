@@ -39,6 +39,7 @@ import Services from '@/pages/Services';
 import Consulting from '@/pages/Consulting';
 
 // Admin pages
+import AdminPanel from '@/pages/AdminPanel';
 import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AdminRoles from '@/pages/AdminRoles';
@@ -118,10 +119,11 @@ function App() {
               <Route path="/consulting" element={<ProtectedRoute><Consulting /></ProtectedRoute>} />
 
               {/* Routes Admin */}
-              <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-              <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
-              <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
-              <Route path="/admin/access-codes" element={<ProtectedRoute><AdminAccessCodes /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+              <Route path="/admin/dashboard" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+              <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+              <Route path="/admin/roles" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+              <Route path="/admin/access-codes" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
 
               {/* Routes Partner */}
               <Route path="/partner-dashboard" element={<ProtectedRoute><PartnerDashboard /></ProtectedRoute>} />
