@@ -13,26 +13,21 @@ export const useOfflineMode = () => {
       try {
         const { initDB } = await import('@/lib/offlineDB');
         const { syncService } = await import('@/services/SyncService');
-        const { dataService } = await import('@/services/DataService');
         
-        console.log('🚀 Initialisation du mode offline pour utilisateur authentifié...');
         await initDB();
         
-        // Sync toutes les 5 minutes au lieu de 30 secondes
+        // Sync toutes les 5 minutes
         syncService.startAutoSync(300);
         
-        // Nettoyer les anciennes données en arrière-plan (non bloquant)
-        setTimeout(() => {
-          dataService.cleanupOldData(7).catch(console.error);
-        }, 5000);
-        
-        console.log('✅ Mode offline initialisé');
         initializedRef.current = true;
       } catch (error) {
         console.error('❌ Erreur initialisation mode offline:', error);
       }
     };
 
-    initOfflineMode();
+    // Initialiser avec un délai pour ne pas bloquer le rendu
+    const timeoutId = setTimeout(initOfflineMode, 1000);
+    
+    return () => clearTimeout(timeoutId);
   }, [user]);
 };
