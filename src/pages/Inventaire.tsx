@@ -15,6 +15,7 @@ import { Package, Plus, AlertTriangle, TrendingDown, TrendingUp, Users, Trash2, 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
+import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { Progress } from '@/components/ui/progress';
 
 const Inventaire: React.FC = () => {
@@ -525,6 +526,7 @@ const Inventaire: React.FC = () => {
             </DialogContent>
           </Dialog>
         </div>
+        <SubscriptionPopup />
       </PageWithSidebar>
     </SubscriptionGuard>
   );
