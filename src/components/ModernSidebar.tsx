@@ -7,7 +7,6 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
 import { useUserProfiles, ProfileTitle } from '@/hooks/useUserProfiles';
-import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import {
@@ -42,8 +41,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
-  const { isAdmin: isSubscriptionAdmin } = useSubscription();
-  const { isAdmin } = useUserRole();
+  const { isAdmin } = useSubscription();
   const { outlets, selectedOutletId, selectOutlet, canAddMoreOutlets, getOutletLimit } = useOutlets();
   const { profileSession, hasPermission, isProfileAuthenticated, logout: profileLogout } = useOutletProfile();
   
@@ -241,19 +239,19 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const adminItems = [{
     icon: Crown,
     label: 'Tableau de Bord',
-    path: '/admin'
+    path: '/admin/dashboard'
   }, {
     icon: CreditCard,
     label: 'Abonnements',
-    path: '/admin'
+    path: '/admin/subscriptions'
   }, {
     icon: UserCog,
     label: 'Gestion des Rôles',
-    path: '/admin'
+    path: '/admin/roles'
   }, {
     icon: Shield,
     label: 'Codes d\'Accès',
-    path: '/admin'
+    path: '/admin/access-codes'
   }];
 
   const bottomMenuItems = [
@@ -317,241 +315,238 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
         {!collapsed && <OfflineIndicator />}
       </div>
 
-      {/* Admin Panel - Simple navigation for admins */}
-      {isAdmin ? (
-        <>
-          {/* Admin Navigation */}
-          <nav className="flex-1 px-2 py-4 space-y-2">
-            {/* Admin Section */}
-            <div className="pt-2">
-              <button onClick={toggleAdminExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isAdminSection ? 'bg-red-100 text-red-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-                <Crown size={20} className="flex-shrink-0" />
-                {!collapsed && <>
-                    <span className="ml-3 flex-1">Administration</span>
-                    <ChevronRight size={16} className={`transition-transform ${adminExpanded ? 'rotate-90' : ''}`} />
-                  </>}
-              </button>
-
-              {/* Admin Submenu */}
-              {adminExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
-                  {adminItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-red-100 text-red-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                      <item.icon size={16} className="flex-shrink-0" />
-                      <span className="ml-3">{item.label}</span>
-                    </button>)}
-                </div>}
-            </div>
-          </nav>
-
-          {/* Admin Bottom Menu */}
-          <div className="p-2 border-t border-gray-200 space-y-2">
-            <button onClick={signOut} className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50">
-              <LogOut size={20} className="flex-shrink-0" />
-              {!collapsed && <span className="ml-3">Déconnexion</span>}
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Profile Selector - Only for non-admins */}
-          {profiles.length > 0 && (
-            <div className={`p-3 border-b border-gray-200 ${collapsed ? 'flex justify-center' : ''}`}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className={`w-full justify-start ${collapsed ? 'w-10 h-10 p-0' : ''}`}>
-                    <UserCircle size={18} className={collapsed ? '' : 'mr-2'} />
-                    {!collapsed && (
-                      <span className="truncate text-sm">
-                        {selectedProfile?.name || selectedProfile?.title || 'Sélectionner...'}
-                      </span>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  {profiles.map((p) => (
-                    <DropdownMenuItem
-                      key={p.id}
-                      onClick={() => handleProfileChange(p.id)}
-                      className="flex items-center justify-between cursor-pointer"
-                    >
-                      <div className="flex items-center">
-                        <UserCircle size={16} className="mr-2" />
-                        <span>{p.name || p.title}</span>
-                      </div>
-                      {p.id === selectedProfileId && (
-                        <Check size={16} className="text-primary" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (canAddMoreProfiles()) {
-                        navigate('/select-profile');
-                      } else {
-                        navigate('/abonnement');
-                      }
-                    }}
-                    className="flex items-center cursor-pointer text-primary"
-                  >
-                    <Plus size={16} className="mr-2" />
-                    <span>
-                      {canAddMoreProfiles() 
-                        ? 'Ajouter un profil' 
-                        : `Limite atteinte (${getProfileLimit()} max)`
-                      }
-                    </span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-
-          {/* Outlet Selector - Only for non-admins */}
-          {outlets.length > 0 && (
-            <div className={`p-3 border-b border-gray-200 ${collapsed ? 'flex justify-center' : ''}`}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className={`w-full justify-start ${collapsed ? 'w-10 h-10 p-0' : ''}`}>
-                    <Building2 size={18} className={collapsed ? '' : 'mr-2'} />
-                    {!collapsed && (
-                      <span className="truncate text-sm">
-                        {selectedOutlet?.name || 'Sélectionner un PDV...'}
-                      </span>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  {outlets.map((outlet) => (
-                    <DropdownMenuItem
-                      key={outlet.id}
-                      onClick={() => handleOutletChange(outlet.id)}
-                      className="flex items-center justify-between cursor-pointer"
-                    >
-                      <div className="flex items-center">
-                        <Building2 size={16} className="mr-2" />
-                        <span>{outlet.name}</span>
-                      </div>
-                      {outlet.id === selectedOutletId && (
-                        <Check size={16} className="text-primary" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (canAddMoreOutlets()) {
-                        navigate('/select-outlet');
-                      } else {
-                        navigate('/abonnement');
-                      }
-                    }}
-                    className="flex items-center cursor-pointer text-primary"
-                  >
-                    <Plus size={16} className="mr-2" />
-                    <span>
-                      {canAddMoreOutlets() 
-                        ? 'Ajouter un point de vente' 
-                        : `Limite atteinte (${getOutletLimit()} max)`
-                      }
-                    </span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-
-          {/* Navigation - For non-admins */}
-          <nav className="flex-1 px-2 py-4 space-y-2">
-            {filteredMenuItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-                <item.icon size={20} className="flex-shrink-0" />
-                {!collapsed && <span className="ml-3">{item.label}</span>}
-              </button>)}
-
-            {/* Marketing Section */}
-            {marketingItems.length > 0 && (
-              <div className="pt-2">
-                <button onClick={toggleMarketingExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isMarketingSection ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-                  <TrendingUp size={20} className="flex-shrink-0" />
-                  {!collapsed && <>
-                      <span className="ml-3 flex-1">Marketing</span>
-                      <ChevronRight size={16} className={`transition-transform ${marketingExpanded ? 'rotate-90' : ''}`} />
-                    </>}
-                </button>
-
-                {/* Marketing Submenu */}
-                {marketingExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
-                    {marketingItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                        <item.icon size={16} className="flex-shrink-0" />
-                        <span className="ml-3">{item.label}</span>
-                      </button>)}
-                  </div>}
-              </div>
-            )}
-
-            {/* Services Section */}
-            {servicesItems.length > 0 && (
-              <div className="pt-2">
-                <button onClick={toggleServicesExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isServicesSection ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-                  <Headphones size={20} className="flex-shrink-0" />
-                  {!collapsed && <>
-                      <span className="ml-3 flex-1">Services</span>
-                      <ChevronRight size={16} className={`transition-transform ${servicesExpanded ? 'rotate-90' : ''}`} />
-                    </>}
-                </button>
-
-                {/* Services Submenu */}
-                {servicesExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
-                    {servicesItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                        <item.icon size={16} className="flex-shrink-0" />
-                        <span className="ml-3">{item.label}</span>
-                      </button>)}
-                  </div>}
-              </div>
-            )}
-
-            {/* Admin Section - Only visible if isAdmin from subscription */}
-            {isSubscriptionAdmin && (
-              <div className="pt-2">
-                <button onClick={toggleAdminExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isAdminSection ? 'bg-red-100 text-red-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-                  <Crown size={20} className="flex-shrink-0" />
-                  {!collapsed && <>
-                      <span className="ml-3 flex-1">Administration</span>
-                      <ChevronRight size={16} className={`transition-transform ${adminExpanded ? 'rotate-90' : ''}`} />
-                    </>}
-                </button>
-
-                {/* Admin Submenu */}
-                {adminExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
-                    {adminItems.map(item => <button key={item.label} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-red-100 text-red-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                        <item.icon size={16} className="flex-shrink-0" />
-                        <span className="ml-3">{item.label}</span>
-                      </button>)}
-                  </div>}
-              </div>
-            )}
-          </nav>
-
-          {/* Bottom Menu - For non-admins */}
-          <div className="p-2 border-t border-gray-200 space-y-2">
-            {bottomMenuItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-                <item.icon size={20} className="flex-shrink-0" />
-                {!collapsed && <span className="ml-3">{item.label}</span>}
-              </button>)}
-
-            {isProfileAuthenticated && profileSession && (
-              <button onClick={handleLogoutProfile} className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-orange-600 hover:bg-orange-50">
-                <LogOut size={20} className="flex-shrink-0" />
-                {!collapsed && <span className="ml-3">Fermer session profil</span>}
-              </button>
-            )}
-
-            <button onClick={signOut} className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50">
-              <LogOut size={20} className="flex-shrink-0" />
-              {!collapsed && <span className="ml-3">Déconnexion</span>}
-            </button>
-          </div>
-        </>
+      {/* Profile Selector */}
+      {profiles.length > 0 && (
+        <div className={`p-3 border-b border-gray-200 ${collapsed ? 'flex justify-center' : ''}`}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className={`w-full justify-start ${collapsed ? 'w-10 h-10 p-0' : ''}`}>
+                <UserCircle size={18} className={collapsed ? '' : 'mr-2'} />
+                {!collapsed && (
+                  <span className="truncate text-sm">
+                    {selectedProfile?.name || selectedProfile?.title || 'Sélectionner...'}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {profiles.map((p) => (
+                <DropdownMenuItem
+                  key={p.id}
+                  onClick={() => handleProfileChange(p.id)}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center">
+                    <UserCircle size={16} className="mr-2" />
+                    <span>{p.name || p.title}</span>
+                  </div>
+                  {p.id === selectedProfileId && (
+                    <Check size={16} className="text-primary" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  if (canAddMoreProfiles()) {
+                    navigate('/select-profile');
+                  } else {
+                    navigate('/abonnement');
+                  }
+                }}
+                className="flex items-center cursor-pointer text-primary"
+              >
+                <Plus size={16} className="mr-2" />
+                <span>
+                  {canAddMoreProfiles()
+                    ? 'Ajouter un profil'
+                    : `Limite atteinte (${getProfileLimit()} max)`}
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLogoutProfile}
+                className="flex items-center cursor-pointer text-red-600 hover:text-red-700"
+              >
+                <LogOut size={16} className="mr-2" />
+                <span>Fermer la session</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )}
+
+      {/* Outlet Selector */}
+      {outlets.length > 0 && (
+        <div className={`p-3 border-b border-gray-200 ${collapsed ? 'flex justify-center' : ''}`}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className={`w-full justify-start ${collapsed ? 'w-10 h-10 p-0' : ''}`}>
+                <Building2 size={18} className={collapsed ? '' : 'mr-2'} />
+                {!collapsed && (
+                  <span className="truncate text-sm">
+                    {selectedOutlet?.name || 'Sélectionner...'}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {outlets.map((outlet) => (
+                <DropdownMenuItem
+                  key={outlet.id}
+                  onClick={() => handleOutletChange(outlet.id)}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center">
+                    <Building2 size={16} className="mr-2" />
+                    <span>{outlet.name}</span>
+                  </div>
+                  {outlet.id === selectedOutletId && (
+                    <Check size={16} className="text-primary" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  if (canAddMoreOutlets()) {
+                    navigate('/select-outlet');
+                  } else {
+                    navigate('/abonnement');
+                  }
+                }}
+                className="flex items-center cursor-pointer text-primary"
+              >
+                <Plus size={16} className="mr-2" />
+                <span>
+                  {canAddMoreOutlets() 
+                    ? 'Ajouter un point de vente' 
+                    : `Limite atteinte (${getOutletLimit()} max)`
+                  }
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <nav className="flex-1 px-2 py-4 space-y-2">
+        {filteredMenuItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+            <item.icon size={20} className="flex-shrink-0" />
+            {!collapsed && <span className="ml-3">{item.label}</span>}
+          </button>)}
+
+        {/* Marketing Section */}
+        <div className="pt-2">
+          <button onClick={toggleMarketingExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isMarketingSection ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+            <TrendingUp size={20} className="flex-shrink-0" />
+            {!collapsed && <>
+                <span className="ml-3 flex-1">Marketing</span>
+                <ChevronRight size={16} className={`transition-transform ${marketingExpanded ? 'rotate-90' : ''}`} />
+              </>}
+          </button>
+
+          {/* Marketing Submenu */}
+          {marketingExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
+              {marketingItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
+                  <item.icon size={16} className="flex-shrink-0" />
+                  <span className="ml-3">{item.label}</span>
+                </button>)}
+            </div>}
+        </div>
+
+        {/* Services Section */}
+        <div className="pt-2">
+          <button onClick={toggleServicesExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isServicesSection ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+            <Headphones size={20} className="flex-shrink-0" />
+            {!collapsed && <>
+                <span className="ml-3 flex-1">Services</span>
+                <ChevronRight size={16} className={`transition-transform ${servicesExpanded ? 'rotate-90' : ''}`} />
+              </>}
+          </button>
+
+          {/* Services Submenu */}
+          {servicesExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
+              {servicesItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
+                  <item.icon size={16} className="flex-shrink-0" />
+                  <span className="ml-3">{item.label}</span>
+                </button>)}
+            </div>}
+        </div>
+
+        {/* Admin Section - Only visible to admins */}
+        {isAdmin && (
+          <div className="pt-2">
+            <button onClick={toggleAdminExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isAdminSection ? 'bg-red-100 text-red-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+              <Shield size={20} className="flex-shrink-0" />
+              {!collapsed && <>
+                  <span className="ml-3 flex-1">Administrateur</span>
+                  <ChevronRight size={16} className={`transition-transform ${adminExpanded ? 'rotate-90' : ''}`} />
+                </>}
+            </button>
+
+            {/* Admin Submenu */}
+            {adminExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
+                {adminItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-red-100 text-red-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
+                    <item.icon size={16} className="flex-shrink-0" />
+                    <span className="ml-3">{item.label}</span>
+                  </button>)}
+              </div>}
+          </div>
+        )}
+      </nav>
+
+      {/* Bottom Navigation */}
+      <div className="border-t border-gray-200 px-2 py-4 space-y-2">
+        {/* Profile Info */}
+        {profileSession && (
+          <div className={`px-3 py-2 mb-2 rounded-lg bg-purple-50 border border-purple-200 ${collapsed ? 'hidden' : ''}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <UserCircle size={16} className="text-purple-600" />
+              <span className="text-xs font-semibold text-purple-900">{profileSession.profileName}</span>
+            </div>
+            <p className="text-xs text-purple-600 capitalize">{profileSession.role}</p>
+            <p className="text-xs text-purple-500">{profileSession.outletName}</p>
+          </div>
+        )}
+
+        {bottomMenuItems.map(item => (
+          <button 
+            key={item.path} 
+            onClick={() => handleNavigation(item.path)} 
+            className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
+              isActive(item.path) 
+                ? 'bg-blue-100 text-blue-700 font-medium' 
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <item.icon size={20} className="flex-shrink-0" />
+            {!collapsed && <span className="ml-3">{item.label}</span>}
+          </button>
+        ))}
+
+        {/* Logout/Close Session Button */}
+        <button
+          onClick={() => {
+            if (isProfileAuthenticated()) {
+              profileLogout();
+              navigate('/profile-login');
+            } else {
+              signOut();
+              navigate('/auth');
+            }
+          }}
+          className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50"
+        >
+          <LogOut size={20} className="flex-shrink-0" />
+          {!collapsed && (
+            <span className="ml-3">
+              {selectedProfile?.title === 'Admin' ? 'Déconnexion' : 'Fermer la session'}
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* Access Code Dialog */}
       <AlertDialog open={isAccessCodeDialogOpen} onOpenChange={setIsAccessCodeDialogOpen}>
@@ -559,19 +554,22 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Code d'accès requis</AlertDialogTitle>
             <AlertDialogDescription>
-              Veuillez entrer le code d'accès pour {selectedProfileForAccess?.title}
+              Entrez le code d'accès pour ce profil
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <Input
-            placeholder="Entrer le code d'accès"
-            value={accessCode}
-            onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleAccessCodeSubmit();
-              }
-            }}
-          />
+          <div className="py-4">
+            <Input
+              type="text"
+              placeholder="Code d'accès"
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleAccessCodeSubmit();
+                }
+              }}
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => {
               setAccessCode('');
