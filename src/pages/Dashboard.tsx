@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import ModernSidebar from '@/components/ModernSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
+import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { useState } from 'react';
 
 const Dashboard: React.FC = () => {
@@ -198,10 +199,11 @@ const Dashboard: React.FC = () => {
               </Card>
             </div>
           </div>
+          </div>
         </div>
-      </div>
-    </SubscriptionGuard>
-  );
-};
-
-export default Dashboard;
+        <SubscriptionPopup />
+      </SubscriptionGuard>
+    );
+  };
+  
+  export default Dashboard;

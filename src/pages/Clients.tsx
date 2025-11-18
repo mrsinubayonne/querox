@@ -4,6 +4,7 @@ import EmptyState from '@/components/EmptyState';
 import StaffRequestModal from '@/components/StaffRequestModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { Users, UserPlus } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 
@@ -103,6 +104,7 @@ const Clients: React.FC = () => {
         isOpen={showStaffRequestModal} 
         onClose={() => setShowStaffRequestModal(false)} 
       />
+      <SubscriptionPopup />
     </div>
   );
 };

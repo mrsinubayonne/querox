@@ -2,6 +2,7 @@
 import React from 'react';
 import { plans } from '@/components/landing/pricingData';
 import PricingCard from '@/components/landing/PricingCard';
+import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { Crown } from 'lucide-react';
 
 const Abonnement: React.FC = () => {
@@ -27,6 +28,7 @@ const Abonnement: React.FC = () => {
           ))}
         </div>
       </div>
+      <SubscriptionPopup />
     </div>
   );
 };

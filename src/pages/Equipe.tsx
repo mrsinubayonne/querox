@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useSubscription } from '@/hooks/useSubscription';
+import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { useToast } from '@/hooks/use-toast';
 
 const ROLES = [
@@ -275,6 +276,7 @@ const Equipe: React.FC = () => {
             </div>
           )}
         </div>
+        <SubscriptionPopup />
       </PageWithSidebar>
     </SubscriptionGuard>
   );

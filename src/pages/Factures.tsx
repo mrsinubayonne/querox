@@ -14,6 +14,7 @@ import InvoiceDetailsModal from '@/components/invoices/InvoiceDetailsModal';
 import EditInvoiceModal from '@/components/invoices/EditInvoiceModal';
 import InvoiceFilters from '@/components/invoices/InvoiceFilters';
 import InvoicePrintView from '@/components/invoices/InvoicePrintView';
+import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -366,6 +367,7 @@ const Factures: React.FC = () => {
         </AlertDialog>
 
         {printInvoice && <InvoicePrintView invoice={printInvoice} servedBy={servedBy} />}
+        <SubscriptionPopup />
       </PageWithSidebar>
     </SubscriptionGuard>
   );

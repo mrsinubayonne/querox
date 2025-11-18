@@ -10,6 +10,7 @@ import { useOrders } from "@/hooks/useOrders";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useInvoices } from "@/hooks/useInvoices";
+import SubscriptionPopup from "@/components/SubscriptionPopup";
 
 const Statistiques: React.FC = () => {
   const { orders, loading: ordersLoading } = useOrders();
@@ -175,6 +176,7 @@ const Statistiques: React.FC = () => {
           </Card>
         )}
       </div>
+      <SubscriptionPopup />
     </PageWithSidebar>
   );
 };
