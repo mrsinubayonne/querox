@@ -180,29 +180,37 @@ class DataService {
   }
 
   async cleanupOldData(days: number = 7): Promise<void> {
-    const db = await getDB();
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    
-    const stores: StoreName[] = ['orders', 'invoices', 'table_sessions', 'reservations', 'events', 'business_periods'];
-    
-    for (const store of stores) {
-      const tx = db.transaction(store as any, 'readwrite');
-      const index = tx.store.index('by-lastSync');
+    try {
+      const db = await getDB();
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
       
-      let cursor = await index.openCursor(IDBKeyRange.upperBound(cutoffDate));
+      const stores: StoreName[] = ['orders', 'invoices', 'table_sessions'];
       
-      while (cursor) {
-        if (cursor.value.status === 'synced') {
-          await cursor.delete();
+      for (const store of stores) {
+        try {
+          const tx = db.transaction(store as any, 'readwrite');
+          const index = tx.store.index('by-lastSync');
+          
+          let cursor = await index.openCursor(IDBKeyRange.upperBound(cutoffDate));
+          
+          while (cursor) {
+            if (cursor.value.status === 'synced') {
+              await cursor.delete();
+            }
+            cursor = await cursor.continue();
+          }
+          
+          await tx.done;
+        } catch (storeError) {
+          console.warn(`Impossible de nettoyer ${store}:`, storeError);
         }
-        cursor = await cursor.continue();
       }
       
-      await tx.done;
+      console.log(`🧹 Nettoyage des données > ${days} jours effectué`);
+    } catch (error) {
+      console.error('Erreur lors du nettoyage:', error);
     }
-    
-    console.log(`🧹 Nettoyage des données > ${days} jours effectué`);
   }
 }
 
