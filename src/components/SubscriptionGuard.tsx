@@ -16,11 +16,12 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   children, 
   feature = "cette fonctionnalité" 
 }) => {
-  const { isSubscriptionActive, loading, refetch, isAdmin, subscription } = useSubscription();
+  const { isSubscriptionActive, loading, refetch, isAdmin, subscription, hasCachedData } = useSubscription();
   const navigate = useNavigate();
   const { isTeamMember } = useTeamPermissions();
 
   const handleRefresh = async () => {
+    console.log('🔄 Rafraîchissement manuel de l\'abonnement');
     await refetch();
   };
 
@@ -44,9 +45,14 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     return <>{children}</>;
   }
 
-  // Loading state: only block UI on first load (to avoid flicker on refetches)
-  const isInitialLoading = loading && !subscription && !isAdmin;
+  // Déterminer si on a des données connues (cache ou subscription existante)
+  const hasKnownSubscription = !!subscription || hasCachedData;
+  
+  // Ne bloquer que lors du tout premier chargement sans aucune donnée
+  const isInitialLoading = loading && !hasKnownSubscription && !isAdmin;
+  
   if (isInitialLoading) {
+    console.log('⏳ Chargement initial de l\'abonnement...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -57,12 +63,26 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     );
   }
 
+  // Si on est en train de refetch mais qu'on a déjà des données, on laisse passer
+  if (loading && hasKnownSubscription) {
+    console.log('🔄 Refetch en cours, utilisation des données existantes');
+  }
+
   // Vérifier l'abonnement
-  if (
-    isSubscriptionActive ||
+  const isActive = isSubscriptionActive ||
     (subscription?.subscription_status === 'active') ||
-    (subscription?.subscribed && (!subscription?.subscription_end || new Date(subscription.subscription_end) > new Date()))
-  ) {
+    (subscription?.subscribed && (!subscription?.subscription_end || new Date(subscription.subscription_end) > new Date()));
+
+  console.log('🔐 SubscriptionGuard check:', {
+    isActive,
+    tier: subscription?.subscription_tier,
+    status: subscription?.subscription_status,
+    hasSubscription: !!subscription,
+    hasCachedData,
+    loading
+  });
+
+  if (isActive) {
     return <>{children}</>;
   }
 
