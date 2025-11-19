@@ -28,6 +28,63 @@ interface UserRole {
   updated_at: string;
 }
 
+interface CachedSubscription extends Subscription {
+  cached_at: number;
+}
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+const getSubscriptionCacheKey = (userId: string) => `subscription_cache_${userId}`;
+
+const getCachedSubscription = (userId: string): Subscription | null => {
+  try {
+    const cached = localStorage.getItem(getSubscriptionCacheKey(userId));
+    if (!cached) return null;
+    
+    const data: CachedSubscription = JSON.parse(cached);
+    const age = Date.now() - data.cached_at;
+    
+    // Vérifier que le cache n'est pas expiré
+    if (age > CACHE_DURATION) {
+      localStorage.removeItem(getSubscriptionCacheKey(userId));
+      return null;
+    }
+    
+    // Vérifier que l'abonnement n'est pas expiré
+    if (data.subscription_end) {
+      const endDate = new Date(data.subscription_end);
+      if (endDate < new Date()) {
+        localStorage.removeItem(getSubscriptionCacheKey(userId));
+        return null;
+      }
+    }
+    
+    const { cached_at, ...subscription } = data;
+    return subscription;
+  } catch (error) {
+    console.error('Error reading subscription cache:', error);
+    return null;
+  }
+};
+
+const setCachedSubscription = (userId: string, subscription: Subscription | null) => {
+  try {
+    if (!subscription) {
+      localStorage.removeItem(getSubscriptionCacheKey(userId));
+      return;
+    }
+    
+    const cached: CachedSubscription = {
+      ...subscription,
+      cached_at: Date.now()
+    };
+    
+    localStorage.setItem(getSubscriptionCacheKey(userId), JSON.stringify(cached));
+  } catch (error) {
+    console.error('Error caching subscription:', error);
+  }
+};
+
 export const useSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -35,6 +92,7 @@ export const useSubscription = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingRole, setLoadingRole] = useState(true);
+  const [hasCachedData, setHasCachedData] = useState(false);
 
   // Check if current user is admin using the new role system
   const isAdminUser = useCallback(async () => {
@@ -96,13 +154,14 @@ export const useSubscription = () => {
     if (!user) {
       setSubscription(null);
       setLoading(false);
+      setCachedSubscription('', null);
       return;
     }
 
     const isAdmin = await isAdminUser();
     
     if (isAdmin) {
-      setSubscription({
+      const adminSubscription = {
         id: 'admin-override',
         user_id: user.id,
         email: user.email || '',
@@ -116,7 +175,9 @@ export const useSubscription = () => {
         monthly_revenue: 0,
         last_payment_date: null,
         subscription_status: 'active'
-      });
+      };
+      setSubscription(adminSubscription);
+      setCachedSubscription(user.id, adminSubscription);
       setLoading(false);
       return;
     }
@@ -166,6 +227,12 @@ export const useSubscription = () => {
       }
 
       setSubscription(record);
+      setCachedSubscription(user.id, record);
+      console.log('✅ Abonnement récupéré et mis en cache:', { 
+        tier: record?.subscription_tier, 
+        status: record?.subscription_status,
+        userId: user.id 
+      });
     } catch (error) {
       console.error('Erreur fetchSubscription:', error);
       setSubscription(null);
@@ -173,6 +240,22 @@ export const useSubscription = () => {
       setLoading(false);
     }
   }, [user, isAdminUser]);
+
+  // Charger le cache au montage
+  useEffect(() => {
+    if (user) {
+      const cached = getCachedSubscription(user.id);
+      if (cached) {
+        console.log('📦 Cache abonnement trouvé:', { 
+          tier: cached.subscription_tier, 
+          status: cached.subscription_status 
+        });
+        setSubscription(cached);
+        setHasCachedData(true);
+        setLoading(false);
+      }
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     fetchUserRole();
@@ -235,5 +318,6 @@ export const useSubscription = () => {
     daysRemaining: getDaysRemaining(),
     refetch: fetchSubscription,
     isAdmin: userRole?.role === 'admin',
+    hasCachedData,
   };
 };

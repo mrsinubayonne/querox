@@ -27,7 +27,7 @@ type UpdateOutletData = Partial<Pick<Outlet, 'name' | 'address' | 'phone'>>;
 
 export const useOutlets = () => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
-  const { subscription } = useSubscription();
+  const { subscription, refetch: refetchSubscription } = useSubscription();
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
@@ -243,6 +243,9 @@ export const useOutlets = () => {
         if (!silent) {
           toast.success('Point de vente sélectionné');
         }
+        // Refetch subscription après changement de PDV
+        console.log('🔄 Refetch abonnement après sélection PDV:', outletId);
+        await refetchSubscription();
         return;
       }
 
@@ -259,6 +262,10 @@ export const useOutlets = () => {
       if (!silent) {
         toast.success('Point de vente sélectionné');
       }
+      
+      // Refetch subscription après changement de PDV
+      console.log('🔄 Refetch abonnement après sélection PDV:', outletId);
+      await refetchSubscription();
     } catch (error) {
       console.error('Error selecting outlet:', error);
       if (!silent) {
