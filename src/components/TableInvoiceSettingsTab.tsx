@@ -34,6 +34,31 @@ export const TableInvoiceSettingsTab: React.FC = () => {
     fetchSettings();
   }, [user]);
 
+  const getSelectedOutletId = async () => {
+    if (!user) return null;
+
+    const selectedProfileId = localStorage.getItem('selectedProfileId');
+    let outletId: string | null = null;
+
+    if (selectedProfileId) {
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('selected_outlet_id')
+        .eq('id', selectedProfileId)
+        .maybeSingle();
+      outletId = userProfile?.selected_outlet_id ?? null;
+    } else {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('selected_outlet_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      outletId = profile?.selected_outlet_id ?? null;
+    }
+
+    return outletId;
+  };
+
   const fetchSettings = async () => {
     if (!user) {
       setLoading(false);
@@ -41,12 +66,20 @@ export const TableInvoiceSettingsTab: React.FC = () => {
     }
 
     try {
-      // Récupérer les paramètres spécifiques aux tables (outlet_id = '00000000-0000-0000-0000-000000000001')
+      const outletId = await getSelectedOutletId();
+      
+      if (!outletId) {
+        console.log('No outlet selected');
+        setLoading(false);
+        return;
+      }
+
+      // Récupérer les paramètres spécifiques aux tables pour ce PDV (préfixe TABLE_)
       const { data, error } = await supabase
         .from('invoice_settings')
         .select('*')
         .eq('user_id', user.id)
-        .eq('outlet_id', '00000000-0000-0000-0000-000000000001')
+        .eq('outlet_id', `TABLE_${outletId}`)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
@@ -102,12 +135,18 @@ export const TableInvoiceSettingsTab: React.FC = () => {
 
         if (error) throw error;
       } else {
-        // Créer de nouveaux paramètres avec outlet_id spécial pour les tables
+        // Créer de nouveaux paramètres spécifiques aux tables pour ce PDV
+        const outletId = await getSelectedOutletId();
+        
+        if (!outletId) {
+          throw new Error('Aucun point de vente sélectionné');
+        }
+
         const { data, error } = await supabase
           .from('invoice_settings')
           .insert({
             user_id: user.id,
-            outlet_id: '00000000-0000-0000-0000-000000000001',
+            outlet_id: `TABLE_${outletId}`,
             ...sanitizedData,
           })
           .select()
@@ -119,7 +158,7 @@ export const TableInvoiceSettingsTab: React.FC = () => {
 
       toast({
         title: 'Succès',
-        description: 'Paramètres d\'impression sauvegardés',
+        description: 'Paramètres d\'impression sauvegardés pour ce point de vente',
       });
     } catch (error: any) {
       console.error('Error saving table invoice settings:', error);
