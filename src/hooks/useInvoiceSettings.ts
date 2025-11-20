@@ -116,12 +116,22 @@ export const useInvoiceSettings = () => {
     try {
       console.log('Updating settings with outlet_id:', outletId);
       
+      // S'assurer que le logo est stocké comme simple chaîne
+      const sanitizedUpdates: any = { ...updates };
+      if (
+        sanitizedUpdates.logo_url &&
+        typeof sanitizedUpdates.logo_url === 'object' &&
+        (sanitizedUpdates.logo_url as any).value
+      ) {
+        sanitizedUpdates.logo_url = (sanitizedUpdates.logo_url as any).value;
+      }
+      
       if (settings?.id) {
         // Update existing settings
         const { data, error } = await supabase
           .from('invoice_settings')
           .update({
-            ...updates,
+            ...sanitizedUpdates,
             updated_at: new Date().toISOString()
           })
           .eq('id', settings.id)
@@ -138,7 +148,7 @@ export const useInvoiceSettings = () => {
           .insert({
             user_id: user.id,
             outlet_id: outletId,
-            ...updates,
+            ...sanitizedUpdates,
           })
           .select()
           .single();
