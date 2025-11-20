@@ -235,23 +235,68 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/consulting'
   }] : [];
 
-  const adminItems = [{
-    icon: Crown,
-    label: 'Tableau de Bord',
-    path: '/admin/dashboard'
-  }, {
-    icon: CreditCard,
-    label: 'Abonnements',
-    path: '/admin/subscriptions'
-  }, {
-    icon: UserCog,
-    label: 'Gestion des Rôles',
-    path: '/admin/roles'
-  }, {
-    icon: Shield,
-    label: 'Codes d\'Accès',
-    path: '/admin/access-codes'
-  }];
+  const adminItems = [
+    {
+      icon: Crown,
+      label: 'Tableau de Bord',
+      path: '/admin/dashboard'
+    },
+    {
+      icon: Building2,
+      label: 'Gestion Restaurants',
+      path: '/admin/restaurants'
+    },
+    {
+      icon: TrendingUp,
+      label: 'Revenus & Finances',
+      path: '/admin/revenues'
+    },
+    {
+      icon: BarChart3,
+      label: 'Activité Temps Réel',
+      path: '/admin/real-time'
+    },
+    {
+      icon: Shield,
+      label: 'Alertes Globales',
+      path: '/admin/alerts'
+    },
+    {
+      icon: LifeBuoy,
+      label: 'Support & Réclamations',
+      path: '/admin/support'
+    },
+    {
+      icon: Settings,
+      label: 'Contrôle Global',
+      path: '/admin/global-control'
+    },
+    {
+      icon: CreditCard,
+      label: 'Abonnements',
+      path: '/admin/subscriptions'
+    },
+    {
+      icon: UserCog,
+      label: 'Gestion des Rôles',
+      path: '/admin/roles'
+    },
+    {
+      icon: Shield,
+      label: 'Codes d\'Accès',
+      path: '/admin/access-codes'
+    },
+    {
+      icon: Settings,
+      label: 'Paramètres Système',
+      path: '/admin/system-settings'
+    },
+    {
+      icon: Globe,
+      label: 'Mode Multi-Pays',
+      path: '/admin/multi-country'
+    }
+  ];
 
   const bottomMenuItems = [
     ...(hasPermission('settings') && selectedProfile?.title === 'Admin' ? [{
