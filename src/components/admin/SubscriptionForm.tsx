@@ -19,6 +19,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
   const [selectedTier, setSelectedTier] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('30');
   const [isLifetime, setIsLifetime] = useState(false);
+  const [isTrial, setIsTrial] = useState(false);
   const { toast } = useToast();
 
   const createOrUpdateSubscription = async () => {
@@ -33,11 +34,17 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
 
     try {
       let endDate = null;
+      let subscriptionStatus = 'active';
       
       if (isLifetime) {
         // Abonnement à vie - date dans 100 ans
         endDate = new Date();
         endDate.setFullYear(endDate.getFullYear() + 100);
+      } else if (isTrial) {
+        // Essai gratuit
+        endDate = new Date();
+        endDate.setDate(endDate.getDate() + parseInt(selectedDuration));
+        subscriptionStatus = 'trialing';
       } else {
         // Abonnement temporaire
         endDate = new Date();
@@ -51,6 +58,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
           subscription_tier: selectedTier,
           subscribed: true,
           subscription_end: endDate.toISOString(),
+          subscription_status: subscriptionStatus,
           updated_at: new Date().toISOString()
         });
 
@@ -60,12 +68,15 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
         title: "Succès",
         description: isLifetime 
           ? `Abonnement ${selectedTier} à vie accordé`
+          : isTrial
+          ? `Essai gratuit ${selectedTier} accordé pour ${selectedDuration} jours`
           : `Abonnement ${selectedTier} accordé pour ${selectedDuration} jours`,
       });
 
       setSearchEmail('');
       setSelectedTier('');
       setIsLifetime(false);
+      setIsTrial(false);
       onSubscriptionCreated();
     } catch (error) {
       console.error('Erreur:', error);
@@ -126,15 +137,31 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end">
+          <div className="flex flex-col gap-2 justify-end">
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="lifetime" 
                 checked={isLifetime}
-                onCheckedChange={(checked) => setIsLifetime(checked as boolean)}
+                onCheckedChange={(checked) => {
+                  setIsLifetime(checked as boolean);
+                  if (checked) setIsTrial(false);
+                }}
               />
               <Label htmlFor="lifetime" className="text-sm font-medium cursor-pointer">
                 Abonnement à vie
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="trial" 
+                checked={isTrial}
+                onCheckedChange={(checked) => {
+                  setIsTrial(checked as boolean);
+                  if (checked) setIsLifetime(false);
+                }}
+              />
+              <Label htmlFor="trial" className="text-sm font-medium cursor-pointer">
+                Essai gratuit
               </Label>
             </div>
           </div>
