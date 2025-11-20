@@ -43,23 +43,8 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
       let settingsData = null;
       let settingsError = null;
 
-      // 1. D'abord essayer les paramètres spécifiques aux tables (session_id présent)
-      if (invoice.session_id && invoice.outlet_id) {
-        console.log('📋 Session invoice detected, trying table-specific settings for outlet:', invoice.outlet_id);
-        const tableResult = await supabase
-          .from('invoice_settings')
-          .select('*')
-          .eq('user_id', invoice.user_id)
-          .eq('outlet_id', `TABLE_${invoice.outlet_id}`)
-          .maybeSingle();
-        
-        settingsData = tableResult.data;
-        settingsError = tableResult.error;
-        console.log('🔍 Table settings result:', settingsData);
-      }
-
-      // 2. Si pas trouvé, essayer les paramètres généraux de facture pour ce PDV
-      if (!settingsData && invoice.outlet_id) {
+      // 1. Essayer les paramètres de facture pour ce PDV
+      if (invoice.outlet_id) {
         const result = await supabase
           .from('invoice_settings')
           .select('*')
