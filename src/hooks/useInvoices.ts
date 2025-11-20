@@ -198,8 +198,9 @@ export const useInvoices = () => {
   useEffect(() => {
     if (!user) return;
 
+    const channelName = `invoices-changes-${user.id}-${Date.now()}`;
     const channel = supabase
-      .channel('invoices-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -217,7 +218,7 @@ export const useInvoices = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchInvoices]);
+  }, [user?.id]);
 
   return {
     invoices,
