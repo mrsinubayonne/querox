@@ -117,108 +117,121 @@ const LiveActivityPanel: React.FC = () => {
     <div className="space-y-6">
       {/* Real-time stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500/10 to-green-500/5">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Revenus du Jour</span>
-              <TrendingUp className="w-5 h-5 text-green-600" />
+        <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/10 backdrop-blur-sm rounded-2xl p-6 border border-green-500/20 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-green-500/20 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-green-400" />
             </div>
-            <div className="text-3xl font-bold text-foreground">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm text-slate-400">Revenus du Jour</p>
+            <p className="text-3xl font-bold text-white">
               {new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(todayRevenue)} FCFA
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Mis à jour en temps réel</p>
-          </CardContent>
-        </Card>
+            </p>
+            <p className="text-xs text-slate-500">Mis à jour en temps réel</p>
+          </div>
+        </div>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Commandes Aujourd'hui</span>
-              <ShoppingCart className="w-5 h-5 text-blue-600" />
+        <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/10 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/20 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <ShoppingCart className="w-5 h-5 text-blue-400" />
             </div>
-            <div className="text-3xl font-bold text-foreground">{liveOrders.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">Dernières 24h</p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm text-slate-400">Commandes Aujourd'hui</p>
+            <p className="text-3xl font-bold text-white">{liveOrders.length}</p>
+            <p className="text-xs text-slate-500">Dernières 24h</p>
+          </div>
+        </div>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Trafic</span>
-              <Activity className="w-5 h-5 text-purple-600" />
+        <div className="bg-gradient-to-br from-purple-500/20 to-violet-500/10 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/20 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-purple-500/20 rounded-lg">
+              <Activity className="w-5 h-5 text-purple-400" />
             </div>
-            <div className="text-3xl font-bold text-foreground">{trafficPeak}</div>
-            <p className="text-xs text-muted-foreground mt-1">commandes/jour</p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm text-slate-400">Trafic</p>
+            <p className="text-3xl font-bold text-white">{trafficPeak}</p>
+            <p className="text-xs text-slate-500">commandes/jour</p>
+          </div>
+        </div>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-500/10 to-amber-500/5">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Panier Moyen</span>
-              <Award className="w-5 h-5 text-amber-600" />
+        <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/20 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-amber-500/20 rounded-lg">
+              <Award className="w-5 h-5 text-amber-400" />
             </div>
-            <div className="text-3xl font-bold text-foreground">
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm text-slate-400">Panier Moyen</p>
+            <p className="text-3xl font-bold text-white">
               {liveOrders.length > 0 
                 ? new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(todayRevenue / liveOrders.length)
                 : 0
               } FCFA
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Par commande</p>
-          </CardContent>
-        </Card>
+            </p>
+            <p className="text-xs text-slate-500">Par commande</p>
+          </div>
+        </div>
       </div>
 
       {/* Live orders feed */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-primary animate-pulse" />
-            Flux de Commandes en Temps Réel
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[500px] pr-4">
-            <div className="space-y-3">
-              {liveOrders.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucune commande récente</p>
+      <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-xl">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="p-2 bg-green-500/20 rounded-lg">
+            <Activity className="w-5 h-5 text-green-400 animate-pulse" />
+          </div>
+          <h3 className="text-lg font-semibold text-white">Flux de Commandes en Temps Réel</h3>
+        </div>
+        <ScrollArea className="h-[500px] pr-4">
+          <div className="space-y-3">
+            {liveOrders.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="p-4 bg-slate-800/50 rounded-xl w-fit mx-auto mb-4">
+                  <Clock className="w-12 h-12 text-slate-600" />
                 </div>
-              ) : (
-                liveOrders.map((order) => (
-                  <div 
-                    key={order.id}
-                    className="p-4 bg-card border border-border rounded-lg hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <ShoppingCart className="w-4 h-4 text-primary" />
-                          <span className="font-semibold text-foreground">{order.customer_name}</span>
-                          <Badge className={`${getStatusColor(order.status)} text-xs border`}>
-                            {getStatusLabel(order.status)}
-                          </Badge>
+                <p className="text-slate-400">Aucune commande récente</p>
+              </div>
+            ) : (
+              liveOrders.map((order) => (
+                <div 
+                  key={order.id}
+                  className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl hover:bg-slate-800 hover:shadow-lg transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="p-1.5 bg-blue-500/20 rounded-lg">
+                          <ShoppingCart className="w-4 h-4 text-blue-400" />
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(Number(order.total_amount))} FCFA</span>
-                          <span>•</span>
-                          <span>{new Date(order.created_at).toLocaleString('fr-FR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            day: '2-digit',
-                            month: 'short'
-                          })}</span>
-                        </div>
+                        <span className="font-semibold text-white">{order.customer_name}</span>
+                        <Badge className={`${getStatusColor(order.status)} text-xs border`}>
+                          {getStatusLabel(order.status)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-slate-400">
+                        <span className="font-semibold text-green-400">
+                          {new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(Number(order.total_amount))} FCFA
+                        </span>
+                        <span>•</span>
+                        <span>{new Date(order.created_at).toLocaleString('fr-FR', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          day: '2-digit',
+                          month: 'short'
+                        })}</span>
                       </div>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 };

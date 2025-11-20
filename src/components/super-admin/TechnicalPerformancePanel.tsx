@@ -1,21 +1,18 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 const TechnicalPerformancePanel: React.FC = () => {
   return (
     <div className="space-y-6">
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-primary" />
-            Performances Techniques
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Monitoring des performances et uptime API en cours de développement.</p>
-        </CardContent>
-      </Card>
+      <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 shadow-xl">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 bg-yellow-500/20 rounded-xl">
+            <Zap className="w-6 h-6 text-yellow-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-white">Performances Techniques</h2>
+        </div>
+        <p className="text-slate-400">Monitoring des performances et uptime API en cours de développement.</p>
+      </div>
     </div>
   );
 };

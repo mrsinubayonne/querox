@@ -1,21 +1,18 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, CreditCard } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 
 const RevenueSubscriptionsPanel: React.FC = () => {
   return (
     <div className="space-y-6">
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-primary" />
-            Revenus & Abonnements
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Détails des revenus et abonnements en cours de développement.</p>
-        </CardContent>
-      </Card>
+      <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 shadow-xl">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 bg-green-500/20 rounded-xl">
+            <DollarSign className="w-6 h-6 text-green-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-white">Revenus & Abonnements</h2>
+        </div>
+        <p className="text-slate-400">Détails des revenus et abonnements en cours de développement.</p>
+      </div>
     </div>
   );
 };
