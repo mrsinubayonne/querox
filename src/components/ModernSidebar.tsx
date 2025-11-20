@@ -280,11 +280,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       icon: Settings,
       label: 'Paramètres Système',
       path: '/admin/system-settings'
-    },
-    {
-      icon: Globe,
-      label: 'Mode Multi-Pays',
-      path: '/admin/multi-country'
     }
   ];
 

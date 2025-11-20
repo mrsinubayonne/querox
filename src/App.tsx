@@ -50,7 +50,7 @@ import AdminAlerts from '@/pages/AdminAlerts';
 import AdminSupport from '@/pages/AdminSupport';
 import AdminGlobalControl from '@/pages/AdminGlobalControl';
 import AdminSystemSettings from '@/pages/AdminSystemSettings';
-import AdminMultiCountry from '@/pages/AdminMultiCountry';
+
 
 // Partner pages
 import PartnerSignup from '@/pages/PartnerSignup';
@@ -128,7 +128,7 @@ function App() {
               <Route path="/admin/support" element={<ProtectedRoute><AdminSupport /></ProtectedRoute>} />
               <Route path="/admin/global-control" element={<ProtectedRoute><AdminGlobalControl /></ProtectedRoute>} />
               <Route path="/admin/system-settings" element={<ProtectedRoute><AdminSystemSettings /></ProtectedRoute>} />
-              <Route path="/admin/multi-country" element={<ProtectedRoute><AdminMultiCountry /></ProtectedRoute>} />
+              
               <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
               <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
               <Route path="/admin/access-codes" element={<ProtectedRoute><AdminAccessCodes /></ProtectedRoute>} />
