@@ -41,12 +41,12 @@ export const TableInvoiceSettingsTab: React.FC = () => {
     }
 
     try {
-      // Récupérer les paramètres spécifiques aux tables (outlet_id = 'TABLES_SETTINGS')
+      // Récupérer les paramètres spécifiques aux tables (outlet_id = '00000000-0000-0000-0000-000000000001')
       const { data, error } = await supabase
         .from('invoice_settings')
         .select('*')
         .eq('user_id', user.id)
-        .eq('outlet_id', 'TABLES_SETTINGS')
+        .eq('outlet_id', '00000000-0000-0000-0000-000000000001')
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
@@ -107,7 +107,7 @@ export const TableInvoiceSettingsTab: React.FC = () => {
           .from('invoice_settings')
           .insert({
             user_id: user.id,
-            outlet_id: 'TABLES_SETTINGS',
+            outlet_id: '00000000-0000-0000-0000-000000000001',
             ...sanitizedData,
           })
           .select()

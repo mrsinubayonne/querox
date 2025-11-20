@@ -50,7 +50,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
           .from('invoice_settings')
           .select('*')
           .eq('user_id', invoice.user_id)
-          .eq('outlet_id', 'TABLES_SETTINGS')
+          .eq('outlet_id', '00000000-0000-0000-0000-000000000001')
           .maybeSingle();
         
         settingsData = tableResult.data;
