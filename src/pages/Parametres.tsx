@@ -39,21 +39,16 @@ const Parametres = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
-        <div className="container max-w-4xl py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link to="/site-web">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-xl font-semibold">Paramètres</h1>
-              <p className="text-sm text-muted-foreground">Configurez votre application selon vos préférences</p>
-            </div>
+        <div className="container max-w-4xl py-4 flex items-center gap-2">
+          <Link to="/site-web">
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-xl font-semibold">Paramètres</h1>
+            <p className="text-sm text-muted-foreground">Configurez votre application selon vos préférences</p>
           </div>
-          <Button className="bg-emerald-600 hover:bg-emerald-700">
-            Sauvegarder
-          </Button>
         </div>
       </header>
       
