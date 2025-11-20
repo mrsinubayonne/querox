@@ -1,91 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { supabase } from '@/integrations/supabase/client';
+import { useAdminAlerts } from '@/hooks/useAdminAlerts';
 import ModernSidebar from '@/components/ModernSidebar';
 import UnauthorizedAccess from '@/components/admin/UnauthorizedAccess';
 import { AlertTriangle, XCircle, CheckCircle, Clock, CreditCard, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface GlobalAlert {
-  id: string;
-  type: 'payment_failure' | 'suspension' | 'trial_ending' | 'system';
-  severity: 'critical' | 'warning' | 'info';
-  title: string;
-  message: string;
-  restaurant_id?: string;
-  restaurant_name?: string;
-  created_at: string;
-  resolved: boolean;
-}
-
 const AdminAlerts: React.FC = () => {
   const { user } = useAuth();
   const { isAdmin, loading: authLoading } = useSubscription();
+  const { alerts, loading } = useAdminAlerts();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [alerts, setAlerts] = useState<GlobalAlert[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'critical' | 'warning'>('all');
+  const [localAlerts, setLocalAlerts] = useState(alerts);
 
-  useEffect(() => {
-    if (isAdmin) {
-      fetchAlerts();
-    }
-  }, [isAdmin]);
-
-  const fetchAlerts = async () => {
-    try {
-      setLoading(true);
-      
-      // Simulated alerts - in production, fetch from database
-      const mockAlerts: GlobalAlert[] = [
-        {
-          id: '1',
-          type: 'suspension',
-          severity: 'critical',
-          title: 'Suspension automatique - Impayé',
-          message: 'Restaurant "La Terrasse" suspendu pour non-paiement',
-          restaurant_name: 'La Terrasse',
-          created_at: new Date().toISOString(),
-          resolved: false
-        },
-        {
-          id: '2',
-          type: 'payment_failure',
-          severity: 'critical',
-          title: 'Échec de paiement',
-          message: '3 tentatives de paiement échouées pour "Le Gourmet"',
-          restaurant_name: 'Le Gourmet',
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-          resolved: false
-        },
-        {
-          id: '3',
-          type: 'trial_ending',
-          severity: 'warning',
-          title: 'Période d\'essai se termine',
-          message: 'Restaurant "Chez Marie" - Essai expire dans 2 jours',
-          restaurant_name: 'Chez Marie',
-          created_at: new Date(Date.now() - 7200000).toISOString(),
-          resolved: false
-        }
-      ];
-
-      setAlerts(mockAlerts);
-    } catch (error: any) {
-      toast.error('Erreur lors du chargement des alertes');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  React.useEffect(() => {
+    setLocalAlerts(alerts);
+  }, [alerts]);
 
   const resolveAlert = async (alertId: string) => {
-    setAlerts(prev => prev.map(a => 
+    setLocalAlerts(prev => prev.map(a => 
       a.id === alertId ? { ...a, resolved: true } : a
     ));
     toast.success('Alerte résolue');
@@ -118,7 +57,7 @@ const AdminAlerts: React.FC = () => {
     return configs[severity as keyof typeof configs] || configs.info;
   };
 
-  const filteredAlerts = alerts.filter(alert => {
+  const filteredAlerts = localAlerts.filter(alert => {
     if (filter === 'all') return !alert.resolved;
     return alert.severity === filter && !alert.resolved;
   });
@@ -172,7 +111,7 @@ const AdminAlerts: React.FC = () => {
                   <XCircle className="w-5 h-5 text-red-600" />
                 </div>
                 <div className="text-3xl font-bold text-red-700 dark:text-red-300">
-                  {alerts.filter(a => a.severity === 'critical' && !a.resolved).length}
+                  {localAlerts.filter(a => a.severity === 'critical' && !a.resolved).length}
                 </div>
                 <p className="text-xs text-red-600 dark:text-red-400 mt-1">nécessitent une action immédiate</p>
               </CardContent>
@@ -185,7 +124,7 @@ const AdminAlerts: React.FC = () => {
                   <AlertTriangle className="w-5 h-5 text-orange-600" />
                 </div>
                 <div className="text-3xl font-bold text-orange-700 dark:text-orange-300">
-                  {alerts.filter(a => a.severity === 'warning' && !a.resolved).length}
+                  {localAlerts.filter(a => a.severity === 'warning' && !a.resolved).length}
                 </div>
                 <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">à surveiller</p>
               </CardContent>
@@ -198,7 +137,7 @@ const AdminAlerts: React.FC = () => {
                   <CheckCircle className="w-5 h-5 text-green-600" />
                 </div>
                 <div className="text-3xl font-bold text-green-700 dark:text-green-300">
-                  {alerts.filter(a => a.resolved).length}
+                  {localAlerts.filter(a => a.resolved).length}
                 </div>
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">problèmes traités</p>
               </CardContent>
