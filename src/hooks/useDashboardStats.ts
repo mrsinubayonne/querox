@@ -3,98 +3,224 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOutlets } from './useOutlets';
 
+type Period = 'day' | 'week' | 'month';
+
 interface DashboardStats {
-  totalRevenue: number;
+  // Revenue
+  revenue: number;
+  previousRevenue: number;
+  revenueChange: number;
+  
+  // Orders
   totalOrders: number;
-  totalDishes: number;
-  totalCustomers: number;
-  paidInvoices: number;
-  unpaidInvoices: number;
-  averageOrderValue: number;
+  previousOrders: number;
+  ordersChange: number;
+  successRate: number;
+  
+  // Products
+  averageCart: number;
+  topProducts: Array<{ name: string; quantity: number; revenue: number }>;
+  
+  // Alerts
+  lowStockItems: Array<{ name: string; stock: number; minStock: number }>;
+  delayedOrders: Array<{ id: string; customerName: string; createdAt: string }>;
 }
 
-export const useDashboardStats = () => {
+export const useDashboardStats = (period: Period = 'day') => {
   const { user } = useAuth();
   const { selectedOutletId } = useOutlets();
   const [stats, setStats] = useState<DashboardStats>({
-    totalRevenue: 0,
+    revenue: 0,
+    previousRevenue: 0,
+    revenueChange: 0,
     totalOrders: 0,
-    totalDishes: 0,
-    totalCustomers: 0,
-    paidInvoices: 0,
-    unpaidInvoices: 0,
-    averageOrderValue: 0,
+    previousOrders: 0,
+    ordersChange: 0,
+    successRate: 0,
+    averageCart: 0,
+    topProducts: [],
+    lowStockItems: [],
+    delayedOrders: [],
   });
   const [loading, setLoading] = useState(true);
+
+  const getDateRange = (period: Period) => {
+    const now = new Date();
+    const start = new Date();
+    const previousStart = new Date();
+    const previousEnd = new Date();
+
+    if (period === 'day') {
+      start.setHours(0, 0, 0, 0);
+      previousStart.setDate(start.getDate() - 1);
+      previousStart.setHours(0, 0, 0, 0);
+      previousEnd.setDate(start.getDate() - 1);
+      previousEnd.setHours(23, 59, 59, 999);
+    } else if (period === 'week') {
+      const dayOfWeek = start.getDay();
+      start.setDate(start.getDate() - dayOfWeek);
+      start.setHours(0, 0, 0, 0);
+      previousStart.setDate(start.getDate() - 7);
+      previousEnd.setDate(start.getDate() - 1);
+      previousEnd.setHours(23, 59, 59, 999);
+    } else {
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      previousStart.setMonth(start.getMonth() - 1);
+      previousStart.setDate(1);
+      previousEnd.setMonth(start.getMonth());
+      previousEnd.setDate(0);
+      previousEnd.setHours(23, 59, 59, 999);
+    }
+
+    return {
+      start: start.toISOString(),
+      previousStart: previousStart.toISOString(),
+      previousEnd: previousEnd.toISOString(),
+    };
+  };
 
   const fetchStats = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayISO = today.toISOString();
+      const { start, previousStart, previousEnd } = getDateRange(period);
 
-      // Fetch today's orders
-      const ordersQuery = supabase
+      // Build queries
+      let ordersQuery = supabase
         .from('orders')
         .select('*')
         .eq('user_id', user.id)
-        .gte('created_at', todayISO);
+        .gte('created_at', start);
 
-      if (selectedOutletId) {
-        ordersQuery.eq('outlet_id', selectedOutletId);
-      }
+      let previousOrdersQuery = supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', previousStart)
+        .lte('created_at', previousEnd);
 
-      const { data: orders } = await ordersQuery;
-
-      // Fetch today's invoices
-      const invoicesQuery = supabase
+      let invoicesQuery = supabase
         .from('invoices')
         .select('*')
         .eq('user_id', user.id)
-        .gte('created_at', todayISO);
+        .gte('created_at', start);
+
+      let previousInvoicesQuery = supabase
+        .from('invoices')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', previousStart)
+        .lte('created_at', previousEnd);
+
+      let inventoryQuery = supabase
+        .from('inventory_items')
+        .select('*')
+        .eq('user_id', user.id);
 
       if (selectedOutletId) {
-        invoicesQuery.eq('outlet_id', selectedOutletId);
+        ordersQuery = ordersQuery.eq('outlet_id', selectedOutletId);
+        previousOrdersQuery = previousOrdersQuery.eq('outlet_id', selectedOutletId);
+        invoicesQuery = invoicesQuery.eq('outlet_id', selectedOutletId);
+        previousInvoicesQuery = previousInvoicesQuery.eq('outlet_id', selectedOutletId);
+        inventoryQuery = inventoryQuery.eq('outlet_id', selectedOutletId);
       }
 
-      const { data: invoices } = await invoicesQuery;
+      const [
+        { data: orders },
+        { data: previousOrders },
+        { data: invoices },
+        { data: previousInvoices },
+        { data: inventoryItems },
+      ] = await Promise.all([
+        ordersQuery,
+        previousOrdersQuery,
+        invoicesQuery,
+        previousInvoicesQuery,
+        inventoryQuery,
+      ]);
 
-      // Calculate stats
+      // Calculate revenue
       const orderRevenue = orders?.reduce((sum, order) => sum + Number(order.total_amount || 0), 0) || 0;
       const invoiceRevenue = invoices
         ?.filter(inv => inv.status === 'paid')
         .reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
+      const revenue = orderRevenue + invoiceRevenue;
 
-      const totalRevenue = orderRevenue + invoiceRevenue;
+      const previousOrderRevenue = previousOrders?.reduce((sum, order) => sum + Number(order.total_amount || 0), 0) || 0;
+      const previousInvoiceRevenue = previousInvoices
+        ?.filter(inv => inv.status === 'paid')
+        .reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
+      const previousRevenue = previousOrderRevenue + previousInvoiceRevenue;
+
+      const revenueChange = previousRevenue > 0 ? ((revenue - previousRevenue) / previousRevenue) * 100 : 0;
+
+      // Calculate orders
       const totalOrders = orders?.length || 0;
+      const previousOrdersCount = previousOrders?.length || 0;
+      const ordersChange = previousOrdersCount > 0 ? ((totalOrders - previousOrdersCount) / previousOrdersCount) * 100 : 0;
 
-      // Count total dishes sold
-      const totalDishes = orders?.reduce((sum, order) => {
+      // Calculate success rate
+      const successfulOrders = orders?.filter(o => o.status === 'delivered' || o.status === 'completed').length || 0;
+      const successRate = totalOrders > 0 ? (successfulOrders / totalOrders) * 100 : 0;
+
+      // Calculate average cart
+      const averageCart = totalOrders > 0 ? revenue / totalOrders : 0;
+
+      // Calculate top products
+      const productMap = new Map<string, { quantity: number; revenue: number }>();
+      orders?.forEach(order => {
         const items = order.items as any[];
-        return sum + (items?.length || 0);
-      }, 0) || 0;
+        items?.forEach(item => {
+          const current = productMap.get(item.name) || { quantity: 0, revenue: 0 };
+          productMap.set(item.name, {
+            quantity: current.quantity + (item.quantity || 1),
+            revenue: current.revenue + (item.price * (item.quantity || 1)),
+          });
+        });
+      });
 
-      // Count unique customers
-      const uniqueCustomers = new Set(
-        orders?.map(order => order.customer_email || order.customer_name).filter(Boolean) || []
-      ).size;
+      const topProducts = Array.from(productMap.entries())
+        .map(([name, data]) => ({ name, ...data }))
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 3);
 
-      const paidInvoices = invoices?.filter(inv => inv.status === 'paid').length || 0;
-      const unpaidInvoices = invoices?.filter(inv => inv.status === 'unpaid').length || 0;
+      // Calculate alerts
+      const lowStockItems = inventoryItems
+        ?.filter(item => (item.current_stock || 0) <= (item.min_stock || 0))
+        .map(item => ({
+          name: item.name,
+          stock: item.current_stock || 0,
+          minStock: item.min_stock || 0,
+        }))
+        .slice(0, 5) || [];
 
-      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      const delayedOrders = orders
+        ?.filter(order => 
+          order.status === 'pending' && 
+          order.created_at < twoHoursAgo
+        )
+        .map(order => ({
+          id: order.id,
+          customerName: order.customer_name,
+          createdAt: order.created_at,
+        }))
+        .slice(0, 5) || [];
 
       setStats({
-        totalRevenue,
+        revenue,
+        previousRevenue,
+        revenueChange,
         totalOrders,
-        totalDishes,
-        totalCustomers: uniqueCustomers,
-        paidInvoices,
-        unpaidInvoices,
-        averageOrderValue,
+        previousOrders: previousOrdersCount,
+        ordersChange,
+        successRate,
+        averageCart,
+        topProducts,
+        lowStockItems,
+        delayedOrders,
       });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -106,7 +232,6 @@ export const useDashboardStats = () => {
   useEffect(() => {
     fetchStats();
 
-    // Subscribe to real-time updates
     const ordersChannel = supabase
       .channel('dashboard-orders')
       .on(
@@ -135,11 +260,26 @@ export const useDashboardStats = () => {
       )
       .subscribe();
 
+    const inventoryChannel = supabase
+      .channel('dashboard-inventory')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'inventory_items',
+          filter: `user_id=eq.${user?.id}`,
+        },
+        () => fetchStats()
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(invoicesChannel);
+      supabase.removeChannel(inventoryChannel);
     };
-  }, [user, selectedOutletId]);
+  }, [user, selectedOutletId, period]);
 
   return { stats, loading, refetch: fetchStats };
 };

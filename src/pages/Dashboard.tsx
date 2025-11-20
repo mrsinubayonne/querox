@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -16,21 +16,30 @@ import {
   MessageSquare,
   ShoppingBag,
   TrendingUp,
-  Receipt
+  Receipt,
+  AlertTriangle,
+  Clock,
+  TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
 import ModernSidebar from '@/components/ModernSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import ModernStatCard from '@/components/ModernStatCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+type Period = 'day' | 'week' | 'month';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
   const { toast } = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { stats, loading } = useDashboardStats();
+  const [period, setPeriod] = useState<Period>('day');
+  const { stats, loading } = useDashboardStats(period);
 
   // Display name logic
   const displayName = user?.user_metadata?.full_name || user?.email;
@@ -136,9 +145,34 @@ const Dashboard: React.FC = () => {
               </p>
             </div>
 
-            {/* Stats du jour */}
+            {/* Period Selector */}
+            <div className="mb-6 flex gap-2">
+              <Button
+                variant={period === 'day' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPeriod('day')}
+              >
+                Jour
+              </Button>
+              <Button
+                variant={period === 'week' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPeriod('week')}
+              >
+                Semaine
+              </Button>
+              <Button
+                variant={period === 'month' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPeriod('month')}
+              >
+                Mois
+              </Button>
+            </div>
+
+            {/* Main Stats */}
             <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Statistiques du Jour</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Vue d'ensemble</h2>
               {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[1, 2, 3, 4].map((i) => (
@@ -148,55 +182,161 @@ const Dashboard: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <ModernStatCard
-                    title="Ventes Totales"
-                    value={`${stats.totalRevenue.toFixed(2)} FCFA`}
+                    title="Chiffre d'affaires"
+                    value={`${stats.revenue.toFixed(0)} FCFA`}
                     icon={<DollarSign className="h-5 w-5" />}
                     color="green"
-                    trend="up"
+                    trend={stats.revenueChange >= 0 ? 'up' : 'down'}
                     change={{
-                      value: `${stats.totalOrders} commandes`,
-                      label: "aujourd'hui",
-                      isPositive: true
+                      value: `${stats.revenueChange.toFixed(1)}%`,
+                      label: "vs période précédente",
+                      isPositive: stats.revenueChange >= 0
                     }}
                   />
                   <ModernStatCard
-                    title="Plats Vendus"
-                    value={stats.totalDishes}
+                    title="Commandes"
+                    value={stats.totalOrders}
                     icon={<ShoppingBag className="h-5 w-5" />}
                     color="blue"
+                    trend={stats.ordersChange >= 0 ? 'up' : 'down'}
+                    change={{
+                      value: `${stats.ordersChange.toFixed(1)}%`,
+                      label: "vs période précédente",
+                      isPositive: stats.ordersChange >= 0
+                    }}
+                  />
+                  <ModernStatCard
+                    title="Taux de réussite"
+                    value={`${stats.successRate.toFixed(1)}%`}
+                    icon={<TrendingUp className="h-5 w-5" />}
+                    color="purple"
+                    trend={stats.successRate >= 80 ? 'up' : 'down'}
+                    change={{
+                      value: "Livraison/Collecte",
+                      label: "taux de réussite",
+                      isPositive: stats.successRate >= 80
+                    }}
+                  />
+                  <ModernStatCard
+                    title="Panier moyen"
+                    value={`${stats.averageCart.toFixed(0)} FCFA`}
+                    icon={<Receipt className="h-5 w-5" />}
+                    color="orange"
                     trend="neutral"
                     change={{
                       value: `${stats.totalOrders} commandes`,
-                      label: "au total",
-                      isPositive: true
-                    }}
-                  />
-                  <ModernStatCard
-                    title="Factures Payées"
-                    value={stats.paidInvoices}
-                    icon={<Receipt className="h-5 w-5" />}
-                    color="purple"
-                    trend="up"
-                    change={{
-                      value: `${stats.unpaidInvoices} impayées`,
-                      label: "en attente",
-                      isPositive: false
-                    }}
-                  />
-                  <ModernStatCard
-                    title="Clients du Jour"
-                    value={stats.totalCustomers}
-                    icon={<Users className="h-5 w-5" />}
-                    color="orange"
-                    trend="up"
-                    change={{
-                      value: `${stats.averageOrderValue.toFixed(2)} FCFA`,
-                      label: "panier moyen",
+                      label: "cette période",
                       isPositive: true
                     }}
                   />
                 </div>
               )}
+            </div>
+
+            {/* Top Products & Alerts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Top Products */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Top 3 Produits
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-16" />
+                      ))}
+                    </div>
+                  ) : stats.topProducts.length > 0 ? (
+                    <div className="space-y-4">
+                      {stats.topProducts.map((product, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
+                              {index + 1}
+                            </div>
+                            <div>
+                              <p className="font-medium">{product.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {product.quantity} vendus
+                              </p>
+                            </div>
+                          </div>
+                          <p className="font-semibold text-primary">
+                            {product.revenue.toFixed(0)} FCFA
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">
+                      Aucune vente pour cette période
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Alerts */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Alertes rapides
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-16" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {stats.lowStockItems.length > 0 && (
+                        <Alert className="border-orange-200 bg-orange-50">
+                          <Package className="h-4 w-4 text-orange-600" />
+                          <AlertDescription className="text-orange-900">
+                            <strong>Stock faible:</strong> {stats.lowStockItems.length} article(s)
+                            <div className="mt-2 space-y-1">
+                              {stats.lowStockItems.slice(0, 3).map((item, i) => (
+                                <div key={i} className="text-sm">
+                                  • {item.name}: {item.stock}/{item.minStock}
+                                </div>
+                              ))}
+                            </div>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      
+                      {stats.delayedOrders.length > 0 && (
+                        <Alert className="border-red-200 bg-red-50">
+                          <Clock className="h-4 w-4 text-red-600" />
+                          <AlertDescription className="text-red-900">
+                            <strong>Commandes en retard:</strong> {stats.delayedOrders.length} commande(s)
+                            <div className="mt-2 space-y-1">
+                              {stats.delayedOrders.slice(0, 3).map((order, i) => (
+                                <div key={i} className="text-sm">
+                                  • {order.customerName} - {new Date(order.createdAt).toLocaleTimeString('fr-FR')}
+                                </div>
+                              ))}
+                            </div>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      {stats.lowStockItems.length === 0 && stats.delayedOrders.length === 0 && (
+                        <p className="text-center text-muted-foreground py-8">
+                          Aucune alerte pour le moment 👍
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Accès Rapide</h2>
