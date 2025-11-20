@@ -268,15 +268,12 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
   const handleConfirmPrint = () => {
     setShowPrintDialog(false);
-    // Attendre que InvoicePrintView charge les paramètres avant d'imprimer
+    // InvoicePrintView gère automatiquement l'impression après chargement des données
+    // Nettoyer après l'impression
     setTimeout(() => {
-      window.print();
-      // Nettoyer après l'impression
-      setTimeout(() => {
-        setInvoiceToPrint(null);
-        setServedBy("");
-      }, 500);
-    }, 1500);
+      setInvoiceToPrint(null);
+      setServedBy("");
+    }, 2000);
   };
 
   const handleClosePrintDialog = () => {
