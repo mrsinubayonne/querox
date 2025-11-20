@@ -38,8 +38,8 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         console.log('📍 Outlet data:', outletData, 'Error:', outletError);
         setOutlet(outletData);
 
-        // Récupérer les paramètres de facturation
-        // D'abord essayer avec outlet_id spécifique
+        // Récupérer les paramètres de facturation avec fallback en cascade
+        // 1. D'abord essayer avec outlet_id spécifique
         let { data: settingsData, error: settingsError } = await supabase
           .from('invoice_settings')
           .select('*')
@@ -47,7 +47,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
           .eq('outlet_id', invoice.outlet_id)
           .maybeSingle();
         
-        // Si pas trouvé avec outlet_id, essayer les paramètres globaux
+        // 2. Si pas trouvé avec outlet_id, essayer les paramètres globaux
         if (!settingsData) {
           console.log('⚠️ No outlet-specific settings, trying global settings...');
           const globalResult = await supabase
@@ -59,6 +59,20 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
           
           settingsData = globalResult.data;
           settingsError = globalResult.error;
+        }
+        
+        // 3. Si toujours pas trouvé, prendre n'importe quels settings de l'utilisateur
+        if (!settingsData) {
+          console.log('⚠️ No global settings, trying any user settings...');
+          const anyResult = await supabase
+            .from('invoice_settings')
+            .select('*')
+            .eq('user_id', invoice.user_id)
+            .limit(1)
+            .maybeSingle();
+          
+          settingsData = anyResult.data;
+          settingsError = anyResult.error;
         }
         
         console.log('⚙️ Settings data:', settingsData, 'Error:', settingsError);
