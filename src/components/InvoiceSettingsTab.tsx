@@ -18,6 +18,7 @@ export const InvoiceSettingsTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
+  const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     invoice_title: 'FACTURE',
@@ -36,6 +37,32 @@ export const InvoiceSettingsTab: React.FC = () => {
     fetchSettings();
   }, [user]);
 
+  const getSelectedOutletId = async () => {
+    if (!user) return null;
+
+    const selectedProfileId = localStorage.getItem('selectedProfileId');
+    let outletId: string | null = null;
+
+    if (selectedProfileId) {
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('selected_outlet_id')
+        .eq('id', selectedProfileId)
+        .maybeSingle();
+      outletId = userProfile?.selected_outlet_id ?? null;
+    } else {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('selected_outlet_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      outletId = profile?.selected_outlet_id ?? null;
+    }
+
+    setSelectedOutletId(outletId);
+    return outletId;
+  };
+
   const fetchSettings = async () => {
     if (!user) {
       setLoading(false);
@@ -43,12 +70,20 @@ export const InvoiceSettingsTab: React.FC = () => {
     }
 
     try {
-      // Récupérer les paramètres généraux (outlet_id = '00000000-0000-0000-0000-000000000002')
+      const outletId = await getSelectedOutletId();
+      
+      if (!outletId) {
+        console.log('No outlet selected');
+        setLoading(false);
+        return;
+      }
+
+      // Récupérer les paramètres de facture pour ce PDV
       const { data, error } = await supabase
         .from('invoice_settings')
         .select('*')
         .eq('user_id', user.id)
-        .eq('outlet_id', '00000000-0000-0000-0000-000000000002')
+        .eq('outlet_id', outletId)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
@@ -69,7 +104,7 @@ export const InvoiceSettingsTab: React.FC = () => {
         });
       }
     } catch (error: any) {
-      console.error('Error fetching general invoice settings:', error);
+      console.error('Error fetching invoice settings:', error);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les paramètres de facturation',
@@ -83,6 +118,17 @@ export const InvoiceSettingsTab: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    const outletId = selectedOutletId || await getSelectedOutletId();
+    
+    if (!outletId) {
+      toast({
+        title: 'Erreur',
+        description: 'Aucun point de vente sélectionné',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -104,12 +150,12 @@ export const InvoiceSettingsTab: React.FC = () => {
 
         if (error) throw error;
       } else {
-        // Créer de nouveaux paramètres avec outlet_id spécial pour les factures générales
+        // Créer de nouveaux paramètres pour ce PDV
         const { data, error } = await supabase
           .from('invoice_settings')
           .insert({
             user_id: user.id,
-            outlet_id: '00000000-0000-0000-0000-000000000002',
+            outlet_id: outletId,
             ...sanitizedData,
           })
           .select()
@@ -121,12 +167,12 @@ export const InvoiceSettingsTab: React.FC = () => {
 
       toast({
         title: 'Succès',
-        description: 'Paramètres de facturation enregistrés',
+        description: 'Paramètres de facturation enregistrés pour ce point de vente',
       });
       
       await fetchSettings();
     } catch (error: any) {
-      console.error('Error saving general invoice settings:', error);
+      console.error('Error saving invoice settings:', error);
       toast({
         title: 'Erreur',
         description: 'Impossible d\'enregistrer les paramètres',

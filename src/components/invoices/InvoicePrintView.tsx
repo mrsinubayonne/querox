@@ -44,13 +44,13 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
       let settingsError = null;
 
       // 1. D'abord essayer les paramètres spécifiques aux tables (session_id présent)
-      if (invoice.session_id) {
-        console.log('📋 Session invoice detected, trying table-specific settings...');
+      if (invoice.session_id && invoice.outlet_id) {
+        console.log('📋 Session invoice detected, trying table-specific settings for outlet:', invoice.outlet_id);
         const tableResult = await supabase
           .from('invoice_settings')
           .select('*')
           .eq('user_id', invoice.user_id)
-          .eq('outlet_id', '00000000-0000-0000-0000-000000000001')
+          .eq('outlet_id', `TABLE_${invoice.outlet_id}`)
           .maybeSingle();
         
         settingsData = tableResult.data;
@@ -58,22 +58,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         console.log('🔍 Table settings result:', settingsData);
       }
 
-      // 2. Si pas de session, essayer les paramètres généraux de facture
-      if (!settingsData) {
-        console.log('📄 Regular invoice, trying general invoice settings...');
-        const generalResult = await supabase
-          .from('invoice_settings')
-          .select('*')
-          .eq('user_id', invoice.user_id)
-          .eq('outlet_id', '00000000-0000-0000-0000-000000000002')
-          .maybeSingle();
-        
-        settingsData = generalResult.data;
-        settingsError = generalResult.error;
-        console.log('🔍 General invoice settings result:', settingsData);
-      }
-
-      // 3. Si pas trouvé, essayer avec outlet_id spécifique (si disponible)
+      // 2. Si pas trouvé, essayer les paramètres généraux de facture pour ce PDV
       if (!settingsData && invoice.outlet_id) {
         const result = await supabase
           .from('invoice_settings')
