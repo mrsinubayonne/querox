@@ -4,15 +4,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useInvoiceSettings } from '@/hooks/useInvoiceSettings';
 import { FileText, Save, Loader2, Eye } from 'lucide-react';
 import LogoUpload from './LogoUpload';
 import InvoicePreview from './invoices/InvoicePreview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export const InvoiceSettingsTab: React.FC = () => {
-  const { settings, loading, updateSettings } = useInvoiceSettings();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [settingsId, setSettingsId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     invoice_title: 'FACTURE',
@@ -28,27 +33,108 @@ export const InvoiceSettingsTab: React.FC = () => {
   });
 
   useEffect(() => {
-    if (settings) {
-      setFormData({
-        invoice_title: settings.invoice_title || 'FACTURE',
-        company_name: settings.company_name || '',
-        company_address: settings.company_address || '',
-        company_phone: settings.company_phone || '',
-        company_email: settings.company_email || '',
-        tax_id: settings.tax_id || '',
-        payment_terms: settings.payment_terms || 'Paiement à effectuer sous 30 jours à compter de la date de facturation.',
-        footer_note: settings.footer_note || '',
-        logo_url: settings.logo_url || '',
-        primary_color: settings.primary_color || '#3B82F6',
-      });
+    fetchSettings();
+  }, [user]);
+
+  const fetchSettings = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
     }
-  }, [settings]);
+
+    try {
+      // Récupérer les paramètres généraux (outlet_id = '00000000-0000-0000-0000-000000000002')
+      const { data, error } = await supabase
+        .from('invoice_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('outlet_id', '00000000-0000-0000-0000-000000000002')
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (data) {
+        setSettingsId(data.id);
+        setFormData({
+          invoice_title: data.invoice_title || 'FACTURE',
+          company_name: data.company_name || '',
+          company_address: data.company_address || '',
+          company_phone: data.company_phone || '',
+          company_email: data.company_email || '',
+          tax_id: data.tax_id || '',
+          payment_terms: data.payment_terms || 'Paiement à effectuer sous 30 jours à compter de la date de facturation.',
+          footer_note: data.footer_note || '',
+          logo_url: typeof data.logo_url === 'string' ? data.logo_url : (data.logo_url as any)?.value || '',
+          primary_color: data.primary_color || '#3B82F6',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error fetching general invoice settings:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de charger les paramètres de facturation',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+
     setSaving(true);
-    await updateSettings(formData);
-    setSaving(false);
+    try {
+      // S'assurer que le logo est stocké comme simple chaîne
+      const sanitizedData = { ...formData };
+      if (sanitizedData.logo_url && typeof sanitizedData.logo_url === 'object' && (sanitizedData.logo_url as any).value) {
+        sanitizedData.logo_url = (sanitizedData.logo_url as any).value;
+      }
+
+      if (settingsId) {
+        // Mettre à jour les paramètres existants
+        const { error } = await supabase
+          .from('invoice_settings')
+          .update({
+            ...sanitizedData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', settingsId);
+
+        if (error) throw error;
+      } else {
+        // Créer de nouveaux paramètres avec outlet_id spécial pour les factures générales
+        const { data, error } = await supabase
+          .from('invoice_settings')
+          .insert({
+            user_id: user.id,
+            outlet_id: '00000000-0000-0000-0000-000000000002',
+            ...sanitizedData,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (data) setSettingsId(data.id);
+      }
+
+      toast({
+        title: 'Succès',
+        description: 'Paramètres de facturation enregistrés',
+      });
+      
+      await fetchSettings();
+    } catch (error: any) {
+      console.error('Error saving general invoice settings:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'enregistrer les paramètres',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChange = (field: string, value: string) => {

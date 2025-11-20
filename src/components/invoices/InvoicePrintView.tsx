@@ -58,7 +58,22 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         console.log('🔍 Table settings result:', settingsData);
       }
 
-      // 2. Si pas trouvé, essayer avec outlet_id spécifique (si disponible)
+      // 2. Si pas de session, essayer les paramètres généraux de facture
+      if (!settingsData) {
+        console.log('📄 Regular invoice, trying general invoice settings...');
+        const generalResult = await supabase
+          .from('invoice_settings')
+          .select('*')
+          .eq('user_id', invoice.user_id)
+          .eq('outlet_id', '00000000-0000-0000-0000-000000000002')
+          .maybeSingle();
+        
+        settingsData = generalResult.data;
+        settingsError = generalResult.error;
+        console.log('🔍 General invoice settings result:', settingsData);
+      }
+
+      // 3. Si pas trouvé, essayer avec outlet_id spécifique (si disponible)
       if (!settingsData && invoice.outlet_id) {
         const result = await supabase
           .from('invoice_settings')
@@ -72,7 +87,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         console.log('🔍 Outlet-specific settings:', settingsData);
       }
       
-      // 3. Si pas trouvé avec outlet_id, essayer les paramètres globaux
+      // 4. Si pas trouvé avec outlet_id, essayer les paramètres globaux (outlet_id null)
       if (!settingsData) {
         console.log('⚠️ No outlet-specific settings, trying global settings...');
         const globalResult = await supabase
@@ -87,7 +102,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         console.log('🔍 Global settings result:', settingsData);
       }
       
-      // 4. Si toujours pas trouvé, prendre n'importe quels settings de l'utilisateur
+      // 5. Si toujours pas trouvé, prendre n'importe quels settings de l'utilisateur
       if (!settingsData) {
         console.log('⚠️ No global settings, trying any user settings...');
         const anyResult = await supabase
