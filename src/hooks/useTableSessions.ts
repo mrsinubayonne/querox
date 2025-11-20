@@ -181,16 +181,31 @@ export function useTableSessions() {
   const markSessionAsPaid = useCallback(
     async (sessionId: string) => {
       try {
-        const { error } = await supabase
+        // Update session status to paid
+        const { error: sessionError } = await supabase
           .from("table_sessions" as any)
           .update({ status: "paid" })
           .eq("id", sessionId);
 
-        if (error) throw error;
+        if (sessionError) throw sessionError;
+
+        // Update associated invoice to paid
+        const { error: invoiceError } = await supabase
+          .from("invoices")
+          .update({ 
+            status: "paid",
+            paid_date: new Date().toISOString()
+          })
+          .eq("session_id", sessionId);
+
+        // Don't throw on invoice error - invoice might not exist yet
+        if (invoiceError) {
+          console.warn("Invoice update error (may not exist):", invoiceError);
+        }
 
         toast({
           title: "Paiement enregistré",
-          description: "La session a été marquée comme payée.",
+          description: "La session et la facture ont été marquées comme payées.",
         });
 
         await fetchSessions();
