@@ -194,6 +194,31 @@ export const useInvoices = () => {
     fetchInvoices();
   }, [fetchInvoices]);
 
+  // Subscribe to real-time updates for invoices
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('invoices-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'invoices',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchInvoices();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchInvoices]);
+
   return {
     invoices,
     loading,
