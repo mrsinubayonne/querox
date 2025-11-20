@@ -91,30 +91,35 @@ const RestaurantsManagementPanel: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
+      <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 shadow-xl">
+        <div className="p-6 border-b border-slate-700/50">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-primary" />
-              Gestion des Restaurants
-            </CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <Building2 className="w-5 h-5 text-purple-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Gestion des Restaurants</h3>
+            </div>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                 <Input
                   placeholder="Rechercher un restaurant..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 w-64 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
                 />
               </div>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div className="p-6">
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+                <Building2 className="w-6 h-6 text-purple-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              </div>
             </div>
           ) : (
             <ScrollArea className="h-[600px]">
@@ -122,21 +127,23 @@ const RestaurantsManagementPanel: React.FC = () => {
                 {filteredRestaurants.map((restaurant) => (
                   <div 
                     key={restaurant.id}
-                    className="p-4 bg-card border border-border rounded-lg hover:shadow-md transition-all"
+                    className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl hover:bg-slate-800 hover:shadow-lg transition-all"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <Building2 className="w-4 h-4 text-primary" />
-                          <span className="font-semibold text-foreground">{restaurant.email}</span>
+                          <div className="p-1.5 bg-purple-500/20 rounded-lg">
+                            <Building2 className="w-4 h-4 text-purple-400" />
+                          </div>
+                          <span className="font-semibold text-white">{restaurant.email}</span>
                           {getStatusBadge(restaurant.subscription_status, restaurant.subscribed)}
                           {getTierBadge(restaurant.subscription_tier)}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-slate-400">
                           Inscrit le {new Date(restaurant.created_at).toLocaleDateString('fr-FR')}
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-slate-700">
                         <MoreVertical className="w-4 h-4" />
                       </Button>
                     </div>
@@ -145,8 +152,8 @@ const RestaurantsManagementPanel: React.FC = () => {
               </div>
             </ScrollArea>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
