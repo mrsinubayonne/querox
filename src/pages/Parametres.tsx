@@ -106,6 +106,10 @@ const Parametres = () => {
           <TabsContent value="invoices" className="space-y-6">
             <InvoiceSettingsTab />
           </TabsContent>
+
+          <TabsContent value="tables" className="space-y-6">
+            <TableInvoiceSettingsTab />
+          </TabsContent>
           
           <TabsContent value="notifications" className="space-y-6">
             <NotificationsTab
