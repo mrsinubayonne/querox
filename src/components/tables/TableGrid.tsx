@@ -20,16 +20,21 @@ export const TableGrid: React.FC<TableGridProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-      {tableNumbers.map((tableNumber) => {
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 animate-in fade-in duration-500">
+      {tableNumbers.map((tableNumber, index) => {
         const session = getSessionForTable(tableNumber);
         return (
-          <TableCard
+          <div
             key={tableNumber}
-            tableNumber={tableNumber}
-            session={session}
-            onClick={() => onTableClick(tableNumber, session)}
-          />
+            className="animate-in slide-in-from-bottom duration-300"
+            style={{ animationDelay: `${index * 20}ms` }}
+          >
+            <TableCard
+              tableNumber={tableNumber}
+              session={session}
+              onClick={() => onTableClick(tableNumber, session)}
+            />
+          </div>
         );
       })}
     </div>
