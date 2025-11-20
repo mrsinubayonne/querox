@@ -53,25 +53,42 @@ const AdminRealTime: React.FC = () => {
     try {
       setLoading(true);
       
-      // Get last 20 orders
+      // Get last 20 orders with outlet information
       const { data: orders, error } = await supabase
         .from('orders')
-        .select('id, customer_name, total_amount, status, created_at, user_id')
+        .select(`
+          id, 
+          customer_name, 
+          total_amount, 
+          status, 
+          created_at, 
+          user_id,
+          outlet_id,
+          outlets (
+            name
+          )
+        `)
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (error) throw error;
 
+      // Map orders with outlet name
+      const ordersWithOutletName = orders?.map(order => ({
+        ...order,
+        restaurant_name: (order as any).outlets?.name || 'PDV inconnu'
+      })) || [];
+
       // Calculate live revenue
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const todayRevenue = orders
-        ?.filter(o => new Date(o.created_at) >= today)
-        .reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0;
+      const todayRevenue = ordersWithOutletName
+        .filter(o => new Date(o.created_at) >= today)
+        .reduce((sum, o) => sum + (o.total_amount || 0), 0);
 
       setLiveRevenue(todayRevenue);
-      setRecentOrders(orders || []);
+      setRecentOrders(ordersWithOutletName);
     } catch (error: any) {
       toast.error('Erreur lors du chargement des données temps réel');
       console.error(error);
@@ -196,10 +213,16 @@ const AdminRealTime: React.FC = () => {
                 ) : (
                   recentOrders.map((order) => (
                     <div key={order.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border animate-fade-in">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 flex-1">
                         <div className={`w-2 h-2 rounded-full ${getStatusColor(order.status)}`}></div>
-                        <div>
-                          <p className="font-semibold">{order.customer_name}</p>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold">{order.customer_name}</p>
+                            <Badge variant="secondary" className="text-xs">
+                              <Building2 className="w-3 h-3 mr-1" />
+                              {order.restaurant_name}
+                            </Badge>
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             {new Date(order.created_at).toLocaleTimeString('fr-FR')}
                           </p>

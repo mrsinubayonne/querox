@@ -247,11 +247,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       path: '/admin/restaurants'
     },
     {
-      icon: TrendingUp,
-      label: 'Revenus & Finances',
-      path: '/admin/revenues'
-    },
-    {
       icon: BarChart3,
       label: 'Activité Temps Réel',
       path: '/admin/real-time'
@@ -260,11 +255,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       icon: Shield,
       label: 'Alertes Globales',
       path: '/admin/alerts'
-    },
-    {
-      icon: LifeBuoy,
-      label: 'Support & Réclamations',
-      path: '/admin/support'
     },
     {
       icon: Settings,
