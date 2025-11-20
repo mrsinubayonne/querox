@@ -311,8 +311,8 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
         </button>
       </div>
 
-      {/* Profile Selector */}
-      {profiles.length > 0 && (
+      {/* Profile Selector - Hidden for admins */}
+      {!isAdmin && profiles.length > 0 && (
         <div className={`p-3 border-b border-gray-200 ${collapsed ? 'flex justify-center' : ''}`}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -372,8 +372,8 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
         </div>
       )}
 
-      {/* Outlet Selector */}
-      {outlets.length > 0 && (
+      {/* Outlet Selector - Hidden for admins */}
+      {!isAdmin && outlets.length > 0 && (
         <div className={`p-3 border-b border-gray-200 ${collapsed ? 'flex justify-center' : ''}`}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
