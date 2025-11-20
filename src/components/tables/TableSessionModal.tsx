@@ -186,6 +186,12 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     }
   };
 
+  const handleOpenInvoiceSettings = () => {
+    // Fermer la modale puis ouvrir directement l'onglet paramètres de facturation
+    onClose();
+    navigate("/parametres?tab=invoices");
+  };
+
   const handleAddOrder = () => {
     setShowQuickAddModal(true);
   };
@@ -460,9 +466,15 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
             </>
           )}
 
+          <Button variant="ghost" onClick={handleOpenInvoiceSettings}>
+            <FileText className="h-4 w-4 mr-2" />
+            Paramètres factures
+          </Button>
+
           <Button variant="outline" onClick={onClose}>
             Fermer
           </Button>
+
         </DialogFooter>
       </DialogContent>
       <QuickAddOrderToSessionModal
