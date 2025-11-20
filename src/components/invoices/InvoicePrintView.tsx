@@ -117,10 +117,10 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
   useEffect(() => {
     if (dataLoaded) {
       console.log('✅ Data loaded, triggering print...');
-      // Attendre plus longtemps pour que le rendu et les images soient complètement chargés
+      // Attendre un peu pour que le rendu soit complet
       const timer = setTimeout(() => {
         window.print();
-      }, 1500);
+      }, 300);
 
       return () => clearTimeout(timer);
     }
