@@ -107,12 +107,11 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
 
       const allTransactions: DetailedTransaction[] = [];
 
-      // Fetch orders - STRICTEMENT pour ce PDV et SEULEMENT les commandes delivered/completed
+      // Fetch orders - TOUTES les commandes pour obtenir toutes les ventes
       let ordersQuery = supabase
         .from('orders')
         .select('*')
         .eq('user_id', user.id)
-        .in('status', ['delivered', 'completed'])
         .gte('created_at', startISO)
         .lte('created_at', endISO)
         .order('created_at', { ascending: false });
@@ -142,12 +141,11 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         });
       });
 
-      // Fetch invoices - STRICTEMENT pour ce PDV et SEULEMENT les factures payées
+      // Fetch invoices - TOUTES les factures pour obtenir toutes les ventes
       let invoicesQuery = supabase
         .from('invoices')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'paid')
         .gte('created_at', startISO)
         .lte('created_at', endISO)
         .order('created_at', { ascending: false });
