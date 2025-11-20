@@ -186,6 +186,15 @@ const SuperAdminDashboard: React.FC = () => {
 
             {/* Right: Status Indicators */}
             <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.href = '/admin/old-dashboard'}
+                className="text-slate-400 hover:text-white border-slate-700 hover:bg-slate-800"
+              >
+                <SettingsIcon className="w-4 h-4 mr-2" />
+                Admin Classique
+              </Button>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 rounded-lg border border-green-500/30">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                 <span className="text-xs font-medium text-green-400">Système en ligne</span>
