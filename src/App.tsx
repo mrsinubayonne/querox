@@ -41,7 +41,6 @@ import Consulting from '@/pages/Consulting';
 // Admin pages
 import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminDashboard from '@/pages/AdminDashboard';
-import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import AdminRoles from '@/pages/AdminRoles';
 import AdminAccessCodes from '@/pages/AdminAccessCodes';
 
@@ -113,9 +112,7 @@ function App() {
               <Route path="/consulting" element={<ProtectedRoute><Consulting /></ProtectedRoute>} />
 
               {/* Routes Admin */}
-              <Route path="/admin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
-              <Route path="/admin/dashboard" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
-              <Route path="/admin/old-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
               <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
               <Route path="/admin/access-codes" element={<ProtectedRoute><AdminAccessCodes /></ProtectedRoute>} />
