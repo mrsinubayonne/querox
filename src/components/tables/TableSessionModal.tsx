@@ -187,9 +187,9 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   };
 
   const handleOpenInvoiceSettings = () => {
-    // Fermer la modale puis ouvrir directement l'onglet paramètres de facturation
+    // Fermer la modale puis ouvrir directement l'onglet paramètres des tables
     onClose();
-    navigate("/parametres?tab=invoices");
+    navigate("/parametres?tab=tables");
   };
 
   const handleAddOrder = () => {

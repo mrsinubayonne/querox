@@ -12,7 +12,8 @@ import {
   Database,
   FileText,
   UserCog,
-  Store
+  Store,
+  Table
 } from "lucide-react";
 import ProfileTab from "@/components/ProfileTab";
 import { NotificationsTab } from "@/components/NotificationsTab";
@@ -22,6 +23,7 @@ import { DataTab } from "@/components/DataTab";
 import { InvoiceSettingsTab } from "@/components/InvoiceSettingsTab";
 import { UserProfilesTab } from "@/components/UserProfilesTab";
 import { OutletSettingsTab } from "@/components/OutletSettingsTab";
+import { TableInvoiceSettingsTab } from "@/components/TableInvoiceSettingsTab";
 
 const Parametres = () => {
   const [searchParams] = useSearchParams();
@@ -54,7 +56,7 @@ const Parametres = () => {
       
       <main className="container max-w-4xl py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-3xl mx-auto">
-          <TabsList className="mb-8 grid grid-cols-8 w-full mx-auto">
+          <TabsList className="mb-8 grid grid-cols-9 w-full mx-auto">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profil
@@ -66,6 +68,10 @@ const Parametres = () => {
             <TabsTrigger value="invoices" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Factures
+            </TabsTrigger>
+            <TabsTrigger value="tables" className="flex items-center gap-2">
+              <Table className="h-4 w-4" />
+              Tables
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -88,7 +94,7 @@ const Parametres = () => {
               Données
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="profile" className="space-y-6">
             <ProfileTab />
           </TabsContent>
