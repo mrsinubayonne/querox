@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import QuickAddOrderToSessionModal from "./QuickAddOrderToSessionModal";
 import InvoicePrintView from "@/components/invoices/InvoicePrintView";
 import { Invoice } from "@/hooks/useInvoices";
+import { usePaidCelebration } from "@/hooks/usePaidCelebration";
 interface Order {
   id: string;
   customer_name: string;
@@ -47,6 +48,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [servedBy, setServedBy] = useState("");
   const [invoiceToPrint, setInvoiceToPrint] = useState<Invoice | null>(null);
+  const { celebrate, CelebrationMessage } = usePaidCelebration();
   const navigate = useNavigate();
   const {
     user
@@ -361,7 +363,10 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                 Imprimer
               </Button>
               
-              <Button onClick={onMarkAsPaid}>
+              <Button onClick={() => {
+                celebrate();
+                onMarkAsPaid();
+              }}>
                 Marquer comme Payée
               </Button>
             </>}
@@ -410,5 +415,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
       {/* Invoice Print View */}
       {invoiceToPrint && !showPrintDialog && <InvoicePrintView invoice={invoiceToPrint} servedBy={servedBy || undefined} />}
+      
+      <CelebrationMessage />
     </Dialog>;
 };
