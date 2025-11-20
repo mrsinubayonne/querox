@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProfile } from './useProfile';
 import { useToast } from './use-toast';
 
 export interface InvoiceSettings {
@@ -24,27 +23,62 @@ export interface InvoiceSettings {
 
 export const useInvoiceSettings = () => {
   const { user } = useAuth();
-  const { profile } = useProfile();
   const { toast } = useToast();
   const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
+
+  const getSelectedOutletId = async () => {
+    if (!user) return null;
+
+    const selectedProfileId = localStorage.getItem('selectedProfileId');
+    let outletId: string | null = null;
+
+    if (selectedProfileId) {
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('selected_outlet_id')
+        .eq('id', selectedProfileId)
+        .maybeSingle();
+      outletId = userProfile?.selected_outlet_id ?? null;
+    } else {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('selected_outlet_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      outletId = profile?.selected_outlet_id ?? null;
+    }
+
+    setSelectedOutletId(outletId);
+    return outletId;
+  };
 
   const fetchSettings = async () => {
-    if (!user || !profile?.selected_outlet_id) {
+    if (!user) {
       setLoading(false);
       return;
     }
 
     try {
+      const outletId = await getSelectedOutletId();
+      
+      if (!outletId) {
+        console.log('No outlet selected');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('invoice_settings')
         .select('*')
         .eq('user_id', user.id)
-        .eq('outlet_id', profile.selected_outlet_id)
+        .eq('outlet_id', outletId)
         .maybeSingle();
 
       if (error) throw error;
 
+      console.log('Invoice settings loaded:', data);
       setSettings(data);
     } catch (error: any) {
       console.error('Error fetching invoice settings:', error);
@@ -59,19 +93,43 @@ export const useInvoiceSettings = () => {
   };
 
   const updateSettings = async (updates: Partial<InvoiceSettings>) => {
-    if (!user || !profile?.selected_outlet_id) return;
+    if (!user) {
+      toast({
+        title: 'Erreur',
+        description: 'Vous devez être connecté',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    const outletId = selectedOutletId || await getSelectedOutletId();
+    
+    if (!outletId) {
+      toast({
+        title: 'Erreur',
+        description: 'Aucun point de vente sélectionné',
+        variant: 'destructive',
+      });
+      return false;
+    }
 
     try {
+      console.log('Updating settings with outlet_id:', outletId);
+      
       if (settings?.id) {
         // Update existing settings
         const { data, error } = await supabase
           .from('invoice_settings')
-          .update(updates)
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', settings.id)
           .select()
           .single();
 
         if (error) throw error;
+        console.log('Settings updated:', data);
         setSettings(data);
       } else {
         // Create new settings
@@ -79,13 +137,14 @@ export const useInvoiceSettings = () => {
           .from('invoice_settings')
           .insert({
             user_id: user.id,
-            outlet_id: profile.selected_outlet_id,
+            outlet_id: outletId,
             ...updates,
           })
           .select()
           .single();
 
         if (error) throw error;
+        console.log('Settings created:', data);
         setSettings(data);
       }
 
@@ -94,15 +153,12 @@ export const useInvoiceSettings = () => {
         description: 'Paramètres de facturation mis à jour',
       });
 
-      // Force refetch to ensure latest data
-      await fetchSettings();
-      
       return true;
     } catch (error: any) {
       console.error('Error updating invoice settings:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de mettre à jour les paramètres',
+        description: error.message || 'Impossible de mettre à jour les paramètres',
         variant: 'destructive',
       });
       return false;
@@ -111,7 +167,7 @@ export const useInvoiceSettings = () => {
 
   useEffect(() => {
     fetchSettings();
-  }, [user, profile?.selected_outlet_id]);
+  }, [user]);
 
   return {
     settings,
