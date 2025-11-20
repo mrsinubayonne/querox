@@ -11,7 +11,8 @@ import {
   Globe,
   Database,
   FileText,
-  UserCog
+  UserCog,
+  Store
 } from "lucide-react";
 import ProfileTab from "@/components/ProfileTab";
 import { NotificationsTab } from "@/components/NotificationsTab";
@@ -20,6 +21,7 @@ import DomainTab from "@/components/DomainTab";
 import { DataTab } from "@/components/DataTab";
 import { InvoiceSettingsTab } from "@/components/InvoiceSettingsTab";
 import { UserProfilesTab } from "@/components/UserProfilesTab";
+import { OutletSettingsTab } from "@/components/OutletSettingsTab";
 
 const Parametres = () => {
   const [searchParams] = useSearchParams();
@@ -57,10 +59,14 @@ const Parametres = () => {
       
       <main className="container max-w-4xl py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-3xl mx-auto">
-          <TabsList className="mb-8 grid grid-cols-7 w-full mx-auto">
+          <TabsList className="mb-8 grid grid-cols-8 w-full mx-auto">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profil
+            </TabsTrigger>
+            <TabsTrigger value="outlet" className="flex items-center gap-2">
+              <Store className="h-4 w-4" />
+              PDV
             </TabsTrigger>
             <TabsTrigger value="invoices" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -90,6 +96,10 @@ const Parametres = () => {
           
           <TabsContent value="profile" className="space-y-6">
             <ProfileTab />
+          </TabsContent>
+
+          <TabsContent value="outlet" className="space-y-6">
+            <OutletSettingsTab />
           </TabsContent>
 
           <TabsContent value="invoices" className="space-y-6">
