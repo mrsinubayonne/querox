@@ -428,48 +428,52 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-2">
-        {filteredMenuItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-            <item.icon size={20} className="flex-shrink-0" />
-            {!collapsed && <span className="ml-3">{item.label}</span>}
-          </button>)}
+        {!isAdmin && (
+          <>
+            {filteredMenuItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+                <item.icon size={20} className="flex-shrink-0" />
+                {!collapsed && <span className="ml-3">{item.label}</span>}
+              </button>)}
 
-        {/* Marketing Section */}
-        <div className="pt-2">
-          <button onClick={toggleMarketingExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isMarketingSection ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-            <TrendingUp size={20} className="flex-shrink-0" />
-            {!collapsed && <>
-                <span className="ml-3 flex-1">Marketing</span>
-                <ChevronRight size={16} className={`transition-transform ${marketingExpanded ? 'rotate-90' : ''}`} />
-              </>}
-          </button>
+            {/* Marketing Section */}
+            <div className="pt-2">
+              <button onClick={toggleMarketingExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isMarketingSection ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+                <TrendingUp size={20} className="flex-shrink-0" />
+                {!collapsed && <>
+                    <span className="ml-3 flex-1">Marketing</span>
+                    <ChevronRight size={16} className={`transition-transform ${marketingExpanded ? 'rotate-90' : ''}`} />
+                  </>}
+              </button>
 
-          {/* Marketing Submenu */}
-          {marketingExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
-              {marketingItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                  <item.icon size={16} className="flex-shrink-0" />
-                  <span className="ml-3">{item.label}</span>
-                </button>)}
-            </div>}
-        </div>
+              {/* Marketing Submenu */}
+              {marketingExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
+                  {marketingItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
+                      <item.icon size={16} className="flex-shrink-0" />
+                      <span className="ml-3">{item.label}</span>
+                    </button>)}
+                </div>}
+            </div>
 
-        {/* Services Section */}
-        <div className="pt-2">
-          <button onClick={toggleServicesExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isServicesSection ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-            <Headphones size={20} className="flex-shrink-0" />
-            {!collapsed && <>
-                <span className="ml-3 flex-1">Services</span>
-                <ChevronRight size={16} className={`transition-transform ${servicesExpanded ? 'rotate-90' : ''}`} />
-              </>}
-          </button>
+            {/* Services Section */}
+            <div className="pt-2">
+              <button onClick={toggleServicesExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isServicesSection ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+                <Headphones size={20} className="flex-shrink-0" />
+                {!collapsed && <>
+                    <span className="ml-3 flex-1">Services</span>
+                    <ChevronRight size={16} className={`transition-transform ${servicesExpanded ? 'rotate-90' : ''}`} />
+                  </>}
+              </button>
 
-          {/* Services Submenu */}
-          {servicesExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
-              {servicesItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                  <item.icon size={16} className="flex-shrink-0" />
-                  <span className="ml-3">{item.label}</span>
-                </button>)}
-            </div>}
-        </div>
+              {/* Services Submenu */}
+              {servicesExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
+                  {servicesItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
+                      <item.icon size={16} className="flex-shrink-0" />
+                      <span className="ml-3">{item.label}</span>
+                    </button>)}
+                </div>}
+            </div>
+          </>
+        )}
 
         {/* Admin Section - Only visible to admins */}
         {isAdmin && (
@@ -494,55 +498,73 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       </nav>
 
       {/* Bottom Navigation */}
-      <div className="border-t border-gray-200 px-2 py-4 space-y-2">
-        {/* Profile Info */}
-        {profileSession && (
-          <div className={`px-3 py-2 mb-2 rounded-lg bg-purple-50 border border-purple-200 ${collapsed ? 'hidden' : ''}`}>
-            <div className="flex items-center gap-2 mb-1">
-              <UserCircle size={16} className="text-purple-600" />
-              <span className="text-xs font-semibold text-purple-900">{profileSession.profileName}</span>
+      {!isAdmin && (
+        <div className="border-t border-gray-200 px-2 py-4 space-y-2">
+          {/* Profile Info */}
+          {profileSession && (
+            <div className={`px-3 py-2 mb-2 rounded-lg bg-purple-50 border border-purple-200 ${collapsed ? 'hidden' : ''}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <UserCircle size={16} className="text-purple-600" />
+                <span className="text-xs font-semibold text-purple-900">{profileSession.profileName}</span>
+              </div>
+              <p className="text-xs text-purple-600 capitalize">{profileSession.role}</p>
+              <p className="text-xs text-purple-500">{profileSession.outletName}</p>
             </div>
-            <p className="text-xs text-purple-600 capitalize">{profileSession.role}</p>
-            <p className="text-xs text-purple-500">{profileSession.outletName}</p>
-          </div>
-        )}
+          )}
 
-        {bottomMenuItems.map(item => (
-          <button 
-            key={item.path} 
-            onClick={() => handleNavigation(item.path)} 
-            className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
-              isActive(item.path) 
-                ? 'bg-blue-100 text-blue-700 font-medium' 
-                : 'text-gray-700 hover:bg-gray-100'
-            }`}
+          {bottomMenuItems.map(item => (
+            <button 
+              key={item.path} 
+              onClick={() => handleNavigation(item.path)} 
+              className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
+                isActive(item.path) 
+                  ? 'bg-blue-100 text-blue-700 font-medium' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <item.icon size={20} className="flex-shrink-0" />
+              {!collapsed && <span className="ml-3">{item.label}</span>}
+            </button>
+          ))}
+
+          {/* Logout/Close Session Button */}
+          <button
+            onClick={() => {
+              if (isProfileAuthenticated()) {
+                profileLogout();
+                navigate('/profile-login');
+              } else {
+                signOut();
+                navigate('/auth');
+              }
+            }}
+            className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50"
           >
-            <item.icon size={20} className="flex-shrink-0" />
-            {!collapsed && <span className="ml-3">{item.label}</span>}
+            <LogOut size={20} className="flex-shrink-0" />
+            {!collapsed && (
+              <span className="ml-3">
+                {selectedProfile?.title === 'Admin' ? 'Déconnexion' : 'Fermer la session'}
+              </span>
+            )}
           </button>
-        ))}
-
-        {/* Logout/Close Session Button */}
-        <button
-          onClick={() => {
-            if (isProfileAuthenticated()) {
-              profileLogout();
-              navigate('/profile-login');
-            } else {
+        </div>
+      )}
+      
+      {/* Admin Logout Button */}
+      {isAdmin && (
+        <div className="border-t border-gray-200 px-2 py-4">
+          <button
+            onClick={() => {
               signOut();
               navigate('/auth');
-            }
-          }}
-          className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50"
-        >
-          <LogOut size={20} className="flex-shrink-0" />
-          {!collapsed && (
-            <span className="ml-3">
-              {selectedProfile?.title === 'Admin' ? 'Déconnexion' : 'Fermer la session'}
-            </span>
-          )}
-        </button>
-      </div>
+            }}
+            className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50"
+          >
+            <LogOut size={20} className="flex-shrink-0" />
+            {!collapsed && <span className="ml-3">Déconnexion</span>}
+          </button>
+        </div>
+      )}
 
       {/* Access Code Dialog */}
       <AlertDialog open={isAccessCodeDialogOpen} onOpenChange={setIsAccessCodeDialogOpen}>
