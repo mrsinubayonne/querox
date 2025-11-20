@@ -13,10 +13,16 @@ import {
   BarChart2,
   Globe,
   QrCode,
-  MessageSquare
+  MessageSquare,
+  ShoppingBag,
+  TrendingUp,
+  Receipt
 } from 'lucide-react';
 import ModernSidebar from '@/components/ModernSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
+import ModernStatCard from '@/components/ModernStatCard';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useState } from 'react';
 
 const Dashboard: React.FC = () => {
@@ -24,6 +30,7 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { stats, loading } = useDashboardStats();
 
   // Display name logic
   const displayName = user?.user_metadata?.full_name || user?.email;
@@ -125,10 +132,74 @@ const Dashboard: React.FC = () => {
                 Bienvenue sur QUEROX, {displayName}!
               </h1>
               <p className="text-gray-600 mt-2">
-                Voici votre tableau de bord. Cliquez sur une fonctionnalité pour commencer à configurer votre restaurant.
+                Voici votre tableau de bord. Statistiques en temps réel de vos activités du jour.
               </p>
             </div>
 
+            {/* Stats du jour */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Statistiques du Jour</h2>
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-32" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <ModernStatCard
+                    title="Ventes Totales"
+                    value={`${stats.totalRevenue.toFixed(2)} FCFA`}
+                    icon={<DollarSign className="h-5 w-5" />}
+                    color="green"
+                    trend="up"
+                    change={{
+                      value: `${stats.totalOrders} commandes`,
+                      label: "aujourd'hui",
+                      isPositive: true
+                    }}
+                  />
+                  <ModernStatCard
+                    title="Plats Vendus"
+                    value={stats.totalDishes}
+                    icon={<ShoppingBag className="h-5 w-5" />}
+                    color="blue"
+                    trend="neutral"
+                    change={{
+                      value: `${stats.totalOrders} commandes`,
+                      label: "au total",
+                      isPositive: true
+                    }}
+                  />
+                  <ModernStatCard
+                    title="Factures Payées"
+                    value={stats.paidInvoices}
+                    icon={<Receipt className="h-5 w-5" />}
+                    color="purple"
+                    trend="up"
+                    change={{
+                      value: `${stats.unpaidInvoices} impayées`,
+                      label: "en attente",
+                      isPositive: false
+                    }}
+                  />
+                  <ModernStatCard
+                    title="Clients du Jour"
+                    value={stats.totalCustomers}
+                    icon={<Users className="h-5 w-5" />}
+                    color="orange"
+                    trend="up"
+                    change={{
+                      value: `${stats.averageOrderValue.toFixed(2)} FCFA`,
+                      label: "panier moyen",
+                      isPositive: true
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Accès Rapide</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {quickActions.map((action, index) => (
                 <Link key={index} to={action.link}>
