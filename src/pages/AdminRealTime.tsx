@@ -16,7 +16,11 @@ interface RealtimeOrder {
   status: string;
   created_at: string;
   user_id?: string;
+  outlet_id?: string;
   restaurant_name?: string;
+  restaurant_address?: string;
+  table_number?: string;
+  order_type?: string;
 }
 
 const AdminRealTime: React.FC = () => {
@@ -25,6 +29,7 @@ const AdminRealTime: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [recentOrders, setRecentOrders] = useState<RealtimeOrder[]>([]);
   const [liveRevenue, setLiveRevenue] = useState(0);
+  const [activeRestaurants, setActiveRestaurants] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,7 +58,7 @@ const AdminRealTime: React.FC = () => {
     try {
       setLoading(true);
       
-      // Get last 20 orders with outlet information
+      // Get last 50 orders with outlet information
       const { data: orders, error } = await supabase
         .from('orders')
         .select(`
@@ -64,31 +69,45 @@ const AdminRealTime: React.FC = () => {
           created_at, 
           user_id,
           outlet_id,
+          table_number,
+          order_type,
           outlets (
-            name
+            name,
+            address
           )
         `)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50);
 
       if (error) throw error;
 
-      // Map orders with outlet name
-      const ordersWithOutletName = orders?.map(order => ({
+      // Map orders with outlet name and address
+      const ordersWithOutletInfo = orders?.map(order => ({
         ...order,
-        restaurant_name: (order as any).outlets?.name || 'PDV inconnu'
+        restaurant_name: (order as any).outlets?.name || 'PDV inconnu',
+        restaurant_address: (order as any).outlets?.address || ''
       })) || [];
 
-      // Calculate live revenue
+      // Calculate live revenue (today)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const todayRevenue = ordersWithOutletName
+      const todayRevenue = ordersWithOutletInfo
         .filter(o => new Date(o.created_at) >= today)
         .reduce((sum, o) => sum + (o.total_amount || 0), 0);
 
       setLiveRevenue(todayRevenue);
-      setRecentOrders(ordersWithOutletName);
+
+      // Count active restaurants (with orders today)
+      const { data: todayOrders } = await supabase
+        .from('orders')
+        .select('outlet_id')
+        .gte('created_at', today.toISOString());
+
+      const uniqueOutlets = new Set(todayOrders?.map(o => o.outlet_id).filter(Boolean));
+      setActiveRestaurants(uniqueOutlets.size);
+
+      setRecentOrders(ordersWithOutletInfo);
     } catch (error: any) {
       toast.error('Erreur lors du chargement des données temps réel');
       console.error(error);
@@ -184,13 +203,13 @@ const AdminRealTime: React.FC = () => {
             <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Restaurants actifs</span>
+                  <span className="text-sm font-medium text-muted-foreground">PDV actifs aujourd'hui</span>
                   <Building2 className="w-5 h-5 text-purple-500" />
                 </div>
                 <div className="text-3xl font-bold">
-                  {new Set(recentOrders.map(o => o.user_id)).size}
+                  {activeRestaurants}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">ont des commandes</p>
+                <p className="text-xs text-muted-foreground mt-1">points de vente avec commandes</p>
               </CardContent>
             </Card>
           </div>
@@ -212,24 +231,37 @@ const AdminRealTime: React.FC = () => {
                   </div>
                 ) : (
                   recentOrders.map((order) => (
-                    <div key={order.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border animate-fade-in">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className={`w-2 h-2 rounded-full ${getStatusColor(order.status)}`}></div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                    <div key={order.id} className="flex items-start justify-between p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/40 transition-colors">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className={`w-2 h-2 rounded-full mt-2 ${getStatusColor(order.status)}`}></div>
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold">{order.customer_name}</p>
-                            <Badge variant="secondary" className="text-xs">
-                              <Building2 className="w-3 h-3 mr-1" />
+                            <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                              <Building2 className="w-3 h-3" />
                               {order.restaurant_name}
                             </Badge>
+                            {order.table_number && (
+                              <Badge variant="outline" className="text-xs">
+                                Table {order.table_number}
+                              </Badge>
+                            )}
+                            {order.order_type && (
+                              <Badge variant="outline" className="text-xs capitalize">
+                                {order.order_type}
+                              </Badge>
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(order.created_at).toLocaleTimeString('fr-FR')}
+                          {order.restaurant_address && (
+                            <p className="text-xs text-muted-foreground">{order.restaurant_address}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(order.created_at).toLocaleString('fr-FR')}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold">{order.total_amount.toLocaleString('fr-FR')} FCFA</p>
+                      <div className="text-right space-y-1">
+                        <p className="font-bold text-lg">{order.total_amount.toLocaleString('fr-FR')} FCFA</p>
                         <Badge variant="outline" className="capitalize text-xs">
                           {order.status}
                         </Badge>
