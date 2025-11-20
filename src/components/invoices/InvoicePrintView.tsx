@@ -27,7 +27,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         user_id: invoice.user_id
       });
 
-      // Récupérer les infos du point de vente (toujours nécessaire)
+      // Récupérer les infos du point de vente si disponible
       if (invoice.outlet_id) {
         const { data: outletData, error: outletError } = await supabase
           .from('outlets')
@@ -37,49 +37,59 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
         
         console.log('📍 Outlet data:', outletData, 'Error:', outletError);
         setOutlet(outletData);
+      }
 
-        // Récupérer les paramètres de facturation avec fallback en cascade
-        // 1. D'abord essayer avec outlet_id spécifique
-        let { data: settingsData, error: settingsError } = await supabase
+      // Récupérer les paramètres de facturation avec fallback en cascade
+      // 1. D'abord essayer avec outlet_id spécifique (si disponible)
+      let settingsData = null;
+      let settingsError = null;
+
+      if (invoice.outlet_id) {
+        const result = await supabase
           .from('invoice_settings')
           .select('*')
           .eq('user_id', invoice.user_id)
           .eq('outlet_id', invoice.outlet_id)
           .maybeSingle();
         
-        // 2. Si pas trouvé avec outlet_id, essayer les paramètres globaux
-        if (!settingsData) {
-          console.log('⚠️ No outlet-specific settings, trying global settings...');
-          const globalResult = await supabase
-            .from('invoice_settings')
-            .select('*')
-            .eq('user_id', invoice.user_id)
-            .is('outlet_id', null)
-            .maybeSingle();
-          
-          settingsData = globalResult.data;
-          settingsError = globalResult.error;
-        }
-        
-        // 3. Si toujours pas trouvé, prendre n'importe quels settings de l'utilisateur
-        if (!settingsData) {
-          console.log('⚠️ No global settings, trying any user settings...');
-          const anyResult = await supabase
-            .from('invoice_settings')
-            .select('*')
-            .eq('user_id', invoice.user_id)
-            .limit(1)
-            .maybeSingle();
-          
-          settingsData = anyResult.data;
-          settingsError = anyResult.error;
-        }
-        
-        console.log('⚙️ Settings data:', settingsData, 'Error:', settingsError);
-        setSettings(settingsData);
-      } else {
-        console.warn('⚠️ No outlet_id found on invoice');
+        settingsData = result.data;
+        settingsError = result.error;
+        console.log('🔍 Trying outlet-specific settings:', settingsData);
       }
+      
+      // 2. Si pas trouvé avec outlet_id, essayer les paramètres globaux
+      if (!settingsData) {
+        console.log('⚠️ No outlet-specific settings, trying global settings...');
+        const globalResult = await supabase
+          .from('invoice_settings')
+          .select('*')
+          .eq('user_id', invoice.user_id)
+          .is('outlet_id', null)
+          .maybeSingle();
+        
+        settingsData = globalResult.data;
+        settingsError = globalResult.error;
+        console.log('🔍 Global settings result:', settingsData);
+      }
+      
+      // 3. Si toujours pas trouvé, prendre n'importe quels settings de l'utilisateur
+      if (!settingsData) {
+        console.log('⚠️ No global settings, trying any user settings...');
+        const anyResult = await supabase
+          .from('invoice_settings')
+          .select('*')
+          .eq('user_id', invoice.user_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        settingsData = anyResult.data;
+        settingsError = anyResult.error;
+        console.log('🔍 Any user settings result:', settingsData);
+      }
+      
+      console.log('⚙️ Final settings data:', settingsData, 'Error:', settingsError);
+      setSettings(settingsData);
       
       // Marquer les données comme chargées
       setDataLoaded(true);
