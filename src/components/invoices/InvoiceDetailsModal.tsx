@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { usePaidCelebration } from '@/hooks/usePaidCelebration';
 
 interface InvoiceDetailsModalProps {
   invoice: Invoice | null;
@@ -35,6 +36,7 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   const [isPrinting, setIsPrinting] = useState(false);
   const [showServerDialog, setShowServerDialog] = useState(false);
   const [servedBy, setServedBy] = useState('');
+  const { celebrate, CelebrationMessage } = usePaidCelebration();
 
   if (!invoice) return null;
 
@@ -158,6 +160,7 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
             {invoice.status === 'unpaid' && (
               <Button
                 onClick={() => {
+                  celebrate();
                   onMarkAsPaid(invoice.id);
                   onOpenChange(false);
                 }}
@@ -203,6 +206,8 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CelebrationMessage />
     </Dialog>
   );
 };
