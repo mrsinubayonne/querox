@@ -6,7 +6,7 @@ export const usePaidCelebration = () => {
 
   const celebrate = () => {
     // Lancer les confetti
-    const duration = 3000;
+    const duration = 4000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
 
@@ -42,7 +42,7 @@ export const usePaidCelebration = () => {
 
     // Afficher le message
     setShowMessage(true);
-    setTimeout(() => setShowMessage(false), 3500);
+    setTimeout(() => setShowMessage(false), 4000);
   };
 
   const CelebrationMessage = () => {
@@ -50,17 +50,17 @@ export const usePaidCelebration = () => {
 
     return (
       <div className="fixed inset-0 z-[9998] flex items-center justify-center pointer-events-none animate-in fade-in duration-300">
-        <div className="bg-gradient-to-br from-primary via-primary to-accent p-8 rounded-3xl shadow-2xl animate-in zoom-in-50 duration-300 text-white text-center max-w-md mx-4 border-4 border-white/20">
-          <div className="text-7xl mb-4 animate-bounce">
+        <div className="bg-gradient-to-br from-primary via-primary to-accent p-12 rounded-3xl shadow-2xl animate-in zoom-in-50 duration-300 text-white text-center max-w-2xl mx-4 border-4 border-white/20">
+          <div className="text-8xl mb-6 animate-bounce">
             🎉
           </div>
-          <h2 className="text-4xl font-bold mb-3 drop-shadow-lg">
+          <h2 className="text-6xl font-bold mb-4 drop-shadow-lg">
             Félicitations ! 🎊
           </h2>
-          <p className="text-2xl font-semibold leading-relaxed drop-shadow-md">
+          <p className="text-4xl font-semibold leading-relaxed drop-shadow-md">
             Querox vous félicite pour cette vente
           </p>
-          <div className="mt-4 flex justify-center gap-2 text-4xl animate-pulse">
+          <div className="mt-6 flex justify-center gap-3 text-5xl animate-pulse">
             ✨ 💪 ✨
           </div>
         </div>
