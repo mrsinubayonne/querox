@@ -43,6 +43,14 @@ import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AdminRoles from '@/pages/AdminRoles';
 import AdminAccessCodes from '@/pages/AdminAccessCodes';
+import AdminRestaurants from '@/pages/AdminRestaurants';
+import AdminRevenues from '@/pages/AdminRevenues';
+import AdminRealTime from '@/pages/AdminRealTime';
+import AdminAlerts from '@/pages/AdminAlerts';
+import AdminSupport from '@/pages/AdminSupport';
+import AdminGlobalControl from '@/pages/AdminGlobalControl';
+import AdminSystemSettings from '@/pages/AdminSystemSettings';
+import AdminMultiCountry from '@/pages/AdminMultiCountry';
 
 // Partner pages
 import PartnerSignup from '@/pages/PartnerSignup';
@@ -113,6 +121,14 @@ function App() {
 
               {/* Routes Admin */}
               <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/restaurants" element={<ProtectedRoute><AdminRestaurants /></ProtectedRoute>} />
+              <Route path="/admin/revenues" element={<ProtectedRoute><AdminRevenues /></ProtectedRoute>} />
+              <Route path="/admin/real-time" element={<ProtectedRoute><AdminRealTime /></ProtectedRoute>} />
+              <Route path="/admin/alerts" element={<ProtectedRoute><AdminAlerts /></ProtectedRoute>} />
+              <Route path="/admin/support" element={<ProtectedRoute><AdminSupport /></ProtectedRoute>} />
+              <Route path="/admin/global-control" element={<ProtectedRoute><AdminGlobalControl /></ProtectedRoute>} />
+              <Route path="/admin/system-settings" element={<ProtectedRoute><AdminSystemSettings /></ProtectedRoute>} />
+              <Route path="/admin/multi-country" element={<ProtectedRoute><AdminMultiCountry /></ProtectedRoute>} />
               <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
               <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
               <Route path="/admin/access-codes" element={<ProtectedRoute><AdminAccessCodes /></ProtectedRoute>} />
