@@ -221,11 +221,12 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       const startISO = targetPeriod.started_at;
       const endISO = new Date().toISOString();
 
-      // Fetch orders for this period - STRICTEMENT pour ce PDV uniquement
+      // Fetch orders for this period - STRICTEMENT pour ce PDV uniquement et UNIQUEMENT les commandes payées
       let ordersQuery = supabase
         .from('orders')
-        .select('id, total_amount')
+        .select('id, total_amount, status')
         .eq('user_id', user.id)
+        .eq('status', 'completed')
         .gte('created_at', startISO)
         .lte('created_at', endISO);
 

@@ -141,11 +141,12 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         });
       });
 
-      // Fetch invoices - TOUTES les factures pour obtenir toutes les ventes
+      // Fetch invoices - UNIQUEMENT les factures payées
       let invoicesQuery = supabase
         .from('invoices')
         .select('*')
         .eq('user_id', user.id)
+        .eq('status', 'paid')
         .gte('created_at', startISO)
         .lte('created_at', endISO)
         .order('created_at', { ascending: false });
