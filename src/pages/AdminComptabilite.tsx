@@ -10,6 +10,8 @@ import UnauthorizedAccess from '@/components/admin/UnauthorizedAccess';
 import { Calculator, TrendingUp, TrendingDown, DollarSign, Receipt, Calendar, Users, Target, Activity, BarChart3, PieChart, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { AccountingCalculator } from '@/components/admin/AccountingCalculator';
+import { ManualAccountingEntries } from '@/components/admin/ManualAccountingEntries';
 
 interface FinancialStats {
   totalSubscriptionRevenue: number;
@@ -429,13 +431,22 @@ const AdminComptabilite: React.FC = () => {
             </Card>
           </div>
 
-          {/* Charts Section */}
-          <Tabs defaultValue="revenue" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="revenue">Évolution Revenus</TabsTrigger>
+          {/* Calculator & Manual Entries */}
+          <Tabs defaultValue="calculator" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="calculator">Calculateur</TabsTrigger>
+              <TabsTrigger value="manual">Entrées Manuelles</TabsTrigger>
+              <TabsTrigger value="revenue">Évolution</TabsTrigger>
               <TabsTrigger value="subscribers">Abonnés</TabsTrigger>
-              <TabsTrigger value="distribution">Distribution</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="calculator" className="space-y-4">
+              <AccountingCalculator />
+            </TabsContent>
+
+            <TabsContent value="manual" className="space-y-4">
+              <ManualAccountingEntries />
+            </TabsContent>
 
             <TabsContent value="revenue" className="space-y-4">
               <Card className="border-0 shadow-lg">
@@ -487,62 +498,70 @@ const AdminComptabilite: React.FC = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+          </Tabs>
+
+          {/* Distribution Charts */}
+          <Tabs defaultValue="distribution" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="distribution">Plans</TabsTrigger>
+              <TabsTrigger value="revenue-dist">Revenus</TabsTrigger>
+            </TabsList>
 
             <TabsContent value="distribution" className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Card className="border-0 shadow-lg">
-                  <CardHeader>
-                    <CardTitle>Répartition par Plan</CardTitle>
-                    <CardDescription>Nombre d'abonnés par tier</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <RechartsPie>
-                        <Pie
-                          data={tierDistribution}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, value }) => `${name}: ${value}`}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {tierDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </RechartsPie>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle>Répartition par Plan</CardTitle>
+                  <CardDescription>Nombre d'abonnés par tier</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RechartsPie>
+                      <Pie
+                        data={tierDistribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value }) => `${name}: ${value}`}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {tierDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </RechartsPie>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                <Card className="border-0 shadow-lg">
-                  <CardHeader>
-                    <CardTitle>Revenus par Plan</CardTitle>
-                    <CardDescription>Distribution du MRR</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={tierDistribution}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis dataKey="name" stroke="#6b7280" />
-                        <YAxis stroke="#6b7280" tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`} />
-                        <Tooltip 
-                          formatter={(value: number) => `${value.toLocaleString('fr-FR')} FCFA`}
-                          contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                        />
-                        <Bar dataKey="revenue" radius={[8, 8, 0, 0]}>
-                          {tierDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
+            <TabsContent value="revenue-dist" className="space-y-4">
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle>Revenus par Plan</CardTitle>
+                  <CardDescription>Distribution du MRR</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={tierDistribution}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="name" stroke="#6b7280" />
+                      <YAxis stroke="#6b7280" tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`} />
+                      <Tooltip 
+                        formatter={(value: number) => `${value.toLocaleString('fr-FR')} FCFA`}
+                        contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                      />
+                      <Bar dataKey="revenue" radius={[8, 8, 0, 0]}>
+                        {tierDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
 
