@@ -48,7 +48,7 @@ export const DetailedTransactionsTable: React.FC<DetailedTransactionsTableProps>
     );
   }
 
-  if (transactions.length === 0) {
+  if (transactions.filter(t => t.type === 'invoice' && t.status === 'paid').length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -80,7 +80,11 @@ export const DetailedTransactionsTable: React.FC<DetailedTransactionsTableProps>
     }
   };
 
-  const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const filteredTransactions = transactions.filter(
+    (t) => t.type === 'invoice' && t.status === 'paid'
+  );
+
+  const totalAmount = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <Card>
@@ -107,7 +111,7 @@ export const DetailedTransactionsTable: React.FC<DetailedTransactionsTableProps>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((transaction) => {
+              {filteredTransactions.map((transaction) => {
                 const isExpanded = expandedRows.has(transaction.id);
                 return (
                   <React.Fragment key={transaction.id}>
