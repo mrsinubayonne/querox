@@ -37,13 +37,35 @@ export const useTransactions = () => {
       
       // Fetch transactions for the selected outlet only
       // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
 
-      const outletId = profile?.selected_outlet_id;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id ?? null;
+      } else {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id ?? null;
+      }
+
+      // Fallback ancien profil si nécessaire
+      if (!outletId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('selected_outlet_id')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        outletId = profile?.selected_outlet_id ?? null;
+      }
 
       if (!outletId) {
         setTransactions([]);
@@ -101,13 +123,35 @@ export const useTransactions = () => {
 
     try {
       // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      const outletId = profile?.selected_outlet_id;
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id ?? null;
+      } else {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id ?? null;
+      }
+
+      if (!outletId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('selected_outlet_id')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        outletId = profile?.selected_outlet_id ?? null;
+      }
+
       if (!outletId) {
         toast({
           title: "Erreur",
