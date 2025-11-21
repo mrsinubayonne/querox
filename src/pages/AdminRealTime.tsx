@@ -23,6 +23,15 @@ interface RealtimeOrder {
   order_type?: string;
 }
 
+interface OutletDailySales {
+  outlet_id: string;
+  outlet_name: string;
+  outlet_address: string;
+  daily_revenue: number;
+  order_count: number;
+  user_email?: string;
+}
+
 const AdminRealTime: React.FC = () => {
   const { user } = useAuth();
   const { isAdmin, loading: authLoading } = useSubscription();
@@ -31,6 +40,7 @@ const AdminRealTime: React.FC = () => {
   const [liveRevenue, setLiveRevenue] = useState(0);
   const [activeRestaurants, setActiveRestaurants] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [outletSales, setOutletSales] = useState<OutletDailySales[]>([]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -58,8 +68,12 @@ const AdminRealTime: React.FC = () => {
     try {
       setLoading(true);
       
-      // Get last 50 orders with outlet information
-      const { data: orders, error } = await supabase
+      // Calculate today's date range
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Get ALL orders from today with outlet information
+      const { data: todayOrders, error: ordersError } = await supabase
         .from('orders')
         .select(`
           id, 
@@ -71,43 +85,65 @@ const AdminRealTime: React.FC = () => {
           outlet_id,
           table_number,
           order_type,
-          outlets (
+          outlets!inner (
+            id,
             name,
-            address
+            address,
+            user_id
           )
         `)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .gte('created_at', today.toISOString())
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (ordersError) throw ordersError;
 
-      // Map orders with outlet name and address
-      const ordersWithOutletInfo = orders?.map(order => ({
+      // Map orders with outlet info for recent orders display
+      const ordersWithOutletInfo = todayOrders?.map(order => ({
         ...order,
         restaurant_name: (order as any).outlets?.name || 'PDV inconnu',
         restaurant_address: (order as any).outlets?.address || ''
       })) || [];
 
-      // Calculate live revenue (today)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const todayRevenue = ordersWithOutletInfo
-        .filter(o => new Date(o.created_at) >= today)
-        .reduce((sum, o) => sum + (o.total_amount || 0), 0);
-
+      // Calculate live revenue (all orders today)
+      const todayRevenue = ordersWithOutletInfo.reduce((sum, o) => sum + (o.total_amount || 0), 0);
       setLiveRevenue(todayRevenue);
 
-      // Count active restaurants (with orders today)
-      const { data: todayOrders } = await supabase
-        .from('orders')
-        .select('outlet_id')
-        .gte('created_at', today.toISOString());
-
+      // Count active restaurants
       const uniqueOutlets = new Set(todayOrders?.map(o => o.outlet_id).filter(Boolean));
       setActiveRestaurants(uniqueOutlets.size);
 
-      setRecentOrders(ordersWithOutletInfo);
+      // Group by outlet and calculate daily sales
+      const salesByOutlet = new Map<string, OutletDailySales>();
+      
+      todayOrders?.forEach(order => {
+        const outletId = order.outlet_id;
+        const outletName = (order as any).outlets?.name || 'PDV inconnu';
+        const outletAddress = (order as any).outlets?.address || '';
+        
+        if (!outletId) return;
+        
+        if (!salesByOutlet.has(outletId)) {
+          salesByOutlet.set(outletId, {
+            outlet_id: outletId,
+            outlet_name: outletName,
+            outlet_address: outletAddress,
+            daily_revenue: 0,
+            order_count: 0
+          });
+        }
+        
+        const current = salesByOutlet.get(outletId)!;
+        current.daily_revenue += order.total_amount || 0;
+        current.order_count += 1;
+      });
+
+      // Convert to array and sort by revenue
+      const sortedOutletSales = Array.from(salesByOutlet.values())
+        .sort((a, b) => b.daily_revenue - a.daily_revenue);
+
+      setOutletSales(sortedOutletSales);
+      setRecentOrders(ordersWithOutletInfo.slice(0, 50)); // Keep last 50 orders
+      
     } catch (error: any) {
       toast.error('Erreur lors du chargement des données temps réel');
       console.error(error);
@@ -273,16 +309,46 @@ const AdminRealTime: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Top Performing Restaurants */}
+          {/* Daily Sales by Outlet */}
           <Card className="border-0 shadow-lg">
             <CardHeader>
-              <CardTitle>Top 10 Restaurants du jour</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5" />
+                Ventes journalières par PDV
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>Données en cours de collecte...</p>
-              </div>
+              {outletSales.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Aucune vente aujourd'hui</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {outletSales.map((outlet, index) => (
+                    <div key={outlet.outlet_id} className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/40 transition-colors">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-bold">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="font-semibold text-lg">{outlet.outlet_name}</p>
+                        {outlet.outlet_address && (
+                          <p className="text-xs text-muted-foreground">{outlet.outlet_address}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground">
+                          {outlet.order_count} commande{outlet.order_count > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-green-600">
+                          {outlet.daily_revenue.toLocaleString('fr-FR')}
+                        </p>
+                        <p className="text-xs text-muted-foreground">FCFA</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
