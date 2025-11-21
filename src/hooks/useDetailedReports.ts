@@ -107,39 +107,12 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
 
       const allTransactions: DetailedTransaction[] = [];
 
-      // Fetch orders - TOUTES les commandes pour obtenir toutes les ventes
-      let ordersQuery = supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('created_at', startISO)
-        .lte('created_at', endISO)
-        .order('created_at', { ascending: false });
+      // IMPORTANT: Pour les rapports clients, nous n'incluons que les FACTURES PAYÉES
+      // Les commandes (orders) ne doivent PAS apparaître dans les transactions détaillées
+      // afin d'éviter toute confusion avec des ventes non facturées ou non payées.
 
-      // IMPORTANT: Filtrer par outlet_id si spécifié
-      if (period.outlet_id) {
-        ordersQuery = ordersQuery.eq('outlet_id', period.outlet_id);
-      }
-
-      const { data: orders, error: ordersError } = await ordersQuery;
-      if (ordersError) throw ordersError;
-
-      (orders || []).forEach((order: any) => {
-        const orderDate = new Date(order.created_at);
-        allTransactions.push({
-          id: order.id,
-          date: formatDate(orderDate, 'yyyy-MM-dd'),
-          time: formatDate(orderDate, 'HH:mm:ss'),
-          outlet_id: order.outlet_id,
-          outlet_name: outletNameById.get(order.outlet_id) || 'Non défini',
-          type: 'order',
-          reference: `CMD-${order.id.slice(0, 8)}`,
-          customer_name: order.customer_name || 'Client',
-          amount: Number(order.total_amount),
-          status: order.status,
-          items: order.items,
-        });
-      });
+      // Nous ne chargeons donc plus les commandes ici. Seules les factures avec statut "paid"
+      // seront ajoutées ci-dessous dans la section des factures.
 
       // Fetch invoices - UNIQUEMENT les factures payées
       let invoicesQuery = supabase
