@@ -50,6 +50,7 @@ import AdminAlerts from '@/pages/AdminAlerts';
 import AdminSupport from '@/pages/AdminSupport';
 import AdminGlobalControl from '@/pages/AdminGlobalControl';
 import AdminSystemSettings from '@/pages/AdminSystemSettings';
+import AdminComptabilite from '@/pages/AdminComptabilite';
 
 
 // Partner pages
@@ -124,6 +125,7 @@ function App() {
               <Route path="/admin/restaurants" element={<ProtectedRoute><AdminRestaurants /></ProtectedRoute>} />
               <Route path="/admin/revenues" element={<ProtectedRoute><AdminRevenues /></ProtectedRoute>} />
               <Route path="/admin/real-time" element={<ProtectedRoute><AdminRealTime /></ProtectedRoute>} />
+              <Route path="/admin/comptabilite" element={<ProtectedRoute><AdminComptabilite /></ProtectedRoute>} />
               <Route path="/admin/alerts" element={<ProtectedRoute><AdminAlerts /></ProtectedRoute>} />
               <Route path="/admin/support" element={<ProtectedRoute><AdminSupport /></ProtectedRoute>} />
               <Route path="/admin/global-control" element={<ProtectedRoute><AdminGlobalControl /></ProtectedRoute>} />

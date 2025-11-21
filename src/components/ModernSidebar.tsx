@@ -252,6 +252,11 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       path: '/admin/real-time'
     },
     {
+      icon: Calculator,
+      label: 'Comptabilité',
+      path: '/admin/comptabilite'
+    },
+    {
       icon: Shield,
       label: 'Alertes Globales',
       path: '/admin/alerts'
