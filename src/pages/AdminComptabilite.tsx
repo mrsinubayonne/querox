@@ -10,21 +10,23 @@ import { Calculator, TrendingUp, TrendingDown, DollarSign, Receipt, Calendar } f
 import { toast } from 'sonner';
 
 interface FinancialStats {
-  totalRevenue: number;
+  totalSubscriptionRevenue: number;
   monthlyRevenue: number;
-  subscriptionRevenue: number;
-  transactionCount: number;
   activeSubscribers: number;
-  averageOrderValue: number;
+  starterCount: number;
+  premiumCount: number;
+  proCount: number;
+  trialingCount: number;
+  cancelledCount: number;
 }
 
-interface RecentTransaction {
+interface SubscriptionTransaction {
   id: string;
-  outlet_name: string;
-  amount: number;
-  type: 'subscription' | 'order' | 'invoice';
-  date: string;
+  email: string;
+  tier: string;
   status: string;
+  amount: number;
+  date: string;
 }
 
 const AdminComptabilite: React.FC = () => {
@@ -33,14 +35,16 @@ const AdminComptabilite: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<FinancialStats>({
-    totalRevenue: 0,
+    totalSubscriptionRevenue: 0,
     monthlyRevenue: 0,
-    subscriptionRevenue: 0,
-    transactionCount: 0,
     activeSubscribers: 0,
-    averageOrderValue: 0
+    starterCount: 0,
+    premiumCount: 0,
+    proCount: 0,
+    trialingCount: 0,
+    cancelledCount: 0
   });
-  const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<SubscriptionTransaction[]>([]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -52,75 +56,66 @@ const AdminComptabilite: React.FC = () => {
     try {
       setLoading(true);
 
-      // Get current month range
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
 
-      // Fetch all orders
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('total_amount, created_at, outlet_id, outlets(name)');
-
-      // Fetch all invoices
-      const { data: invoices } = await supabase
-        .from('invoices')
-        .select('total_amount, created_at, status, outlet_id, outlets(name)')
-        .eq('status', 'paid');
-
-      // Fetch subscribers
+      // Fetch all subscribers
       const { data: subscribers } = await supabase
         .from('subscribers')
-        .select('subscription_tier, subscription_status, created_at');
+        .select('id, email, subscription_tier, subscription_status, subscription_start, updated_at, created_at')
+        .order('updated_at', { ascending: false });
 
-      const activeSubscribers = subscribers?.filter(s => s.subscription_status === 'active').length || 0;
+      if (!subscribers) {
+        toast.error('Erreur lors du chargement des abonnements');
+        return;
+      }
 
-      // Calculate revenues
-      const ordersRevenue = orders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0;
-      const invoicesRevenue = invoices?.reduce((sum, i) => sum + (i.total_amount || 0), 0) || 0;
-      const totalRevenue = ordersRevenue + invoicesRevenue;
+      // Calculate stats
+      const activeSubscribers = subscribers.filter(s => s.subscription_status === 'active').length;
+      const starterCount = subscribers.filter(s => s.subscription_tier === 'starter' && s.subscription_status === 'active').length;
+      const premiumCount = subscribers.filter(s => s.subscription_tier === 'premium' && s.subscription_status === 'active').length;
+      const proCount = subscribers.filter(s => s.subscription_tier === 'pro' && s.subscription_status === 'active').length;
+      const trialingCount = subscribers.filter(s => s.subscription_status === 'trialing').length;
+      const cancelledCount = subscribers.filter(s => s.subscription_status === 'cancelled').length;
 
-      // Monthly revenue
-      const monthlyOrders = orders?.filter(o => new Date(o.created_at) >= firstDayOfMonth) || [];
-      const monthlyInvoices = invoices?.filter(i => new Date(i.created_at) >= firstDayOfMonth) || [];
-      const monthlyRevenue = 
-        monthlyOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0) +
-        monthlyInvoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
+      // Calculate subscription revenue
+      const prices = { starter: 35000, premium: 65000, pro: 91000 };
+      const totalSubscriptionRevenue = subscribers.reduce((sum, s) => {
+        if (s.subscription_status === 'active') {
+          return sum + (prices[s.subscription_tier as keyof typeof prices] || 0);
+        }
+        return sum;
+      }, 0);
 
-      // Subscription revenue (estimation based on tiers)
-      const subscriptionRevenue = subscribers?.reduce((sum, s) => {
-        if (s.subscription_status !== 'active') return sum;
-        const prices = { starter: 35000, premium: 65000, pro: 91000 };
-        return sum + (prices[s.subscription_tier as keyof typeof prices] || 0);
-      }, 0) || 0;
+      // Monthly revenue (subscriptions that started or renewed this month)
+      const monthlyRevenue = subscribers
+        .filter(s => {
+          const date = new Date(s.subscription_start || s.created_at);
+          return date >= firstDayOfMonth && s.subscription_status === 'active';
+        })
+        .reduce((sum, s) => sum + (prices[s.subscription_tier as keyof typeof prices] || 0), 0);
 
-      // Recent transactions
-      const transactions: RecentTransaction[] = [
-        ...monthlyOrders.slice(0, 10).map(o => ({
-          id: o.outlet_id || '',
-          outlet_name: (o as any).outlets?.name || 'PDV inconnu',
-          amount: o.total_amount,
-          type: 'order' as const,
-          date: o.created_at,
-          status: 'completed'
-        })),
-        ...monthlyInvoices.slice(0, 10).map(i => ({
-          id: i.outlet_id || '',
-          outlet_name: (i as any).outlets?.name || 'PDV inconnu',
-          amount: i.total_amount,
-          type: 'invoice' as const,
-          date: i.created_at,
-          status: i.status
-        }))
-      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 20);
+      // Recent subscription transactions
+      const transactions: SubscriptionTransaction[] = subscribers
+        .slice(0, 20)
+        .map(s => ({
+          id: s.id,
+          email: s.email,
+          tier: s.subscription_tier || 'N/A',
+          status: s.subscription_status || 'unknown',
+          amount: s.subscription_status === 'active' ? (prices[s.subscription_tier as keyof typeof prices] || 0) : 0,
+          date: s.updated_at
+        }));
 
       setStats({
-        totalRevenue,
+        totalSubscriptionRevenue,
         monthlyRevenue,
-        subscriptionRevenue,
-        transactionCount: (orders?.length || 0) + (invoices?.length || 0),
         activeSubscribers,
-        averageOrderValue: orders?.length ? ordersRevenue / orders.length : 0
+        starterCount,
+        premiumCount,
+        proCount,
+        trialingCount,
+        cancelledCount
       });
 
       setRecentTransactions(transactions);
@@ -168,23 +163,23 @@ const AdminComptabilite: React.FC = () => {
               <Calculator className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Comptabilité</h1>
-              <p className="text-sm text-muted-foreground">Vue d'ensemble financière de la plateforme</p>
+              <h1 className="text-3xl font-bold text-foreground">Comptabilité Querox</h1>
+              <p className="text-sm text-muted-foreground">Revenus des abonnements et gestion financière de la plateforme</p>
             </div>
           </div>
 
           {/* Financial Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium opacity-90">Revenus Totaux</span>
+                  <span className="text-sm font-medium opacity-90">MRR Total</span>
                   <DollarSign className="w-5 h-5 opacity-90" />
                 </div>
                 <div className="text-3xl font-bold">
-                  {stats.totalRevenue.toLocaleString('fr-FR')} FCFA
+                  {stats.totalSubscriptionRevenue.toLocaleString('fr-FR')} FCFA
                 </div>
-                <p className="text-xs opacity-80 mt-1">Tous les temps</p>
+                <p className="text-xs opacity-80 mt-1">Revenu mensuel récurrent</p>
               </CardContent>
             </Card>
 
@@ -197,75 +192,119 @@ const AdminComptabilite: React.FC = () => {
                 <div className="text-3xl font-bold">
                   {stats.monthlyRevenue.toLocaleString('fr-FR')} FCFA
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Mois en cours</p>
+                <p className="text-xs text-muted-foreground mt-1">Nouveaux abonnements</p>
               </CardContent>
             </Card>
 
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Revenus Abonnements</span>
+                  <span className="text-sm font-medium text-muted-foreground">Abonnés Actifs</span>
                   <Calendar className="w-5 h-5 text-purple-500" />
                 </div>
                 <div className="text-3xl font-bold">
-                  {stats.subscriptionRevenue.toLocaleString('fr-FR')} FCFA
+                  {stats.activeSubscribers}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{stats.activeSubscribers} abonnés actifs</p>
+                <p className="text-xs text-muted-foreground mt-1">Comptes payants</p>
               </CardContent>
             </Card>
 
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Total Transactions</span>
+                  <span className="text-sm font-medium text-muted-foreground">Essais Gratuits</span>
                   <Receipt className="w-5 h-5 text-orange-500" />
                 </div>
                 <div className="text-3xl font-bold">
-                  {stats.transactionCount.toLocaleString('fr-FR')}
+                  {stats.trialingCount}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Commandes et factures</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Panier Moyen</span>
-                  <TrendingUp className="w-5 h-5 text-green-500" />
-                </div>
-                <div className="text-3xl font-bold">
-                  {stats.averageOrderValue.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} FCFA
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Par commande</p>
+                <p className="text-xs text-muted-foreground mt-1">En période d'essai</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Recent Transactions */}
+          {/* Subscription Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Starter</span>
+                  <Badge variant="outline">35 000 FCFA/mois</Badge>
+                </div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {stats.starterCount}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(stats.starterCount * 35000).toLocaleString('fr-FR')} FCFA/mois
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Premium</span>
+                  <Badge variant="outline">65 000 FCFA/mois</Badge>
+                </div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {stats.premiumCount}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(stats.premiumCount * 65000).toLocaleString('fr-FR')} FCFA/mois
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Pro</span>
+                  <Badge variant="outline">91 000 FCFA/mois</Badge>
+                </div>
+                <div className="text-2xl font-bold text-green-600">
+                  {stats.proCount}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(stats.proCount * 91000).toLocaleString('fr-FR')} FCFA/mois
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Subscription Transactions */}
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Receipt className="w-5 h-5" />
-                Transactions Récentes
+                Abonnements Récents
               </CardTitle>
             </CardHeader>
             <CardContent>
               {recentTransactions.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Receipt className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Aucune transaction récente</p>
+                  <p>Aucun abonnement récent</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {recentTransactions.map((transaction, index) => (
                     <div key={index} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/40 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${transaction.type === 'order' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                        <div className={`w-2 h-2 rounded-full ${
+                          transaction.status === 'active' ? 'bg-green-500' : 
+                          transaction.status === 'trialing' ? 'bg-blue-500' : 'bg-gray-400'
+                        }`}></div>
                         <div>
-                          <p className="font-semibold">{transaction.outlet_name}</p>
+                          <p className="font-semibold">{transaction.email}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline" className="text-xs capitalize">
-                              {transaction.type === 'order' ? 'Commande' : 'Facture'}
+                              {transaction.tier}
+                            </Badge>
+                            <Badge 
+                              variant={transaction.status === 'active' ? 'default' : 'secondary'} 
+                              className="text-xs"
+                            >
+                              {transaction.status}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
                               {new Date(transaction.date).toLocaleDateString('fr-FR')}
@@ -275,7 +314,7 @@ const AdminComptabilite: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-green-600">
-                          {transaction.amount.toLocaleString('fr-FR')} FCFA
+                          {transaction.amount > 0 ? `${transaction.amount.toLocaleString('fr-FR')} FCFA` : 'Essai gratuit'}
                         </p>
                       </div>
                     </div>
