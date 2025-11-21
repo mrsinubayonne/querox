@@ -166,7 +166,11 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
   };
 
   const downloadReport = async (format: 'pdf' | 'excel') => {
-    if (transactions.length === 0) {
+    const filteredTransactions = transactions.filter(
+      (t) => t.type === 'invoice' && t.status === 'paid'
+    );
+
+    if (filteredTransactions.length === 0) {
       toast.error('Aucune donnée à télécharger');
       return;
     }
@@ -174,11 +178,11 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
     try {
       if (format === 'excel') {
         const worksheet = XLSX.utils.json_to_sheet(
-          transactions.map((t) => ({
+          filteredTransactions.map((t) => ({
             Date: t.date,
             Heure: t.time,
             'Point de vente': t.outlet_name,
-            Type: t.type === 'order' ? 'Commande' : 'Facture',
+            Type: 'Facture',
             Référence: t.reference,
             Client: t.customer_name,
             'Montant (CFA)': t.amount,
@@ -209,11 +213,11 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         };
         
         // Calculate total amount
-        const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+        const totalAmount = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
         
         // Get period info if available
-        const firstTransaction = transactions[0];
-        const lastTransaction = transactions[transactions.length - 1];
+        const firstTransaction = filteredTransactions[0];
+        const lastTransaction = filteredTransactions[filteredTransactions.length - 1];
         const periodText = firstTransaction && lastTransaction && firstTransaction.date !== lastTransaction.date
           ? `Période: ${firstTransaction.date} au ${lastTransaction.date}`
           : `Date: ${firstTransaction?.date || formatDate(new Date(), 'dd/MM/yyyy')}`;
@@ -221,11 +225,11 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         doc.setFontSize(10);
         doc.text(periodText, 14, 34);
 
-        const tableData = transactions.map((t) => [
+        const tableData = filteredTransactions.map((t) => [
           t.date,
           t.time,
           t.outlet_name,
-          t.type === 'order' ? 'CMD' : 'FAC',
+          'FAC',
           t.reference,
           t.customer_name,
           formatFCFA(t.amount),
