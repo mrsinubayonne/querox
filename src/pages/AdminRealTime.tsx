@@ -97,6 +97,15 @@ const AdminRealTime: React.FC = () => {
 
       if (ordersError) throw ordersError;
 
+      // Get ALL paid invoices from today
+      const { data: todayInvoices, error: invoicesError } = await supabase
+        .from('invoices')
+        .select('id, total_amount, order_id, outlet_id')
+        .eq('status', 'paid')
+        .gte('created_at', today.toISOString());
+
+      if (invoicesError) throw invoicesError;
+
       // Map orders with outlet info for recent orders display
       const ordersWithOutletInfo = todayOrders?.map(order => ({
         ...order,
@@ -104,8 +113,15 @@ const AdminRealTime: React.FC = () => {
         restaurant_address: (order as any).outlets?.address || ''
       })) || [];
 
-      // Calculate live revenue (all orders today)
-      const todayRevenue = ordersWithOutletInfo.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+      // Calculate live revenue (orders + paid invoices without double counting)
+      const revenueFromOrders = ordersWithOutletInfo.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+      
+      const orderIds = new Set(todayOrders?.map(o => o.id) || []);
+      const revenueFromPaidInvoices = todayInvoices
+        ?.filter(inv => !inv.order_id || !orderIds.has(inv.order_id))
+        .reduce((sum, inv) => sum + (inv.total_amount || 0), 0) || 0;
+      
+      const todayRevenue = revenueFromOrders + revenueFromPaidInvoices;
       setLiveRevenue(todayRevenue);
 
       // Count active restaurants
@@ -115,6 +131,7 @@ const AdminRealTime: React.FC = () => {
       // Group by outlet and calculate daily sales
       const salesByOutlet = new Map<string, OutletDailySales>();
       
+      // Add orders revenue per outlet
       todayOrders?.forEach(order => {
         const outletId = order.outlet_id;
         const outletName = (order as any).outlets?.name || 'PDV inconnu';
@@ -136,6 +153,19 @@ const AdminRealTime: React.FC = () => {
         current.daily_revenue += order.total_amount || 0;
         current.order_count += 1;
       });
+
+      // Add paid invoices revenue per outlet (avoiding double counting)
+      todayInvoices
+        ?.filter(inv => !inv.order_id || !orderIds.has(inv.order_id))
+        .forEach(invoice => {
+          const outletId = invoice.outlet_id;
+          if (!outletId) return;
+          
+          if (salesByOutlet.has(outletId)) {
+            const current = salesByOutlet.get(outletId)!;
+            current.daily_revenue += invoice.total_amount || 0;
+          }
+        });
 
       // Convert to array and sort by revenue
       const sortedOutletSales = Array.from(salesByOutlet.values())
