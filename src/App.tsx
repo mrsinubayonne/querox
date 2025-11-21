@@ -69,6 +69,7 @@ import PerformancePersonnel from '@/pages/PerformancePersonnel';
 import SelectOutlet from '@/pages/SelectOutlet';
 import SelectProfile from '@/pages/SelectProfile';
 import ProfileLogin from '@/pages/ProfileLogin';
+import CGUCGV from '@/pages/CGUCGV';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
@@ -83,6 +84,7 @@ function App() {
               <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
               <Route path="/blog" element={<Blog />} />
+              <Route path="/cgu-cgv" element={<CGUCGV />} />
               <Route path="/menu/:menuId" element={<PublicMenu />} />
               <Route path="/w/:slug" element={<PublicWebsite />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />

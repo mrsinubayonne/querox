@@ -125,6 +125,11 @@ const LandingFooter: React.FC = () => {
                       {link.label}
                     </button>
                   </li>)}
+                <li>
+                  <button onClick={() => navigate('/cgu-cgv')} className="text-sm sm:text-base text-muted-foreground hover:text-foreground transition-colors duration-200">
+                    CGU/CGV
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
