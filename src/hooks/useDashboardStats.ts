@@ -142,16 +142,38 @@ export const useDashboardStats = (period: Period = 'day') => {
       ]);
 
       // Calculate revenue
-      const orderRevenue = orders?.reduce((sum, order) => sum + Number(order.total_amount || 0), 0) || 0;
-      const invoiceRevenue = invoices
-        ?.filter(inv => inv.status === 'paid')
-        .reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
+      const orderRevenue =
+        orders?.reduce((sum, order) => sum + Number(order.total_amount || 0), 0) || 0;
+
+      // To avoid counting the same vente twice, we only add invoices
+      // that are paid AND not linked to an order already present
+      const orderIds = new Set((orders || []).map((o: any) => o.id));
+      const invoiceRevenue =
+        invoices
+          ?.filter(
+            (inv) =>
+              inv.status === 'paid' && (!inv.order_id || !orderIds.has(inv.order_id))
+          )
+          .reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
+
       const revenue = orderRevenue + invoiceRevenue;
 
-      const previousOrderRevenue = previousOrders?.reduce((sum, order) => sum + Number(order.total_amount || 0), 0) || 0;
-      const previousInvoiceRevenue = previousInvoices
-        ?.filter(inv => inv.status === 'paid')
-        .reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
+      const previousOrderRevenue =
+        previousOrders?.reduce(
+          (sum, order) => sum + Number(order.total_amount || 0),
+          0
+        ) || 0;
+
+      const previousOrderIds = new Set((previousOrders || []).map((o: any) => o.id));
+      const previousInvoiceRevenue =
+        previousInvoices
+          ?.filter(
+            (inv) =>
+              inv.status === 'paid' &&
+              (!inv.order_id || !previousOrderIds.has(inv.order_id))
+          )
+          .reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
+
       const previousRevenue = previousOrderRevenue + previousInvoiceRevenue;
 
       const revenueChange = previousRevenue > 0 ? ((revenue - previousRevenue) / previousRevenue) * 100 : 0;
