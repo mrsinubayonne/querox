@@ -256,10 +256,18 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
 
       // Calculate totals
       const totalOrders = orders?.length || 0;
-      const totalRevenue = orders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
+      const revenueFromOrders =
+        orders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
+
       const totalInvoices = invoices?.length || 0;
-      const paidInvoices = invoices?.filter((i) => i.status === 'paid').length || 0;
+      const paidInvoiceList = invoices?.filter((i) => i.status === 'paid') || [];
+      const paidInvoices = paidInvoiceList.length;
       const unpaidInvoices = totalInvoices - paidInvoices;
+
+      const revenueFromPaidInvoices =
+        paidInvoiceList.reduce((sum, i) => sum + Number(i.total_amount), 0) || 0;
+
+      const totalRevenue = revenueFromOrders + revenueFromPaidInvoices;
 
       // Update period with stats and close it
       const { error: updateError } = await supabase
