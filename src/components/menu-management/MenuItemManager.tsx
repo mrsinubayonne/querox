@@ -7,7 +7,8 @@ import TransferMenuItemModal from '@/components/TransferMenuItemModal';
 import { useMenus, Menu, MenuCategory } from '@/hooks/useMenus';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useOutlets } from '@/hooks/useOutlets';
-import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft, Search, Copy } from 'lucide-react';
+import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft, Search, Copy, Package } from 'lucide-react';
+import MenuItemIngredientsModal from './MenuItemIngredientsModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
+  const [ingredientsModalItem, setIngredientsModalItem] = useState<{ id: string; name: string } | null>(null);
   
   const { items, categories, menus, loading, refetch, fetchAllMenus } = useMenus();
   const { toggleAvailability, deleteMenuItem, shareMenuItems, addMenuItem } = useMenuItems();
@@ -346,6 +348,16 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => setIngredientsModalItem({ id: item.id, name: item.name })}
+                      title="Gérer les ingrédients"
+                      className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                    >
+                      <Package className="w-4 h-4" />
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleDuplicateItem(item)}
                       title="Dupliquer ce plat"
                     >
@@ -452,6 +464,15 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
         currentOutletId={menus.find(m => m.id === activeMenuId)?.outlet_id || menus[0]?.outlet_id || ''}
         isBulkTransfer
       />
+
+      {ingredientsModalItem && (
+        <MenuItemIngredientsModal
+          isOpen={!!ingredientsModalItem}
+          onClose={() => setIngredientsModalItem(null)}
+          menuItemId={ingredientsModalItem.id}
+          menuItemName={ingredientsModalItem.name}
+        />
+      )}
     </>
   );
 };
