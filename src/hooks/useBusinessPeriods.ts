@@ -241,7 +241,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       // Fetch invoices for this period - STRICTEMENT pour ce PDV uniquement
       let invoicesQuery = supabase
         .from('invoices')
-        .select('id, total_amount, status')
+        .select('id, total_amount, status, order_id')
         .eq('user_id', user.id)
         .gte('created_at', startISO)
         .lte('created_at', endISO);
@@ -260,7 +260,12 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         orders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
 
       const totalInvoices = invoices?.length || 0;
-      const paidInvoiceList = invoices?.filter((i) => i.status === 'paid') || [];
+
+      const orderIds = new Set((orders || []).map((o: any) => o.id));
+      const paidInvoiceList =
+        invoices?.filter(
+          (i) => i.status === 'paid' && (!i.order_id || !orderIds.has(i.order_id))
+        ) || [];
       const paidInvoices = paidInvoiceList.length;
       const unpaidInvoices = totalInvoices - paidInvoices;
 
