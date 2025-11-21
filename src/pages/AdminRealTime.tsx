@@ -153,8 +153,8 @@ const AdminRealTime: React.FC = () => {
   };
 
   const handleNewOrder = (newOrder: RealtimeOrder) => {
-    setRecentOrders(prev => [newOrder, ...prev].slice(0, 20));
-    setLiveRevenue(prev => prev + (newOrder.total_amount || 0));
+    // Refetch all data to update outlet sales and stats
+    fetchRealtimeData();
     toast.success('Nouvelle commande reçue!');
   };
 
