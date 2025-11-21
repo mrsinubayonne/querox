@@ -142,41 +142,72 @@ export const useDashboardStats = (period: Period = 'day') => {
       ]);
 
       // Calculate revenue
-      const orderRevenue =
-        orders?.reduce((sum, order) => sum + Number(order.total_amount || 0), 0) || 0;
+      const paidInvoices =
+        invoices?.filter((inv) => inv.status === 'paid') || [];
 
-      // To avoid counting the same vente twice, we only add invoices
-      // that are paid AND not linked to an order already present
-      const orderIds = new Set((orders || []).map((o: any) => o.id));
-      const invoiceRevenue =
-        invoices
-          ?.filter(
-            (inv) =>
-              inv.status === 'paid' && (!inv.order_id || !orderIds.has(inv.order_id))
-          )
-          .reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
+      // If a table session has a paid invoice, we exclude all its orders
+      const sessionsWithPaidInvoice = new Set(
+        paidInvoices
+          .filter((inv: any) => inv.session_id)
+          .map((inv: any) => inv.session_id)
+      );
+
+      const ordersForRevenue =
+        orders?.filter(
+          (order: any) =>
+            !order.session_id || !sessionsWithPaidInvoice.has(order.session_id)
+        ) || [];
+
+      const orderRevenue = ordersForRevenue.reduce(
+        (sum, order: any) => sum + Number(order.total_amount || 0),
+        0
+      );
+
+      // For remaining invoices, also avoid double counting orders linked by order_id
+      const orderIds = new Set(ordersForRevenue.map((o: any) => o.id));
+      const invoiceRevenue = paidInvoices
+        .filter(
+          (inv: any) => !inv.order_id || !orderIds.has(inv.order_id)
+        )
+        .reduce((sum, inv: any) => sum + Number(inv.total_amount || 0), 0);
 
       const revenue = orderRevenue + invoiceRevenue;
 
-      const previousOrderRevenue =
-        previousOrders?.reduce(
-          (sum, order) => sum + Number(order.total_amount || 0),
-          0
-        ) || 0;
+      // Previous period revenue with the same logic
+      const previousPaidInvoices =
+        previousInvoices?.filter((inv) => inv.status === 'paid') || [];
 
-      const previousOrderIds = new Set((previousOrders || []).map((o: any) => o.id));
-      const previousInvoiceRevenue =
-        previousInvoices
-          ?.filter(
-            (inv) =>
-              inv.status === 'paid' &&
-              (!inv.order_id || !previousOrderIds.has(inv.order_id))
-          )
-          .reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
+      const previousSessionsWithPaidInvoice = new Set(
+        previousPaidInvoices
+          .filter((inv: any) => inv.session_id)
+          .map((inv: any) => inv.session_id)
+      );
+
+      const previousOrdersForRevenue =
+        previousOrders?.filter(
+          (order: any) =>
+            !order.session_id ||
+            !previousSessionsWithPaidInvoice.has(order.session_id)
+        ) || [];
+
+      const previousOrderRevenue = previousOrdersForRevenue.reduce(
+        (sum, order: any) => sum + Number(order.total_amount || 0),
+        0
+      );
+
+      const previousOrderIds = new Set(previousOrdersForRevenue.map((o: any) => o.id));
+      const previousInvoiceRevenue = previousPaidInvoices
+        .filter(
+          (inv: any) => !inv.order_id || !previousOrderIds.has(inv.order_id)
+        )
+        .reduce((sum, inv: any) => sum + Number(inv.total_amount || 0), 0);
 
       const previousRevenue = previousOrderRevenue + previousInvoiceRevenue;
 
-      const revenueChange = previousRevenue > 0 ? ((revenue - previousRevenue) / previousRevenue) * 100 : 0;
+      const revenueChange =
+        previousRevenue > 0
+          ? ((revenue - previousRevenue) / previousRevenue) * 100
+          : 0;
 
       // Calculate orders
       const totalOrders = orders?.length || 0;
