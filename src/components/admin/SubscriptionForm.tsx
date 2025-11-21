@@ -20,7 +20,52 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
   const [selectedDuration, setSelectedDuration] = useState('30');
   const [isLifetime, setIsLifetime] = useState(false);
   const [isTrial, setIsTrial] = useState(false);
+  const [quickEmail, setQuickEmail] = useState('');
   const { toast } = useToast();
+
+  const grantQuickSubscription = async (days: number) => {
+    if (!quickEmail) {
+      toast({
+        title: "Email requis",
+        description: "Veuillez saisir l'email de l'utilisateur",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + days);
+
+      const { error } = await supabase
+        .from('subscribers')
+        .upsert({
+          email: quickEmail,
+          subscription_tier: 'starter',
+          subscribed: true,
+          subscription_end: endDate.toISOString(),
+          subscription_status: 'trialing',
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: `Essai gratuit Starter accordé pour ${days} jour${days > 1 ? 's' : ''}`,
+      });
+
+      setQuickEmail('');
+      onSubscriptionCreated();
+    } catch (error) {
+      console.error('Erreur:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'accorder l'essai gratuit",
+        variant: "destructive",
+      });
+    }
+  };
 
   const createOrUpdateSubscription = async () => {
     if (!searchEmail || !selectedTier) {
@@ -89,14 +134,59 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
   };
 
   return (
-    <Card className="mb-8">
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <UserPlus className="w-5 h-5 mr-2" />
-          Accorder un Abonnement
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <>
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <UserPlus className="w-5 h-5 mr-2" />
+            Actions Rapides - Essais Gratuits
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-2">Email utilisateur</label>
+              <Input
+                placeholder="email@example.com"
+                value={quickEmail}
+                onChange={(e) => setQuickEmail(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 items-end">
+              <Button 
+                onClick={() => grantQuickSubscription(1)}
+                variant="outline"
+                className="flex-1"
+              >
+                1 jour
+              </Button>
+              <Button 
+                onClick={() => grantQuickSubscription(3)}
+                variant="outline"
+                className="flex-1"
+              >
+                3 jours
+              </Button>
+              <Button 
+                onClick={() => grantQuickSubscription(14)}
+                variant="outline"
+                className="flex-1"
+              >
+                14 jours
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <UserPlus className="w-5 h-5 mr-2" />
+            Accorder un Abonnement Personnalisé
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Email utilisateur</label>
@@ -173,6 +263,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
         </div>
       </CardContent>
     </Card>
+    </>
   );
 };
 
