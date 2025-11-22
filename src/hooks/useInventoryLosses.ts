@@ -176,7 +176,28 @@ export const useInventoryLosses = () => {
 
   useEffect(() => {
     fetchLosses();
-  }, [fetchLosses]);
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('inventory-losses-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'inventory_losses',
+          filter: `user_id=eq.${user?.id}`
+        },
+        () => {
+          fetchLosses();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchLosses, user?.id]);
 
   return {
     losses,

@@ -198,7 +198,28 @@ export const usePurchaseOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [fetchOrders]);
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('purchase-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'purchase_orders',
+          filter: `user_id=eq.${user?.id}`
+        },
+        () => {
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchOrders, user?.id]);
 
   return {
     orders,

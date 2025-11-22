@@ -219,7 +219,28 @@ export const useInventory = () => {
 
   useEffect(() => {
     fetchItems();
-  }, [fetchItems]);
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('inventory-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'inventory_items',
+          filter: `user_id=eq.${user?.id}`
+        },
+        () => {
+          fetchItems();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchItems, user?.id]);
 
   return {
     items,
