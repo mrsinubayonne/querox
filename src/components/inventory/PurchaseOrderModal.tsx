@@ -12,8 +12,11 @@ import { Plus, Trash2, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface PurchaseOrderModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  open?: boolean;
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 interface OrderItem {
@@ -24,7 +27,18 @@ interface OrderItem {
   total: number;
 }
 
-const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({ isOpen, onClose }) => {
+const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({ 
+  isOpen, 
+  open, 
+  onClose, 
+  onOpenChange,
+  onSuccess 
+}) => {
+  const modalOpen = isOpen ?? open ?? false;
+  const handleClose = () => {
+    onClose?.();
+    onOpenChange?.(false);
+  };
   const { createOrder } = usePurchaseOrders();
   const { suppliers } = useSuppliers();
   const { items } = useInventory();
@@ -85,7 +99,8 @@ const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({ isOpen, onClose
     });
 
     setIsSubmitting(false);
-    onClose();
+    handleClose();
+    onSuccess?.();
     
     // Reset form
     setSupplierId('');
@@ -95,7 +110,7 @@ const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({ isOpen, onClose
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={modalOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -219,7 +234,7 @@ const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({ isOpen, onClose
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+          <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
             Annuler
           </Button>
           <Button 

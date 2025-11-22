@@ -1,58 +1,47 @@
 
 import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ClipboardList, AlertTriangle, ShoppingCart, BarChart3 } from "lucide-react";
 import InventoryStocksTab from './InventoryStocksTab';
 import InventoryMovementsTab from './InventoryMovementsTab';
+import InventoryLossesTab from './InventoryLossesTab';
 import InventorySuppliersTab from './InventorySuppliersTab';
-
-interface InventoryItem {
-  id: number;
-  name: string;
-  category: string;
-  quantity: number;
-  unit: string;
-  minQuantity: number;
-  price: number;
-  supplier: string;
-  status: string;
-}
+import InventoryAnalyticsTab from './InventoryAnalyticsTab';
 
 interface InventoryTabsProps {
-  filteredItems: InventoryItem[];
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-  filterCategory: string;
-  onFilter: () => void;
-  onEditItem: (itemId: number) => void;
-  onDeleteItem: (itemId: number) => void;
+  onEditItem: (item: any) => void;
+  onDeleteItem: (id: string) => void;
+  onAdjustItem: (item: any) => void;
 }
 
-const InventoryTabs: React.FC<InventoryTabsProps> = ({
-  filteredItems,
-  searchTerm,
-  onSearchChange,
-  filterCategory,
-  onFilter,
-  onEditItem,
-  onDeleteItem
-}) => {
+const InventoryTabs: React.FC<InventoryTabsProps> = ({ onEditItem, onDeleteItem, onAdjustItem }) => {
   return (
-    <Tabs defaultValue="stocks" className="w-full">
-      <TabsList className="grid w-full grid-cols-3 mb-6">
-        <TabsTrigger value="stocks">État des stocks</TabsTrigger>
-        <TabsTrigger value="movements">Mouvements</TabsTrigger>
-        <TabsTrigger value="suppliers">Fournisseurs</TabsTrigger>
+    <Tabs defaultValue="stocks" className="space-y-4">
+      <TabsList className="grid w-full grid-cols-5">
+        <TabsTrigger value="stocks">Stocks</TabsTrigger>
+        <TabsTrigger value="movements">
+          <ClipboardList className="h-4 w-4 mr-1" />
+          Mouvements
+        </TabsTrigger>
+        <TabsTrigger value="losses">
+          <AlertTriangle className="h-4 w-4 mr-1" />
+          Pertes
+        </TabsTrigger>
+        <TabsTrigger value="suppliers">
+          <ShoppingCart className="h-4 w-4 mr-1" />
+          Commandes
+        </TabsTrigger>
+        <TabsTrigger value="analytics">
+          <BarChart3 className="h-4 w-4 mr-1" />
+          Analytics
+        </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="stocks" className="space-y-6">
+      <TabsContent value="stocks">
         <InventoryStocksTab
-          filteredItems={filteredItems}
-          searchTerm={searchTerm}
-          onSearchChange={onSearchChange}
-          filterCategory={filterCategory}
-          onFilter={onFilter}
-          onEditItem={onEditItem}
-          onDeleteItem={onDeleteItem}
+          onEdit={onEditItem}
+          onDelete={onDeleteItem}
+          onAdjust={onAdjustItem}
         />
       </TabsContent>
 
@@ -60,8 +49,16 @@ const InventoryTabs: React.FC<InventoryTabsProps> = ({
         <InventoryMovementsTab />
       </TabsContent>
 
+      <TabsContent value="losses">
+        <InventoryLossesTab />
+      </TabsContent>
+
       <TabsContent value="suppliers">
         <InventorySuppliersTab />
+      </TabsContent>
+
+      <TabsContent value="analytics">
+        <InventoryAnalyticsTab />
       </TabsContent>
     </Tabs>
   );

@@ -14,6 +14,8 @@ interface InventoryItem {
   supplier?: string;
   supplier_id?: string;
   unit_price?: number;
+  expiration_date?: string | null;
+  batch_number?: string | null;
   created_at: string;
   updated_at: string;
 }

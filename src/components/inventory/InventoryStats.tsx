@@ -4,16 +4,16 @@ import { Card, CardContent } from "@/components/ui/card";
 
 interface InventoryStatsProps {
   totalItems: number;
-  criticalItems: number;
+  lowStockCount: number;
   totalValue: number;
-  lowStockItems: number;
+  suppliersCount: number;
 }
 
 const InventoryStats: React.FC<InventoryStatsProps> = ({
   totalItems,
-  criticalItems,
+  lowStockCount,
   totalValue,
-  lowStockItems
+  suppliersCount
 }) => {
   const stats = [
     {
@@ -24,7 +24,7 @@ const InventoryStats: React.FC<InventoryStatsProps> = ({
     },
     {
       title: "Stock critique",
-      value: criticalItems.toString(),
+      value: lowStockCount.toString(),
       icon: "⚠️",
       color: "text-red-600"
     },
@@ -35,10 +35,10 @@ const InventoryStats: React.FC<InventoryStatsProps> = ({
       color: "text-green-600"
     },
     {
-      title: "Stock faible",
-      value: lowStockItems.toString(),
-      icon: "📊",
-      color: "text-orange-600"
+      title: "Fournisseurs",
+      value: suppliersCount.toString(),
+      icon: "👥",
+      color: "text-purple-600"
     }
   ];
 
