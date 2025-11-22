@@ -145,6 +145,26 @@ export const useStockMovements = () => {
 
   useEffect(() => {
     fetchMovements();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('stock-movements-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'stock_movements'
+        },
+        () => {
+          fetchMovements();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchMovements]);
 
   return {
