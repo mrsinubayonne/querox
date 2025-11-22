@@ -242,13 +242,18 @@ export type Database = {
       }
       inventory_items: {
         Row: {
+          batch_number: string | null
           category: string
           created_at: string
           current_stock: number | null
+          expiration_date: string | null
           id: string
+          last_reorder_date: string | null
           min_stock: number | null
           name: string
           outlet_id: string | null
+          reorder_point: number | null
+          reorder_quantity: number | null
           supplier: string | null
           supplier_id: string | null
           unit: string
@@ -257,13 +262,18 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          batch_number?: string | null
           category: string
           created_at?: string
           current_stock?: number | null
+          expiration_date?: string | null
           id?: string
+          last_reorder_date?: string | null
           min_stock?: number | null
           name: string
           outlet_id?: string | null
+          reorder_point?: number | null
+          reorder_quantity?: number | null
           supplier?: string | null
           supplier_id?: string | null
           unit?: string
@@ -272,13 +282,18 @@ export type Database = {
           user_id: string
         }
         Update: {
+          batch_number?: string | null
           category?: string
           created_at?: string
           current_stock?: number | null
+          expiration_date?: string | null
           id?: string
+          last_reorder_date?: string | null
           min_stock?: number | null
           name?: string
           outlet_id?: string | null
+          reorder_point?: number | null
+          reorder_quantity?: number | null
           supplier?: string | null
           supplier_id?: string | null
           unit?: string
@@ -299,6 +314,113 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_losses: {
+        Row: {
+          cost_value: number | null
+          created_at: string | null
+          id: string
+          inventory_item_id: string
+          loss_category: string
+          loss_date: string
+          loss_type: string
+          outlet_id: string | null
+          quantity: number
+          reason: string | null
+          recorded_by_user_id: string | null
+          user_id: string
+        }
+        Insert: {
+          cost_value?: number | null
+          created_at?: string | null
+          id?: string
+          inventory_item_id: string
+          loss_category: string
+          loss_date?: string
+          loss_type: string
+          outlet_id?: string | null
+          quantity: number
+          reason?: string | null
+          recorded_by_user_id?: string | null
+          user_id: string
+        }
+        Update: {
+          cost_value?: number | null
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string
+          loss_category?: string
+          loss_date?: string
+          loss_type?: string
+          outlet_id?: string | null
+          quantity?: number
+          reason?: string | null
+          recorded_by_user_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_losses_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_losses_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_reorder_rules: {
+        Row: {
+          created_at: string | null
+          id: string
+          inventory_item_id: string
+          is_active: boolean | null
+          lead_time_days: number
+          min_quantity: number
+          safety_stock: number
+          target_quantity: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          inventory_item_id: string
+          is_active?: boolean | null
+          lead_time_days?: number
+          min_quantity?: number
+          safety_stock?: number
+          target_quantity?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string
+          is_active?: boolean | null
+          lead_time_days?: number
+          min_quantity?: number
+          safety_stock?: number
+          target_quantity?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_reorder_rules_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
             referencedColumns: ["id"]
           },
         ]
@@ -894,6 +1016,72 @@ export type Database = {
           },
         ]
       }
+      purchase_orders: {
+        Row: {
+          actual_delivery_date: string | null
+          created_at: string | null
+          expected_delivery_date: string | null
+          id: string
+          items: Json
+          notes: string | null
+          order_date: string
+          order_number: string
+          outlet_id: string | null
+          status: string
+          supplier_id: string | null
+          total_amount: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          actual_delivery_date?: string | null
+          created_at?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_date?: string
+          order_number: string
+          outlet_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          actual_delivery_date?: string | null
+          created_at?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_date?: string
+          order_number?: string
+          outlet_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referrals: {
         Row: {
           commission_amount: number
@@ -1088,28 +1276,43 @@ export type Database = {
       }
       stock_movements: {
         Row: {
+          after_quantity: number | null
+          before_quantity: number | null
           created_at: string
           id: string
           item_id: string
           movement_type: string
+          notes: string | null
+          performed_by_user_id: string | null
           quantity: number
           reason: string | null
+          reason_category: string | null
         }
         Insert: {
+          after_quantity?: number | null
+          before_quantity?: number | null
           created_at?: string
           id?: string
           item_id: string
           movement_type: string
+          notes?: string | null
+          performed_by_user_id?: string | null
           quantity: number
           reason?: string | null
+          reason_category?: string | null
         }
         Update: {
+          after_quantity?: number | null
+          before_quantity?: number | null
           created_at?: string
           id?: string
           item_id?: string
           movement_type?: string
+          notes?: string | null
+          performed_by_user_id?: string | null
           quantity?: number
           reason?: string | null
+          reason_category?: string | null
         }
         Relationships: [
           {
@@ -1893,6 +2096,19 @@ export type Database = {
           period_start: string
         }[]
       }
+      calculate_reorder_suggestions: {
+        Args: { p_outlet_id: string; p_user_id: string }
+        Returns: {
+          current_stock: number
+          item_id: string
+          item_name: string
+          min_stock: number
+          suggested_order_quantity: number
+          supplier_name: string
+          total_cost: number
+          unit_price: number
+        }[]
+      }
       check_team_member_permission: {
         Args: { _member_email: string; _permission_name: string }
         Returns: boolean
@@ -1905,6 +2121,7 @@ export type Database = {
         }
         Returns: string
       }
+      generate_purchase_order_number: { Args: never; Returns: string }
       generate_team_access_code: { Args: never; Returns: string }
       get_admin_revenue_stats: {
         Args: never

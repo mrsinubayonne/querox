@@ -11,11 +11,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Package, Plus, AlertTriangle, TrendingDown, TrendingUp, Users, Trash2, Download, Edit } from 'lucide-react';
+import { Package, Plus, AlertTriangle, TrendingDown, TrendingUp, Users, Trash2, Download, Edit, ClipboardList, ShoppingCart, BarChart3 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import { Progress } from '@/components/ui/progress';
+import InventoryMovementsTab from '@/components/inventory/InventoryMovementsTab';
+import InventoryLossesTab from '@/components/inventory/InventoryLossesTab';
+import InventorySuppliersTab from '@/components/inventory/InventorySuppliersTab';
+import InventoryAnalyticsTab from '@/components/inventory/InventoryAnalyticsTab';
+import ManualAdjustmentModal from '@/components/inventory/ManualAdjustmentModal';
 
 const Inventaire: React.FC = () => {
   const { items, loading: itemsLoading, createItem, updateItem, deleteItem, getLowStockItems } = useInventory();
@@ -23,6 +28,7 @@ const Inventaire: React.FC = () => {
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [adjustmentItem, setAdjustmentItem] = useState<any>(null);
 
   const lowStockItems = getLowStockItems();
   const totalValue = items.reduce((sum, item) => sum + (item.current_stock * (item.unit_price || 0)), 0);
@@ -278,9 +284,12 @@ const Inventaire: React.FC = () => {
 
           {/* Tabs */}
           <Tabs defaultValue="stocks" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="stocks">État des stocks</TabsTrigger>
-              <TabsTrigger value="suppliers">Fournisseurs</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="stocks">Stocks</TabsTrigger>
+              <TabsTrigger value="movements"><ClipboardList className="h-4 w-4 mr-1" />Mouvements</TabsTrigger>
+              <TabsTrigger value="losses"><AlertTriangle className="h-4 w-4 mr-1" />Pertes</TabsTrigger>
+              <TabsTrigger value="suppliers"><ShoppingCart className="h-4 w-4 mr-1" />Commandes</TabsTrigger>
+              <TabsTrigger value="analytics"><BarChart3 className="h-4 w-4 mr-1" />Analytics</TabsTrigger>
             </TabsList>
 
             <TabsContent value="stocks" className="space-y-4">
@@ -333,7 +342,7 @@ const Inventaire: React.FC = () => {
                               <Button size="sm" variant="outline" onClick={() => handleUpdateStock(item.id, 1, item.current_stock)}>
                                 <TrendingUp className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="outline" onClick={() => setEditingItem(item)}>
+                              <Button size="sm" variant="outline" onClick={() => setAdjustmentItem(item)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
                               <Button size="sm" variant="destructive" onClick={() => handleDeleteItem(item.id)}>
@@ -349,7 +358,23 @@ const Inventaire: React.FC = () => {
               )}
             </TabsContent>
 
-            <TabsContent value="suppliers" className="space-y-4">
+            <TabsContent value="movements">
+              <InventoryMovementsTab />
+            </TabsContent>
+
+            <TabsContent value="losses">
+              <InventoryLossesTab />
+            </TabsContent>
+
+            <TabsContent value="suppliers">
+              <InventorySuppliersTab />
+            </TabsContent>
+
+            <TabsContent value="analytics">
+              <InventoryAnalyticsTab />
+            </TabsContent>
+
+            <TabsContent value="suppliers-old" className="space-y-4">
               <div className="flex justify-end">
                 <Dialog open={showAddSupplier} onOpenChange={setShowAddSupplier}>
                   <DialogTrigger asChild>
@@ -524,6 +549,18 @@ const Inventaire: React.FC = () => {
               </form>
             </DialogContent>
           </Dialog>
+
+          {/* Manual Adjustment Modal */}
+          {adjustmentItem && (
+            <ManualAdjustmentModal
+              isOpen={!!adjustmentItem}
+              onClose={() => setAdjustmentItem(null)}
+              itemId={adjustmentItem.id}
+              itemName={adjustmentItem.name}
+              currentStock={adjustmentItem.current_stock}
+              unit={adjustmentItem.unit}
+            />
+          )}
         </div>
       </PageWithSidebar>
     </SubscriptionGuard>
