@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
-import { TeamInvitationSystem } from '@/components/team/TeamInvitationSystem';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useOutlets } from '@/hooks/useOutlets';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,22 +27,33 @@ const ROLES = [
 const Equipe: React.FC = () => {
   const { teamMembers, loading, inviteMember, removeMember, toggleMemberStatus, canAddMoreMembers, getTeamLimit } = useTeamMembers();
   const { subscription } = useSubscription();
+  const { outlets, loading: outletsLoading } = useOutlets();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [selectedRole, setSelectedRole] = useState('serveur');
+  const [selectedOutlets, setSelectedOutlets] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
 
   const handleInvite = async () => {
-    if (email) {
-      await inviteMember(email, selectedRole, fullName, phone);
+    if (email && selectedOutlets.length > 0) {
+      await inviteMember(email, selectedRole, fullName, phone, selectedOutlets);
       setEmail('');
       setFullName('');
       setPhone('');
       setSelectedRole('serveur');
+      setSelectedOutlets([]);
       setOpen(false);
     }
+  };
+  
+  const toggleOutletSelection = (outletId: string) => {
+    setSelectedOutlets(prev => 
+      prev.includes(outletId) 
+        ? prev.filter(id => id !== outletId)
+        : [...prev, outletId]
+    );
   };
 
   const copyAccessCode = (code: string) => {
@@ -87,18 +97,7 @@ const Equipe: React.FC = () => {
             </div>
           </div>
 
-          <Tabs defaultValue="invitations" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="invitations">Invitations par email</TabsTrigger>
-              <TabsTrigger value="access-codes">Codes d'accès manuel</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="invitations" className="space-y-6 mt-6">
-              <TeamInvitationSystem />
-            </TabsContent>
-
-            <TabsContent value="access-codes" className="space-y-6 mt-6">
-              <div className="space-y-6">
+          <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
@@ -124,7 +123,7 @@ const Equipe: React.FC = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader>
+                  <DialogHeader>
                   <DialogTitle>Ajouter un membre d'équipe</DialogTitle>
                   <DialogDescription>
                     Un code d'accès unique sera généré pour ce membre. Il pourra se connecter sur la page de connexion principale avec son email et ce code.
@@ -142,13 +141,14 @@ const Equipe: React.FC = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="email">Adresse email</Label>
+                    <Label htmlFor="email">Adresse email *</Label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="email@exemple.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      required
                     />
                   </div>
 
@@ -164,7 +164,7 @@ const Equipe: React.FC = () => {
                   </div>
                   
                   <div>
-                    <Label htmlFor="role">Rôle</Label>
+                    <Label htmlFor="role">Rôle *</Label>
                     <Select value={selectedRole} onValueChange={setSelectedRole}>
                       <SelectTrigger>
                         <SelectValue />
@@ -181,11 +181,54 @@ const Equipe: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div>
+                    <Label>Points de vente assignés *</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Sélectionnez les PDV auxquels ce membre aura accès
+                    </p>
+                    {outletsLoading ? (
+                      <div className="flex items-center justify-center p-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                      </div>
+                    ) : outlets.length === 0 ? (
+                      <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
+                        Aucun point de vente disponible. Créez d'abord un PDV.
+                      </div>
+                    ) : (
+                      <div className="space-y-2 border rounded-md p-3 max-h-48 overflow-y-auto">
+                        {outlets.map((outlet) => (
+                          <label 
+                            key={outlet.id} 
+                            className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedOutlets.includes(outlet.id)}
+                              onChange={() => toggleOutletSelection(outlet.id)}
+                              className="w-4 h-4 text-purple-600 rounded"
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium text-sm">{outlet.name}</div>
+                              {outlet.address && (
+                                <div className="text-xs text-muted-foreground">{outlet.address}</div>
+                              )}
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                    {selectedOutlets.length > 0 && (
+                      <p className="text-xs text-purple-600 mt-2">
+                        {selectedOutlets.length} PDV sélectionné{selectedOutlets.length > 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
                   
                   <Button 
                     onClick={handleInvite} 
                     className="w-full bg-purple-600 hover:bg-purple-700"
-                    disabled={!email}
+                    disabled={!email || selectedOutlets.length === 0}
                   >
                     <Key className="w-4 h-4 mr-2" />
                     Générer le code d'accès
@@ -302,8 +345,6 @@ const Equipe: React.FC = () => {
             </div>
           )}
               </div>
-            </TabsContent>
-          </Tabs>
         </div>
       </PageWithSidebar>
     </SubscriptionGuard>
