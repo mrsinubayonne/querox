@@ -28,10 +28,13 @@ const OnboardingTour: React.FC = () => {
     const driverObj = driver({
       showProgress: true,
       showButtons: ['next', 'previous', 'close'],
-      nextBtnText: 'Suivant',
-      prevBtnText: 'Précédent',
-      doneBtnText: 'Terminer',
-      progressText: '{{current}} sur {{total}}',
+      nextBtnText: 'Suivant →',
+      prevBtnText: '← Précédent',
+      doneBtnText: '✓ Terminer',
+      progressText: '{{current}} / {{total}}',
+      popoverClass: 'querox-tour-popover',
+      overlayColor: 'rgba(0, 0, 0, 0.85)',
+      smoothScroll: true,
       onDestroyStarted: () => {
         // Marquer le tour comme terminé
         if (user) {
@@ -42,15 +45,15 @@ const OnboardingTour: React.FC = () => {
       steps: [
         {
           popover: {
-            title: 'Bienvenue sur QUEROX ! 🎉',
-            description: 'Laissez-nous vous faire découvrir les fonctionnalités principales de votre plateforme de gestion restaurant.'
+            title: '🎉 Bienvenue sur QUEROX !',
+            description: 'Votre solution complète de gestion de restaurant. Découvrons ensemble toutes les fonctionnalités qui vont transformer votre business ! 🚀',
           }
         },
         {
           element: '[data-tour="dashboard"]',
           popover: {
-            title: 'Tableau de bord 📊',
-            description: 'Consultez vos statistiques de vente, revenus et performances en temps réel.',
+            title: '📊 Tableau de Bord',
+            description: 'Visualisez vos statistiques de vente, revenus et commandes en temps réel. Toutes vos données importantes au même endroit !',
             side: 'right',
             align: 'start'
           }
@@ -58,8 +61,8 @@ const OnboardingTour: React.FC = () => {
         {
           element: '[data-tour="menus"]',
           popover: {
-            title: 'Gestion des menus 🍽️',
-            description: 'Créez et gérez vos menus, catégories et plats. Ajoutez des photos et des descriptions.',
+            title: '🍽️ Gestion des Menus',
+            description: 'Créez et gérez vos menus, catégories et plats. Ajoutez des images, des descriptions et des prix facilement. Tout pour séduire vos clients !',
             side: 'right',
             align: 'start'
           }
@@ -67,8 +70,8 @@ const OnboardingTour: React.FC = () => {
         {
           element: '[data-tour="orders"]',
           popover: {
-            title: 'Commandes 📝',
-            description: 'Suivez toutes vos commandes en temps réel : en attente, en préparation, livrées.',
+            title: '📦 Commandes',
+            description: 'Gérez toutes vos commandes en un seul endroit. Suivez leur statut et progression en temps réel, de la commande à la livraison !',
             side: 'right',
             align: 'start'
           }
@@ -76,8 +79,8 @@ const OnboardingTour: React.FC = () => {
         {
           element: '[data-tour="inventory"]',
           popover: {
-            title: 'Inventaire 📦',
-            description: 'Gérez votre stock, suivez les approvisionnements et recevez des alertes de réapprovisionnement.',
+            title: '📦 Inventaire',
+            description: 'Gérez votre stock intelligemment, suivez les approvisionnements et évitez les ruptures avec des alertes automatiques. Tout sous contrôle !',
             side: 'right',
             align: 'start'
           }
@@ -85,8 +88,8 @@ const OnboardingTour: React.FC = () => {
         {
           element: '[data-tour="invoices"]',
           popover: {
-            title: 'Factures 💰',
-            description: 'Créez, gérez et suivez vos factures. Marquez-les comme payées pour mettre à jour automatiquement votre inventaire.',
+            title: '🧾 Factures',
+            description: 'Créez et gérez vos factures professionnelles. Suivez les paiements et exportez en PDF en un clic. L\'inventaire se met à jour automatiquement !',
             side: 'right',
             align: 'start'
           }
@@ -94,8 +97,8 @@ const OnboardingTour: React.FC = () => {
         {
           element: '[data-tour="team"]',
           popover: {
-            title: 'Gestion d\'équipe 👥',
-            description: 'Invitez des membres d\'équipe avec différents rôles : manager, serveur, caissier, cuisinier.',
+            title: '👥 Gestion d\'Équipe',
+            description: 'Invitez des membres d\'équipe par email avec différents rôles : manager, serveur, caissier, cuisinier. Collaborez efficacement !',
             side: 'right',
             align: 'start'
           }
@@ -103,8 +106,8 @@ const OnboardingTour: React.FC = () => {
         {
           element: '[data-tour="accounting"]',
           popover: {
-            title: 'Comptabilité 💼',
-            description: 'Gérez vos transactions, générez des rapports financiers et suivez votre trésorerie.',
+            title: '💼 Comptabilité',
+            description: 'Gérez vos transactions, générez des rapports financiers détaillés et suivez votre trésorerie. La santé financière de votre restaurant en temps réel !',
             side: 'right',
             align: 'start'
           }
@@ -112,16 +115,16 @@ const OnboardingTour: React.FC = () => {
         {
           element: '[data-tour="settings"]',
           popover: {
-            title: 'Paramètres ⚙️',
-            description: 'Personnalisez votre profil, gérez vos points de vente et configurez vos préférences.',
+            title: '⚙️ Paramètres',
+            description: 'Personnalisez votre profil, gérez vos points de vente et configurez toutes vos préférences. Adaptez QUEROX à vos besoins !',
             side: 'right',
             align: 'start'
           }
         },
         {
           popover: {
-            title: 'Vous êtes prêt ! 🚀',
-            description: 'Explorez QUEROX à votre rythme. Vous pouvez relancer ce tour à tout moment depuis les paramètres.'
+            title: '🚀 Vous êtes prêt !',
+            description: 'Explorez QUEROX à votre rythme et découvrez toute sa puissance. Vous pouvez relancer ce tour à tout moment depuis les paramètres. Bonne gestion ! 💪',
           }
         }
       ]

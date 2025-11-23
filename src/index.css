@@ -1,5 +1,5 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -97,4 +97,120 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom Driver.js Tour Styling - QUEROX Onboarding */
+.querox-tour-popover {
+  background: linear-gradient(135deg, hsl(210 100% 50%) 0%, hsl(210 100% 40%) 100%) !important;
+  border: none !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 4px rgba(255, 255, 255, 0.1) !important;
+  border-radius: 1.25rem !important;
+  max-width: 440px !important;
+  padding: 2rem !important;
+  animation: tourFadeIn 0.4s ease-out;
+}
+
+@keyframes tourFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.querox-tour-popover .driver-popover-title {
+  color: white !important;
+  font-size: 1.75rem !important;
+  font-weight: 800 !important;
+  margin-bottom: 1rem !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  letter-spacing: -0.02em;
+}
+
+.querox-tour-popover .driver-popover-description {
+  color: rgba(255, 255, 255, 0.98) !important;
+  font-size: 1.0625rem !important;
+  line-height: 1.7 !important;
+  font-weight: 500 !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.querox-tour-popover .driver-popover-progress-text {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 700 !important;
+  font-size: 0.9375rem !important;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.375rem 0.875rem;
+  border-radius: 2rem;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.querox-tour-popover .driver-popover-footer {
+  margin-top: 1.75rem !important;
+  gap: 0.75rem !important;
+}
+
+.querox-tour-popover .driver-popover-footer button {
+  background: white !important;
+  color: hsl(210 100% 50%) !important;
+  border: none !important;
+  padding: 0.875rem 2rem !important;
+  border-radius: 0.75rem !important;
+  font-weight: 800 !important;
+  font-size: 0.9375rem !important;
+  transition: all 0.2s ease !important;
+  text-transform: none !important;
+  letter-spacing: 0.02em;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.querox-tour-popover .driver-popover-footer button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.querox-tour-popover .driver-popover-footer button:active {
+  transform: translateY(0);
+}
+
+.querox-tour-popover .driver-popover-close-btn {
+  color: white !important;
+  opacity: 0.85 !important;
+  font-size: 1.75rem !important;
+  font-weight: bold !important;
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.querox-tour-popover .driver-popover-close-btn:hover {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  transform: rotate(90deg);
+}
+
+.querox-tour-popover .driver-popover-arrow {
+  border-top-color: hsl(210 100% 50%) !important;
+}
+
+.querox-tour-popover .driver-popover-arrow-side-left {
+  border-left-color: hsl(210 100% 50%) !important;
+}
+
+.querox-tour-popover .driver-popover-arrow-side-right {
+  border-right-color: hsl(210 100% 50%) !important;
+}
+
+.querox-tour-popover .driver-popover-arrow-side-bottom {
+  border-bottom-color: hsl(210 100% 50%) !important;
 }
