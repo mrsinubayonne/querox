@@ -69,6 +69,8 @@ import PerformancePersonnel from '@/pages/PerformancePersonnel';
 import SelectOutlet from '@/pages/SelectOutlet';
 import SelectProfile from '@/pages/SelectProfile';
 import ProfileLogin from '@/pages/ProfileLogin';
+import TeamMemberAuth from '@/pages/TeamMemberAuth';
+import TeamMemberSetup from '@/pages/TeamMemberSetup';
 import CGUCGV from '@/pages/CGUCGV';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -91,6 +93,8 @@ function App() {
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-failure" element={<PaymentFailure />} />
               <Route path="/partner-signup" element={<PartnerSignup />} />
+              <Route path="/team-login" element={<TeamMemberAuth />} />
+              <Route path="/team-join" element={<TeamMemberSetup />} />
 
               {/* Routes protégées */}
               <Route path="/select-profile" element={<ProtectedRoute><SelectProfile /></ProtectedRoute>} />

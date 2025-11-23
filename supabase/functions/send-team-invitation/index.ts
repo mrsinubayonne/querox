@@ -94,6 +94,13 @@ serve(async (req) => {
               margin: 20px 0;
               border-radius: 4px;
             }
+            .step {
+              background: white;
+              padding: 15px;
+              margin: 10px 0;
+              border-radius: 8px;
+              border: 1px solid #e5e7eb;
+            }
             .footer {
               text-align: center;
               margin-top: 30px;
@@ -104,23 +111,34 @@ serve(async (req) => {
         </head>
         <body>
           <div class="header">
-            <h1>🎉 Invitation à rejoindre QUEROX</h1>
+            <h1>🎊 Bienvenue dans l'équipe QUEROX !</h1>
           </div>
           <div class="content">
             <p>Bonjour ${full_name || 'cher collaborateur'},</p>
             
-            <p>Vous avez été invité(e) à rejoindre une équipe sur <strong>QUEROX</strong> en tant que <strong>${roleName}</strong>.</p>
+            <p>Vous avez été invité(e) à rejoindre l'équipe${owner_email ? ` de <strong>${owner_email}</strong>` : ''} sur la plateforme <strong>QUEROX</strong> !</p>
             
             <div class="info-box">
               <p><strong>📧 Email:</strong> ${to}</p>
-              <p><strong>👤 Rôle:</strong> ${roleName}</p>
+              <p><strong>👤 Votre rôle:</strong> ${roleName}</p>
               ${owner_email ? `<p><strong>👨‍💼 Invité par:</strong> ${owner_email}</p>` : ''}
             </div>
 
-            <p>Cliquez sur le bouton ci-dessous pour accepter l'invitation et rejoindre l'équipe :</p>
+            <h3 style="color: #9333ea;">🔐 Configuration de votre accès</h3>
+            <p>Pour commencer, vous devez <strong>définir votre propre code d'accès personnel</strong>. Voici comment procéder :</p>
             
-            <div style="text-align: center;">
-              <a href="${invitation_link}" class="button">Accepter l'invitation</a>
+            <div class="step">
+              <strong>1️⃣ Étape 1 :</strong> Cliquez sur le bouton ci-dessous
+            </div>
+            <div class="step">
+              <strong>2️⃣ Étape 2 :</strong> Créez un code d'accès à 6 caractères de votre choix
+            </div>
+            <div class="step">
+              <strong>3️⃣ Étape 3 :</strong> Confirmez votre code
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${invitation_link}" class="button">✨ Configurer mon code d'accès</a>
             </div>
 
             <p style="margin-top: 20px; font-size: 14px; color: #666;">
@@ -128,11 +146,13 @@ serve(async (req) => {
               <code style="background: #eee; padding: 5px 10px; border-radius: 4px; display: inline-block; margin-top: 5px;">${invitation_link}</code>
             </p>
 
-            <div class="info-box" style="margin-top: 30px;">
-              <p style="margin: 0;"><strong>⚠️ Important :</strong> Cette invitation est personnelle et ne doit pas être partagée. Elle vous permettra de vous connecter à la plateforme QUEROX avec les permissions correspondant à votre rôle.</p>
+            <div class="info-box" style="margin-top: 30px; background: #fef3c7; border-left-color: #f59e0b;">
+              <p style="margin: 0;"><strong>⏰ Important :</strong> Ce lien d'invitation est à usage unique. Une fois votre code configuré, vous pourrez vous connecter à tout moment sur <strong>/team-login</strong> avec votre email et votre code personnel.</p>
             </div>
 
-            <p>Bienvenue dans l'équipe ! 🎊</p>
+            <p>Si vous rencontrez des difficultés, n'hésitez pas à contacter votre responsable.</p>
+            
+            <p><strong>À très bientôt sur QUEROX ! 🚀</strong></p>
           </div>
           <div class="footer">
             <p>© ${new Date().getFullYear()} QUEROX - Plateforme de gestion restaurant</p>

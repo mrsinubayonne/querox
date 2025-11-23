@@ -1507,6 +1507,8 @@ export type Database = {
           last_login_at: string | null
           member_email: string
           member_user_id: string | null
+          needs_password_setup: boolean | null
+          outlet_id: string | null
           owner_id: string
           phone: string | null
           role: string
@@ -1524,6 +1526,8 @@ export type Database = {
           last_login_at?: string | null
           member_email: string
           member_user_id?: string | null
+          needs_password_setup?: boolean | null
+          outlet_id?: string | null
           owner_id: string
           phone?: string | null
           role?: string
@@ -1541,12 +1545,22 @@ export type Database = {
           last_login_at?: string | null
           member_email?: string
           member_user_id?: string | null
+          needs_password_setup?: boolean | null
+          outlet_id?: string | null
           owner_id?: string
           phone?: string | null
           role?: string
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "team_members_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {

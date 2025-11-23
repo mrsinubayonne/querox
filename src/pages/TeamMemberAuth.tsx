@@ -43,11 +43,33 @@ const TeamMemberAuth: React.FC = () => {
 
       const member = memberData[0];
 
+      // Get full member details including outlet_id
+      const { data: fullMemberData, error: fetchError } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('id', member.member_id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       // Update last login
       await supabase
         .from('team_members')
-        .update({ last_login_at: new Date().toISOString() })
+        .update({ 
+          last_login_at: new Date().toISOString()
+        })
         .eq('id', member.member_id);
+
+      // If member has an outlet_id, update the profile's selected_outlet_id
+      if (fullMemberData.outlet_id) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from('profiles')
+            .update({ selected_outlet_id: fullMemberData.outlet_id })
+            .eq('id', user.id);
+        }
+      }
 
       // Store team member session info in localStorage with 8-hour expiration
       const expiresAt = new Date();
@@ -58,6 +80,7 @@ const TeamMemberAuth: React.FC = () => {
         ownerId: member.owner_id,
         memberEmail: formData.email,
         role: member.role,
+        outletId: fullMemberData.outlet_id,
         expiresAt: expiresAt.toISOString()
       }));
 

@@ -10,6 +10,7 @@ import { UserPlus, Mail, Send, Trash2, Clock, CheckCircle, XCircle } from 'lucid
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 
 const ROLES = [
   { value: 'manager', label: 'Manager', description: 'Gestion complète sauf équipe' },
@@ -31,6 +32,7 @@ interface TeamInvitation {
 
 export const TeamInvitationSystem: React.FC = () => {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
@@ -42,6 +44,15 @@ export const TeamInvitationSystem: React.FC = () => {
 
   const sendInvitation = async () => {
     if (!user || !email) return;
+
+    if (!profile?.selected_outlet_id) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un point de vente avant d'inviter des membres",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -59,7 +70,9 @@ export const TeamInvitationSystem: React.FC = () => {
           phone: phone || null,
           role: selectedRole,
           status: 'pending',
-          access_code: invitationToken, // Utiliser le token comme code d'accès temporaire
+          access_code: invitationToken,
+          outlet_id: profile.selected_outlet_id,
+          needs_password_setup: true,
           is_active: false
         })
         .select()
