@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -217,30 +217,44 @@ export const useInventory = () => {
     return items.filter(item => item.current_stock <= item.min_stock);
   };
 
+  const channelRef = useRef<any>(null);
+
   useEffect(() => {
     fetchItems();
 
+    // Clean up previous channel if exists
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    if (!user?.id) return;
+
     // Subscribe to realtime changes
-    const channel = supabase
-      .channel('inventory-changes')
+    channelRef.current = supabase
+      .channel(`inventory-changes-${user.id}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'inventory_items',
-          filter: `user_id=eq.${user?.id}`
+          filter: `user_id=eq.${user.id}`
         },
         () => {
+          console.log('Inventory updated, refetching...');
           fetchItems();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [fetchItems, user?.id]);
+  }, [user?.id]);
 
   return {
     items,
