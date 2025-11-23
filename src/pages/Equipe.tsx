@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
-import { TeamInvitationSystem } from '@/components/team/TeamInvitationSystem';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -74,31 +72,6 @@ const Equipe: React.FC = () => {
     <SubscriptionGuard feature="la gestion d'équipe">
       <PageWithSidebar>
         <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Gestion d'équipe</h1>
-              <p className="text-gray-600">
-                Invitez et gérez vos membres d'équipe
-              </p>
-            </div>
-          </div>
-
-          <Tabs defaultValue="invitations" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="invitations">Invitations par email</TabsTrigger>
-              <TabsTrigger value="access-codes">Codes d'accès manuel</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="invitations" className="space-y-6 mt-6">
-              <TeamInvitationSystem />
-            </TabsContent>
-
-            <TabsContent value="access-codes" className="space-y-6 mt-6">
-              <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
@@ -301,9 +274,6 @@ const Equipe: React.FC = () => {
               ))}
             </div>
           )}
-              </div>
-            </TabsContent>
-          </Tabs>
         </div>
       </PageWithSidebar>
     </SubscriptionGuard>

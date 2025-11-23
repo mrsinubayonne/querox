@@ -465,29 +465,10 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       <nav className="flex-1 px-2 py-4 space-y-2">
         {!isAdmin && (
           <>
-            {filteredMenuItems.map(item => {
-              let dataTourAttr = '';
-              if (item.label === 'Dashboard') dataTourAttr = 'dashboard';
-              else if (item.label === 'Menus') dataTourAttr = 'menus';
-              else if (item.label === 'Commandes') dataTourAttr = 'orders';
-              else if (item.label === 'Inventaire') dataTourAttr = 'inventory';
-              else if (item.label === 'Factures') dataTourAttr = 'invoices';
-              else if (item.label === 'Équipe') dataTourAttr = 'team';
-              else if (item.label === 'Comptabilité') dataTourAttr = 'accounting';
-              else if (item.label === 'Paramètres') dataTourAttr = 'settings';
-
-              return (
-                <button
-                  key={item.path}
-                  onClick={() => handleNavigation(item.path)}
-                  data-tour={dataTourAttr}
-                  className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}
-                >
-                  <item.icon size={20} className="flex-shrink-0" />
-                  {!collapsed && <span className="ml-3">{item.label}</span>}
-                </button>
-              );
-            })}
+            {filteredMenuItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+                <item.icon size={20} className="flex-shrink-0" />
+                {!collapsed && <span className="ml-3">{item.label}</span>}
+              </button>)}
 
             {/* Marketing Section */}
             <div className="pt-2">
@@ -569,8 +550,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
           {bottomMenuItems.map(item => (
             <button 
               key={item.path} 
-              onClick={() => handleNavigation(item.path)}
-              data-tour={item.label === 'Paramètres' ? 'settings' : ''}
+              onClick={() => handleNavigation(item.path)} 
               className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
                 isActive(item.path) 
                   ? 'bg-blue-100 text-blue-700 font-medium' 
