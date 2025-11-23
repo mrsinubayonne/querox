@@ -73,6 +73,7 @@ import CGUCGV from '@/pages/CGUCGV';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
+import OnboardingTour from "@/components/OnboardingTour";
 
 function App() {
   return (
@@ -156,6 +157,7 @@ function App() {
           <Toaster />
           <Sonner />
           <InvoicePaidCelebration />
+          <OnboardingTour />
         </Router>
       </RestaurantProvider>
   );
