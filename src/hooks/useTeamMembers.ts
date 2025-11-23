@@ -69,7 +69,7 @@ export const useTeamMembers = () => {
     }
   }, [user]);
 
-  const inviteMember = async (email: string, role: string = 'member', fullName?: string, phone?: string) => {
+  const inviteMember = async (email: string, role: string = 'member', fullName?: string, phone?: string, outletIds?: string[]) => {
     if (!user) return;
 
     if (!canAddMoreMembers()) {
@@ -91,6 +91,9 @@ export const useTeamMembers = () => {
 
       const accessCode = codeData as string;
 
+      // Use first outlet ID if multiple are provided
+      const outletId = outletIds && outletIds.length > 0 ? outletIds[0] : null;
+
       const { error } = await supabase
         .from('team_members')
         .insert({
@@ -102,14 +105,15 @@ export const useTeamMembers = () => {
           status: 'accepted',
           access_code: accessCode,
           accepted_at: new Date().toISOString(),
-          is_active: true
+          is_active: true,
+          outlet_id: outletId
         });
 
       if (error) throw error;
 
       toast({
         title: "Membre ajouté",
-        description: `Code d'accès généré : ${accessCode}`,
+        description: `Code d'accès généré : ${accessCode}. PDV assigné${outletIds && outletIds.length > 1 ? 's' : ''}.`,
       });
 
       await fetchTeamMembers();
