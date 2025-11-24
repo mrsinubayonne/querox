@@ -55,7 +55,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       if (localOutletId !== teamMemberSession.outletId) {
         localStorage.setItem('selectedOutletId', teamMemberSession.outletId);
       }
-      // Team members don't need profile/outlet selection, skip redirections
+      // If team member is on selection pages, redirect to dashboard
+      if (location.pathname === '/select-profile' || location.pathname === '/select-outlet') {
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+      // Team members don't need profile/outlet selection for other pages
     } else {
       // Normal user flow - check for profile and outlet
       // Étape 2: Vérifier qu'un profil est sélectionné
