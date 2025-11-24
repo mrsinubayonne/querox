@@ -60,17 +60,6 @@ const TeamMemberAuth: React.FC = () => {
         })
         .eq('id', member.member_id);
 
-      // If member has an outlet_id, update the profile's selected_outlet_id
-      if (fullMemberData.outlet_id) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase
-            .from('profiles')
-            .update({ selected_outlet_id: fullMemberData.outlet_id })
-            .eq('id', user.id);
-        }
-      }
-
       // Store team member session info in localStorage with 8-hour expiration
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 8);
@@ -83,6 +72,21 @@ const TeamMemberAuth: React.FC = () => {
         outletId: fullMemberData.outlet_id,
         expiresAt: expiresAt.toISOString()
       }));
+
+      // If member has an outlet_id, update both profile and localStorage
+      if (fullMemberData.outlet_id) {
+        // Store outlet in localStorage FIRST
+        localStorage.setItem('selectedOutletId', fullMemberData.outlet_id);
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Update profile selected_outlet_id
+          await supabase
+            .from('profiles')
+            .update({ selected_outlet_id: fullMemberData.outlet_id })
+            .eq('id', user.id);
+        }
+      }
 
       // Log activity
       await supabase
