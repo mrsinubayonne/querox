@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,23 +7,29 @@ import { supabase } from '@/integrations/supabase/client';
 
 const OnboardingTour: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [hasSeenTour, setHasSeenTour] = useState(true);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       if (!user) return;
 
+      // Only run on dashboard or protected routes, NOT on landing page
+      if (location.pathname === '/' || location.pathname === '/auth' || location.pathname.startsWith('/team')) {
+        return;
+      }
+
       // Vérifier si l'utilisateur a déjà vu le tour
       const seenTour = localStorage.getItem(`querox_onboarding_${user.id}`);
       
-      if (!seenTour) {
+      if (!seenTour && location.pathname === '/dashboard') {
         setHasSeenTour(false);
-        setTimeout(() => startTour(), 1000); // Démarrer après 1 seconde
+        setTimeout(() => startTour(), 1500); // Démarrer après 1.5 secondes
       }
     };
 
     checkOnboardingStatus();
-  }, [user]);
+  }, [user, location.pathname]);
 
   const startTour = () => {
     const driverObj = driver({
