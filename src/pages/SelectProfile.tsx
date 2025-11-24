@@ -47,6 +47,8 @@ const SelectProfile: React.FC = () => {
   });
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<{ id: string; name: string } | null>(null);
+  const [isForgotCodeDialogOpen, setIsForgotCodeDialogOpen] = useState(false);
+  const [forgotCodeProfile, setForgotCodeProfile] = useState<{ name: string; code: string } | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -67,8 +69,8 @@ const SelectProfile: React.FC = () => {
       return;
     }
 
-    // Validate access code for non-Admin profiles
-    if (formData.title !== 'Admin' && !formData.accessCode.trim()) {
+    // Validate access code for all profiles
+    if (!formData.accessCode.trim()) {
       toast.error('Vous devez définir un code d\'accès pour ce profil');
       return;
     }
@@ -168,6 +170,23 @@ const SelectProfile: React.FC = () => {
             <p className="text-xl text-gray-600">
               Choisissez le profil que vous souhaitez utiliser
             </p>
+            {profiles.length > 0 && (
+              <Button
+                variant="link"
+                onClick={() => {
+                  if (profiles.length > 0) {
+                    setForgotCodeProfile({ 
+                      name: profiles[0].name || profiles[0].title, 
+                      code: profiles[0].access_code || 'Non défini' 
+                    });
+                    setIsForgotCodeDialogOpen(true);
+                  }
+                }}
+                className="mt-2"
+              >
+                Code oublié ?
+              </Button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -268,7 +287,7 @@ const SelectProfile: React.FC = () => {
                       Si vide, sera nommé automatiquement "{formData.title ? `${formData.title} ${getNextNumber(formData.title)}` : ''}"
                     </p>
                   </div>
-                  {formData.title && formData.title !== 'Admin' && (
+                  {formData.title && (
                     <div>
                       <Label htmlFor="accessCode">Code d'accès * (personnalisable)</Label>
                       <Input
@@ -282,16 +301,6 @@ const SelectProfile: React.FC = () => {
                       />
                       <p className="text-sm text-muted-foreground mt-1">
                         Définissez votre propre code d'accès pour ce profil
-                      </p>
-                    </div>
-                  )}
-                  {formData.title === 'Admin' && (
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                      <p className="text-sm text-blue-900 font-medium">
-                        🔐 Code d'accès automatique
-                      </p>
-                      <p className="text-sm text-blue-700 mt-1">
-                        Un code d'accès sera généré automatiquement pour le profil Admin
                       </p>
                     </div>
                   )}
@@ -379,6 +388,36 @@ const SelectProfile: React.FC = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Forgot Code Dialog */}
+        <AlertDialog open={isForgotCodeDialogOpen} onOpenChange={setIsForgotCodeDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Codes d'accès des profils</AlertDialogTitle>
+              <AlertDialogDescription>
+                Voici les codes d'accès de vos profils :
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4 space-y-2 max-h-96 overflow-y-auto">
+              {profiles.map((profile) => (
+                <div key={profile.id} className="flex justify-between items-center p-3 bg-muted rounded-md">
+                  <div>
+                    <p className="font-medium">{profile.name || profile.title}</p>
+                    <p className="text-sm text-muted-foreground">{profile.title}</p>
+                  </div>
+                  <code className="text-lg font-mono bg-background px-3 py-1 rounded border">
+                    {profile.access_code || 'Non défini'}
+                  </code>
+                </div>
+              ))}
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setIsForgotCodeDialogOpen(false)}>
+                Fermer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </SubscriptionGuard>
   );
