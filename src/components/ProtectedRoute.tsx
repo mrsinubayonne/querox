@@ -55,20 +55,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       if (localOutletId !== teamMemberSession.outletId) {
         localStorage.setItem('selectedOutletId', teamMemberSession.outletId);
       }
-      // Team members don't need profile selection
-      return;
-    }
+      // Team members don't need profile/outlet selection, skip redirections
+    } else {
+      // Normal user flow - check for profile and outlet
+      // Étape 2: Vérifier qu'un profil est sélectionné
+      if (!effectiveProfileId) {
+        navigate('/select-profile', { replace: true });
+        return;
+      }
 
-    // Étape 2: Vérifier qu'un profil est sélectionné
-    if (!effectiveProfileId) {
-      navigate('/select-profile', { replace: true });
-      return;
-    }
-
-    // Étape 3: Vérifier qu'un outlet est sélectionné
-    if (!effectiveOutletId) {
-      navigate('/select-outlet', { replace: true });
-      return;
+      // Étape 3: Vérifier qu'un outlet est sélectionné
+      if (!effectiveOutletId) {
+        navigate('/select-outlet', { replace: true });
+        return;
+      }
     }
   }, [user, authLoading, selectedProfileId, profilesLoading, selectedOutletId, outletsLoading, navigate, location.pathname, isTeamMember, teamMemberSession]);
 
