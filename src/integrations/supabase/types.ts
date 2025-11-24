@@ -1641,6 +1641,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          access_code: string | null
           created_at: string
           id: string
           is_default: boolean | null
@@ -1651,6 +1652,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_code?: string | null
           created_at?: string
           id?: string
           is_default?: boolean | null
@@ -1661,6 +1663,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_code?: string | null
           created_at?: string
           id?: string
           is_default?: boolean | null
