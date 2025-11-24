@@ -47,6 +47,8 @@ const SelectProfile: React.FC = () => {
   });
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<{ id: string; name: string } | null>(null);
+  const [isForgotCodeDialogOpen, setIsForgotCodeDialogOpen] = useState(false);
+  const [forgotCodeProfile, setForgotCodeProfile] = useState<{ name: string; code: string } | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -67,8 +69,8 @@ const SelectProfile: React.FC = () => {
       return;
     }
 
-    // Validate access code for non-Admin profiles
-    if (formData.title !== 'Admin' && !formData.accessCode.trim()) {
+    // Validate access code for all profiles
+    if (!formData.accessCode.trim()) {
       toast.error('Vous devez définir un code d\'accès pour ce profil');
       return;
     }
@@ -104,9 +106,19 @@ const SelectProfile: React.FC = () => {
     }
 
     const enteredCode = accessCode.trim().toUpperCase();
+    const storedCode = (profile.access_code || '').toUpperCase();
 
-    // Check against the stored access code in database
-    if (profile.access_code && profile.access_code === enteredCode) {
+    console.log('🔍 Vérification du code:', {
+      profileName: profile.name || profile.title,
+      enteredCode,
+      storedCode,
+      rawStoredCode: profile.access_code,
+      match: storedCode === enteredCode
+    });
+
+    // Check against the stored access code in database (case-insensitive)
+    if (profile.access_code && storedCode === enteredCode) {
+      console.log('✅ Code correct! Redirection...');
       if (selectedProfileForAccess) {
         selectProfile(selectedProfileForAccess);
         // Rediriger vers les rapports pour Serveur et Caissier
@@ -120,6 +132,7 @@ const SelectProfile: React.FC = () => {
       setAccessCode('');
       setSelectedProfileForAccess(null);
     } else {
+      console.log('❌ Code incorrect');
       toast.error('Code d\'accès incorrect');
     }
   };
@@ -156,43 +169,60 @@ const SelectProfile: React.FC = () => {
 
   return (
     <SubscriptionGuard feature="créer ou sélectionner un profil">
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 py-6 md:py-12 px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-6">
-              <User className="w-8 h-8 text-white" />
+          <div className="text-center mb-8 md:mb-12">
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4 md:mb-6">
+              <User className="w-6 h-6 md:w-8 md:h-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">
               Sélectionnez votre profil
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className="text-base md:text-xl text-gray-600">
               Choisissez le profil que vous souhaitez utiliser
             </p>
+            {profiles.length > 0 && (
+              <Button
+                variant="link"
+                onClick={() => {
+                  if (profiles.length > 0) {
+                    setForgotCodeProfile({ 
+                      name: profiles[0].name || profiles[0].title, 
+                      code: profiles[0].access_code || 'Non défini' 
+                    });
+                    setIsForgotCodeDialogOpen(true);
+                  }
+                }}
+                className="mt-2 text-sm md:text-base"
+              >
+                Code oublié ?
+              </Button>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {profiles.map((profile) => (
               <Card 
                 key={profile.id}
                 className="hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => handleSelectProfile(profile.id)}
               >
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5 text-primary" />
-                    {profile.name || profile.title}
+                <CardHeader className="pb-3 md:pb-6">
+                  <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                    <User className="h-4 w-4 md:h-5 md:w-5 text-primary flex-shrink-0" />
+                    <span className="truncate">{profile.name || profile.title}</span>
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-xs md:text-sm">
                     {profile.title}
                     {profile.is_default && ' • Par défaut'}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Button className="w-full">
+                <CardContent className="space-y-2">
+                  <Button className="w-full text-sm md:text-base">
                     Utiliser ce profil
                   </Button>
-                  <Button type="button" variant="outline" className="w-full mt-2" onClick={(e) => { e.stopPropagation(); handleEditProfile(profile.id, profile.name || profile.title); }}>
-                    <Pencil className="h-4 w-4 mr-2" /> Renommer
+                  <Button type="button" variant="outline" className="w-full text-sm md:text-base" onClick={(e) => { e.stopPropagation(); handleEditProfile(profile.id, profile.name || profile.title); }}>
+                    <Pencil className="h-3 w-3 md:h-4 md:w-4 mr-2" /> Renommer
                   </Button>
                 </CardContent>
               </Card>
@@ -201,23 +231,24 @@ const SelectProfile: React.FC = () => {
             {/* Card pour créer un nouveau profil */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild disabled={!canAddMoreProfiles()}>
-                <Card className={`transition-shadow cursor-pointer border-dashed border-2 flex items-center justify-center min-h-[220px] ${
+                <Card className={`transition-shadow cursor-pointer border-dashed border-2 flex items-center justify-center min-h-[180px] md:min-h-[220px] ${
                   canAddMoreProfiles() 
                     ? 'hover:shadow-lg' 
                     : 'opacity-50 cursor-not-allowed'
                 }`}>
-                  <CardContent className="text-center py-8">
-                    <Plus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-lg font-semibold text-foreground">
+                  <CardContent className="text-center py-6 md:py-8">
+                    <Plus className="h-8 w-8 md:h-12 md:w-12 text-muted-foreground mx-auto mb-3 md:mb-4" />
+                    <p className="text-base md:text-lg font-semibold text-foreground">
                       {canAddMoreProfiles() 
                         ? 'Créer un nouveau profil'
                         : `Limite atteinte (${getProfileLimit()} max)`
                       }
                     </p>
                     {!canAddMoreProfiles() && (
-                      <p className="text-sm text-muted-foreground mt-2">
+                      <p className="text-xs md:text-sm text-muted-foreground mt-2">
                         <Button 
                           variant="link" 
+                          className="text-xs md:text-sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate('/abonnement');
@@ -230,10 +261,10 @@ const SelectProfile: React.FC = () => {
                   </CardContent>
                 </Card>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Nouveau profil</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-lg md:text-xl">Nouveau profil</DialogTitle>
+                  <DialogDescription className="text-sm md:text-base">
                     Créez un nouveau profil avec un titre et un nom personnalisé
                   </DialogDescription>
                 </DialogHeader>
@@ -268,7 +299,7 @@ const SelectProfile: React.FC = () => {
                       Si vide, sera nommé automatiquement "{formData.title ? `${formData.title} ${getNextNumber(formData.title)}` : ''}"
                     </p>
                   </div>
-                  {formData.title && formData.title !== 'Admin' && (
+                  {formData.title && (
                     <div>
                       <Label htmlFor="accessCode">Code d'accès * (personnalisable)</Label>
                       <Input
@@ -282,16 +313,6 @@ const SelectProfile: React.FC = () => {
                       />
                       <p className="text-sm text-muted-foreground mt-1">
                         Définissez votre propre code d'accès pour ce profil
-                      </p>
-                    </div>
-                  )}
-                  {formData.title === 'Admin' && (
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                      <p className="text-sm text-blue-900 font-medium">
-                        🔐 Code d'accès automatique
-                      </p>
-                      <p className="text-sm text-blue-700 mt-1">
-                        Un code d'accès sera généré automatiquement pour le profil Admin
                       </p>
                     </div>
                   )}
@@ -314,13 +335,13 @@ const SelectProfile: React.FC = () => {
 
         {/* Access Code Dialog for Admin Profile */}
         <AlertDialog open={isAccessCodeDialogOpen} onOpenChange={setIsAccessCodeDialogOpen}>
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-[95vw] sm:max-w-lg">
             <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-primary" />
+              <AlertDialogTitle className="flex items-center gap-2 text-lg md:text-xl">
+                <Lock className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 Code d'accès requis
               </AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogDescription className="text-sm md:text-base">
                 Ce profil nécessite un code d'accès pour garantir la sécurité. Veuillez entrer le code d'accès.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -356,10 +377,10 @@ const SelectProfile: React.FC = () => {
 
         {/* Edit Profile Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-[95vw] sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Modifier le profil</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-lg md:text-xl">Modifier le profil</DialogTitle>
+              <DialogDescription className="text-sm md:text-base">
                 Changez le nom de ce profil
               </DialogDescription>
             </DialogHeader>
@@ -379,6 +400,36 @@ const SelectProfile: React.FC = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Forgot Code Dialog */}
+        <AlertDialog open={isForgotCodeDialogOpen} onOpenChange={setIsForgotCodeDialogOpen}>
+          <AlertDialogContent className="max-w-[95vw] md:max-w-lg">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-lg md:text-xl">Codes d'accès des profils</AlertDialogTitle>
+              <AlertDialogDescription className="text-sm md:text-base">
+                Voici les codes d'accès de vos profils :
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4 space-y-2 max-h-[60vh] md:max-h-96 overflow-y-auto">
+              {profiles.map((profile) => (
+                <div key={profile.id} className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 p-3 bg-muted rounded-md">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm md:text-base truncate">{profile.name || profile.title}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">{profile.title}</p>
+                  </div>
+                  <code className="text-base md:text-lg font-mono bg-background px-3 py-2 rounded border self-start md:self-center">
+                    {profile.access_code || 'Non défini'}
+                  </code>
+                </div>
+              ))}
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setIsForgotCodeDialogOpen(false)} className="w-full md:w-auto">
+                Fermer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </SubscriptionGuard>
   );
