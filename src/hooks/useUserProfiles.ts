@@ -13,6 +13,7 @@ export interface UserProfile {
   name: string | null;
   is_default: boolean;
   selected_outlet_id: string | null;
+  access_code: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -89,7 +90,7 @@ export const useUserProfiles = () => {
     }
   };
 
-  const createProfile = async (title: ProfileTitle, name?: string): Promise<UserProfile | null> => {
+  const createProfile = async (title: ProfileTitle, name?: string, accessCode?: string): Promise<UserProfile | null> => {
     if (!user) return null;
 
     if (!canAddMoreProfiles()) {
@@ -102,6 +103,20 @@ export const useUserProfiles = () => {
     }
 
     try {
+      // Generate automatic code for Admin, use provided code for others
+      const finalAccessCode = title === 'Admin' 
+        ? `QRX-${Math.random().toString(36).substring(2, 7).toUpperCase()}`
+        : accessCode;
+
+      if (!finalAccessCode) {
+        toast({
+          title: 'Code d\'accès requis',
+          description: 'Vous devez définir un code d\'accès pour ce profil',
+          variant: 'destructive',
+        });
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('user_profiles')
         .insert([
@@ -110,6 +125,7 @@ export const useUserProfiles = () => {
             title,
             name: name || null,
             is_default: profiles.length === 0,
+            access_code: finalAccessCode,
           },
         ])
         .select()
@@ -119,7 +135,9 @@ export const useUserProfiles = () => {
 
       toast({
         title: 'Profil créé',
-        description: 'Le profil a été créé avec succès',
+        description: title === 'Admin' 
+          ? `Profil créé avec le code: ${finalAccessCode}`
+          : 'Le profil a été créé avec succès',
       });
 
       await fetchProfiles();

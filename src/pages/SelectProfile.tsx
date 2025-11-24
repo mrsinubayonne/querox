@@ -24,14 +24,6 @@ import {
 
 const PROFILE_TITLES: ProfileTitle[] = ['Admin', 'Caissier(e)', 'Comptable', 'Serveur'];
 
-// Codes d'accès pour chaque type de profil
-const ACCESS_CODES: Record<ProfileTitle, string[]> = {
-  'Admin': ['QRX-27A79'],
-  'Comptable': ['QRX-C8218'],
-  'Caissier(e)': ['QRX-B2A15', 'QRX-CAS77'],
-  'Serveur': ['QRX-B2A15', 'QRX-CAS77']
-};
-
 const SelectProfile: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -50,7 +42,8 @@ const SelectProfile: React.FC = () => {
   const [accessCode, setAccessCode] = useState('');
   const [formData, setFormData] = useState({
     title: '' as ProfileTitle | '',
-    name: ''
+    name: '',
+    accessCode: ''
   });
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<{ id: string; name: string } | null>(null);
@@ -74,15 +67,21 @@ const SelectProfile: React.FC = () => {
       return;
     }
 
+    // Validate access code for non-Admin profiles
+    if (formData.title !== 'Admin' && !formData.accessCode.trim()) {
+      toast.error('Vous devez définir un code d\'accès pour ce profil');
+      return;
+    }
+
     const nextNumber = getNextNumber(formData.title);
     const defaultName = `${formData.title} ${nextNumber}`;
     const finalName = formData.name.trim() || defaultName;
 
-    const newProfile = await createProfile(formData.title, finalName);
+    const newProfile = await createProfile(formData.title, finalName, formData.accessCode.trim().toUpperCase());
 
     if (newProfile) {
       setIsDialogOpen(false);
-      setFormData({ title: '', name: '' });
+      setFormData({ title: '', name: '', accessCode: '' });
     }
   };
 
@@ -104,10 +103,10 @@ const SelectProfile: React.FC = () => {
       return;
     }
 
-    const validCodes = ACCESS_CODES[profile.title];
     const enteredCode = accessCode.trim().toUpperCase();
 
-    if (validCodes.includes(enteredCode)) {
+    // Check against the stored access code in database
+    if (profile.access_code && profile.access_code === enteredCode) {
       if (selectedProfileForAccess) {
         selectProfile(selectedProfileForAccess);
         // Rediriger vers les rapports pour Serveur et Caissier
@@ -269,6 +268,27 @@ const SelectProfile: React.FC = () => {
                       Si vide, sera nommé automatiquement "{formData.title ? `${formData.title} ${getNextNumber(formData.title)}` : ''}"
                     </p>
                   </div>
+                  {formData.title && formData.title !== 'Admin' && (
+                    <div>
+                      <Label htmlFor="accessCode">Code d'accès *</Label>
+                      <Input
+                        id="accessCode"
+                        type="text"
+                        value={formData.accessCode}
+                        onChange={(e) => setFormData({ ...formData, accessCode: e.target.value })}
+                        placeholder="Ex: MONCODE123"
+                        maxLength={20}
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Ce code sera demandé pour accéder à ce profil
+                      </p>
+                    </div>
+                  )}
+                  {formData.title === 'Admin' && (
+                    <p className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
+                      Un code d'accès sera généré automatiquement pour le profil Admin
+                    </p>
+                  )}
                   <Button type="submit" className="w-full">
                     Créer le profil
                   </Button>
