@@ -106,9 +106,10 @@ const SelectProfile: React.FC = () => {
     }
 
     const enteredCode = accessCode.trim().toUpperCase();
+    const storedCode = (profile.access_code || '').toUpperCase();
 
-    // Check against the stored access code in database
-    if (profile.access_code && profile.access_code === enteredCode) {
+    // Check against the stored access code in database (case-insensitive)
+    if (profile.access_code && storedCode === enteredCode) {
       if (selectedProfileForAccess) {
         selectProfile(selectedProfileForAccess);
         // Rediriger vers les rapports pour Serveur et Caissier
