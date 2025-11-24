@@ -14,7 +14,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requiresSubscription = false 
 }) => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isTeamMember, teamMemberSession } = useAuth();
   const { selectedProfileId, profiles, loading: profilesLoading } = useUserProfiles();
   const { selectedOutletId, loading: outletsLoading } = useOutlets();
   const navigate = useNavigate();
@@ -49,6 +49,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     const effectiveProfileId = selectedProfileId || localProfileId;
     const effectiveOutletId = selectedOutletId || localOutletId;
 
+    // Special handling for team members with outlet_id
+    if (isTeamMember && teamMemberSession?.outletId) {
+      // Team member has an assigned outlet, ensure it's set
+      if (localOutletId !== teamMemberSession.outletId) {
+        localStorage.setItem('selectedOutletId', teamMemberSession.outletId);
+      }
+      // Team members don't need profile selection
+      return;
+    }
+
     // Étape 2: Vérifier qu'un profil est sélectionné
     if (!effectiveProfileId) {
       navigate('/select-profile', { replace: true });
@@ -60,7 +70,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       navigate('/select-outlet', { replace: true });
       return;
     }
-  }, [user, authLoading, selectedProfileId, profilesLoading, selectedOutletId, outletsLoading, navigate, location.pathname]);
+  }, [user, authLoading, selectedProfileId, profilesLoading, selectedOutletId, outletsLoading, navigate, location.pathname, isTeamMember, teamMemberSession]);
 
   // Show loading state while checking authentication
   if (loading) {
