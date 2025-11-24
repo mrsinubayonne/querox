@@ -270,24 +270,30 @@ const SelectProfile: React.FC = () => {
                   </div>
                   {formData.title && formData.title !== 'Admin' && (
                     <div>
-                      <Label htmlFor="accessCode">Code d'accès *</Label>
+                      <Label htmlFor="accessCode">Code d'accès * (personnalisable)</Label>
                       <Input
                         id="accessCode"
                         type="text"
                         value={formData.accessCode}
-                        onChange={(e) => setFormData({ ...formData, accessCode: e.target.value })}
-                        placeholder="Ex: MONCODE123"
+                        onChange={(e) => setFormData({ ...formData, accessCode: e.target.value.toUpperCase() })}
+                        placeholder="Ex: MON123CODE"
                         maxLength={20}
+                        className="font-mono"
                       />
                       <p className="text-sm text-muted-foreground mt-1">
-                        Ce code sera demandé pour accéder à ce profil
+                        Définissez votre propre code d'accès pour ce profil
                       </p>
                     </div>
                   )}
                   {formData.title === 'Admin' && (
-                    <p className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
-                      Un code d'accès sera généré automatiquement pour le profil Admin
-                    </p>
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="text-sm text-blue-900 font-medium">
+                        🔐 Code d'accès automatique
+                      </p>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Un code d'accès sera généré automatiquement pour le profil Admin
+                      </p>
+                    </div>
                   )}
                   <Button type="submit" className="w-full">
                     Créer le profil
