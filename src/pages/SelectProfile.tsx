@@ -108,8 +108,17 @@ const SelectProfile: React.FC = () => {
     const enteredCode = accessCode.trim().toUpperCase();
     const storedCode = (profile.access_code || '').toUpperCase();
 
+    console.log('🔍 Vérification du code:', {
+      profileName: profile.name || profile.title,
+      enteredCode,
+      storedCode,
+      rawStoredCode: profile.access_code,
+      match: storedCode === enteredCode
+    });
+
     // Check against the stored access code in database (case-insensitive)
     if (profile.access_code && storedCode === enteredCode) {
+      console.log('✅ Code correct! Redirection...');
       if (selectedProfileForAccess) {
         selectProfile(selectedProfileForAccess);
         // Rediriger vers les rapports pour Serveur et Caissier
@@ -123,6 +132,7 @@ const SelectProfile: React.FC = () => {
       setAccessCode('');
       setSelectedProfileForAccess(null);
     } else {
+      console.log('❌ Code incorrect');
       toast.error('Code d\'accès incorrect');
     }
   };
