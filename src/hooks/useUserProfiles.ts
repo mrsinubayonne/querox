@@ -103,12 +103,8 @@ export const useUserProfiles = () => {
     }
 
     try {
-      // Generate automatic code for Admin, use provided code for others
-      const finalAccessCode = title === 'Admin' 
-        ? `QRX-${Math.random().toString(36).substring(2, 7).toUpperCase()}`
-        : accessCode;
-
-      if (!finalAccessCode) {
+      // Always use the provided access code
+      if (!accessCode?.trim()) {
         toast({
           title: 'Code d\'accès requis',
           description: 'Vous devez définir un code d\'accès pour ce profil',
@@ -125,7 +121,7 @@ export const useUserProfiles = () => {
             title,
             name: name || null,
             is_default: profiles.length === 0,
-            access_code: finalAccessCode,
+            access_code: accessCode.trim().toUpperCase(),
           },
         ])
         .select()
@@ -135,9 +131,7 @@ export const useUserProfiles = () => {
 
       toast({
         title: 'Profil créé',
-        description: title === 'Admin' 
-          ? `Profil créé avec le code: ${finalAccessCode}`
-          : 'Le profil a été créé avec succès',
+        description: 'Le profil a été créé avec succès',
       });
 
       await fetchProfiles();
