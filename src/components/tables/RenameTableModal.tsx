@@ -1,0 +1,111 @@
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface RenameTableModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  sessionId: string;
+  currentName: string;
+  onSuccess: () => void;
+}
+
+export const RenameTableModal: React.FC<RenameTableModalProps> = ({
+  isOpen,
+  onClose,
+  sessionId,
+  currentName,
+  onSuccess,
+}) => {
+  const [newName, setNewName] = useState(currentName);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newName.trim()) {
+      toast({
+        title: "Nom requis",
+        description: "Veuillez entrer un nom pour la table.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("table_sessions")
+        .update({ custom_table_name: newName.trim() })
+        .eq("id", sessionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Table renommée",
+        description: `La table a été renommée en "${newName}".`,
+      });
+
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      console.error("Error renaming table:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de renommer la table.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Renommer la table</DialogTitle>
+          <DialogDescription>
+            Donnez un nouveau nom à cette table.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="table-name">Nouveau nom</Label>
+              <Input
+                id="table-name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Ex: VIP 1, Terrasse 3..."
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};

@@ -7,6 +7,7 @@ import { TableGrid } from "@/components/tables/TableGrid";
 import { CreateSessionWithOrderModal } from "@/components/tables/CreateSessionWithOrderModal";
 import { AddOrderFromCustomerModal } from "@/components/tables/AddOrderFromCustomerModal";
 import { TableSessionModal } from "@/components/tables/TableSessionModal";
+import { RenameTableModal } from "@/components/tables/RenameTableModal";
 import { useTableSessions, TableSession } from "@/hooks/useTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,8 +31,10 @@ const Tables: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddOrderModal, setShowAddOrderModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<TableSession | null>(null);
+  const [sessionToRename, setSessionToRename] = useState<TableSession | null>(null);
 
   // Generate table numbers (default to 120 tables)
   const tableNumbers = Array.from({ length: 120 }, (_, i) => String(i + 1).padStart(2, "0"));
@@ -187,11 +190,14 @@ const Tables: React.FC = () => {
               ))}
             </div>
           ) : (
-            <TableGrid
-              tableNumbers={tableNumbers}
-              sessions={sessions}
-              onTableClick={handleTableClick}
-            />
+          <TableGrid
+            sessions={sessions}
+            onTableClick={handleTableClick}
+            onTableRename={(session) => {
+              setSessionToRename(session);
+              setShowRenameModal(true);
+            }}
+          />
           )}
 
           {/* Modals */}
@@ -227,6 +233,40 @@ const Tables: React.FC = () => {
             onCloseSession={handleCloseSession}
             onMarkAsPaid={handleMarkAsPaid}
           />
+
+          {sessionToRename && (
+            <RenameTableModal
+              isOpen={showRenameModal}
+              onClose={() => {
+                setShowRenameModal(false);
+                setSessionToRename(null);
+              }}
+              sessionId={sessionToRename.id}
+              currentName={sessionToRename.custom_table_name || `Table ${sessionToRename.table_number}`}
+              onSuccess={() => {
+                refetch();
+                setShowRenameModal(false);
+                setSessionToRename(null);
+              }}
+            />
+          )}
+
+          {sessionToRename && (
+            <RenameTableModal
+              isOpen={showRenameModal}
+              onClose={() => {
+                setShowRenameModal(false);
+                setSessionToRename(null);
+              }}
+              sessionId={sessionToRename.id}
+              currentName={sessionToRename.custom_table_name || `Table ${sessionToRename.table_number}`}
+              onSuccess={() => {
+                refetch();
+                setShowRenameModal(false);
+                setSessionToRename(null);
+              }}
+            />
+          )}
         </div>
       </PageWithSidebar>
     </SubscriptionGuard>
