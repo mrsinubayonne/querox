@@ -10,6 +10,7 @@ interface MenuData {
   description?: string;
   logo_url?: string;
   header_image_url?: string;
+  outlet_id?: string;
 }
 
 export const useMenuData = (menuId: string | null) => {
@@ -18,6 +19,7 @@ export const useMenuData = (menuId: string | null) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [restaurantUserId, setRestaurantUserId] = useState<string | null>(null);
+  const [outletId, setOutletId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchMenu = useCallback(async (id: string) => {
@@ -28,7 +30,7 @@ export const useMenuData = (menuId: string | null) => {
       // 1. Récupérer le menu et vérifier qu'il existe
       const { data: menuData, error: menuError } = await supabase
         .from('menus')
-        .select('user_id, name, description, logo_url, header_image_url, is_active')
+        .select('user_id, outlet_id, name, description, logo_url, header_image_url, is_active')
         .eq('id', id)
         .eq('is_active', true)
         .maybeSingle();
@@ -43,12 +45,14 @@ export const useMenuData = (menuId: string | null) => {
       }
 
       setRestaurantUserId(menuData.user_id);
+      setOutletId(menuData.outlet_id || null);
       setMenuData({
         id,
         name: menuData.name,
         description: menuData.description || undefined,
         logo_url: menuData.logo_url || undefined,
         header_image_url: menuData.header_image_url || undefined,
+        outlet_id: menuData.outlet_id || undefined,
       });
 
       // 2. Récupérer les catégories
@@ -128,5 +132,5 @@ export const useMenuData = (menuId: string | null) => {
     }
   }, [menuId, fetchMenu]);
 
-  return { menuItems, loading, error, restaurantUserId, menuData };
+  return { menuItems, loading, error, restaurantUserId, menuData, outletId };
 };

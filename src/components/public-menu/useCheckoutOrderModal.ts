@@ -23,7 +23,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const [numberOfPeople, setNumberOfPeople] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { restaurantUserId } = useRestaurant();
+  const { restaurantUserId, outletId } = useRestaurant();
 
   // Pre-fill table number from URL parameter
   useEffect(() => {
@@ -61,18 +61,11 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     setLoading(true);
 
     try {
-      // Get the outlet_id for the restaurant - use profiles table for restaurant owner
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', restaurantUserId)
-        .maybeSingle();
-      
-      const outletId = profile?.selected_outlet_id;
+      // Vérifier que l'outlet_id est disponible depuis le menu
       if (!outletId) {
         toast({ 
           title: "Erreur", 
-          description: "Point de vente non configuré pour ce restaurant.", 
+          description: "Point de vente non configuré pour ce menu.", 
           variant: "destructive" 
         });
         setLoading(false);
