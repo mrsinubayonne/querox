@@ -19,7 +19,7 @@ import QuickAddOrderToSessionModal from "./QuickAddOrderToSessionModal";
 import InvoicePrintView from "@/components/invoices/InvoicePrintView";
 import { Invoice } from "@/hooks/useInvoices";
 import { usePaidCelebration } from "@/hooks/usePaidCelebration";
-import { InvoicePreviewLive } from "@/components/invoices/InvoicePreviewLive";
+import { InvoicePreviewModal } from "./InvoicePreviewModal";
 interface Order {
   id: string;
   customer_name: string;
@@ -49,6 +49,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [servedBy, setServedBy] = useState("");
   const [invoiceToPrint, setInvoiceToPrint] = useState<Invoice | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
   const navigate = useNavigate();
   const {
@@ -239,7 +240,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   };
   if (!session) return null;
   return <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="max-w-[95vw] w-full max-h-[95vh]">
+      <DialogContent className="max-w-2xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Table {session.table_number}
@@ -254,10 +255,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[70vh]">
-          {/* Left: Orders */}
-          <ScrollArea className="h-full pr-4">
+        <ScrollArea className="max-h-[50vh]">
           <div className="space-y-4">
             {/* Session Info */}
             <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
@@ -332,7 +330,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                         <span>{formatCurrency(order.total_amount)}</span>
                       </div>
                     </div>)}
-              </div>}
+                </div>}
             </div>
 
             <Separator />
@@ -347,20 +345,14 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
               </div>
             </div>
           </div>
-          </ScrollArea>
-
-          {/* Right: Invoice Preview */}
-          <div className="border-l pl-4 overflow-y-auto h-full">
-            <InvoicePreviewLive 
-              sessionId={session.id}
-              tableNumber={session.table_number}
-              orders={orders}
-            />
-          </div>
-        </div>
+        </ScrollArea>
 
         <DialogFooter className="flex-wrap gap-2">
           {session.status === "active" && <>
+              <Button onClick={() => setShowPreview(true)} variant="outline">
+                <Eye className="h-4 w-4 mr-2" />
+                Prévisualiser
+              </Button>
               <Button onClick={handleAddOrder} variant="secondary">
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter une commande
@@ -429,6 +421,14 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
       {/* Invoice Print View */}
       {invoiceToPrint && !showPrintDialog && <InvoicePrintView invoice={invoiceToPrint} servedBy={servedBy || undefined} />}
+      
+      {/* Invoice Preview Modal */}
+      <InvoicePreviewModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        sessionId={session.id}
+        tableNumber={session.table_number}
+      />
       
       <CelebrationMessage />
     </Dialog>;
