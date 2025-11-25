@@ -49,16 +49,31 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ open, on
     try {
       setLoading(true);
 
-      // Generate a reset link
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/auth?reset=true`,
-      });
+      // Call edge function to reset password directly without email
+      const response = await fetch(
+        `https://aufmphldtjrcddyayqoy.supabase.co/functions/v1/reset-user-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1Zm1waGxkdGpyY2RkeWF5cW95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NzMwNTUsImV4cCI6MjA2NTI0OTA1NX0.MJm2BxWo43HLFpVLFsI2nw4KeFbRNJxm2O7G8L0po_Y`,
+          },
+          body: JSON.stringify({
+            email: data.email.trim().toLowerCase(),
+            newPassword: data.newPassword,
+          }),
+        }
+      );
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message);
+      }
 
       toast({
-        title: "Lien de réinitialisation envoyé",
-        description: "Consultez votre email pour réinitialiser votre mot de passe. Le lien est valable 1 heure.",
+        title: "Succès",
+        description: result.message,
       });
 
       form.reset();
@@ -66,7 +81,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ open, on
     } catch (error: any) {
       toast({
         title: "Erreur",
-        description: error?.message || "Impossible d'envoyer le lien de réinitialisation",
+        description: error?.message || "Impossible de réinitialiser le mot de passe",
         variant: "destructive",
       });
     } finally {
@@ -80,7 +95,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ open, on
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Réinitialiser le mot de passe</DialogTitle>
           <DialogDescription>
-            Entrez votre email pour recevoir un lien de réinitialisation
+            Entrez votre email et choisissez un nouveau mot de passe
           </DialogDescription>
         </DialogHeader>
 

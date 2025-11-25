@@ -8,7 +8,6 @@ import { useSubscription } from '@/hooks/useSubscription';
 import ModernSidebar from '@/components/ModernSidebar';
 import UnauthorizedAccess from '@/components/admin/UnauthorizedAccess';
 import { LifeBuoy, MessageSquare, AlertCircle, DollarSign, Clock, User, CheckCircle2 } from 'lucide-react';
-import { UserPasswordReset } from '@/components/admin/UserPasswordReset';
 
 const AdminSupport: React.FC = () => {
   const { user } = useAuth();
@@ -119,15 +118,11 @@ const AdminSupport: React.FC = () => {
             </Card>
           </div>
 
-          {/* Password Reset Section */}
-          <UserPasswordReset />
-
           {/* Tabs */}
           <Tabs defaultValue="tickets" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="tickets">Tickets de Support</TabsTrigger>
               <TabsTrigger value="claims">Réclamations</TabsTrigger>
-              <TabsTrigger value="reset">Réinitialisation MDP</TabsTrigger>
             </TabsList>
 
             <TabsContent value="tickets" className="space-y-4">
@@ -200,12 +195,6 @@ const AdminSupport: React.FC = () => {
                   </CardContent>
                 </Card>
               ))}
-            </TabsContent>
-
-            <TabsContent value="reset" className="space-y-4">
-              <div className="max-w-2xl">
-                <UserPasswordReset />
-              </div>
             </TabsContent>
           </Tabs>
         </div>
