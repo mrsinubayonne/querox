@@ -8,6 +8,7 @@ export interface TableSession {
   user_id: string;
   outlet_id: string | null;
   table_number: string;
+  custom_table_name?: string | null;
   status: "active" | "closed" | "paid";
   started_at: string;
   closed_at: string | null;

@@ -3,16 +3,18 @@ import { TableCard } from "./TableCard";
 import { TableSession } from "@/hooks/useTableSessions";
 
 interface TableGridProps {
-  tableNumbers: string[];
   sessions: TableSession[];
   onTableClick: (tableNumber: string, session: TableSession | null) => void;
+  onTableRename?: (session: TableSession) => void;
 }
 
 export const TableGrid: React.FC<TableGridProps> = ({
-  tableNumbers,
   sessions,
   onTableClick,
+  onTableRename,
 }) => {
+  // Generate table numbers (default to 120 tables)
+  const tableNumbers = Array.from({ length: 120 }, (_, i) => String(i + 1).padStart(2, "0"));
   const getSessionForTable = (tableNumber: string) => {
     return sessions.find(
       (s) => s.table_number === tableNumber && (s.status === "active" || s.status === "closed")
@@ -33,6 +35,7 @@ export const TableGrid: React.FC<TableGridProps> = ({
               tableNumber={tableNumber}
               session={session}
               onClick={() => onTableClick(tableNumber, session)}
+              onRename={session && onTableRename ? () => onTableRename(session) : undefined}
             />
           </div>
         );

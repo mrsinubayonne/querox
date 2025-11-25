@@ -11,7 +11,7 @@ import { TableSession } from "@/hooks/useTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer } from "lucide-react";
+import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ import QuickAddOrderToSessionModal from "./QuickAddOrderToSessionModal";
 import InvoicePrintView from "@/components/invoices/InvoicePrintView";
 import { Invoice } from "@/hooks/useInvoices";
 import { usePaidCelebration } from "@/hooks/usePaidCelebration";
+import { InvoicePreviewModal } from "./InvoicePreviewModal";
 interface Order {
   id: string;
   customer_name: string;
@@ -48,6 +49,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [servedBy, setServedBy] = useState("");
   const [invoiceToPrint, setInvoiceToPrint] = useState<Invoice | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
   const navigate = useNavigate();
   const {
@@ -347,6 +349,10 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
         <DialogFooter className="flex-wrap gap-2">
           {session.status === "active" && <>
+              <Button onClick={() => setShowPreview(true)} variant="outline">
+                <Eye className="h-4 w-4 mr-2" />
+                Prévisualiser
+              </Button>
               <Button onClick={handleAddOrder} variant="secondary">
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter une commande
@@ -415,6 +421,14 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
       {/* Invoice Print View */}
       {invoiceToPrint && !showPrintDialog && <InvoicePrintView invoice={invoiceToPrint} servedBy={servedBy || undefined} />}
+      
+      {/* Invoice Preview Modal */}
+      <InvoicePreviewModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        sessionId={session.id}
+        tableNumber={session.table_number}
+      />
       
       <CelebrationMessage />
     </Dialog>;

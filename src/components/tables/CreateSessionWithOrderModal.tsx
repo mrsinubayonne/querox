@@ -115,15 +115,37 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   }, [menuItems, searchTerm]);
 
   const addToCart = (item: typeof menuItems[0]) => {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
-      if (existing) {
-        return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-        );
-      }
-      return [...prev, { id: item.id, name: item.name, price: item.price, quantity: 1 }];
-    });
+    const itemData = menuItems.find(m => m.id === item.id);
+    
+    // Si c'est un plat personnalisable, demander le prix et le nom
+    if (itemData && (itemData as any).is_custom_price) {
+      const customPrice = prompt("Entrez le prix pour ce plat:");
+      const customName = (itemData as any).is_custom_name 
+        ? prompt("Entrez le nom du plat:", item.name) 
+        : item.name;
+      
+      if (!customPrice || isNaN(Number(customPrice))) return;
+      
+      setCart((prev) => [
+        ...prev, 
+        { 
+          id: item.id + Date.now(), // Unique ID pour chaque plat custom
+          name: customName || item.name, 
+          price: Number(customPrice), 
+          quantity: 1 
+        }
+      ]);
+    } else {
+      setCart((prev) => {
+        const existing = prev.find((i) => i.id === item.id);
+        if (existing) {
+          return prev.map((i) =>
+            i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+          );
+        }
+        return [...prev, { id: item.id, name: item.name, price: item.price, quantity: 1 }];
+      });
+    }
     setSearchTerm("");
   };
 

@@ -1,7 +1,8 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Clock, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Clock, Sparkles, Pencil } from "lucide-react";
 import { TableSession } from "@/hooks/useTableSessions";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -10,12 +11,14 @@ interface TableCardProps {
   tableNumber: string;
   session: TableSession | null;
   onClick: () => void;
+  onRename?: () => void;
 }
 
 export const TableCard: React.FC<TableCardProps> = ({
   tableNumber,
   session,
   onClick,
+  onRename,
 }) => {
   const getStatusStyles = () => {
     if (!session) {
@@ -109,6 +112,8 @@ export const TableCard: React.FC<TableCardProps> = ({
 
   const styles = getStatusStyles();
 
+  const displayName = session?.custom_table_name || `Table ${tableNumber}`;
+
   return (
     <Card
       className={`relative overflow-hidden p-6 cursor-pointer transition-all duration-200 hover:scale-[1.02] ${styles.card}`}
@@ -117,9 +122,24 @@ export const TableCard: React.FC<TableCardProps> = ({
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-2 flex-1">
-            <h3 className={`text-3xl font-bold tracking-tight ${styles.title}`}>
-              Table {tableNumber}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className={`text-3xl font-bold tracking-tight ${styles.title}`}>
+                {displayName}
+              </h3>
+              {session && onRename && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRename();
+                  }}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
             {session && session.number_of_guests && (
               <div className={`flex items-center gap-2 text-sm font-medium ${styles.icon}`}>
                 <Users className="h-4 w-4" />

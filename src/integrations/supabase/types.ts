@@ -730,6 +730,8 @@ export type Database = {
           id: string
           image_url: string | null
           is_available: boolean | null
+          is_custom_name: boolean | null
+          is_custom_price: boolean | null
           name: string
           order_index: number | null
           price: number
@@ -743,6 +745,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean | null
+          is_custom_name?: boolean | null
+          is_custom_price?: boolean | null
           name: string
           order_index?: number | null
           price: number
@@ -756,6 +760,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean | null
+          is_custom_name?: boolean | null
+          is_custom_price?: boolean | null
           name?: string
           order_index?: number | null
           price?: number
@@ -1502,6 +1508,7 @@ export type Database = {
         Row: {
           closed_at: string | null
           created_at: string | null
+          custom_table_name: string | null
           id: string
           notes: string | null
           number_of_guests: number | null
@@ -1516,6 +1523,7 @@ export type Database = {
         Insert: {
           closed_at?: string | null
           created_at?: string | null
+          custom_table_name?: string | null
           id?: string
           notes?: string | null
           number_of_guests?: number | null
@@ -1530,6 +1538,7 @@ export type Database = {
         Update: {
           closed_at?: string | null
           created_at?: string | null
+          custom_table_name?: string | null
           id?: string
           notes?: string | null
           number_of_guests?: number | null
