@@ -86,12 +86,19 @@ export const useInvoices = () => {
     }
   }, [user, toast]);
 
-  const generateInvoiceNumber = () => {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `INV-${year}${month}-${random}`;
+  const generateInvoiceNumber = async () => {
+    // Use database function for sequential numbering
+    const { data, error } = await supabase.rpc('generate_invoice_number');
+    if (error) {
+      console.error('Error generating invoice number:', error);
+      // Fallback to timestamp-based if function fails
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const timestamp = Date.now().toString().slice(-4);
+      return `INV-${year}${month}-${timestamp}`;
+    }
+    return data;
   };
 
   const createInvoice = useCallback(async (orderId: string | null, totalAmount: number, notes?: string) => {
@@ -125,7 +132,7 @@ export const useInvoices = () => {
         return;
       }
       
-      const invoiceNumber = generateInvoiceNumber();
+      const invoiceNumber = await generateInvoiceNumber();
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 30); // 30 jours pour payer
 
