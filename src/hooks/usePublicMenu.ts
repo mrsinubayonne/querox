@@ -78,7 +78,7 @@ export const usePublicMenu = () => {
     processUrl();
   }, [location.search, routeMenuId, toast, autoLoginProcessed, user]);
 
-  const { menuItems, loading, error: dataError, restaurantUserId, menuData } = useMenuData(menuId);
+  const { menuItems, loading, error: dataError, restaurantUserId, menuData, outletId } = useMenuData(menuId);
   
   const {
     filteredItems,
@@ -111,5 +111,6 @@ export const usePublicMenu = () => {
     restaurantUserId,
     menuData,
     autoLoginProcessed,
+    outletId,
   };
 };

@@ -34,6 +34,7 @@ const PublicMenu: React.FC = () => {
     menuError,
     restaurantUserId,
     menuData,
+    outletId,
   } = usePublicMenu();
 
   if (loading) {
@@ -61,7 +62,7 @@ const PublicMenu: React.FC = () => {
   }
 
   return (
-    <RestaurantProvider restaurantUserId={restaurantUserId}>
+    <RestaurantProvider restaurantUserId={restaurantUserId} outletId={outletId}>
       <div className="min-h-screen w-full bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex flex-col">
         <PublicMenuHeader 
           totalItems={getTotalItems()} 

@@ -79,7 +79,7 @@ import OnboardingTour from "@/components/OnboardingTour";
 
 function App() {
   return (
-    <RestaurantProvider restaurantUserId={null}>
+    <RestaurantProvider restaurantUserId={null} outletId={null}>
         <Router>
           <div className="min-h-screen bg-background">
             <Routes>

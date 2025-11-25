@@ -3,13 +3,14 @@ import React, { createContext, useContext, ReactNode } from 'react';
 
 type RestaurantContextType = {
   restaurantUserId: string | null;
+  outletId: string | null;
 };
 
 const RestaurantContext = createContext<RestaurantContextType | undefined>(undefined);
 
-export const RestaurantProvider = ({ children, restaurantUserId }: { children: ReactNode; restaurantUserId: string | null }) => {
+export const RestaurantProvider = ({ children, restaurantUserId, outletId }: { children: ReactNode; restaurantUserId: string | null; outletId: string | null }) => {
   return (
-    <RestaurantContext.Provider value={{ restaurantUserId }}>
+    <RestaurantContext.Provider value={{ restaurantUserId, outletId }}>
       {children}
     </RestaurantContext.Provider>
   );
