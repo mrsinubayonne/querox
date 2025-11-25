@@ -2,7 +2,7 @@
  * Retourne l'image par défaut selon la catégorie du plat
  */
 export function getCategoryDefaultImage(categoryName: string | undefined): string {
-  if (!categoryName) return '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png';
+  if (!categoryName) return '/lovable-uploads/default-dish-image.png';
   
   const category = categoryName.toLowerCase();
   
@@ -109,5 +109,5 @@ export function getCategoryDefaultImage(categoryName: string | undefined): strin
   }
   
   // Par défaut
-  return '/lovable-uploads/eedf6dca-ced1-4275-a5ca-db24eefce183.png';
+  return '/lovable-uploads/default-dish-image.png';
 }

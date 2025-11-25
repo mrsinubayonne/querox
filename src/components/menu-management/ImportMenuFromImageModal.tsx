@@ -38,10 +38,11 @@ const ImportMenuFromImageModal: React.FC<ImportMenuFromImageModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp", "application/pdf"];
+    if (!validTypes.includes(file.type)) {
       toast({
         title: "Format invalide",
-        description: "Veuillez uploader une image (JPG, PNG, etc.)",
+        description: "Veuillez uploader une image (JPG, PNG, WEBP) ou un PDF",
         variant: "destructive",
       });
       return;
@@ -69,7 +70,7 @@ const ImportMenuFromImageModal: React.FC<ImportMenuFromImageModalProps> = ({
 
       // Call edge function
       const { data, error } = await supabase.functions.invoke("extract-menu-from-image", {
-        body: { imageBase64 },
+        body: { imageBase64, mimeType: imageFile.type },
       });
 
       if (error) throw error;
@@ -191,9 +192,9 @@ const ImportMenuFromImageModal: React.FC<ImportMenuFromImageModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Importer un menu depuis une image</DialogTitle>
+          <DialogTitle>Importer un menu depuis une image ou PDF</DialogTitle>
           <DialogDescription>
-            Uploadez une photo de votre menu et l'IA extraira automatiquement tous les plats
+            Uploadez une photo ou un PDF de votre menu et l'IA extraira automatiquement tous les plats
           </DialogDescription>
         </DialogHeader>
 
@@ -205,16 +206,16 @@ const ImportMenuFromImageModal: React.FC<ImportMenuFromImageModalProps> = ({
                 <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <Label htmlFor="image-upload" className="cursor-pointer">
                   <div className="text-sm text-muted-foreground mb-2">
-                    Cliquez pour uploader ou glissez votre image ici
+                    Cliquez pour uploader ou glissez votre fichier ici
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    JPG, PNG ou WEBP (max 10MB)
+                    JPG, PNG, WEBP ou PDF (max 10MB)
                   </div>
                 </Label>
                 <Input
                   id="image-upload"
                   type="file"
-                  accept="image/*"
+                  accept="image/*,application/pdf"
                   onChange={handleImageUpload}
                   className="hidden"
                 />
