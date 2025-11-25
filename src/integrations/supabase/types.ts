@@ -89,6 +89,71 @@ export type Database = {
         }
         Relationships: []
       }
+      business_customers: {
+        Row: {
+          address: string | null
+          company_name: string
+          contact_person: string | null
+          created_at: string
+          credit_limit: number | null
+          current_debt: number | null
+          email: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          outlet_id: string | null
+          payment_terms_days: number
+          phone: string | null
+          siret: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          company_name: string
+          contact_person?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          current_debt?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          outlet_id?: string | null
+          payment_terms_days?: number
+          phone?: string | null
+          siret?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          company_name?: string
+          contact_person?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          current_debt?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          outlet_id?: string | null
+          payment_terms_days?: number
+          phone?: string | null
+          siret?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_customers_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_periods: {
         Row: {
           created_at: string
@@ -481,6 +546,8 @@ export type Database = {
       }
       invoices: {
         Row: {
+          billing_address: string | null
+          business_customer_id: string | null
           created_at: string
           customer_email: string | null
           customer_name: string | null
@@ -488,18 +555,23 @@ export type Database = {
           due_date: string | null
           id: string
           invoice_number: string
+          invoice_type: string
           items: Json | null
           notes: string | null
           order_id: string | null
           outlet_id: string | null
           paid_date: string | null
+          payment_terms_days: number | null
           session_id: string | null
+          siret: string | null
           status: string
           total_amount: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          billing_address?: string | null
+          business_customer_id?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -507,18 +579,23 @@ export type Database = {
           due_date?: string | null
           id?: string
           invoice_number: string
+          invoice_type?: string
           items?: Json | null
           notes?: string | null
           order_id?: string | null
           outlet_id?: string | null
           paid_date?: string | null
+          payment_terms_days?: number | null
           session_id?: string | null
+          siret?: string | null
           status?: string
           total_amount?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          billing_address?: string | null
+          business_customer_id?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -526,18 +603,28 @@ export type Database = {
           due_date?: string | null
           id?: string
           invoice_number?: string
+          invoice_type?: string
           items?: Json | null
           notes?: string | null
           order_id?: string | null
           outlet_id?: string | null
           paid_date?: string | null
+          payment_terms_days?: number | null
           session_id?: string | null
+          siret?: string | null
           status?: string
           total_amount?: number
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_business_customer_id_fkey"
+            columns: ["business_customer_id"]
+            isOneToOne: false
+            referencedRelation: "business_customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_order_id_fkey"
             columns: ["order_id"]
@@ -2148,6 +2235,37 @@ export type Database = {
           month: string
           monthly_revenue: number
           new_subscribers: number
+        }[]
+      }
+      get_overdue_invoices: {
+        Args: never
+        Returns: {
+          billing_address: string
+          business_customer_id: string
+          company_name: string
+          contact_person: string
+          created_at: string
+          customer_email: string
+          customer_email_b2b: string
+          customer_name: string
+          customer_phone: string
+          days_overdue: number
+          due_date: string
+          id: string
+          invoice_number: string
+          invoice_type: string
+          items: Json
+          notes: string
+          order_id: string
+          outlet_id: string
+          paid_date: string
+          payment_terms_days: number
+          session_id: string
+          siret: string
+          status: string
+          total_amount: number
+          updated_at: string
+          user_id: string
         }[]
       }
       get_public_website_by_slug: {
