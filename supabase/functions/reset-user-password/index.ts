@@ -59,6 +59,45 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Check subscription status before allowing password reset
+    const { data: subscription, error: subError } = await supabaseAdmin
+      .from('subscribers')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+
+    if (subError || !subscription) {
+      console.error('Error fetching subscription:', subError)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Aucun abonnement trouvé. Veuillez contacter le support.' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      )
+    }
+
+    // Validate subscription is active or trial is not expired
+    const now = new Date()
+    const subscriptionEnd = subscription.subscription_end ? new Date(subscription.subscription_end) : null
+    
+    const isTrialActive = subscription.subscription_status === 'trialing' && 
+                          subscriptionEnd && 
+                          subscriptionEnd > now
+    
+    const isSubscriptionActive = subscription.subscribed && 
+                                  subscription.subscription_status === 'active'
+
+    if (!isTrialActive && !isSubscriptionActive) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Votre abonnement a expiré. Veuillez renouveler votre abonnement pour accéder à votre compte.' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      )
+    }
+
     // Update user password using Admin API
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       user.id,
