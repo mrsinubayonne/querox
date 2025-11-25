@@ -18,10 +18,15 @@ import {
 
 interface BusinessCustomersListProps {
   outletId?: string;
+  filteredCustomers?: any[];
 }
 
-const BusinessCustomersList: React.FC<BusinessCustomersListProps> = ({ outletId }) => {
+const BusinessCustomersList: React.FC<BusinessCustomersListProps> = ({ 
+  outletId,
+  filteredCustomers 
+}) => {
   const { customers, isLoading, deleteCustomer } = useBusinessCustomers(outletId);
+  const displayCustomers = filteredCustomers || customers;
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -68,12 +73,17 @@ const BusinessCustomersList: React.FC<BusinessCustomersListProps> = ({ outletId 
       </div>
 
       <div className="grid gap-4">
-        {customers.length === 0 ? (
+        {displayCustomers.length === 0 ? (
           <Card className="p-8 text-center">
-            <p className="text-muted-foreground">Aucun client entreprise enregistré</p>
+            <p className="text-muted-foreground">
+              {customers.length === 0 
+                ? "Aucun client entreprise enregistré" 
+                : "Aucun client ne correspond aux critères de recherche"
+              }
+            </p>
           </Card>
         ) : (
-          customers.map((customer) => (
+          displayCustomers.map((customer) => (
             <Card key={customer.id} className="p-4">
               <div className="flex justify-between items-start">
                 <div className="space-y-2 flex-1">
