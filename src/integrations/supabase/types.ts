@@ -2189,10 +2189,6 @@ export type Database = {
       }
     }
     Functions: {
-      admin_reset_user_password: {
-        Args: { new_password: string; user_email: string }
-        Returns: Json
-      }
       admin_revenue_stats_policy: { Args: never; Returns: boolean }
       calculate_churn_rate: {
         Args: { period_months?: number }
@@ -2403,6 +2399,10 @@ export type Database = {
       logout_outlet_profile: {
         Args: { _profile_id: string }
         Returns: undefined
+      }
+      public_reset_password: {
+        Args: { new_password: string; user_email: string }
+        Returns: Json
       }
       verify_outlet_access_code: {
         Args: { _access_code: string; _session_id: string }
