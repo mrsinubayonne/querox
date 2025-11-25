@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOptimizedOutlet } from "@/hooks/useOptimizedOutlet";
 
 export interface TableSession {
   id: string;
@@ -24,9 +25,10 @@ export function useTableSessions() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { outletId, loading: outletLoading } = useOptimizedOutlet();
 
   const fetchSessions = useCallback(async () => {
-    if (!user) {
+    if (!user || outletLoading) {
       setLoading(false);
       return;
     }
@@ -34,30 +36,12 @@ export function useTableSessions() {
     try {
       setLoading(true);
 
-      // Get selected outlet: prefer selectedProfileId in localStorage, fallback to user profile
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId: string | null = null;
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = (userProfile as any)?.selected_outlet_id ?? null;
-      } else {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        outletId = (profile as any)?.selected_outlet_id ?? null;
-      }
-
       let query = supabase
         .from("table_sessions" as any)
         .select("*")
         .eq("user_id", user.id)
-        .order("started_at", { ascending: false }) as any;
+        .order("started_at", { ascending: false })
+        .limit(50) as any; // Limiter à 50 sessions pour la performance
 
       if (outletId) {
         query = query.eq("outlet_id", outletId);
@@ -78,7 +62,7 @@ export function useTableSessions() {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, outletId, outletLoading, toast]);
 
   const createSession = useCallback(
     async (tableNumber: string, numberOfGuests?: number, notes?: string) => {
@@ -92,25 +76,6 @@ export function useTableSessions() {
       }
 
       try {
-        // Get selected outlet: prefer selectedProfileId in localStorage, fallback to user profile
-        const selectedProfileId = localStorage.getItem('selectedProfileId');
-        let outletId: string | null = null;
-        if (selectedProfileId) {
-          const { data: userProfile } = await supabase
-            .from('user_profiles')
-            .select('selected_outlet_id')
-            .eq('id', selectedProfileId)
-            .maybeSingle();
-          outletId = (userProfile as any)?.selected_outlet_id ?? null;
-        } else {
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('selected_outlet_id')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          outletId = (profile as any)?.selected_outlet_id ?? null;
-        }
-
         const { data, error } = await supabase
           .from("table_sessions" as any)
           .insert([
@@ -145,7 +110,7 @@ export function useTableSessions() {
         return null;
       }
     },
-    [user, toast, fetchSessions]
+    [user, outletId, toast, fetchSessions]
   );
 
   const closeSession = useCallback(
@@ -227,25 +192,6 @@ export function useTableSessions() {
       if (!user) return null;
 
       try {
-        const selectedProfileId = localStorage.getItem('selectedProfileId');
-        let outletId: string | null = null;
-
-        if (selectedProfileId) {
-          const { data: userProfile } = await supabase
-            .from('user_profiles')
-            .select('selected_outlet_id')
-            .eq('id', selectedProfileId)
-            .maybeSingle();
-          outletId = (userProfile as any)?.selected_outlet_id ?? null;
-        } else {
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('selected_outlet_id')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          outletId = (profile as any)?.selected_outlet_id ?? null;
-        }
-
         let query = supabase
           .from('table_sessions' as any)
           .select('*')
@@ -267,7 +213,7 @@ export function useTableSessions() {
         return null;
       }
     },
-    [user]
+    [user, outletId]
   );
 
   useEffect(() => {

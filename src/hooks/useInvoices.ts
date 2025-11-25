@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
 
 export interface Invoice {
   id: string;
@@ -28,9 +29,10 @@ export const useInvoices = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { outletId, loading: outletLoading } = useOptimizedOutlet();
 
   const fetchInvoices = useCallback(async () => {
-    if (!user) {
+    if (!user || outletLoading) {
       setInvoices([]);
       setLoading(false);
       return;
@@ -39,24 +41,6 @@ export const useInvoices = () => {
     try {
       setLoading(true);
       
-      // Get selected outlet: prefer selectedProfileId in localStorage, fallback to user profile
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId: string | null = null;
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = userProfile?.selected_outlet_id ?? null;
-      } else {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        outletId = profile?.selected_outlet_id ?? null;
-      }
       if (!outletId) {
         setInvoices([]);
         setLoading(false);
@@ -84,7 +68,7 @@ export const useInvoices = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, outletId, outletLoading, toast]);
 
   const generateInvoiceNumber = async () => {
     // Use database function for sequential numbering
@@ -105,24 +89,6 @@ export const useInvoices = () => {
     if (!user) return;
 
     try {
-      // Get selected outlet: prefer selectedProfileId in localStorage, fallback to user profile
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId: string | null = null;
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = userProfile?.selected_outlet_id ?? null;
-      } else {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        outletId = profile?.selected_outlet_id ?? null;
-      }
       if (!outletId) {
         toast({
           title: "Erreur",
@@ -165,7 +131,7 @@ export const useInvoices = () => {
         variant: "destructive"
       });
     }
-  }, [user, toast, fetchInvoices]);
+  }, [user, outletId, toast, fetchInvoices]);
 
   const updateInvoiceStatus = useCallback(async (invoiceId: string, status: 'paid' | 'unpaid' | 'overdue') => {
     try {
