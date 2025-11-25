@@ -1,0 +1,24 @@
+-- Fix security issues by recreating the function with proper search_path
+
+-- Drop trigger first, then function
+DROP TRIGGER IF EXISTS update_business_customers_updated_at ON public.business_customers;
+DROP FUNCTION IF EXISTS public.update_business_customers_updated_at();
+
+-- Recreate function with proper search_path
+CREATE OR REPLACE FUNCTION public.update_business_customers_updated_at()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+-- Recreate trigger
+CREATE TRIGGER update_business_customers_updated_at
+BEFORE UPDATE ON public.business_customers
+FOR EACH ROW
+EXECUTE FUNCTION public.update_business_customers_updated_at();
