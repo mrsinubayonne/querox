@@ -2,7 +2,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { RestaurantProvider } from '@/contexts/RestaurantContext';
-import { SupportChatButton } from '@/components/SupportChatButton';
 
 // Import des pages
 import Index from '@/pages/Index';
@@ -164,7 +163,6 @@ function App() {
           <Toaster />
           <Sonner />
           <InvoicePaidCelebration />
-          <SupportChatButton />
         </Router>
       </RestaurantProvider>
   );
