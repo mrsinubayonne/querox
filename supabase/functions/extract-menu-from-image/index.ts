@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64 } = await req.json();
+    const { imageBase64, mimeType } = await req.json();
     
     if (!imageBase64) {
       return new Response(
@@ -26,10 +26,10 @@ serve(async (req) => {
     }
 
     const systemPrompt = `Tu es un assistant spécialisé dans l'extraction de données de menus de restaurant. 
-Ta tâche est d'analyser l'image d'un menu et d'extraire TOUS les plats avec leurs informations.
+Ta tâche est d'analyser l'image ou le PDF d'un menu et d'extraire TOUS les plats avec leurs informations.
 
 IMPORTANT:
-- Extrais TOUS les plats visibles dans l'image
+- Extrais TOUS les plats visibles dans le document
 - Si un prix n'est pas visible, mets 0
 - Si une description n'est pas visible, laisse une chaîne vide
 - Retourne les prix en format numérique (sans symbole monétaire)
@@ -46,6 +46,10 @@ Format de sortie attendu:
     }
   ]
 }`;
+
+    const imageUrl = mimeType === 'application/pdf' 
+      ? `data:application/pdf;base64,${imageBase64}`
+      : `data:image/jpeg;base64,${imageBase64}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -65,12 +69,12 @@ Format de sortie attendu:
             content: [
               {
                 type: "text",
-                text: "Extrais tous les plats de cette image de menu et retourne-les au format JSON."
+                text: "Extrais tous les plats de ce document (image ou PDF) de menu et retourne-les au format JSON."
               },
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`
+                  url: imageUrl
                 }
               }
             ]
