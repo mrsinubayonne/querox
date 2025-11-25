@@ -3,11 +3,12 @@ import EmptyState from '@/components/EmptyState';
 import AddMenuItemModal from '@/components/AddMenuItemModal';
 import EditMenuItemModal from '@/components/EditMenuItemModal';
 import TransferMenuItemModal from '@/components/TransferMenuItemModal';
+import ImportMenuFromImageModal from './ImportMenuFromImageModal';
 
 import { useMenus, Menu, MenuCategory } from '@/hooks/useMenus';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useOutlets } from '@/hooks/useOutlets';
-import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft, Search, Copy, Package } from 'lucide-react';
+import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft, Search, Copy, Package, Image } from 'lucide-react';
 import MenuItemIngredientsModal from './MenuItemIngredientsModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +34,7 @@ interface EditableMenuItem {
 
 const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) => {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingItem, setEditingItem] = useState<EditableMenuItem | null>(null);
   const [transferringItem, setTransferringItem] = useState<MenuItem | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -268,6 +270,14 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                   Partager la sélection
                 </Button>
               )}
+              <Button 
+                onClick={() => setShowImportModal(true)} 
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
+              >
+                <Image className="w-4 h-4 mr-2" />
+                Importer depuis une image
+              </Button>
               <Button onClick={handleAddItem} className="bg-green-600 hover:bg-green-700">
                 <MenuIcon className="w-4 h-4 mr-2" />
                 Ajouter un plat
@@ -471,6 +481,15 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
           onClose={() => setIngredientsModalItem(null)}
           menuItemId={ingredientsModalItem.id}
           menuItemName={ingredientsModalItem.name}
+        />
+      )}
+
+      {activeMenuId && (
+        <ImportMenuFromImageModal
+          open={showImportModal}
+          onOpenChange={setShowImportModal}
+          menuId={activeMenuId}
+          onImportComplete={refetch}
         />
       )}
     </>
