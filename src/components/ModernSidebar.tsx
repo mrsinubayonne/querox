@@ -134,6 +134,11 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/clients',
     permission: 'customers'
   }, {
+    icon: Building2,
+    label: 'Clients Entreprise',
+    path: '/clients-entreprise',
+    permission: 'invoices'
+  }, {
     icon: Users,
     label: 'Équipe',
     path: '/equipe',
