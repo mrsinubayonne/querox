@@ -2189,6 +2189,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_reset_user_password: {
+        Args: { new_password: string; user_email: string }
+        Returns: Json
+      }
       admin_revenue_stats_policy: { Args: never; Returns: boolean }
       calculate_churn_rate: {
         Args: { period_months?: number }
