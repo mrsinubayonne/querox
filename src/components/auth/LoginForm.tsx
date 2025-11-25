@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from "@/components/ui/switch";
+import { ResetPasswordModal } from './ResetPasswordModal';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -29,6 +30,7 @@ interface LoginFormProps {
 const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
   const [loading, setLoading] = useState(false);
   const [useAccessCode, setUseAccessCode] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -227,11 +229,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
         <div className="text-center">
           <button
             type="button"
+            onClick={() => setShowResetModal(true)}
             className="text-sm text-primary hover:text-primary/80 transition-colors"
           >
             Mot de passe oublié ?
           </button>
         </div>
+
+        <ResetPasswordModal 
+          open={showResetModal} 
+          onOpenChange={setShowResetModal}
+        />
 
         <div className="text-center pt-6 border-t border-border">
           <p className="text-muted-foreground">
