@@ -36,44 +36,8 @@ export const useTransactions = () => {
     try {
       setLoading(true);
       
-      // Fetch transactions for the selected outlet only
-      // Get selected outlet
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId: string | null = null;
-
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = userProfile?.selected_outlet_id ?? null;
-      } else {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        outletId = userProfile?.selected_outlet_id ?? null;
-      }
-
-      // Fallback ancien profil si nécessaire
-      if (!outletId) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('selected_outlet_id')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        outletId = profile?.selected_outlet_id ?? null;
-      }
-
-      if (!outletId) {
-        setTransactions([]);
-        setLoading(false);
-        return;
-      }
-
+      // Fetch ALL transactions for the user (not filtered by outlet)
+      // The outlet filter will be applied in the UI
       const { data, error } = await supabase
         .from('transactions')
         .select(`
@@ -83,7 +47,6 @@ export const useTransactions = () => {
           )
         `)
         .eq('user_id', user.id)
-        .eq('outlet_id', outletId)
         .order('date', { ascending: false });
 
       if (error) {
