@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
-export interface BusinessCustomer {
+export interface Debtor {
   id: string;
   user_id: string;
   outlet_id?: string;
@@ -22,7 +22,10 @@ export interface BusinessCustomer {
   updated_at: string;
 }
 
-export function useBusinessCustomers(outletId?: string) {
+// Alias pour compatibilité
+export type BusinessCustomer = Debtor;
+
+export function useDebtors(outletId?: string) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -45,13 +48,13 @@ export function useBusinessCustomers(outletId?: string) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as BusinessCustomer[];
+      return data as Debtor[];
     },
     enabled: !!user?.id,
   });
 
   const createCustomer = useMutation({
-    mutationFn: async (customer: Omit<BusinessCustomer, "id" | "user_id" | "current_debt" | "created_at" | "updated_at">) => {
+    mutationFn: async (customer: Omit<Debtor, "id" | "user_id" | "current_debt" | "created_at" | "updated_at">) => {
       if (!user?.id) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
@@ -80,7 +83,7 @@ export function useBusinessCustomers(outletId?: string) {
   });
 
   const updateCustomer = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<BusinessCustomer> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: Partial<Debtor> & { id: string }) => {
       const { data, error } = await supabase
         .from("business_customers")
         .update(updates)
@@ -143,3 +146,6 @@ export function useBusinessCustomers(outletId?: string) {
     isDeleting: deleteCustomer.isPending,
   };
 }
+
+// Export des deux noms pour compatibilité
+export const useBusinessCustomers = useDebtors;
