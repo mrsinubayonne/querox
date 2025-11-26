@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash2, Users } from "lucide-react";
-import { useDebtors } from "@/hooks/useBusinessCustomers";
+import { Plus, Edit, Trash2, Users, FileText } from "lucide-react";
+import { useDebtors, Debtor } from "@/hooks/useBusinessCustomers";
 import DebtorModal from "./DebtorModal";
+import CreateDebtorInvoiceModal from "./CreateDebtorInvoiceModal";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -28,11 +29,13 @@ const DebtorsList: React.FC<DebtorsListProps> = ({
   const { customers, isLoading, deleteCustomer } = useDebtors(outletId);
   const displayCustomers = filteredCustomers || customers;
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Debtor | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [invoiceCustomer, setInvoiceCustomer] = useState<Debtor | null>(null);
 
-  const handleEdit = (customer: any) => {
+  const handleEdit = (customer: Debtor) => {
     setSelectedCustomer(customer);
     setModalOpen(true);
   };
@@ -134,13 +137,22 @@ const DebtorsList: React.FC<DebtorsListProps> = ({
                   )}
                 </div>
 
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => handleEdit(customer)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(customer.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setInvoiceCustomer(customer);
+                      setInvoiceModalOpen(true);
+                    }}>
+                      <FileText className="h-4 w-4 mr-1" />
+                      Générer facture
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(customer)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(customer.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -153,6 +165,12 @@ const DebtorsList: React.FC<DebtorsListProps> = ({
         onOpenChange={setModalOpen}
         customer={selectedCustomer}
         outletId={outletId}
+      />
+
+      <CreateDebtorInvoiceModal
+        open={invoiceModalOpen}
+        onOpenChange={setInvoiceModalOpen}
+        debtor={invoiceCustomer}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
