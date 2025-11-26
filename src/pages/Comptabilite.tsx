@@ -54,9 +54,25 @@ const Comptabilite = () => {
   const stats = useMemo(() => {
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const matchesFilters = (transaction: any) => {
+      // Filtre moyen de paiement
+      if (paymentMethodFilter !== 'all' && transaction.payment_method !== paymentMethodFilter) {
+        return false;
+      }
+
+      // Filtre dates personnalisées
+      const txDate = new Date(transaction.date);
+      if (startDate && txDate < new Date(startDate)) return false;
+      if (endDate && txDate > new Date(endDate)) return false;
+
+      return true;
+    };
+
+    const filteredForStats = filteredByOutlet.filter(matchesFilters);
     
     // Stats du mois actuel - uniquement les transactions filtrées
-    const currentMonthStats = filteredByOutlet.reduce((acc, transaction) => {
+    const currentMonthStats = filteredForStats.reduce((acc, transaction) => {
       const transactionDate = new Date(transaction.date);
       if (transactionDate.getMonth() === now.getMonth() && 
           transactionDate.getFullYear() === now.getFullYear() &&
@@ -70,8 +86,8 @@ const Comptabilite = () => {
       return acc;
     }, { recettes: 0, depenses: 0 });
 
-    // Stats du mois dernier pour comparaison
-    const lastMonthStats = filteredByOutlet.reduce((acc, transaction) => {
+    // Stats du mois dernier pour comparaison (avec mêmes filtres)
+    const lastMonthStats = filteredForStats.reduce((acc, transaction) => {
       const transactionDate = new Date(transaction.date);
       if (transactionDate.getMonth() === lastMonth.getMonth() && 
           transactionDate.getFullYear() === lastMonth.getFullYear() &&
@@ -140,7 +156,7 @@ const Comptabilite = () => {
         icon: "📊"
       }
     ];
-  }, [filteredByOutlet]);
+  }, [filteredByOutlet, paymentMethodFilter, startDate, endDate]);
 
   const handleDownloadByOutlet = () => {
     const dataByOutlet = outlets.map(outlet => {
