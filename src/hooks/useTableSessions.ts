@@ -118,10 +118,22 @@ export function useTableSessions() {
   const closeSession = useCallback(
     async (sessionId: string) => {
       try {
+        // Récupérer la session pour vérifier si elle a un débiteur
+        const { data: session, error: fetchError } = await supabase
+          .from("table_sessions" as any)
+          .select("debtor_id")
+          .eq("id", sessionId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const hasDebtor = (session as any)?.debtor_id !== null;
+
+        // Si c'est un débiteur, fermer directement sans attendre de paiement
         const { error } = await supabase
           .from("table_sessions" as any)
           .update({
-            status: "closed",
+            status: hasDebtor ? "paid" : "closed", // Passer directement à "paid" pour les débiteurs
             closed_at: new Date().toISOString(),
           })
           .eq("id", sessionId);
@@ -129,8 +141,10 @@ export function useTableSessions() {
         if (error) throw error;
 
         toast({
-          title: "Session fermée",
-          description: "La facture a été générée automatiquement.",
+          title: hasDebtor ? "Session fermée - Crédit accordé" : "Session fermée",
+          description: hasDebtor 
+            ? "La dette du client a été enregistrée. Aucun paiement immédiat requis."
+            : "La facture a été générée automatiquement.",
         });
 
         await fetchSessions();
