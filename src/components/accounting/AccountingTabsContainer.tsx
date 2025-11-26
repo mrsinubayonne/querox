@@ -28,6 +28,8 @@ interface AccountingTabsContainerProps {
   formatCurrency: (amount: number) => string;
   onTabChange: (tabId: string) => void;
   onTransactionDetails: (transaction: Transaction) => void;
+  onEditTransaction?: (transaction: Transaction) => void;
+  onDeleteTransaction?: (transactionId: string) => void;
   onGenerateReport: () => void;
   onConfigureBudget: () => void;
 }
@@ -39,6 +41,8 @@ const AccountingTabsContainer: React.FC<AccountingTabsContainerProps> = ({
   formatCurrency,
   onTabChange,
   onTransactionDetails,
+  onEditTransaction,
+  onDeleteTransaction,
   onGenerateReport,
   onConfigureBudget
 }) => {
@@ -51,6 +55,8 @@ const AccountingTabsContainer: React.FC<AccountingTabsContainerProps> = ({
           transactions={transactions}
           formatCurrency={formatCurrency}
           onTransactionDetails={onTransactionDetails}
+          onEditTransaction={onEditTransaction}
+          onDeleteTransaction={onDeleteTransaction}
         />
       )}
 
