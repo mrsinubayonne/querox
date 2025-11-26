@@ -33,6 +33,45 @@ const Comptabilite = () => {
   const { invoices, loading: invoicesLoading, refetch: refetchInvoices } = useInvoices();
   const { outlets } = useOutlets();
 
+  // Combiner transactions enregistrées et factures payées manquantes
+  const combinedTransactions = useMemo(() => {
+    const base = transactions || [];
+
+    const invoiceNumbersFromTx = new Set(
+      base
+        .filter((t) => t.category === 'facture' && typeof t.title === 'string' && t.title.startsWith('Facture '))
+        .map((t) => t.title.replace('Facture ', '').trim())
+    );
+
+    const syntheticFromInvoices = invoices
+      .filter((inv) => inv.status === 'paid')
+      .filter((inv) => !invoiceNumbersFromTx.has(inv.invoice_number))
+      .map((inv) => ({
+        id: `invoice-${inv.id}`,
+        title: `Facture ${inv.invoice_number}`,
+        amount: inv.total_amount,
+        type: 'income' as const,
+        category: 'facture',
+        date: inv.paid_date || inv.created_at.split('T')[0],
+        status: 'completed' as const,
+        description: `Paiement de la facture ${inv.invoice_number}`,
+        created_at: inv.updated_at,
+        user_id: inv.user_id,
+        outlet_id: inv.outlet_id || undefined,
+        outlet_name: outlets.find((o) => o.id === inv.outlet_id)?.name || 'Non défini',
+        payment_method: (inv as any).payment_method || 'Espèces',
+      }));
+
+    const all = [...base, ...syntheticFromInvoices];
+
+    return all.sort((a, b) => {
+      const da = new Date(a.date).getTime();
+      const db = new Date(b.date).getTime();
+      if (db !== da) return db - da;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [transactions, invoices, outlets]);
+
   // Rafraîchir les données régulièrement pour voir les factures payées
   useEffect(() => {
     const interval = setInterval(() => {
@@ -46,10 +85,10 @@ const Comptabilite = () => {
   // Filtrer les transactions par outlet
   const filteredByOutlet = useMemo(() => {
     if (selectedOutletFilter === 'all') {
-      return transactions;
+      return combinedTransactions;
     }
-    return transactions.filter(t => t.outlet_id === selectedOutletFilter);
-  }, [transactions, selectedOutletFilter]);
+    return combinedTransactions.filter(t => t.outlet_id === selectedOutletFilter);
+  }, [combinedTransactions, selectedOutletFilter]);
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -160,7 +199,7 @@ const Comptabilite = () => {
 
   const handleDownloadByOutlet = () => {
     const dataByOutlet = outlets.map(outlet => {
-      const outletTransactions = transactions.filter(t => t.outlet_id === outlet.id);
+      const outletTransactions = combinedTransactions.filter(t => t.outlet_id === outlet.id);
       const recettes = outletTransactions
         .filter(t => t.type === 'income' && t.status === 'completed')
         .reduce((sum, t) => sum + t.amount, 0);
@@ -478,10 +517,10 @@ const Comptabilite = () => {
           />
 
           {activeTab === 'periodes' ? (
-            <AccountingPeriodsTab 
-              transactions={transactions}
-              invoices={invoices}
-            />
+             <AccountingPeriodsTab 
+               transactions={combinedTransactions}
+               invoices={invoices}
+             />
           ) : (
             <AccountingTabsContainer
               activeTab={activeTab}
