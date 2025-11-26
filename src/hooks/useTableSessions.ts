@@ -8,6 +8,7 @@ export interface TableSession {
   id: string;
   user_id: string;
   outlet_id: string | null;
+  debtor_id: string | null;
   table_number: string;
   custom_table_name?: string | null;
   status: "active" | "closed" | "paid";
@@ -65,7 +66,7 @@ export function useTableSessions() {
   }, [user, outletId, outletLoading, toast]);
 
   const createSession = useCallback(
-    async (tableNumber: string, numberOfGuests?: number, notes?: string) => {
+    async (tableNumber: string, numberOfGuests?: number, notes?: string, debtorId?: string) => {
       if (!user) {
         toast({
           title: "Erreur",
@@ -85,6 +86,7 @@ export function useTableSessions() {
               table_number: tableNumber,
               number_of_guests: numberOfGuests,
               notes: notes,
+              debtor_id: debtorId,
               status: "active",
             },
           ])

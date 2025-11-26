@@ -13,9 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Minus, Search, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Minus, Search, X, AlertCircle } from "lucide-react";
 import { useMenuData } from "@/hooks/useMenuData";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRestaurant } from "@/contexts/RestaurantContext";
+import { useDebtors } from "@/hooks/useBusinessCustomers";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,11 +45,20 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { outletId } = useRestaurant();
+  const { customers } = useDebtors(outletId || undefined);
   const [numberOfGuests, setNumberOfGuests] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [isDebtorOrder, setIsDebtorOrder] = useState(false);
+  const [selectedDebtorId, setSelectedDebtorId] = useState<string>("");
+
+  const selectedDebtor = customers.find(c => c.id === selectedDebtorId);
+  const availableCredit = selectedDebtor 
+    ? selectedDebtor.credit_limit - selectedDebtor.current_debt 
+    : 0;
 
   // Fetch user's active menu
   React.useEffect(() => {
@@ -213,6 +226,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             outlet_id: outletId,
             table_number: tableNumber,
             number_of_guests: parseInt(numberOfGuests) || 1,
+            debtor_id: isDebtorOrder ? selectedDebtorId : null,
             status: "active",
           },
         ])
@@ -253,6 +267,8 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       setNumberOfGuests("");
       setCart([]);
       setSearchTerm("");
+      setIsDebtorOrder(false);
+      setSelectedDebtorId("");
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -291,6 +307,55 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                 onChange={(e) => setNumberOfGuests(e.target.value)}
               />
             </div>
+
+            {/* Mode débiteur */}
+            <div className="flex items-center justify-between space-x-2">
+              <div className="space-y-0.5">
+                <Label htmlFor="debtor-mode">Client à crédit / Débiteur</Label>
+                <p className="text-sm text-muted-foreground">
+                  Facturation avec paiement différé
+                </p>
+              </div>
+              <Switch
+                id="debtor-mode"
+                checked={isDebtorOrder}
+                onCheckedChange={setIsDebtorOrder}
+              />
+            </div>
+
+            {isDebtorOrder && (
+              <div className="space-y-2">
+                <Label htmlFor="debtor">Sélectionner le débiteur *</Label>
+                <Select value={selectedDebtorId} onValueChange={setSelectedDebtorId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir un débiteur" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.filter(c => c.is_active).map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.company_name} - Crédit: {(customer.credit_limit - customer.current_debt).toLocaleString()} FCFA
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedDebtor && (
+                  <div className="text-sm space-y-1">
+                    <p className="flex items-center gap-2">
+                      <span className="font-medium">Crédit disponible:</span>
+                      <span className={availableCredit > 0 ? "text-green-600" : "text-red-600"}>
+                        {availableCredit.toLocaleString()} FCFA
+                      </span>
+                    </p>
+                    {availableCredit <= 0 && (
+                      <div className="flex items-start gap-2 text-destructive">
+                        <AlertCircle className="h-4 w-4 mt-0.5" />
+                        <span>Ce débiteur a atteint sa limite de crédit</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <Separator />
 
@@ -404,7 +469,10 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Annuler
             </Button>
-            <Button type="submit" disabled={loading || cart.length === 0}>
+            <Button 
+              type="submit" 
+              disabled={loading || cart.length === 0 || (isDebtorOrder && (!selectedDebtorId || availableCredit <= 0))}
+            >
               {loading ? "Création..." : "Ouvrir & Commander"}
             </Button>
           </DialogFooter>

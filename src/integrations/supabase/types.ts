@@ -1509,6 +1509,7 @@ export type Database = {
           closed_at: string | null
           created_at: string | null
           custom_table_name: string | null
+          debtor_id: string | null
           id: string
           notes: string | null
           number_of_guests: number | null
@@ -1524,6 +1525,7 @@ export type Database = {
           closed_at?: string | null
           created_at?: string | null
           custom_table_name?: string | null
+          debtor_id?: string | null
           id?: string
           notes?: string | null
           number_of_guests?: number | null
@@ -1539,6 +1541,7 @@ export type Database = {
           closed_at?: string | null
           created_at?: string | null
           custom_table_name?: string | null
+          debtor_id?: string | null
           id?: string
           notes?: string | null
           number_of_guests?: number | null
@@ -1550,7 +1553,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "table_sessions_debtor_id_fkey"
+            columns: ["debtor_id"]
+            isOneToOne: false
+            referencedRelation: "business_customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_activity_logs: {
         Row: {
