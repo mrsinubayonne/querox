@@ -337,8 +337,13 @@ const Comptabilite = () => {
       filtered = filtered.filter(t => new Date(t.date) <= new Date(endDate));
     }
 
+    // Filtre par moyen de paiement
+    if (paymentMethodFilter && paymentMethodFilter !== 'all') {
+      filtered = filtered.filter(t => t.payment_method === paymentMethodFilter);
+    }
+
     return filtered;
-  }, [filteredByOutlet, searchTerm, startDate, endDate]);
+  }, [filteredByOutlet, searchTerm, startDate, endDate, paymentMethodFilter]);
 
   const formatCurrency = (amount: number) => {
     const formatted = new Intl.NumberFormat('fr-FR').format(Math.abs(amount));
@@ -394,6 +399,21 @@ const Comptabilite = () => {
                 </Select>
               </div>
               <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Moyen de paiement</label>
+                <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+                  <SelectTrigger className="w-full sm:w-64">
+                    <SelectValue placeholder="Tous les moyens" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les moyens</SelectItem>
+                    <SelectItem value="Espèces">Espèces</SelectItem>
+                    <SelectItem value="Virement">Virement</SelectItem>
+                    <SelectItem value="Visa/Mastercard">Visa/Mastercard</SelectItem>
+                    <SelectItem value="Mobile Money">Mobile Money</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
                 <label className="text-sm font-medium mb-2 block">Date de début</label>
                 <Input
                   type="date"
@@ -416,6 +436,7 @@ const Comptabilite = () => {
                   setStartDate('');
                   setEndDate('');
                   setSelectedOutletFilter('all');
+                  setPaymentMethodFilter('all');
                 }} 
                 variant="outline"
               >
