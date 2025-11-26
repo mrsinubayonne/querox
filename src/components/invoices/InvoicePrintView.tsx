@@ -7,6 +7,7 @@ import { InvoiceSettings } from '@/hooks/useInvoiceSettings';
 interface InvoicePrintViewProps {
   invoice: Invoice;
   servedBy?: string;
+  format?: 'a4' | 'restaurant';
 }
 
 interface OutletData {
@@ -15,7 +16,7 @@ interface OutletData {
   phone: string | null;
 }
 
-const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }) => {
+const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy, format = 'restaurant' }) => {
   const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [outlet, setOutlet] = useState<OutletData | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -139,8 +140,8 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
             z-index: 99999 !important;
           }
           .invoice-print-container {
-            padding: 8mm !important;
-            width: 148mm !important;
+            padding: ${format === 'a4' ? '15mm' : '8mm'} !important;
+            width: ${format === 'a4' ? '210mm' : '148mm'} !important;
             max-width: 100% !important;
             height: auto !important;
             overflow: hidden !important;
@@ -151,7 +152,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy }
             page-break-before: avoid !important;
           }
           @page {
-            size: A5 portrait;
+            size: ${format === 'a4' ? 'A4' : 'A5'} portrait;
             margin: 0;
           }
           * {

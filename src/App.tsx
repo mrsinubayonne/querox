@@ -65,7 +65,7 @@ import RapportsJournaliers from '@/pages/RapportsJournaliers';
 import Equipe from '@/pages/Equipe';
 import StaffRequest from '@/pages/StaffRequest';
 import Clients from '@/pages/Clients';
-import ClientsEntreprise from '@/pages/ClientsEntreprise';
+import Debiteurs from '@/pages/Debiteurs';
 import PerformancePersonnel from '@/pages/PerformancePersonnel';
 import SelectOutlet from '@/pages/SelectOutlet';
 import SelectProfile from '@/pages/SelectProfile';
@@ -152,7 +152,7 @@ function App() {
           <Route path="/factures" element={<ProtectedRoute><Factures /></ProtectedRoute>} />
           <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
           <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
-          <Route path="/clients-entreprise" element={<ProtectedRoute><ClientsEntreprise /></ProtectedRoute>} />
+          <Route path="/debiteurs" element={<ProtectedRoute><Debiteurs /></ProtectedRoute>} />
           <Route path="/performance-personnel" element={<ProtectedRoute><PerformancePersonnel /></ProtectedRoute>} />
           <Route path="/staff-request" element={<ProtectedRoute><StaffRequest /></ProtectedRoute>} />
 
