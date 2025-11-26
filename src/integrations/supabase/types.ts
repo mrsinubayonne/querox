@@ -561,6 +561,7 @@ export type Database = {
           order_id: string | null
           outlet_id: string | null
           paid_date: string | null
+          payment_method: string | null
           payment_terms_days: number | null
           session_id: string | null
           siret: string | null
@@ -585,6 +586,7 @@ export type Database = {
           order_id?: string | null
           outlet_id?: string | null
           paid_date?: string | null
+          payment_method?: string | null
           payment_terms_days?: number | null
           session_id?: string | null
           siret?: string | null
@@ -609,6 +611,7 @@ export type Database = {
           order_id?: string | null
           outlet_id?: string | null
           paid_date?: string | null
+          payment_method?: string | null
           payment_terms_days?: number | null
           session_id?: string | null
           siret?: string | null
@@ -1678,6 +1681,7 @@ export type Database = {
           description: string | null
           id: string
           outlet_id: string | null
+          payment_method: string | null
           status: string | null
           title: string
           type: string
@@ -1691,6 +1695,7 @@ export type Database = {
           description?: string | null
           id?: string
           outlet_id?: string | null
+          payment_method?: string | null
           status?: string | null
           title: string
           type: string
@@ -1704,6 +1709,7 @@ export type Database = {
           description?: string | null
           id?: string
           outlet_id?: string | null
+          payment_method?: string | null
           status?: string | null
           title?: string
           type?: string

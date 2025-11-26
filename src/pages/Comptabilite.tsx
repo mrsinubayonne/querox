@@ -26,6 +26,7 @@ const Comptabilite = () => {
   const [selectedOutletFilter, setSelectedOutletFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
   const { toast } = useToast();
   
   const { transactions, loading, createTransaction, refetch: refetchTransactions } = useTransactions();

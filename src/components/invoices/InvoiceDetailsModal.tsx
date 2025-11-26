@@ -19,6 +19,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { usePaidCelebration } from '@/hooks/usePaidCelebration';
+import PaymentMethodModal from './PaymentMethodModal';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface InvoiceDetailsModalProps {
   invoice: Invoice | null;
@@ -36,7 +39,34 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   const [isPrinting, setIsPrinting] = useState(false);
   const [showServerDialog, setShowServerDialog] = useState(false);
   const [servedBy, setServedBy] = useState('');
+  const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
+
+  const handleMarkAsPaid = async (paymentMethod: string) => {
+    if (!invoice) return;
+    
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({ 
+          status: 'paid',
+          paid_date: new Date().toISOString(),
+          payment_method: paymentMethod
+        })
+        .eq('id', invoice.id);
+
+      if (error) throw error;
+
+      celebrate();
+      onMarkAsPaid(invoice.id);
+      onOpenChange(false);
+      
+      toast.success('Facture marquée comme payée');
+    } catch (error) {
+      console.error('Error marking invoice as paid:', error);
+      toast.error('Erreur lors de la mise à jour');
+    }
+  };
 
   if (!invoice) return null;
 
@@ -159,11 +189,7 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
           <div className="flex gap-3 justify-end">
             {invoice.status === 'unpaid' && (
               <Button
-                onClick={() => {
-                  celebrate();
-                  onMarkAsPaid(invoice.id);
-                  onOpenChange(false);
-                }}
+                onClick={() => setShowPaymentMethod(true)}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
                 <Check className="w-4 h-4 mr-2" />
@@ -206,6 +232,12 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PaymentMethodModal
+        open={showPaymentMethod}
+        onOpenChange={setShowPaymentMethod}
+        onConfirm={handleMarkAsPaid}
+      />
 
       <CelebrationMessage />
     </Dialog>

@@ -19,6 +19,8 @@ import QuickAddOrderToSessionModal from "./QuickAddOrderToSessionModal";
 import InvoicePrintView from "@/components/invoices/InvoicePrintView";
 import { Invoice } from "@/hooks/useInvoices";
 import { usePaidCelebration } from "@/hooks/usePaidCelebration";
+import PaymentMethodModal from "@/components/invoices/PaymentMethodModal";
+import { toast as sonnerToast } from "sonner";
 import { InvoicePreviewModal } from "./InvoicePreviewModal";
 interface Order {
   id: string;
@@ -50,7 +52,41 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [servedBy, setServedBy] = useState("");
   const [invoiceToPrint, setInvoiceToPrint] = useState<Invoice | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
+
+  const handleMarkAsPaidWithMethod = async (paymentMethod: string) => {
+    if (!session) return;
+    
+    try {
+      // Update session status
+      const { error: sessionError } = await supabase
+        .from('table_sessions')
+        .update({ status: 'paid' })
+        .eq('id', session.id);
+
+      if (sessionError) throw sessionError;
+
+      // Update invoice with payment method
+      const { error: invoiceError } = await supabase
+        .from('invoices')
+        .update({ 
+          status: 'paid',
+          paid_date: new Date().toISOString(),
+          payment_method: paymentMethod
+        })
+        .eq('session_id', session.id);
+
+      if (invoiceError) throw invoiceError;
+
+      celebrate();
+      onMarkAsPaid();
+      sonnerToast.success('Table marquée comme payée');
+    } catch (error) {
+      console.error('Error marking as paid:', error);
+      sonnerToast.error('Erreur lors de la mise à jour');
+    }
+  };
   const navigate = useNavigate();
   const {
     user
@@ -369,10 +405,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                 Imprimer
               </Button>
               
-              <Button onClick={() => {
-                celebrate();
-                onMarkAsPaid();
-              }}>
+              <Button onClick={() => setShowPaymentMethod(true)}>
                 Marquer comme Payée
               </Button>
             </>}
@@ -430,6 +463,12 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         tableNumber={session.table_number}
       />
       
+      <PaymentMethodModal
+        open={showPaymentMethod}
+        onOpenChange={setShowPaymentMethod}
+        onConfirm={handleMarkAsPaidWithMethod}
+      />
+
       <CelebrationMessage />
     </Dialog>;
 };
