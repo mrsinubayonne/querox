@@ -285,7 +285,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Ouvrir la Table {tableNumber}</DialogTitle>
           <DialogDescription>
@@ -293,8 +293,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="space-y-4 pb-4">
+        <form onSubmit={handleSubmit} className="flex gap-6 overflow-hidden">
+          {/* FORMULAIRE - GAUCHE */}
+          <div className="flex-1 space-y-4 overflow-y-auto pr-4">
             {/* Nombre de personnes */}
             <div className="space-y-2">
               <Label htmlFor="guests">Nombre de personnes (optionnel)</Label>
@@ -373,9 +374,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                 />
               </div>
               {filteredItems.length > 0 && (
-                <ScrollArea className="h-32 border rounded-md">
+                <ScrollArea className="h-48 border rounded-md">
                   <div className="p-2 space-y-1">
-                    {filteredItems.slice(0, 5).map((item) => (
+                    {filteredItems.slice(0, 10).map((item) => (
                       <button
                         key={item.id}
                         type="button"
@@ -397,22 +398,22 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             </div>
           </div>
 
-          {/* Panier - Section visible et scrollable */}
-          <div className="border-t pt-4">
+          {/* PANIER - DROITE */}
+          <div className="w-[400px] flex flex-col border-l pl-6">
             <div className="flex items-center justify-between mb-3">
-              <Label className="text-base font-semibold">Panier ({cart.length} plat{cart.length > 1 ? 's' : ''})</Label>
+              <Label className="text-base font-semibold">Panier ({cart.length})</Label>
               {cart.length > 0 && (
                 <span className="text-sm font-medium text-primary">
-                  Total: {totalAmount.toLocaleString()} FCFA
+                  {totalAmount.toLocaleString()} FCFA
                 </span>
               )}
             </div>
             
-            <ScrollArea className="h-64 border rounded-md bg-muted/20">
+            <ScrollArea className="flex-1 border rounded-md bg-muted/20 mb-4">
               {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-8 px-4">
-                  <p className="text-center">Aucun plat ajouté au panier</p>
-                  <p className="text-sm text-center mt-2">Recherchez et ajoutez des plats ci-dessus</p>
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12 px-4">
+                  <p className="text-center">Aucun plat ajouté</p>
+                  <p className="text-sm text-center mt-2">Recherchez et ajoutez des plats</p>
                 </div>
               ) : (
                 <div className="space-y-2 p-3">
@@ -424,40 +425,40 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                       <div className="flex-1 min-w-0 pr-3">
                         <p className="font-medium truncate">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {item.price.toLocaleString()} FCFA × {item.quantity} ={" "}
+                          {item.price.toLocaleString()} × {item.quantity} ={" "}
                           <span className="font-semibold text-foreground">
-                            {(item.price * item.quantity).toLocaleString()} FCFA
+                            {(item.price * item.quantity).toLocaleString()}
                           </span>
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         <Button
                           type="button"
                           size="icon"
                           variant="outline"
                           onClick={() => updateQuantity(item.id, -1)}
-                          className="h-8 w-8"
+                          className="h-7 w-7"
                         >
-                          <Minus className="h-4 w-4" />
+                          <Minus className="h-3 w-3" />
                         </Button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
+                        <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
                         <Button
                           type="button"
                           size="icon"
                           variant="outline"
                           onClick={() => updateQuantity(item.id, 1)}
-                          className="h-8 w-8"
+                          className="h-7 w-7"
                         >
-                          <Plus className="h-4 w-4" />
+                          <Plus className="h-3 w-3" />
                         </Button>
                         <Button
                           type="button"
                           size="icon"
                           variant="ghost"
                           onClick={() => removeFromCart(item.id)}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          className="h-7 w-7 text-destructive hover:text-destructive ml-1"
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
@@ -467,26 +468,27 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             </ScrollArea>
             
             {cart.length > 0 && (
-              <div className="mt-3 p-4 bg-primary/10 border border-primary/20 rounded-md">
+              <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-md">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-lg">Total de la commande</span>
+                  <span className="font-bold text-lg">Total</span>
                   <span className="font-bold text-xl text-primary">{totalAmount.toLocaleString()} FCFA</span>
                 </div>
               </div>
             )}
-          </div>
 
-          <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-              Annuler
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={loading || cart.length === 0 || (isDebtorOrder && (!selectedDebtorId || availableCredit <= 0))}
-            >
-              {loading ? "Création..." : "Ouvrir & Commander"}
-            </Button>
-          </DialogFooter>
+            <div className="flex flex-col gap-2">
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={loading || cart.length === 0 || (isDebtorOrder && (!selectedDebtorId || availableCredit < totalAmount))}
+              >
+                {loading ? "Ouverture..." : "Ouvrir & Commander"}
+              </Button>
+              <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="w-full">
+                Annuler
+              </Button>
+            </div>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
