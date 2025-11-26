@@ -42,7 +42,7 @@ export function useDebtors(outletId?: string) {
         .order("company_name");
 
       if (outletId) {
-        query = query.eq("outlet_id", outletId);
+        query = query.or(`outlet_id.eq.${outletId},outlet_id.is.null`);
       }
 
       const { data, error } = await query;
@@ -59,7 +59,7 @@ export function useDebtors(outletId?: string) {
 
       const { data, error } = await supabase
         .from("business_customers")
-        .insert([{ ...customer, user_id: user.id }])
+        .insert([{ ...customer, user_id: user.id, outlet_id: outletId }])
         .select()
         .single();
 
