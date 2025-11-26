@@ -12,6 +12,7 @@ import NewTransactionModal from '@/components/accounting/NewTransactionModal';
 import ExportModal from '@/components/accounting/ExportModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -23,6 +24,8 @@ const Comptabilite = () => {
   const [showNewTransactionModal, setShowNewTransactionModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedOutletFilter, setSelectedOutletFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const { toast } = useToast();
   
   const { transactions, loading, createTransaction, refetch: refetchTransactions } = useTransactions();
@@ -193,18 +196,42 @@ const Comptabilite = () => {
       tout: 'toutes les données'
     };
 
+    // Filtrer les transactions selon la période
+    const now = new Date();
+    let filteredByPeriod = filteredByOutlet;
+
+    if (period === 'ce_mois') {
+      filteredByPeriod = filteredByOutlet.filter(t => {
+        const tDate = new Date(t.date);
+        return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+      });
+    } else if (period === 'mois_dernier') {
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      filteredByPeriod = filteredByOutlet.filter(t => {
+        const tDate = new Date(t.date);
+        return tDate.getMonth() === lastMonth.getMonth() && tDate.getFullYear() === lastMonth.getFullYear();
+      });
+    } else if (period === '3_mois') {
+      const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+      filteredByPeriod = filteredByOutlet.filter(t => new Date(t.date) >= threeMonthsAgo);
+    } else if (period === 'cette_annee') {
+      filteredByPeriod = filteredByOutlet.filter(t => new Date(t.date).getFullYear() === now.getFullYear());
+    }
+
     if (format === 'excel') {
-      const data = `Titre,Date,Montant,Statut\n${filteredTransactions.map(t => 
-        `"${t.title}","${t.date}","${formatCurrency(t.amount)}","${t.status}"`
-      ).join('\n')}`;
-      
-      const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `comptabilite-${period}-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const data = filteredByPeriod.map(t => ({
+        'Titre': t.title,
+        'Date': t.date,
+        'Type': t.type === 'income' ? 'Recette' : 'Dépense',
+        'Catégorie': t.category,
+        'Montant': t.amount,
+        'Statut': t.status === 'completed' ? 'Confirmé' : t.status === 'pending' ? 'En attente' : 'Annulé'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Comptabilité');
+      XLSX.writeFile(workbook, `comptabilite-${period}-${new Date().toISOString().split('T')[0]}.xlsx`);
     } else if (format === 'sheets') {
       window.open('https://sheets.google.com/create', '_blank');
     } else if (format === 'pdf') {
@@ -290,10 +317,27 @@ const Comptabilite = () => {
     { id: 'budget', label: 'Budget prévisionnel', active: activeTab === 'budget' }
   ];
 
-  const filteredTransactions = transactions.filter(transaction =>
-    transaction.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.date.includes(searchTerm)
-  );
+  const filteredTransactions = useMemo(() => {
+    let filtered = filteredByOutlet;
+
+    // Filtre par recherche
+    if (searchTerm) {
+      filtered = filtered.filter(transaction =>
+        transaction.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.date.includes(searchTerm)
+      );
+    }
+
+    // Filtre par dates
+    if (startDate) {
+      filtered = filtered.filter(t => new Date(t.date) >= new Date(startDate));
+    }
+    if (endDate) {
+      filtered = filtered.filter(t => new Date(t.date) <= new Date(endDate));
+    }
+
+    return filtered;
+  }, [filteredByOutlet, searchTerm, startDate, endDate]);
 
   const formatCurrency = (amount: number) => {
     const formatted = new Intl.NumberFormat('fr-FR').format(Math.abs(amount));
@@ -330,27 +374,59 @@ const Comptabilite = () => {
           />
 
           {/* Filtre par PDV et Total */}
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-white p-4 rounded-lg border">
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Filtrer par point de vente</label>
-              <Select value={selectedOutletFilter} onValueChange={setSelectedOutletFilter}>
-                <SelectTrigger className="w-full sm:w-64">
-                  <SelectValue placeholder="Tous les points de vente" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les points de vente</SelectItem>
-                  {outlets.map(outlet => (
-                    <SelectItem key={outlet.id} value={outlet.id}>
-                      {outlet.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="bg-white p-4 rounded-lg border space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Filtrer par point de vente</label>
+                <Select value={selectedOutletFilter} onValueChange={setSelectedOutletFilter}>
+                  <SelectTrigger className="w-full sm:w-64">
+                    <SelectValue placeholder="Tous les points de vente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les points de vente</SelectItem>
+                    {outlets.map(outlet => (
+                      <SelectItem key={outlet.id} value={outlet.id}>
+                        {outlet.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Date de début</label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Date de fin</label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <Button 
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  setSelectedOutletFilter('all');
+                }} 
+                variant="outline"
+              >
+                Réinitialiser
+              </Button>
             </div>
-            <Button onClick={handleDownloadByOutlet} variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Exporter totaux par PDV
-            </Button>
+            <div className="flex justify-end">
+              <Button onClick={handleDownloadByOutlet} variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Exporter totaux par PDV
+              </Button>
+            </div>
           </div>
 
           <AccountingStats

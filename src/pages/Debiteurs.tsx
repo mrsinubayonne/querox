@@ -60,6 +60,9 @@ const Debiteurs = () => {
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Users className="h-8 w-8" />
             Débiteurs
+            <span className="text-sm font-normal px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+              Beta
+            </span>
           </h1>
           <p className="text-muted-foreground mt-1">
             Gérez vos clients à paiement différé (entreprises, particuliers, etc.)
