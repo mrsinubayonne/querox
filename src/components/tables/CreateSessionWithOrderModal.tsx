@@ -401,56 +401,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
             <Separator />
 
-            {/* Article libre button */}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowCustomItem(!showCustomItem)}
-              className="w-full"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Article libre
-            </Button>
-
-            {/* Custom item form */}
-            {showCustomItem && (
-              <div className="space-y-3 p-4 border rounded-md bg-accent/10">
-                <div className="space-y-2">
-                  <Label htmlFor="custom-name">Nom de l'article *</Label>
-                  <Input
-                    id="custom-name"
-                    placeholder="Ex: Plat du jour"
-                    value={customItemName}
-                    onChange={(e) => setCustomItemName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="custom-price">Prix (FCFA) *</Label>
-                  <Input
-                    id="custom-price"
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="Ex: 5000"
-                    value={customItemPrice}
-                    onChange={(e) => setCustomItemPrice(e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button type="button" onClick={addCustomItem} className="flex-1">
-                    Ajouter au panier
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => {
-                    setShowCustomItem(false);
-                    setCustomItemName("");
-                    setCustomItemPrice("");
-                  }}>
-                    Annuler
-                  </Button>
-                </div>
-              </div>
-            )}
-
             {/* Recherche de plats */}
             <div className="space-y-2">
               <Label htmlFor="search">Rechercher un plat</Label>
@@ -493,12 +443,55 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           <div className="w-[400px] flex flex-col border-l pl-6">
             <div className="flex items-center justify-between mb-3">
               <Label className="text-base font-semibold">Panier ({cart.length})</Label>
-              {cart.length > 0 && (
-                <span className="text-sm font-medium text-primary">
-                  {totalAmount.toLocaleString()} FCFA
-                </span>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCustomItem(!showCustomItem)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Article libre
+              </Button>
             </div>
+
+            {/* Custom item form */}
+            {showCustomItem && (
+              <div className="space-y-3 p-3 mb-3 border rounded-md bg-accent/10">
+                <div className="space-y-2">
+                  <Label htmlFor="custom-name">Nom de l'article *</Label>
+                  <Input
+                    id="custom-name"
+                    placeholder="Ex: Plat du jour"
+                    value={customItemName}
+                    onChange={(e) => setCustomItemName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="custom-price">Prix (FCFA) *</Label>
+                  <Input
+                    id="custom-price"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="Ex: 5000"
+                    value={customItemPrice}
+                    onChange={(e) => setCustomItemPrice(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" onClick={addCustomItem} className="flex-1">
+                    Ajouter
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => {
+                    setShowCustomItem(false);
+                    setCustomItemName("");
+                    setCustomItemPrice("");
+                  }}>
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            )}
             
             <ScrollArea className="h-[400px] border rounded-md bg-muted/20 mb-4">
               {cart.length === 0 ? (
