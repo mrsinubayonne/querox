@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Edit, Trash2 } from 'lucide-react';
 
 interface Transaction {
   id: string;
@@ -18,9 +18,17 @@ interface TransactionCardProps {
   transaction: Transaction;
   onViewDetails: () => void;
   formatCurrency: (amount: number) => string;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, onViewDetails, formatCurrency }) => {
+const TransactionCard: React.FC<TransactionCardProps> = ({ 
+  transaction, 
+  onViewDetails, 
+  formatCurrency,
+  onEdit,
+  onDelete
+}) => {
   return (
     <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
       <CardContent className="p-3">
@@ -52,6 +60,24 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, onViewDe
             >
               {transaction.status}
             </Badge>
+            {onEdit && (
+              <Button 
+                size="sm" 
+                variant="ghost"
+                onClick={onEdit}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {onDelete && (
+              <Button 
+                size="sm" 
+                variant="ghost"
+                onClick={onDelete}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            )}
             <Button 
               size="sm" 
               variant="outline"

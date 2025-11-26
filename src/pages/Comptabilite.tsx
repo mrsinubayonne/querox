@@ -9,12 +9,24 @@ import AccountingStats from '@/components/accounting/AccountingStats';
 import AccountingTabsContainer from '@/components/accounting/AccountingTabsContainer';
 import AccountingPeriodsTab from '@/components/accounting/AccountingPeriodsTab';
 import NewTransactionModal from '@/components/accounting/NewTransactionModal';
+import EditTransactionModal from '@/components/accounting/EditTransactionModal';
 import ExportModal from '@/components/accounting/ExportModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Download } from 'lucide-react';
+import { Download, Edit, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 const Comptabilite = () => {
@@ -22,11 +34,15 @@ const Comptabilite = () => {
   const [activeTab, setActiveTab] = useState('transactions');
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewTransactionModal, setShowNewTransactionModal] = useState(false);
+  const [showEditTransactionModal, setShowEditTransactionModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedOutletFilter, setSelectedOutletFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const { toast } = useToast();
   
   const { transactions, loading, createTransaction, refetch: refetchTransactions } = useTransactions();
@@ -338,11 +354,43 @@ const Comptabilite = () => {
     });
   };
 
-  const handleTransactionDetails = (transaction: any) => {
-    toast({
-      title: "Détails transaction",
-      description: `${transaction.title} - ${formatCurrency(transaction.amount)}`,
-    });
+  const handleEditTransaction = (transaction: any) => {
+    setSelectedTransaction(transaction);
+    setShowEditTransactionModal(true);
+  };
+
+  const handleDeleteTransaction = (transactionId: string) => {
+    setTransactionToDelete(transactionId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteTransaction = async () => {
+    if (!transactionToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("transactions")
+        .delete()
+        .eq("id", transactionToDelete);
+
+      if (error) throw error;
+
+      toast({
+        title: "Transaction supprimée",
+        description: "La transaction a été supprimée avec succès",
+      });
+
+      refetchTransactions();
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la transaction",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setTransactionToDelete(null);
+    }
   };
 
   const handleGenerateReport = () => {
@@ -542,6 +590,13 @@ const Comptabilite = () => {
                   description: `${transaction.title} - ${formatCurrency(transaction.amount)}`,
                 });
               }}
+              onEditTransaction={(transaction) => {
+                const original = filteredTransactions.find(t => t.id === transaction.id);
+                if (original) handleEditTransaction(original);
+              }}
+              onDeleteTransaction={(transactionId) => {
+                handleDeleteTransaction(transactionId);
+              }}
               onGenerateReport={() => {
                 toast({
                   title: "Rapport généré",
@@ -565,11 +620,36 @@ const Comptabilite = () => {
         onSubmit={handleCreateTransaction}
       />
 
+      <EditTransactionModal
+        open={showEditTransactionModal}
+        onOpenChange={setShowEditTransactionModal}
+        transaction={selectedTransaction}
+        onSuccess={() => {
+          refetchTransactions();
+          setShowEditTransactionModal(false);
+        }}
+      />
+
       <ExportModal
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         onExport={handleExport}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette transaction ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteTransaction}>Supprimer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

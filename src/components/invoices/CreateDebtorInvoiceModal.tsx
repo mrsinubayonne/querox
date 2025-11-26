@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +8,7 @@ import { useOptimizedOutlet } from "@/hooks/useOptimizedOutlet";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { Debtor } from "@/hooks/useBusinessCustomers";
+import DebtorInvoiceItemsManager, { InvoiceItem } from "./DebtorInvoiceItemsManager";
 
 interface CreateDebtorInvoiceModalProps {
   open: boolean;
@@ -25,17 +25,18 @@ const CreateDebtorInvoiceModal: React.FC<CreateDebtorInvoiceModalProps> = ({
   const { outletId } = useOptimizedOutlet();
   const { toast } = useToast();
 
-  const [amount, setAmount] = useState("");
+  const [items, setItems] = useState<InvoiceItem[]>([]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
   if (!debtor) return null;
 
   const paymentTerms = debtor.payment_terms_days || 30;
+  const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
 
   const handleClose = () => {
     if (loading) return;
-    setAmount("");
+    setItems([]);
     setNotes("");
     onOpenChange(false);
   };
@@ -61,12 +62,10 @@ const CreateDebtorInvoiceModal: React.FC<CreateDebtorInvoiceModalProps> = ({
       return;
     }
 
-    const numericAmount = parseFloat(amount.replace(",", "."));
-
-    if (isNaN(numericAmount) || numericAmount <= 0) {
+    if (items.length === 0) {
       toast({
-        title: "Montant invalide",
-        description: "Veuillez saisir un montant supérieur à 0",
+        title: "Articles manquants",
+        description: "Veuillez ajouter au moins un article à la facture",
         variant: "destructive",
       });
       return;
@@ -88,13 +87,21 @@ const CreateDebtorInvoiceModal: React.FC<CreateDebtorInvoiceModalProps> = ({
       dueDate.setDate(dueDate.getDate() + paymentTerms);
       const dueDateString = dueDate.toISOString().split("T")[0];
 
+      // Convertir les items au format attendu par la BDD
+      const invoiceItems = items.map(item => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
       const { error: insertError } = await supabase.from("invoices").insert({
         user_id: user.id,
         outlet_id: outletId,
         business_customer_id: debtor.id,
         invoice_number: invoiceNumber as string,
         invoice_type: "b2b",
-        total_amount: numericAmount,
+        total_amount: totalAmount,
         status: "unpaid",
         due_date: dueDateString,
         payment_terms_days: paymentTerms,
@@ -104,7 +111,7 @@ const CreateDebtorInvoiceModal: React.FC<CreateDebtorInvoiceModalProps> = ({
         customer_email: debtor.email,
         customer_phone: debtor.phone,
         notes: notes || null,
-        items: [],
+        items: invoiceItems,
       });
 
       if (insertError) {
@@ -131,7 +138,7 @@ const CreateDebtorInvoiceModal: React.FC<CreateDebtorInvoiceModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Créer une facture pour ce débiteur</DialogTitle>
           <DialogDescription>
@@ -153,23 +160,20 @@ const CreateDebtorInvoiceModal: React.FC<CreateDebtorInvoiceModalProps> = ({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="amount">Montant (FCFA) *</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              placeholder="Ex: 150000"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-            />
-          </div>
+          <DebtorInvoiceItemsManager
+            items={items}
+            onChange={setItems}
+          />
 
           <div className="space-y-1 text-sm text-muted-foreground">
             <div>
               Délai de paiement : <span className="font-medium">{paymentTerms} jours</span>
             </div>
+            {totalAmount > 0 && (
+              <div className="text-lg font-bold text-foreground">
+                Montant total : {totalAmount.toLocaleString()} FCFA
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -187,7 +191,7 @@ const CreateDebtorInvoiceModal: React.FC<CreateDebtorInvoiceModalProps> = ({
             <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
               Annuler
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || items.length === 0}>
               {loading ? "Création..." : "Créer la facture"}
             </Button>
           </div>

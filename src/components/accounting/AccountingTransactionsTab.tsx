@@ -16,12 +16,16 @@ interface AccountingTransactionsTabProps {
   transactions: Transaction[];
   formatCurrency: (amount: number) => string;
   onTransactionDetails: (transaction: Transaction) => void;
+  onEditTransaction?: (transaction: Transaction) => void;
+  onDeleteTransaction?: (transactionId: string) => void;
 }
 
 const AccountingTransactionsTab: React.FC<AccountingTransactionsTabProps> = ({
   transactions,
   formatCurrency,
-  onTransactionDetails
+  onTransactionDetails,
+  onEditTransaction,
+  onDeleteTransaction
 }) => {
   return (
     <div className="space-y-4">
@@ -36,6 +40,8 @@ const AccountingTransactionsTab: React.FC<AccountingTransactionsTabProps> = ({
             transaction={transaction}
             formatCurrency={formatCurrency}
             onViewDetails={() => onTransactionDetails(transaction)}
+            onEdit={onEditTransaction ? () => onEditTransaction(transaction) : undefined}
+            onDelete={onDeleteTransaction ? () => onDeleteTransaction(transaction.id) : undefined}
           />
         ))}
       </div>
