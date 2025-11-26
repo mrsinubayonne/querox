@@ -73,6 +73,7 @@ export const useTransactions = () => {
           outlet_name: transaction.outlets?.name || 'Non défini',
           payment_method: transaction.payment_method || 'Espèces',
         }));
+        console.log('[useTransactions] fetched transactions:', transformedTransactions.length, transformedTransactions.slice(0, 5));
         setTransactions(transformedTransactions);
       }
     } catch (error) {
