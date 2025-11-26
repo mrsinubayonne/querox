@@ -211,6 +211,32 @@ export const useTransactions = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
+  // Real-time listener for transactions
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('transactions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          // Refetch transactions when any change occurs
+          fetchTransactions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchTransactions]);
+
   return {
     transactions,
     loading,
