@@ -1517,6 +1517,7 @@ export type Database = {
           notes: string | null
           number_of_guests: number | null
           outlet_id: string | null
+          payment_method: string | null
           started_at: string
           status: string
           table_number: string
@@ -1533,6 +1534,7 @@ export type Database = {
           notes?: string | null
           number_of_guests?: number | null
           outlet_id?: string | null
+          payment_method?: string | null
           started_at?: string
           status?: string
           table_number: string
@@ -1549,6 +1551,7 @@ export type Database = {
           notes?: string | null
           number_of_guests?: number | null
           outlet_id?: string | null
+          payment_method?: string | null
           started_at?: string
           status?: string
           table_number?: string
