@@ -409,7 +409,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
               )}
             </div>
             
-            <ScrollArea className="flex-1 border rounded-md bg-muted/20 mb-4">
+            <ScrollArea className="h-[400px] border rounded-md bg-muted/20 mb-4">
               {cart.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12 px-4">
                   <p className="text-center">Aucun plat ajouté</p>
