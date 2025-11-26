@@ -17,6 +17,7 @@ interface Transaction {
   user_id: string;
   outlet_id?: string;
   outlet_name?: string;
+  payment_method?: string;
 }
 
 export const useTransactions = () => {
@@ -107,6 +108,7 @@ export const useTransactions = () => {
           user_id: transaction.user_id,
           outlet_id: transaction.outlet_id,
           outlet_name: transaction.outlets?.name || 'Non défini',
+          payment_method: transaction.payment_method || 'Espèces',
         }));
         setTransactions(transformedTransactions);
       }
