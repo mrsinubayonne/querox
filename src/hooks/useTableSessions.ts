@@ -118,31 +118,131 @@ export function useTableSessions() {
   const closeSession = useCallback(
     async (sessionId: string) => {
       try {
-        // Récupérer la session pour vérifier si elle a un débiteur
+        // Récupérer la session complète pour vérifier le débiteur et les montants
         const { data: session, error: fetchError } = await supabase
           .from("table_sessions" as any)
-          .select("debtor_id")
+          .select("id, user_id, outlet_id, debtor_id, table_number, total_amount")
           .eq("id", sessionId)
-          .single();
+          .maybeSingle();
 
         if (fetchError) throw fetchError;
+        if (!session) {
+          throw new Error("Session introuvable");
+        }
 
         const hasDebtor = (session as any)?.debtor_id !== null;
 
-        // Si c'est un débiteur, fermer directement sans attendre de paiement
-        const { error } = await supabase
+        // Si c'est un débiteur, on garde le statut "paid" pour enregistrer un crédit
+        const { error: updateError } = await supabase
           .from("table_sessions" as any)
           .update({
-            status: hasDebtor ? "paid" : "closed", // Passer directement à "paid" pour les débiteurs
+            status: hasDebtor ? "paid" : "closed",
             closed_at: new Date().toISOString(),
           })
           .eq("id", sessionId);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
+
+        // Vérifier si une facture existe déjà pour cette session
+        const { data: existingInvoice, error: existingError } = await supabase
+          .from("invoices" as any)
+          .select("id")
+          .eq("session_id", sessionId)
+          .maybeSingle();
+
+        if (existingError && existingError.code !== "PGRST116") throw existingError;
+
+        // Si aucune facture, la générer automatiquement
+        if (!existingInvoice) {
+          // Récupérer les commandes de la session pour construire les lignes de facture
+          const { data: orders, error: ordersError } = await supabase
+            .from("orders" as any)
+            .select("items, customer_name, customer_email, customer_phone, created_at")
+            .eq("session_id", sessionId)
+            .order("created_at", { ascending: true });
+
+          if (ordersError) throw ordersError;
+
+          const ordersList = (orders ?? []) as any[];
+
+          const allItems: any[] = [];
+          ordersList.forEach((order: any) => {
+            const orderItems = Array.isArray(order.items)
+              ? order.items
+              : order.items
+              ? (order.items as any[])
+              : [];
+            allItems.push(...orderItems);
+          });
+
+          const firstOrder: any | null = ordersList.length > 0 ? (ordersList[0] as any) : null;
+
+          // Générer un numéro de facture séquentiel
+          const { data: invoiceNumber, error: invoiceNumberError } = await supabase.rpc(
+            "generate_invoice_number"
+          );
+
+          if (invoiceNumberError) throw invoiceNumberError;
+          if (!invoiceNumber) throw new Error("Impossible de générer un numéro de facture");
+
+          // Paramètres spécifiques si la session est liée à un débiteur
+          let dueDate: string | null = null;
+          let paymentTermsDays: number | null = null;
+          let businessCustomerId: string | null = null;
+          let invoiceType = "b2c";
+          let billingAddress: string | null = null;
+          let siret: string | null = null;
+
+          if (hasDebtor && (session as any).debtor_id) {
+            invoiceType = "b2b";
+            businessCustomerId = (session as any).debtor_id as string;
+
+            const { data: debtor, error: debtorError } = await supabase
+              .from("business_customers" as any)
+              .select("payment_terms_days, address, siret")
+              .eq("id", businessCustomerId)
+              .maybeSingle();
+
+            if (debtorError && debtorError.code !== "PGRST116") throw debtorError;
+
+            paymentTermsDays = (debtor as any)?.payment_terms_days ?? 30;
+            const now = new Date();
+            now.setDate(now.getDate() + paymentTermsDays);
+            dueDate = now.toISOString().split("T")[0];
+            billingAddress = (debtor as any)?.address ?? null;
+            siret = (debtor as any)?.siret ?? null;
+          }
+
+          const { error: insertError } = await supabase
+            .from("invoices" as any)
+            .insert([
+              {
+                user_id: (session as any).user_id,
+                outlet_id: (session as any).outlet_id,
+                session_id: sessionId,
+                business_customer_id: businessCustomerId,
+                invoice_number: invoiceNumber,
+                invoice_type: invoiceType,
+                total_amount: (session as any).total_amount ?? 0,
+                status: "unpaid",
+                due_date: dueDate,
+                payment_terms_days: paymentTermsDays,
+                notes: `Facture générée automatiquement pour la table ${(session as any).table_number}`,
+                billing_address: billingAddress,
+                siret,
+                customer_name: firstOrder?.customer_name ?? "Client",
+                customer_email: firstOrder?.customer_email ?? null,
+                customer_phone: firstOrder?.customer_phone ?? null,
+                items: allItems,
+              },
+            ]);
+
+          if (insertError) throw insertError;
+        }
 
         toast({
           title: hasDebtor ? "Session fermée - Crédit accordé" : "Session fermée",
-          description: hasDebtor 
+          description: hasDebtor
             ? "La dette du client a été enregistrée. Aucun paiement immédiat requis."
             : "La facture a été générée automatiquement.",
         });
