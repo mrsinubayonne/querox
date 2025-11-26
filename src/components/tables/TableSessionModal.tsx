@@ -233,30 +233,139 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   };
   const handlePrintSession = async () => {
     if (!session) return;
+
     try {
-      // Fetch invoice for this session
+      // 1) Chercher d'abord une facture existante pour cette session
       const {
-        data: invoice,
-        error: invoiceError
-      } = await supabase.from("invoices" as any).select("*").eq("session_id", session.id).maybeSingle();
-      if (invoiceError || !invoice) {
-        toast({
-          title: "Aucune facture",
-          description: "Veuillez d'abord fermer la session pour générer une facture.",
-          variant: "destructive"
-        });
-        return;
+        data: existingInvoice,
+        error: invoiceError,
+      } = await supabase
+        .from("invoices" as any)
+        .select("*")
+        .eq("session_id", session.id)
+        .maybeSingle();
+
+      if (invoiceError) {
+        console.error("Error fetching invoice:", invoiceError);
       }
 
-      // Show dialog to ask for "served by" information
+      let invoice = existingInvoice as any | null;
+
+      // 2) Si aucune facture trouvée, la générer automatiquement
+      if (!invoice) {
+        try {
+          // Récupérer toutes les commandes de la session
+          const { data: ordersForSession, error: ordersError } = await supabase
+            .from("orders" as any)
+            .select("items, customer_name, customer_email, customer_phone, created_at")
+            .eq("session_id", session.id)
+            .order("created_at", { ascending: true });
+
+          if (ordersError) throw ordersError;
+
+          const ordersList = (ordersForSession ?? []) as any[];
+
+          const allItems: any[] = [];
+          ordersList.forEach((order: any) => {
+            const orderItems = Array.isArray(order.items)
+              ? order.items
+              : order.items
+              ? (order.items as any[])
+              : [];
+            allItems.push(...orderItems);
+          });
+
+          const firstOrder: any | null = ordersList.length > 0 ? (ordersList[0] as any) : null;
+
+          // Générer un numéro de facture séquentiel via la fonction SQL
+          const { data: invoiceNumber, error: invoiceNumberError } = await supabase.rpc(
+            "generate_invoice_number"
+          );
+
+          if (invoiceNumberError || !invoiceNumber) {
+            throw invoiceNumberError || new Error("Impossible de générer un numéro de facture");
+          }
+
+          // Paramètres spécifiques si la session est liée à un débiteur
+          const hasDebtor = (session as any).debtor_id !== null;
+          let dueDate: string | null = null;
+          let paymentTermsDays: number | null = null;
+          let businessCustomerId: string | null = null;
+          let invoiceType = "b2c";
+          let billingAddress: string | null = null;
+          let siret: string | null = null;
+
+          if (hasDebtor && (session as any).debtor_id) {
+            invoiceType = "b2b";
+            businessCustomerId = (session as any).debtor_id as string;
+
+            const { data: debtor, error: debtorError } = await supabase
+              .from("business_customers" as any)
+              .select("payment_terms_days, address, siret")
+              .eq("id", businessCustomerId)
+              .maybeSingle();
+
+            if (debtorError && (debtorError as any).code !== "PGRST116") throw debtorError;
+
+            paymentTermsDays = (debtor as any)?.payment_terms_days ?? 30;
+            const now = new Date();
+            now.setDate(now.getDate() + paymentTermsDays);
+            dueDate = now.toISOString().split("T")[0];
+            billingAddress = (debtor as any)?.address ?? null;
+            siret = (debtor as any)?.siret ?? null;
+          }
+
+          const { data: insertedInvoice, error: insertError } = await supabase
+            .from("invoices" as any)
+            .insert([
+              {
+                user_id: (session as any).user_id,
+                outlet_id: (session as any).outlet_id,
+                session_id: session.id,
+                business_customer_id: businessCustomerId,
+                invoice_number: invoiceNumber,
+                invoice_type: invoiceType,
+                total_amount: (session as any).total_amount ?? 0,
+                status: "unpaid",
+                due_date: dueDate,
+                payment_terms_days: paymentTermsDays,
+                notes: `Facture générée automatiquement pour la table ${(session as any).table_number}`,
+                billing_address: billingAddress,
+                siret,
+                customer_name: firstOrder?.customer_name ?? "Client",
+                customer_email: firstOrder?.customer_email ?? null,
+                customer_phone: firstOrder?.customer_phone ?? null,
+                items: allItems,
+              },
+            ])
+            .select("*")
+            .maybeSingle();
+
+          if (insertError || !insertedInvoice) {
+            throw insertError || new Error("Insertion de la facture échouée");
+          }
+
+          invoice = insertedInvoice as any;
+        } catch (genError) {
+          console.error("Error generating invoice on-the-fly:", genError);
+          toast({
+            title: "Erreur facture",
+            description: "Impossible de générer automatiquement la facture.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // À ce stade, on a forcément une facture pour la session
       setInvoiceToPrint(invoice as any as Invoice);
       setShowPrintDialog(true);
     } catch (error) {
-      console.error("Error fetching invoice:", error);
+      console.error("Error in handlePrintSession:", error);
       toast({
         title: "Erreur",
         description: "Impossible de récupérer la facture.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
