@@ -397,29 +397,40 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             </div>
           </div>
 
-          {/* Panier */}
-          <div className="flex-1 overflow-hidden flex flex-col border-t pt-4">
-            <Label className="mb-2">Plats commandés ({cart.length})</Label>
-            <ScrollArea className="flex-1">
+          {/* Panier - Section visible et scrollable */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-base font-semibold">Panier ({cart.length} plat{cart.length > 1 ? 's' : ''})</Label>
+              {cart.length > 0 && (
+                <span className="text-sm font-medium text-primary">
+                  Total: {totalAmount.toLocaleString()} FCFA
+                </span>
+              )}
+            </div>
+            
+            <ScrollArea className="h-64 border rounded-md bg-muted/20">
               {cart.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  Aucun plat ajouté. Recherchez et ajoutez des plats.
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-8 px-4">
+                  <p className="text-center">Aucun plat ajouté au panier</p>
+                  <p className="text-sm text-center mt-2">Recherchez et ajoutez des plats ci-dessus</p>
                 </div>
               ) : (
-                <div className="space-y-2 pr-4">
+                <div className="space-y-2 p-3">
                   {cart.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-3 bg-accent/50 rounded-md"
+                      className="flex items-center justify-between p-3 bg-background border rounded-md shadow-sm"
                     >
-                      <div className="flex-1">
-                        <p className="font-medium">{item.name}</p>
+                      <div className="flex-1 min-w-0 pr-3">
+                        <p className="font-medium truncate">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
                           {item.price.toLocaleString()} FCFA × {item.quantity} ={" "}
-                          {(item.price * item.quantity).toLocaleString()} FCFA
+                          <span className="font-semibold text-foreground">
+                            {(item.price * item.quantity).toLocaleString()} FCFA
+                          </span>
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <Button
                           type="button"
                           size="icon"
@@ -444,7 +455,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                           size="icon"
                           variant="ghost"
                           onClick={() => removeFromCart(item.id)}
-                          className="h-8 w-8"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -456,10 +467,10 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             </ScrollArea>
             
             {cart.length > 0 && (
-              <div className="mt-4 p-3 bg-primary/10 rounded-md">
-                <div className="flex justify-between items-center font-bold text-lg">
-                  <span>Total</span>
-                  <span>{totalAmount.toLocaleString()} FCFA</span>
+              <div className="mt-3 p-4 bg-primary/10 border border-primary/20 rounded-md">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-lg">Total de la commande</span>
+                  <span className="font-bold text-xl text-primary">{totalAmount.toLocaleString()} FCFA</span>
                 </div>
               </div>
             )}
