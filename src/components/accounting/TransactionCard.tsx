@@ -26,9 +26,11 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, onViewDe
       <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gray-50 rounded-lg">
-              {transaction.icon}
-            </div>
+            {transaction.icon && (
+              <div className="p-2 bg-gray-50 rounded-lg text-xl">
+                {transaction.icon}
+              </div>
+            )}
             <div>
               <h3 className="text-sm font-semibold text-gray-900">{transaction.title}</h3>
               <p className="text-xs text-gray-500">{transaction.date}</p>

@@ -477,7 +477,7 @@ const Comptabilite = () => {
                 amount: t.type === 'income' ? t.amount : -t.amount,
                 isPositive: t.type === 'income',
                 status: t.status === 'completed' ? 'confirmé' : t.status === 'pending' ? 'en attente' : 'annulé',
-                icon: null
+                icon: t.type === 'income' ? '💰' : '📤'
               }))}
               formatCurrency={formatCurrency}
               onTabChange={setActiveTab}
