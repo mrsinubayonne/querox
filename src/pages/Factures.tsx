@@ -14,6 +14,7 @@ import InvoiceDetailsModal from '@/components/invoices/InvoiceDetailsModal';
 import EditInvoiceModal from '@/components/invoices/EditInvoiceModal';
 import InvoiceFilters from '@/components/invoices/InvoiceFilters';
 import InvoicePrintView from '@/components/invoices/InvoicePrintView';
+import InvoiceFormatSelector from '@/components/invoices/InvoiceFormatSelector';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -37,8 +38,10 @@ const Factures: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
+  const [printFormat, setPrintFormat] = useState<'a4' | 'restaurant'>('restaurant');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showFormatSelector, setShowFormatSelector] = useState(false);
   const [showServerDialog, setShowServerDialog] = useState(false);
   const [servedBy, setServedBy] = useState('');
 
@@ -77,6 +80,12 @@ const Factures: React.FC = () => {
 
   const handlePrint = (invoice: Invoice) => {
     setPrintInvoice(invoice);
+    setShowFormatSelector(true);
+  };
+
+  const handleFormatSelected = (format: 'a4' | 'restaurant') => {
+    setPrintFormat(format);
+    setShowFormatSelector(false);
     setShowServerDialog(true);
   };
 
@@ -365,7 +374,13 @@ const Factures: React.FC = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {printInvoice && <InvoicePrintView invoice={printInvoice} servedBy={servedBy} />}
+        <InvoiceFormatSelector
+          open={showFormatSelector}
+          onOpenChange={setShowFormatSelector}
+          onSelectFormat={handleFormatSelected}
+        />
+
+        {printInvoice && <InvoicePrintView invoice={printInvoice} servedBy={servedBy} format={printFormat} />}
       </PageWithSidebar>
     </SubscriptionGuard>
   );
