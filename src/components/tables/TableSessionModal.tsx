@@ -359,7 +359,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
               </Button>
               <Button onClick={onCloseSession} variant="default">
                 <Receipt className="h-4 w-4 mr-2" />
-                Fermer & Générer Facture
+                {session.debtor_id ? "Fermer & Créer Crédit" : "Fermer & Générer Facture"}
               </Button>
             </>}
           
