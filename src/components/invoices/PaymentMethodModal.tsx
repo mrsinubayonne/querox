@@ -33,11 +33,6 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
     { value: 'Mobile Money', label: 'Mobile Money', icon: Smartphone, color: 'text-orange-600' },
   ];
 
-  const handleSkip = () => {
-    onConfirm('Espèces');
-    onOpenChange(false);
-  };
-
   const handleConfirm = () => {
     onConfirm(selectedMethod);
     onOpenChange(false);
@@ -47,8 +42,8 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle>Moyen de paiement</AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogTitle className="text-2xl">Moyen de paiement</AlertDialogTitle>
+          <AlertDialogDescription className="text-lg">
             Comment le client a-t-il payé ?
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -68,11 +63,8 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
           })}
         </RadioGroup>
 
-        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-          <AlertDialogCancel onClick={handleSkip} className="sm:flex-1">
-            Passer (Espèces)
-          </AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm} className="sm:flex-1">
+        <AlertDialogFooter>
+          <AlertDialogAction onClick={handleConfirm} className="w-full">
             Confirmer
           </AlertDialogAction>
         </AlertDialogFooter>
