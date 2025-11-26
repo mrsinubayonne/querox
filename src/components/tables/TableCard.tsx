@@ -126,7 +126,7 @@ export const TableCard: React.FC<TableCardProps> = ({
               <h3 className={`text-3xl font-bold tracking-tight ${styles.title}`}>
                 {displayName}
               </h3>
-              {session && onRename && (
+              {onRename && (
                 <Button
                   variant="ghost"
                   size="icon"

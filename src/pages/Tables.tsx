@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import PageWithSidebar from "@/components/PageWithSidebar";
 import SubscriptionGuard from "@/components/SubscriptionGuard";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Plus, UserPlus } from "lucide-react";
+import { RefreshCw, Plus, UserPlus, Filter } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { TableGrid } from "@/components/tables/TableGrid";
 import { CreateSessionWithOrderModal } from "@/components/tables/CreateSessionWithOrderModal";
 import { AddOrderFromCustomerModal } from "@/components/tables/AddOrderFromCustomerModal";
@@ -35,9 +36,60 @@ const Tables: React.FC = () => {
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<TableSession | null>(null);
   const [sessionToRename, setSessionToRename] = useState<TableSession | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Generate table numbers (default to 120 tables)
   const tableNumbers = Array.from({ length: 120 }, (_, i) => String(i + 1).padStart(2, "0"));
+
+  // Filter sessions based on status
+  const filteredSessions = useMemo(() => {
+    if (statusFilter === "all") return sessions;
+    
+    const allTableNumbers = new Set(tableNumbers);
+    const occupiedTables = new Set(sessions.filter(s => s.status === "active" || s.status === "closed").map(s => s.table_number));
+    
+    switch (statusFilter) {
+      case "libre":
+        // Return empty array for free tables, filter will be applied to table numbers
+        return [];
+      case "occupee":
+        return sessions.filter(s => s.status === "active");
+      case "attente":
+        return sessions.filter(s => s.status === "closed");
+      case "payee":
+        return sessions.filter(s => s.status === "paid");
+      default:
+        return sessions;
+    }
+  }, [sessions, statusFilter, tableNumbers]);
+
+  // Filter table numbers based on status filter
+  const filteredTableNumbers = useMemo(() => {
+    if (statusFilter === "all") return tableNumbers;
+    
+    const occupiedTables = new Set(sessions.filter(s => s.status === "active" || s.status === "closed").map(s => s.table_number));
+    
+    if (statusFilter === "libre") {
+      return tableNumbers.filter(num => !occupiedTables.has(num));
+    } else {
+      // For occupied, waiting, or paid, only show tables with sessions
+      return tableNumbers.filter(num => {
+        const session = sessions.find(s => s.table_number === num);
+        if (!session) return false;
+        
+        switch (statusFilter) {
+          case "occupee":
+            return session.status === "active";
+          case "attente":
+            return session.status === "closed";
+          case "payee":
+            return session.status === "paid";
+          default:
+            return true;
+        }
+      });
+    }
+  }, [tableNumbers, sessions, statusFilter]);
 
   // Écouter les mises à jour de session depuis le modal et en temps réel
   useEffect(() => {
@@ -146,6 +198,46 @@ const Tables: React.FC = () => {
             </div>
           </div>
 
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Badge
+              variant={statusFilter === "all" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setStatusFilter("all")}
+            >
+              Tous
+            </Badge>
+            <Badge
+              variant={statusFilter === "libre" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setStatusFilter("libre")}
+            >
+              Libres
+            </Badge>
+            <Badge
+              variant={statusFilter === "occupee" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setStatusFilter("occupee")}
+            >
+              Occupées
+            </Badge>
+            <Badge
+              variant={statusFilter === "attente" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setStatusFilter("attente")}
+            >
+              En attente
+            </Badge>
+            <Badge
+              variant={statusFilter === "payee" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setStatusFilter("payee")}
+            >
+              Payées
+            </Badge>
+          </div>
+
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 bg-card border rounded-lg">
@@ -190,14 +282,22 @@ const Tables: React.FC = () => {
               ))}
             </div>
           ) : (
-          <TableGrid
-            sessions={sessions}
-            onTableClick={handleTableClick}
-            onTableRename={(session) => {
-              setSessionToRename(session);
-              setShowRenameModal(true);
-            }}
-          />
+            <>
+              <TableGrid
+                sessions={sessions}
+                filteredTableNumbers={filteredTableNumbers}
+                onTableClick={handleTableClick}
+                onTableRename={(session) => {
+                  setSessionToRename(session);
+                  setShowRenameModal(true);
+                }}
+              />
+              {filteredTableNumbers.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  Aucune table ne correspond aux filtres sélectionnés
+                </div>
+              )}
+            </>
           )}
 
           {/* Modals */}

@@ -54,6 +54,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [isDebtorOrder, setIsDebtorOrder] = useState(false);
   const [selectedDebtorId, setSelectedDebtorId] = useState<string>("");
+  const [showCustomItem, setShowCustomItem] = useState(false);
+  const [customItemName, setCustomItemName] = useState("");
+  const [customItemPrice, setCustomItemPrice] = useState("");
 
   const selectedDebtor = customers.find(c => c.id === selectedDebtorId);
   const availableCredit = selectedDebtor 
@@ -177,6 +180,44 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
   const removeFromCart = (id: string) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const addCustomItem = () => {
+    if (!customItemName.trim() || !customItemPrice) {
+      toast({
+        title: "Champs requis",
+        description: "Veuillez renseigner le nom et le prix de l'article.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const price = Number(customItemPrice);
+    if (isNaN(price) || price <= 0) {
+      toast({
+        title: "Prix invalide",
+        description: "Le prix doit être un nombre positif.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newItem: CartItem = {
+      id: `custom-${Date.now()}`,
+      name: customItemName,
+      price: price,
+      quantity: 1,
+    };
+
+    setCart((prev) => [...prev, newItem]);
+    setCustomItemName("");
+    setCustomItemPrice("");
+    setShowCustomItem(false);
+    
+    toast({
+      title: "Article ajouté",
+      description: `${customItemName} ajouté au panier.`,
+    });
   };
 
   const totalAmount = useMemo(() => {
@@ -359,6 +400,56 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             )}
 
             <Separator />
+
+            {/* Article libre button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowCustomItem(!showCustomItem)}
+              className="w-full"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Article libre
+            </Button>
+
+            {/* Custom item form */}
+            {showCustomItem && (
+              <div className="space-y-3 p-4 border rounded-md bg-accent/10">
+                <div className="space-y-2">
+                  <Label htmlFor="custom-name">Nom de l'article *</Label>
+                  <Input
+                    id="custom-name"
+                    placeholder="Ex: Plat du jour"
+                    value={customItemName}
+                    onChange={(e) => setCustomItemName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="custom-price">Prix (FCFA) *</Label>
+                  <Input
+                    id="custom-price"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="Ex: 5000"
+                    value={customItemPrice}
+                    onChange={(e) => setCustomItemPrice(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" onClick={addCustomItem} className="flex-1">
+                    Ajouter au panier
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => {
+                    setShowCustomItem(false);
+                    setCustomItemName("");
+                    setCustomItemPrice("");
+                  }}>
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Recherche de plats */}
             <div className="space-y-2">
