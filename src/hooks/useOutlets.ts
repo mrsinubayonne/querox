@@ -129,11 +129,17 @@ export const useOutlets = () => {
   };
 
   useEffect(() => {
-    if (user?.id || (isTeamMember && teamMemberSession)) {
-      loadOutlets();
-      if (user?.id) {
-        loadSelectedOutlet();
+    if (isTeamMember && teamMemberSession) {
+      // Pour les membres d'équipe, utiliser l'outlet de leur session
+      const outletId = teamMemberSession.outletId || localStorage.getItem('selectedOutletId');
+      if (outletId) {
+        setSelectedOutletId(outletId);
       }
+      // Charger les outlets du propriétaire
+      loadOutlets();
+    } else if (user?.id) {
+      loadOutlets();
+      loadSelectedOutlet();
     }
   }, [user?.id, isTeamMember, teamMemberSession]);
 

@@ -35,7 +35,7 @@ import OnboardingTour from '@/components/OnboardingTour';
 type Period = 'day' | 'week' | 'month';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const location = useLocation();
   const { toast } = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -43,7 +43,9 @@ const Dashboard: React.FC = () => {
   const { stats, loading } = useDashboardStats(period);
 
   // Display name logic
-  const displayName = user?.user_metadata?.full_name || user?.email;
+  const displayName = isTeamMember && teamMemberSession 
+    ? teamMemberSession.memberEmail 
+    : (user?.user_metadata?.full_name || user?.email);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
