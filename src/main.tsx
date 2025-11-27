@@ -8,9 +8,15 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 30 * 1000, // 30 secondes - données fraîches pour 1000+ users
+      gcTime: 5 * 60 * 1000, // 5 minutes de cache
       retry: 1,
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: true,
+    },
+    mutations: {
+      retry: 1,
     },
   },
 })
