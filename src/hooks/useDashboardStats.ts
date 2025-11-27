@@ -27,7 +27,7 @@ interface DashboardStats {
 }
 
 export const useDashboardStats = (period: Period = 'day') => {
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { selectedOutletId } = useOutlets();
   const [stats, setStats] = useState<DashboardStats>({
     revenue: 0,
@@ -81,7 +81,11 @@ export const useDashboardStats = (period: Period = 'day') => {
   };
 
   const fetchStats = async () => {
-    if (!user) return;
+    const effectiveUserId = isTeamMember && teamMemberSession 
+      ? teamMemberSession.ownerId 
+      : user?.id;
+    
+    if (!effectiveUserId) return;
 
     try {
       setLoading(true);
@@ -91,33 +95,33 @@ export const useDashboardStats = (period: Period = 'day') => {
       let ordersQuery = supabase
         .from('orders')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .gte('created_at', start);
 
       let previousOrdersQuery = supabase
         .from('orders')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .gte('created_at', previousStart)
         .lte('created_at', previousEnd);
 
       let invoicesQuery = supabase
         .from('invoices')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .gte('created_at', start);
 
       let previousInvoicesQuery = supabase
         .from('invoices')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .gte('created_at', previousStart)
         .lte('created_at', previousEnd);
 
       let inventoryQuery = supabase
         .from('inventory_items')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', effectiveUserId);
 
       if (selectedOutletId) {
         ordersQuery = ordersQuery.eq('outlet_id', selectedOutletId);
@@ -285,6 +289,12 @@ export const useDashboardStats = (period: Period = 'day') => {
   useEffect(() => {
     fetchStats();
 
+    const effectiveUserId = isTeamMember && teamMemberSession 
+      ? teamMemberSession.ownerId 
+      : user?.id;
+
+    if (!effectiveUserId) return;
+
     const ordersChannel = supabase
       .channel('dashboard-orders')
       .on(
@@ -293,7 +303,7 @@ export const useDashboardStats = (period: Period = 'day') => {
           event: '*',
           schema: 'public',
           table: 'orders',
-          filter: `user_id=eq.${user?.id}`,
+          filter: `user_id=eq.${effectiveUserId}`,
         },
         () => fetchStats()
       )
@@ -307,7 +317,7 @@ export const useDashboardStats = (period: Period = 'day') => {
           event: '*',
           schema: 'public',
           table: 'invoices',
-          filter: `user_id=eq.${user?.id}`,
+          filter: `user_id=eq.${effectiveUserId}`,
         },
         () => fetchStats()
       )
@@ -321,7 +331,7 @@ export const useDashboardStats = (period: Period = 'day') => {
           event: '*',
           schema: 'public',
           table: 'inventory_items',
-          filter: `user_id=eq.${user?.id}`,
+          filter: `user_id=eq.${effectiveUserId}`,
         },
         () => fetchStats()
       )
