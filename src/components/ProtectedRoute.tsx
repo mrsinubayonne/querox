@@ -24,32 +24,31 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const loading = isTeamMember ? authLoading : (authLoading || (user && (profilesLoading || outletsLoading)));
 
   useEffect(() => {
-    // Ne rien faire pendant le chargement
+    // Ne rien faire pendant le chargement initial auth
     if (authLoading) {
       return;
     }
 
-    // Special handling for team members
-    if (isTeamMember && teamMemberSession) {
-      console.log('✅ Team member authenticated, allowing access');
-      // Team members have direct access - no profile/outlet checks needed
-      // Their outlet is already in their session
+    // === TEAM MEMBER PATH ===
+    if (isTeamMember) {
+      if (!teamMemberSession) {
+        // Session invalide, rediriger vers auth
+        navigate('/auth', { replace: true });
+        return;
+      }
+      // Membre d'équipe avec session valide = accès direct autorisé
+      console.log('✅ Team member authenticated, allowing access to:', location.pathname);
       return;
     }
 
-    // For regular users, check loading states
+    // === REGULAR USER PATH ===
+    // Attendre le chargement des profiles/outlets pour utilisateurs normaux
     if (profilesLoading || outletsLoading) {
       return;
     }
 
-    // Étape 1: Vérifier l'authentification (user OU team member)
-    if (!user && !isTeamMember) {
-      navigate('/auth', { replace: true });
-      return;
-    }
-
-    // If team member but no session, redirect to auth
-    if (isTeamMember && !teamMemberSession) {
+    // Vérifier l'authentification utilisateur normal
+    if (!user) {
       navigate('/auth', { replace: true });
       return;
     }
@@ -63,25 +62,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return;
     }
 
-    // For regular users (not team members), check profile and outlet
-    if (!isTeamMember) {
-      // Récupérer les sélections depuis localStorage
-      const localProfileId = localStorage.getItem('selectedProfileId');
-      const localOutletId = localStorage.getItem('selectedOutletId');
-      const effectiveProfileId = selectedProfileId || localProfileId;
-      const effectiveOutletId = selectedOutletId || localOutletId;
+    // Vérifier profil et outlet pour utilisateurs normaux
+    const localProfileId = localStorage.getItem('selectedProfileId');
+    const localOutletId = localStorage.getItem('selectedOutletId');
+    const effectiveProfileId = selectedProfileId || localProfileId;
+    const effectiveOutletId = selectedOutletId || localOutletId;
 
-      // Étape 2: Vérifier qu'un profil est sélectionné
-      if (!effectiveProfileId) {
-        navigate('/select-profile', { replace: true });
-        return;
-      }
+    if (!effectiveProfileId) {
+      navigate('/select-profile', { replace: true });
+      return;
+    }
 
-      // Étape 3: Vérifier qu'un outlet est sélectionné
-      if (!effectiveOutletId) {
-        navigate('/select-outlet', { replace: true });
-        return;
-      }
+    if (!effectiveOutletId) {
+      navigate('/select-outlet', { replace: true });
+      return;
     }
   }, [user, authLoading, isTeamMember, teamMemberSession, selectedProfileId, profilesLoading, selectedOutletId, outletsLoading, navigate, location.pathname]);
 

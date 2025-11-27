@@ -32,12 +32,34 @@ export const useAuth = () => {
   return context;
 };
 
+// Helper to initialize team member state synchronously from localStorage
+const getInitialTeamMemberState = () => {
+  try {
+    const teamMemberData = localStorage.getItem('teamMember');
+    if (teamMemberData) {
+      const parsed = JSON.parse(teamMemberData);
+      const expiresAt = new Date(parsed.expiresAt);
+      if (expiresAt > new Date()) {
+        console.log('✅ Team member session loaded synchronously on init');
+        return { isTeamMember: true, session: parsed };
+      }
+      localStorage.removeItem('teamMember');
+    }
+  } catch (error) {
+    console.error('Error loading team member session:', error);
+    localStorage.removeItem('teamMember');
+  }
+  return { isTeamMember: false, session: null };
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const initialState = getInitialTeamMemberState();
+  
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isTeamMember, setIsTeamMember] = useState(false);
-  const [teamMemberSession, setTeamMemberSession] = useState<TeamMemberSession | null>(null);
+  const [loading, setLoading] = useState(!initialState.isTeamMember);
+  const [isTeamMember, setIsTeamMember] = useState(initialState.isTeamMember);
+  const [teamMemberSession, setTeamMemberSession] = useState<TeamMemberSession | null>(initialState.session);
 
   useEffect(() => {
     // Check for team member session in localStorage

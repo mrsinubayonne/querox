@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 
 const SelectOutlet: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { outlets, loading, createOutlet, selectOutlet, selectedOutletId, canAddMoreOutlets, getOutletLimit } = useOutlets();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,10 +22,18 @@ const SelectOutlet: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!user) {
+    // Les membres d'équipe ont déjà un outlet assigné - les rediriger
+    if (isTeamMember && teamMemberSession?.outletId) {
+      console.log('⚠️ Team member redirected from SelectOutlet to dashboard');
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
+    // Utilisateurs non connectés
+    if (!user && !isTeamMember) {
       navigate('/auth', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, isTeamMember, teamMemberSession, navigate]);
 
   const handleCreateOutlet = async (e: React.FormEvent) => {
     e.preventDefault();
