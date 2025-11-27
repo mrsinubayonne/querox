@@ -43,14 +43,7 @@ const TeamMemberAuth: React.FC = () => {
 
       const member = memberData[0];
 
-      // Get full member details including outlet_id
-      const { data: fullMemberData, error: fetchError } = await supabase
-        .from('team_members')
-        .select('*')
-        .eq('id', member.member_id)
-        .single();
-
-      if (fetchError) throw fetchError;
+      // outlet_id is already returned by verify_team_access, no extra fetch needed
 
       // Update last login
       await supabase
@@ -69,22 +62,22 @@ const TeamMemberAuth: React.FC = () => {
         ownerId: member.owner_id,
         memberEmail: formData.email,
         role: member.role,
-        outletId: fullMemberData.outlet_id,
+        outletId: member.outlet_id,
         expiresAt: expiresAt.toISOString()
       }));
 
       // CRITICAL: Ensure outlet is properly set before navigation
-      if (fullMemberData.outlet_id) {
+      if (member.outlet_id) {
         // 1. Store in localStorage FIRST (highest priority)
-        localStorage.setItem('selectedOutletId', fullMemberData.outlet_id);
-        console.log('✅ Outlet set in localStorage:', fullMemberData.outlet_id);
+        localStorage.setItem('selectedOutletId', member.outlet_id);
+        console.log('✅ Outlet set in localStorage:', member.outlet_id);
         
         // 2. Update profile in database
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { error: profileError } = await supabase
             .from('profiles')
-            .update({ selected_outlet_id: fullMemberData.outlet_id })
+            .update({ selected_outlet_id: member.outlet_id })
             .eq('id', user.id);
           
           if (profileError) {
