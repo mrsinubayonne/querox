@@ -89,8 +89,8 @@ export const useTeamMembers = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
 
-      // Generate unique access code (used as invitation token too)
-      const accessCode = `QRX-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+      // Generate unique access code (used as invitation token too) - 6 characters max
+      const accessCode = Math.random().toString(36).substr(2, 6).toUpperCase();
 
       // Determine outlet_id: use first from outletIds array, or null
       const outletId = outletIds && outletIds.length > 0 ? outletIds[0] : null;
