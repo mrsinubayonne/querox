@@ -17,7 +17,8 @@ export const InvitationShareOptions: React.FC<InvitationShareOptionsProps> = ({
   memberEmail
 }) => {
   const { toast } = useToast();
-  const invitationLink = `${window.location.origin}/team-join?token=${invitationToken}`;
+  const baseUrl = 'https://querox.me';
+  const invitationLink = `${baseUrl}/team-join?token=${invitationToken}`;
 
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
@@ -34,7 +35,7 @@ export const InvitationShareOptions: React.FC<InvitationShareOptionsProps> = ({
       `Ou connectez-vous directement:\n` +
       `📧 Email: ${memberEmail || 'votre email'}\n` +
       `🔑 Code d'accès: ${accessCode}\n` +
-      `🌐 URL: ${window.location.origin}/team-login\n\n` +
+      `🌐 URL: ${baseUrl}/team-login\n\n` +
       `Bienvenue dans l'équipe ! 👋`;
     
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
