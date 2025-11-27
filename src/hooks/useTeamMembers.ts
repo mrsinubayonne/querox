@@ -69,69 +69,63 @@ export const useTeamMembers = () => {
     }
   }, [user]);
 
-  const inviteMember = async (email: string, role: string = 'member', fullName?: string, phone?: string, outletIds?: string[]) => {
-    if (!user) return;
-
+  const inviteMember = async (
+    email?: string,
+    role: string = 'serveur',
+    fullName?: string,
+    phone?: string,
+    outletIds?: string[]
+  ) => {
     if (!canAddMoreMembers()) {
-      const limit = getTeamLimit();
       toast({
         title: "Limite atteinte",
-        description: `Votre plan ${subscription?.subscription_tier || 'starter'} permet jusqu'à ${limit} membres. Passez à un plan supérieur pour en ajouter plus.`,
+        description: `Votre plan ${subscription?.subscription_tier || 'starter'} permet jusqu'à ${getTeamLimit()} membres. Passez à un plan supérieur pour ajouter plus de membres.`,
         variant: "destructive"
       });
       return;
     }
 
     try {
-      // Generate access code via database function
-      const { data: codeData, error: codeError } = await supabase
-        .rpc('generate_team_access_code');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Non authentifié');
 
-      if (codeError) throw codeError;
+      // Generate unique access code (used as invitation token too)
+      const accessCode = `QRX-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
-      const accessCode = codeData as string;
-
-      // Use first outlet ID if multiple are provided
+      // Determine outlet_id: use first from outletIds array, or null
       const outletId = outletIds && outletIds.length > 0 ? outletIds[0] : null;
+
+      // Email is now optional - generate temp email if not provided
+      const memberEmail = email || `temp_${accessCode}@querox.local`;
 
       const { error } = await supabase
         .from('team_members')
         .insert({
           owner_id: user.id,
-          member_email: email,
-          full_name: fullName,
-          phone: phone,
+          member_email: memberEmail,
           role,
-          status: 'accepted',
+          full_name: fullName,
+          phone,
           access_code: accessCode,
-          accepted_at: new Date().toISOString(),
-          is_active: true,
-          outlet_id: outletId
+          outlet_id: outletId,
+          status: 'pending'
         });
 
       if (error) throw error;
 
       toast({
-        title: "Membre ajouté",
-        description: `Code d'accès généré : ${accessCode}. PDV assigné${outletIds && outletIds.length > 1 ? 's' : ''}.`,
+        title: "Membre invité ✅",
+        description: `${fullName || email || 'Le membre'} a été ajouté à votre équipe`,
       });
 
       await fetchTeamMembers();
     } catch (error: any) {
       console.error('Error inviting member:', error);
-      if (error.code === '23505') {
-        toast({
-          title: "Erreur",
-          description: "Ce membre a déjà été invité",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Erreur",
-          description: "Impossible d'ajouter le membre",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Erreur",
+        description: "Impossible d'inviter le membre",
+        variant: "destructive"
+      });
     }
   };
 

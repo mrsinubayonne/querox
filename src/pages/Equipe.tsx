@@ -9,12 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Mail, UserPlus, Trash2, Shield, Copy, Key } from 'lucide-react';
+import { Users, Mail, UserPlus, Trash2, Shield, Copy, Key, Share2 } from 'lucide-react';
+import { InvitationShareOptions } from '@/components/team/InvitationShareOptions';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const ROLES = [
   { value: 'manager', label: 'Manager', description: 'Gestion complète sauf équipe' },
@@ -35,10 +37,28 @@ const Equipe: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState('serveur');
   const [selectedOutlets, setSelectedOutlets] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState<{show: boolean, member: any} | null>(null);
 
   const handleInvite = async () => {
-    if (email && selectedOutlets.length > 0) {
-      await inviteMember(email, selectedRole, fullName, phone, selectedOutlets);
+    if (selectedOutlets.length > 0) {
+      await inviteMember(email || undefined, selectedRole, fullName, phone, selectedOutlets);
+      
+      // Fetch updated members to get the newly created member with access code
+      const updatedMembers = await new Promise<any[]>((resolve) => {
+        setTimeout(async () => {
+          const { data } = await supabase
+            .from('team_members')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1);
+          resolve(data || []);
+        }, 500);
+      });
+      
+      if (updatedMembers.length > 0) {
+        setShowShareOptions({ show: true, member: updatedMembers[0] });
+      }
+      
       setEmail('');
       setFullName('');
       setPhone('');
@@ -141,15 +161,17 @@ const Equipe: React.FC = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="email">Adresse email *</Label>
+                    <Label htmlFor="email">Adresse email (optionnel)</Label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="email@exemple.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      required
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      L'email est optionnel. Le membre pourra utiliser uniquement le code d'accès.
+                    </p>
                   </div>
 
                   <div>
@@ -228,10 +250,10 @@ const Equipe: React.FC = () => {
                   <Button 
                     onClick={handleInvite} 
                     className="w-full bg-purple-600 hover:bg-purple-700"
-                    disabled={!email || selectedOutlets.length === 0}
+                    disabled={selectedOutlets.length === 0}
                   >
-                    <Key className="w-4 h-4 mr-2" />
-                    Générer le code d'accès
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Créer l'invitation
                   </Button>
                 </div>
               </DialogContent>
@@ -296,28 +318,17 @@ const Equipe: React.FC = () => {
                             {member.last_login_at && <span>• Dernière connexion: {formatDate(member.last_login_at)}</span>}
                             <span>• {member.actions_count} actions</span>
                           </div>
-                           {(member as any).access_code && (
-                            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-semibold text-blue-900 flex items-center gap-1">
-                                  <Key className="w-3 h-3" />
-                                  Code d'accès à partager
-                                </span>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => copyAccessCode((member as any).access_code)}
-                                  className="h-6 px-2"
-                                >
-                                  <Copy className="w-3 h-3" />
-                                </Button>
-                              </div>
-                              <code className="block px-3 py-2 bg-white text-blue-700 rounded font-mono text-base font-bold text-center border border-blue-300">
-                                {(member as any).access_code}
-                              </code>
-                              <p className="text-xs text-blue-600 mt-2">
-                                Le membre doit se connecter sur <strong>/team-login</strong> avec son email et ce code
-                              </p>
+                          {(member as any).access_code && (
+                            <div className="mt-3">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setShowShareOptions({ show: true, member })}
+                                className="w-full"
+                              >
+                                <Share2 className="w-4 h-4 mr-2" />
+                                Afficher les options de partage
+                              </Button>
                             </div>
                           )}
                         </div>
@@ -344,6 +355,26 @@ const Equipe: React.FC = () => {
               ))}
             </div>
           )}
+
+          {/* Share Options Modal */}
+          <Dialog open={showShareOptions?.show || false} onOpenChange={(open) => !open && setShowShareOptions(null)}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Options de partage d'invitation</DialogTitle>
+                <DialogDescription>
+                  Partagez cette invitation avec {showShareOptions?.member?.full_name || showShareOptions?.member?.member_email}
+                </DialogDescription>
+              </DialogHeader>
+              {showShareOptions?.member && (
+                <InvitationShareOptions
+                  accessCode={showShareOptions.member.access_code}
+                  invitationToken={showShareOptions.member.access_code}
+                  memberName={showShareOptions.member.full_name}
+                  memberEmail={showShareOptions.member.member_email}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
               </div>
         </div>
       </PageWithSidebar>

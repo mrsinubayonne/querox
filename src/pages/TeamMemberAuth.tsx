@@ -73,19 +73,28 @@ const TeamMemberAuth: React.FC = () => {
         expiresAt: expiresAt.toISOString()
       }));
 
-      // If member has an outlet_id, update both profile and localStorage
+      // CRITICAL: Ensure outlet is properly set before navigation
       if (fullMemberData.outlet_id) {
-        // Store outlet in localStorage FIRST
+        // 1. Store in localStorage FIRST (highest priority)
         localStorage.setItem('selectedOutletId', fullMemberData.outlet_id);
+        console.log('✅ Outlet set in localStorage:', fullMemberData.outlet_id);
         
+        // 2. Update profile in database
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          // Update profile selected_outlet_id
-          await supabase
+          const { error: profileError } = await supabase
             .from('profiles')
             .update({ selected_outlet_id: fullMemberData.outlet_id })
             .eq('id', user.id);
+          
+          if (profileError) {
+            console.error('Error updating profile outlet:', profileError);
+          } else {
+            console.log('✅ Profile outlet updated in database');
+          }
         }
+      } else {
+        console.warn('⚠️ No outlet_id assigned to this team member');
       }
 
       // Log activity
@@ -98,11 +107,17 @@ const TeamMemberAuth: React.FC = () => {
         });
 
       toast({
-        title: "Connexion réussie",
+        title: "Connexion réussie ✅",
         description: `Bienvenue ! Vous êtes connecté en tant que ${member.role}`
       });
 
-      navigate('/dashboard');
+      console.log('🔄 Redirecting to dashboard...');
+      
+      // Force navigation with page reload to ensure outlet context is loaded
+      navigate('/dashboard', { replace: true });
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
     } catch (error: any) {
       console.error('Error during team member login:', error);
       toast({
