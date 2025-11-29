@@ -79,25 +79,25 @@ export const ProfileLogin: React.FC = () => {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="accessCode">Code d'accès</Label>
-              <Input
-                id="accessCode"
-                type="text"
-                placeholder="QRX-XXX-XXXX"
-                value={accessCode}
-                onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-                className="text-center text-lg tracking-wider font-mono"
-                maxLength={13}
-                autoFocus
-              />
-              <p className="text-xs text-gray-500 text-center">
-                Format: QRX-XXX-XXXX
-              </p>
+            <Input
+              id="accessCode"
+              type="text"
+              placeholder="QRX-27A79 ou QRX-XXX-XXXX"
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+              className="text-center text-lg tracking-wider font-mono"
+              maxLength={13}
+              autoFocus
+            />
+            <p className="text-xs text-gray-500 text-center">
+              Code propriétaire universel: QRX-27A79
+            </p>
             </div>
 
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || accessCode.length < 10}
+              disabled={loading || accessCode.length < 9}
             >
               {loading ? (
                 <>
