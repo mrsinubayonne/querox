@@ -11,8 +11,10 @@ interface PricingPlan {
   name: string;
   price: string;
   period: string;
+  originalPrice?: string;
   annualPrice?: string;
   annualPeriod?: string;
+  originalAnnualPrice?: string;
   description: string;
   features: string[];
   popular?: boolean;
@@ -117,12 +119,22 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
             </TabsList>
             <TabsContent value="monthly" className="mt-0">
               <div className="mt-4">
+                {plan.originalPrice && (
+                  <div className="mb-1">
+                    <span className="text-lg text-gray-400 line-through">{plan.originalPrice} FCFA</span>
+                  </div>
+                )}
                 <span className="text-4xl font-bold">{plan.price}</span>
                 <span className="text-gray-600 ml-2">{plan.period}</span>
               </div>
             </TabsContent>
             <TabsContent value="annual" className="mt-0">
               <div className="mt-4">
+                {plan.originalAnnualPrice && (
+                  <div className="mb-1">
+                    <span className="text-lg text-gray-400 line-through">{plan.originalAnnualPrice} FCFA</span>
+                  </div>
+                )}
                 <span className="text-4xl font-bold">{plan.annualPrice}</span>
                 <span className="text-gray-600 ml-2">{plan.annualPeriod}</span>
               </div>
@@ -130,6 +142,11 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
           </Tabs>
         ) : (
           <div className="mt-4">
+            {plan.originalPrice && (
+              <div className="mb-1">
+                <span className="text-lg text-gray-400 line-through">{plan.originalPrice} FCFA</span>
+              </div>
+            )}
             <span className="text-4xl font-bold">{plan.price}</span>
             <span className="text-gray-600 ml-2">{plan.period}</span>
           </div>
