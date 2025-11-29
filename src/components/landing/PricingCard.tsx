@@ -102,13 +102,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
         </div>
       )}
       
-      <CardHeader className="text-center relative">
-        {plan.originalPrice && (
-          <div className="absolute top-4 right-4">
-            <span className="text-sm text-muted-foreground line-through">{plan.originalPrice} FCFA</span>
-          </div>
-        )}
-        
+      <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
         
         {plan.spotsLeft && plan.tier !== 'licence' && (
@@ -124,22 +118,37 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
               <TabsTrigger value="annual">Annuel</TabsTrigger>
             </TabsList>
             <TabsContent value="monthly" className="mt-0">
-              <div className="mt-4">
-                <span className="text-4xl font-bold">{plan.price}</span>
-                <span className="text-gray-600 ml-2">{plan.period}</span>
+              <div className="mt-4 flex items-center justify-center gap-4">
+                <div>
+                  <span className="text-4xl font-bold">{plan.price}</span>
+                  <span className="text-gray-600 ml-2">{plan.period}</span>
+                </div>
+                {plan.originalPrice && (
+                  <span className="text-lg text-muted-foreground line-through">{plan.originalPrice} FCFA</span>
+                )}
               </div>
             </TabsContent>
             <TabsContent value="annual" className="mt-0">
-              <div className="mt-4">
-                <span className="text-4xl font-bold">{plan.annualPrice}</span>
-                <span className="text-gray-600 ml-2">{plan.annualPeriod}</span>
+              <div className="mt-4 flex items-center justify-center gap-4">
+                <div>
+                  <span className="text-4xl font-bold">{plan.annualPrice}</span>
+                  <span className="text-gray-600 ml-2">{plan.annualPeriod}</span>
+                </div>
+                {plan.originalAnnualPrice && (
+                  <span className="text-lg text-muted-foreground line-through">{plan.originalAnnualPrice} FCFA</span>
+                )}
               </div>
             </TabsContent>
           </Tabs>
         ) : (
-          <div className="mt-4">
-            <span className="text-4xl font-bold">{plan.price}</span>
-            <span className="text-gray-600 ml-2">{plan.period}</span>
+          <div className="mt-4 flex items-center justify-center gap-4">
+            <div>
+              <span className="text-4xl font-bold">{plan.price}</span>
+              <span className="text-gray-600 ml-2">{plan.period}</span>
+            </div>
+            {plan.originalPrice && (
+              <span className="text-lg text-muted-foreground line-through">{plan.originalPrice} FCFA</span>
+            )}
           </div>
         )}
         
