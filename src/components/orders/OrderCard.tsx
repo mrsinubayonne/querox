@@ -7,6 +7,7 @@ import { MoreHorizontal, Clock, MapPin, Phone, Mail, SquareArrowOutUpRight } fro
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { OrderStatusSelect } from './OrderStatusSelect';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OrderItem {
   id: string;
@@ -136,9 +137,31 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) =
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                <DropdownMenuItem>Éditer</DropdownMenuItem>
-                <DropdownMenuItem className="text-red-600">Supprimer</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate(`/commandes?edit=${order.id}`)}>
+                  Voir les détails
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate(`/commandes?edit=${order.id}`)}>
+                  Éditer
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-red-600"
+                  onClick={async () => {
+                    if (!confirm('Voulez-vous vraiment supprimer cette commande ?')) return;
+                    try {
+                      const { error } = await supabase
+                        .from('orders')
+                        .delete()
+                        .eq('id', order.id);
+                      
+                      if (error) throw error;
+                      onStatusChange();
+                    } catch (error) {
+                      console.error('Error deleting order:', error);
+                    }
+                  }}
+                >
+                  Supprimer
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
