@@ -298,7 +298,6 @@ const Tables: React.FC = () => {
                 filteredTableNumbers={filteredTableNumbers}
                 onTableClick={handleTableClick}
                 onTableRename={handleTableRename}
-                onTableReopen={handleTableReopen}
               />
               {filteredTableNumbers.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
@@ -340,6 +339,7 @@ const Tables: React.FC = () => {
             session={selectedSession}
             onCloseSession={handleCloseSession}
             onMarkAsPaid={handleMarkAsPaid}
+            onReopenSession={selectedSession ? () => handleTableReopen(selectedSession) : undefined}
           />
 
           {sessionToRename && (

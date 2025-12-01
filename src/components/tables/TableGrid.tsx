@@ -6,7 +6,6 @@ interface TableGridProps {
   sessions: TableSession[];
   onTableClick: (tableNumber: string, session: TableSession | null) => void;
   onTableRename?: (session: TableSession) => void;
-  onTableReopen?: (session: TableSession) => void;
   filteredTableNumbers?: string[];
 }
 
@@ -14,7 +13,6 @@ export const TableGrid: React.FC<TableGridProps> = ({
   sessions,
   onTableClick,
   onTableRename,
-  onTableReopen,
   filteredTableNumbers,
 }) => {
   // Generate table numbers (default to 120 tables)
@@ -55,7 +53,6 @@ export const TableGrid: React.FC<TableGridProps> = ({
               customName={customName}
               onClick={() => onTableClick(tableNumber, session)}
               onRename={session && onTableRename ? () => onTableRename(session) : undefined}
-              onReopen={session && onTableReopen ? () => onTableReopen(session) : undefined}
             />
           </div>
         );
