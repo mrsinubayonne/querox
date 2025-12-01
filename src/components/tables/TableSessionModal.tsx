@@ -11,7 +11,7 @@ import { TableSession } from "@/hooks/useTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye } from "lucide-react";
+import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -36,13 +36,15 @@ interface TableSessionModalProps {
   session: TableSession | null;
   onCloseSession: () => void;
   onMarkAsPaid: () => void;
+  onReopenSession?: () => void;
 }
 export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   isOpen,
   onClose,
   session,
   onCloseSession,
-  onMarkAsPaid
+  onMarkAsPaid,
+  onReopenSession
 }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -509,6 +511,12 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
             </>}
           
           {session.status === "closed" && <>
+              {onReopenSession && (
+                <Button onClick={onReopenSession} variant="outline">
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Réouvrir
+                </Button>
+              )}
               <Button onClick={handlePrintSession} variant="outline">
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimer
@@ -520,6 +528,12 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
             </>}
 
           {session.status === "paid" && <>
+              {onReopenSession && (
+                <Button onClick={onReopenSession} variant="outline">
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Réouvrir
+                </Button>
+              )}
               <Button onClick={handlePrintSession} variant="outline">
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimer
