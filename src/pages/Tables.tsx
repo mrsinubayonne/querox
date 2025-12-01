@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import PageWithSidebar from "@/components/PageWithSidebar";
 import SubscriptionGuard from "@/components/SubscriptionGuard";
 import { Button } from "@/components/ui/button";
@@ -160,6 +160,11 @@ const Tables: React.FC = () => {
     setSelectedSession(null);
   };
 
+  const handleTableRename = useCallback((session: TableSession) => {
+    setSessionToRename(session);
+    setShowRenameModal(true);
+  }, []);
+
   return (
     <SubscriptionGuard feature="la gestion des tables">
       <PageWithSidebar>
@@ -287,10 +292,7 @@ const Tables: React.FC = () => {
                 sessions={sessions}
                 filteredTableNumbers={filteredTableNumbers}
                 onTableClick={handleTableClick}
-                onTableRename={(session) => {
-                  setSessionToRename(session);
-                  setShowRenameModal(true);
-                }}
+                onTableRename={handleTableRename}
               />
               {filteredTableNumbers.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
