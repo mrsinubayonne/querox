@@ -203,6 +203,48 @@ export function useTableSessions() {
     [toast, fetchSessions]
   );
 
+  const reopenSession = useCallback(
+    async (sessionId: string) => {
+      try {
+        // Delete the invoice associated with this session
+        const { error: deleteInvoiceError } = await supabase
+          .from("invoices")
+          .delete()
+          .eq("session_id", sessionId);
+
+        if (deleteInvoiceError) {
+          console.warn("Invoice deletion error:", deleteInvoiceError);
+        }
+
+        // Reopen the session
+        const { error: updateError } = await supabase
+          .from("table_sessions" as any)
+          .update({
+            status: "active",
+            closed_at: null,
+          })
+          .eq("id", sessionId);
+
+        if (updateError) throw updateError;
+
+        toast({
+          title: "Table réouverte",
+          description: "La table a été réouverte et la facture annulée.",
+        });
+
+        await fetchSessions();
+      } catch (error: any) {
+        console.error("Error reopening session:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de réouvrir la table.",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast, fetchSessions]
+  );
+
   const getActiveSessionForTable = useCallback(
     async (tableNumber: string): Promise<TableSession | null> => {
       if (!user) return null;
@@ -267,6 +309,7 @@ export function useTableSessions() {
     createSession,
     closeSession,
     markSessionAsPaid,
+    reopenSession,
     getActiveSessionForTable,
     refetch: fetchSessions,
   };

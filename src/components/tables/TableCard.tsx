@@ -2,7 +2,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Clock, Sparkles, Pencil } from "lucide-react";
+import { Users, Clock, Sparkles, Pencil, RotateCcw } from "lucide-react";
 import { TableSession } from "@/hooks/useTableSessions";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -13,6 +13,7 @@ interface TableCardProps {
   customName?: string | null;
   onClick: () => void;
   onRename?: () => void;
+  onReopen?: () => void;
 }
 
 export const TableCard: React.FC<TableCardProps> = ({
@@ -21,6 +22,7 @@ export const TableCard: React.FC<TableCardProps> = ({
   customName,
   onClick,
   onRename,
+  onReopen,
 }) => {
   const getStatusStyles = () => {
     if (!session) {
@@ -170,6 +172,21 @@ export const TableCard: React.FC<TableCardProps> = ({
                   {formatCurrency(session.total_amount)}
                 </p>
               </div>
+            )}
+
+            {(session.status === "closed" || session.status === "paid") && onReopen && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReopen();
+                }}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Réouvrir la table
+              </Button>
             )}
           </div>
         )}
