@@ -10,6 +10,7 @@ import { fr } from "date-fns/locale";
 interface TableCardProps {
   tableNumber: string;
   session: TableSession | null;
+  customName?: string | null;
   onClick: () => void;
   onRename?: () => void;
 }
@@ -17,6 +18,7 @@ interface TableCardProps {
 export const TableCard: React.FC<TableCardProps> = ({
   tableNumber,
   session,
+  customName,
   onClick,
   onRename,
 }) => {
@@ -112,7 +114,7 @@ export const TableCard: React.FC<TableCardProps> = ({
 
   const styles = getStatusStyles();
 
-  const displayName = session?.custom_table_name || `Table ${tableNumber}`;
+  const displayName = session?.custom_table_name || customName || `Table ${tableNumber}`;
 
   return (
     <Card
@@ -126,7 +128,7 @@ export const TableCard: React.FC<TableCardProps> = ({
               <h3 className={`text-3xl font-bold tracking-tight ${styles.title}`}>
                 {displayName}
               </h3>
-              {onRename && (
+              {onRename && session && (
                 <Button
                   variant="ghost"
                   size="icon"

@@ -40,13 +40,6 @@ export const TableGrid: React.FC<TableGridProps> = ({
       {tableNumbers.map((tableNumber, index) => {
         const session = getSessionForTable(tableNumber);
         const customName = session?.custom_table_name || getCustomTableName(tableNumber);
-        
-        // Create a pseudo session for free tables with custom names
-        const displaySession = session || (customName ? {
-          ...({} as TableSession),
-          table_number: tableNumber,
-          custom_table_name: customName,
-        } : null);
 
         return (
           <div
@@ -56,23 +49,10 @@ export const TableGrid: React.FC<TableGridProps> = ({
           >
             <TableCard
               tableNumber={tableNumber}
-              session={displaySession}
+              session={session}
+              customName={customName}
               onClick={() => onTableClick(tableNumber, session)}
-              onRename={onTableRename ? () => {
-                if (session) {
-                  onTableRename(session);
-                } else {
-                  // Handle free table renaming
-                  const newName = prompt("Nom personnalisé pour cette table:", customName || `Table ${tableNumber}`);
-                  if (newName) {
-                    const storedNames = localStorage.getItem('custom_table_names');
-                    const names = storedNames ? JSON.parse(storedNames) : {};
-                    names[tableNumber] = newName;
-                    localStorage.setItem('custom_table_names', JSON.stringify(names));
-                    window.location.reload(); // Quick refresh to show new name
-                  }
-                }
-              } : undefined}
+              onRename={session && onTableRename ? () => onTableRename(session) : undefined}
             />
           </div>
         );
