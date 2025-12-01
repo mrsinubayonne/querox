@@ -206,6 +206,29 @@ export function useTableSessions() {
   const reopenSession = useCallback(
     async (sessionId: string) => {
       try {
+        // First, get the invoice to retrieve its number
+        const { data: invoice, error: fetchInvoiceError } = await supabase
+          .from("invoices")
+          .select("invoice_number")
+          .eq("session_id", sessionId)
+          .maybeSingle();
+
+        if (fetchInvoiceError) {
+          console.warn("Invoice fetch error:", fetchInvoiceError);
+        }
+
+        // Delete associated transaction if invoice exists
+        if (invoice && invoice.invoice_number) {
+          const { error: deleteTransactionError } = await supabase
+            .from("transactions")
+            .delete()
+            .eq("title", `Facture ${invoice.invoice_number}`);
+
+          if (deleteTransactionError) {
+            console.warn("Transaction deletion error:", deleteTransactionError);
+          }
+        }
+
         // Delete the invoice associated with this session
         const { error: deleteInvoiceError } = await supabase
           .from("invoices")
@@ -229,7 +252,7 @@ export function useTableSessions() {
 
         toast({
           title: "Table réouverte",
-          description: "La table a été réouverte et la facture annulée.",
+          description: "La table, la facture et la transaction comptable ont été annulées.",
         });
 
         await fetchSessions();
