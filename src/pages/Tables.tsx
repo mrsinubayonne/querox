@@ -26,6 +26,7 @@ const Tables: React.FC = () => {
     createSession,
     closeSession,
     markSessionAsPaid,
+    reopenSession,
     refetch,
   } = useTableSessions();
 
@@ -165,6 +166,10 @@ const Tables: React.FC = () => {
     setShowRenameModal(true);
   }, []);
 
+  const handleTableReopen = useCallback(async (session: TableSession) => {
+    await reopenSession(session.id);
+  }, [reopenSession]);
+
   return (
     <SubscriptionGuard feature="la gestion des tables">
       <PageWithSidebar>
@@ -293,6 +298,7 @@ const Tables: React.FC = () => {
                 filteredTableNumbers={filteredTableNumbers}
                 onTableClick={handleTableClick}
                 onTableRename={handleTableRename}
+                onTableReopen={handleTableReopen}
               />
               {filteredTableNumbers.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
