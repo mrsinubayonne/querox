@@ -350,23 +350,6 @@ const Tables: React.FC = () => {
               }}
             />
           )}
-
-          {sessionToRename && (
-            <RenameTableModal
-              isOpen={showRenameModal}
-              onClose={() => {
-                setShowRenameModal(false);
-                setSessionToRename(null);
-              }}
-              sessionId={sessionToRename.id}
-              currentName={sessionToRename.custom_table_name || `Table ${sessionToRename.table_number}`}
-              onSuccess={() => {
-                refetch();
-                setShowRenameModal(false);
-                setSessionToRename(null);
-              }}
-            />
-          )}
         </div>
       </PageWithSidebar>
     </SubscriptionGuard>
