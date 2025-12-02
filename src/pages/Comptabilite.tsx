@@ -54,10 +54,17 @@ const Comptabilite = () => {
   const combinedTransactions = useMemo(() => {
     const base = transactions || [];
 
+    // Extraire les numéros de factures des transactions existantes
+    // Gérer les formats: "Facture INV-..." et "Facture Débiteur INV-..."
     const invoiceNumbersFromTx = new Set(
       base
-        .filter((t) => t.category === 'facture' && typeof t.title === 'string' && t.title.startsWith('Facture '))
-        .map((t) => t.title.replace('Facture ', '').trim())
+        .filter((t) => t.category === 'facture' && typeof t.title === 'string')
+        .map((t) => {
+          // Extraire le numéro INV-XXXXXX-XXXXX du titre
+          const match = t.title.match(/INV-\d+-\d+/);
+          return match ? match[0] : null;
+        })
+        .filter(Boolean)
     );
 
     const syntheticFromInvoices = invoices
