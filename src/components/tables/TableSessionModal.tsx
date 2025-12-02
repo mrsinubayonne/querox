@@ -64,12 +64,13 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
       // If debtor payment, handle differently
       if (paymentMethod === 'Debiteur' && debtorId) {
         // Update session with debtor_id and status to closed (not paid)
+        // Note: payment_method is null for debtor payments (will be set when they actually pay)
         const { error: sessionError } = await supabase
           .from('table_sessions')
           .update({ 
             status: 'closed',
             debtor_id: debtorId,
-            payment_method: 'Debiteur'
+            payment_method: null
           })
           .eq('id', session.id);
 
