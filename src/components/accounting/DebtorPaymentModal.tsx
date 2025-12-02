@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDebtorPayments } from '@/hooks/useDebtorPayments';
 import { useRestaurant } from '@/contexts/RestaurantContext';
-import { useOutlets } from '@/hooks/useOutlets';
 
 interface DebtorPaymentModalProps {
   open: boolean;
@@ -42,6 +41,15 @@ const DebtorPaymentModal: React.FC<DebtorPaymentModalProps> = ({
   const [notes, setNotes] = useState('');
   const { createPaymentAsync, isCreating } = useDebtorPayments();
   const { outletId } = useRestaurant();
+
+  // Sync amount with remainingAmount when modal opens or remainingAmount changes
+  useEffect(() => {
+    if (open) {
+      setAmount(remainingAmount.toString());
+      setPaymentMethod('Espèces');
+      setNotes('');
+    }
+  }, [open, remainingAmount]);
 
   const paymentMethods = [
     { value: 'Espèces', label: 'Espèces' },
