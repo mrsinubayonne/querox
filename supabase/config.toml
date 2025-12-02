@@ -8,6 +8,3 @@ verify_jwt = true
 
 [functions.extract-menu-from-image]
 verify_jwt = true
-
-[functions.create-maketou-checkout]
-verify_jwt = false
