@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,17 +13,40 @@ serve(async (req) => {
   }
 
   try {
-    const { productDocumentId, tier, billingPeriod } = await req.json();
+    const { productDocumentId, userId } = await req.json();
 
-    console.log('🛒 Creating Maketou checkout:', { productDocumentId, tier, billingPeriod });
+    console.log('🛒 Creating Maketou checkout:', { productDocumentId, userId });
 
     const maketouApiKey = Deno.env.get('QUEROX_MAKETOU');
     if (!maketouApiKey) {
       throw new Error('QUEROX_MAKETOU API key not configured');
     }
 
-    // Create checkout session via Maketou API
-    const response = await fetch('https://api.maketou.com/v1/checkouts', {
+    // Get user profile from Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('❌ Profile not found:', profileError);
+      throw new Error('User profile not found');
+    }
+
+    // Parse full name into firstName and lastName
+    const nameParts = (profile.full_name || 'Client Querox').split(' ');
+    const firstName = nameParts[0] || 'Client';
+    const lastName = nameParts.slice(1).join(' ') || 'Querox';
+
+    console.log('👤 User info:', { email: profile.email, firstName, lastName });
+
+    // Create checkout via Maketou API
+    const response = await fetch('https://api.maketou.net/api/v1/stores/cart/checkout', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${maketouApiKey}`,
@@ -30,8 +54,10 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         productDocumentId: productDocumentId,
-        successUrl: 'https://querox.me/payment-success',
-        cancelUrl: 'https://querox.me/payment-failure',
+        email: profile.email,
+        firstName: firstName,
+        lastName: lastName,
+        redirectURL: 'https://querox.me/payment-success',
       }),
     });
 
@@ -46,8 +72,8 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        checkoutUrl: data.checkoutUrl || data.url,
-        checkoutId: data.id 
+        redirectUrl: data.redirectUrl,
+        cartId: data.cart.id 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
