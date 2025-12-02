@@ -57,14 +57,80 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
 
-  const handleMarkAsPaidWithMethod = async (paymentMethod: string) => {
+  const handleMarkAsPaidWithMethod = async (paymentMethod: string, debtorId?: string) => {
     if (!session) return;
     
     try {
-      // Update session status
+      // If debtor payment, handle differently
+      if (paymentMethod === 'Debiteur' && debtorId) {
+        // Update session with debtor_id and status to closed (not paid)
+        const { error: sessionError } = await supabase
+          .from('table_sessions')
+          .update({ 
+            status: 'closed',
+            debtor_id: debtorId,
+            payment_method: 'Debiteur'
+          })
+          .eq('id', session.id);
+
+        if (sessionError) throw sessionError;
+
+        // The trigger create_invoice_for_closed_session will handle invoice creation
+        // Wait a bit then update the invoice to be B2B unpaid
+        setTimeout(async () => {
+          try {
+            // Update the invoice to B2B unpaid
+            await supabase
+              .from('invoices')
+              .update({ 
+                status: 'unpaid',
+                invoice_type: 'b2b',
+                business_customer_id: debtorId,
+                payment_method: null,
+                paid_date: null
+              })
+              .eq('session_id', session.id);
+
+            // Update debtor's current_debt
+            const { data: invoice } = await supabase
+              .from('invoices')
+              .select('total_amount')
+              .eq('session_id', session.id)
+              .single();
+
+            if (invoice) {
+              // Get current debt and add the new amount
+              const { data: debtor } = await supabase
+                .from('business_customers')
+                .select('current_debt')
+                .eq('id', debtorId)
+                .single();
+
+              const currentDebt = (debtor as any)?.current_debt || 0;
+              const newDebt = currentDebt + invoice.total_amount;
+
+              await supabase
+                .from('business_customers')
+                .update({ current_debt: newDebt })
+                .eq('id', debtorId);
+            }
+          } catch (e) {
+            console.error('Error updating invoice/debt:', e);
+          }
+        }, 500);
+
+        onMarkAsPaid();
+        sonnerToast.success('Crédit enregistré pour le débiteur');
+        return;
+      }
+
+      // Regular payment flow
       const { error: sessionError } = await supabase
         .from('table_sessions')
-        .update({ status: 'paid' })
+        .update({ 
+          status: 'paid',
+          payment_method: paymentMethod
+        })
         .eq('id', session.id);
 
       if (sessionError) throw sessionError;

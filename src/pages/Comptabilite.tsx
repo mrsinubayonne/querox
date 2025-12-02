@@ -8,6 +8,7 @@ import AccountingHeader from '@/components/accounting/AccountingHeader';
 import AccountingStats from '@/components/accounting/AccountingStats';
 import AccountingTabsContainer from '@/components/accounting/AccountingTabsContainer';
 import AccountingPeriodsTab from '@/components/accounting/AccountingPeriodsTab';
+import DebtorsAccountingTab from '@/components/accounting/DebtorsAccountingTab';
 import NewTransactionModal from '@/components/accounting/NewTransactionModal';
 import EditTransactionModal from '@/components/accounting/EditTransactionModal';
 import ExportModal from '@/components/accounting/ExportModal';
@@ -416,6 +417,7 @@ const Comptabilite = () => {
 
   const tabs = [
     { id: 'transactions', label: 'Transactions récentes', active: activeTab === 'transactions' },
+    { id: 'debiteurs', label: 'Débiteurs', active: activeTab === 'debiteurs' },
     { id: 'periodes', label: 'Rapports par période', active: activeTab === 'periodes' },
     { id: 'rapports', label: 'Rapports mensuels', active: activeTab === 'rapports' },
     { id: 'budget', label: 'Budget prévisionnel', active: activeTab === 'budget' }
@@ -564,7 +566,9 @@ const Comptabilite = () => {
             }}
           />
 
-          {activeTab === 'periodes' ? (
+          {activeTab === 'debiteurs' ? (
+            <DebtorsAccountingTab />
+          ) : activeTab === 'periodes' ? (
              <AccountingPeriodsTab 
                transactions={combinedTransactions}
                invoices={invoices}

@@ -260,6 +260,67 @@ export type Database = {
           },
         ]
       }
+      debtor_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          debtor_id: string | null
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          outlet_id: string | null
+          payment_date: string | null
+          payment_method: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          debtor_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          outlet_id?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          debtor_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          outlet_id?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debtor_payments_debtor_id_fkey"
+            columns: ["debtor_id"]
+            isOneToOne: false
+            referencedRelation: "business_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debtor_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debtor_payments_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           capacity: number
