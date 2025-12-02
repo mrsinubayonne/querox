@@ -61,6 +61,11 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
     }
 
     if (!user) {
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour continuer",
+        variant: "destructive",
+      });
       window.location.href = '/auth';
       return;
     }
@@ -70,7 +75,12 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
     try {
       const productDocumentId = getProductDocumentId(plan.tier, billingPeriod === 'annual');
       
-      console.log('🎯 Création checkout Maketou:', { tier: plan.tier, billingPeriod, productDocumentId });
+      console.log('🎯 Création checkout Maketou:', { 
+        tier: plan.tier, 
+        billingPeriod, 
+        productDocumentId,
+        userId: user.id 
+      });
       
       // Appeler l'edge function pour créer la session de paiement
       const response = await fetch('https://aufmphldtjrcddyayqoy.supabase.co/functions/v1/create-maketou-checkout', {
@@ -80,8 +90,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
         },
         body: JSON.stringify({
           productDocumentId,
-          tier: plan.tier,
-          billingPeriod
+          userId: user.id
         }),
       });
 
@@ -90,20 +99,20 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
         throw new Error(error.error || 'Erreur lors de la création du paiement');
       }
 
-      const { checkoutUrl } = await response.json();
+      const { redirectUrl } = await response.json();
       
-      console.log('✅ Checkout URL reçue:', checkoutUrl);
+      console.log('✅ Redirect URL reçue:', redirectUrl);
       
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
       } else {
-        throw new Error('URL de paiement non reçue');
+        throw new Error('URL de redirection non reçue');
       }
     } catch (error) {
       console.error('💥 Erreur lors du paiement:', error);
       toast({
         title: "Erreur",
-        description: error instanceof Error ? error.message : "Une erreur est survenue lors de la redirection",
+        description: error instanceof Error ? error.message : "Une erreur est survenue",
         variant: "destructive",
       });
     } finally {
