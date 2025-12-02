@@ -1,17 +1,30 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Building, Calendar, CreditCard, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Building, Calendar, CreditCard, AlertTriangle, CheckCircle, Clock, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRestaurant } from '@/contexts/RestaurantContext';
-import { useOutlets } from '@/hooks/useOutlets';
+
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import DebtorPaymentModal from './DebtorPaymentModal';
+import InvoicePrintView from '@/components/invoices/InvoicePrintView';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface DebtorInvoice {
   id: string;
@@ -31,6 +44,10 @@ const DebtorsAccountingTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<DebtorInvoice | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printInvoice, setPrintInvoice] = useState<any>(null);
+  const [printFormat, setPrintFormat] = useState<'a4' | 'restaurant'>('a4');
+  const printRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { outletId } = useRestaurant();
 
@@ -145,6 +162,52 @@ const DebtorsAccountingTab: React.FC = () => {
   const handleRegisterPayment = (invoice: DebtorInvoice) => {
     setSelectedInvoice(invoice);
     setShowPaymentModal(true);
+  };
+
+  const handlePrintInvoice = async (invoice: DebtorInvoice) => {
+    // Fetch full invoice data for printing
+    const { data: fullInvoice } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('id', invoice.id)
+      .single();
+
+    if (fullInvoice) {
+      setPrintInvoice({
+        ...fullInvoice,
+        customer_name: invoice.debtor_name,
+      });
+      setShowPrintModal(true);
+    }
+  };
+
+  const executePrint = () => {
+    if (printRef.current) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Facture ${printInvoice?.invoice_number}</title>
+              <style>
+                body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+                @media print { body { padding: 0; } }
+              </style>
+            </head>
+            <body>
+              ${printRef.current.innerHTML}
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 250);
+      }
+    }
+    setShowPrintModal(false);
   };
 
   if (loading) {
@@ -282,7 +345,15 @@ const DebtorsAccountingTab: React.FC = () => {
                           )}
                         </div>
 
-                        <div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handlePrintInvoice(invoice)}
+                            title="Imprimer la facture"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
                           {!isPaid && (
                             <Button
                               size="sm"
@@ -320,6 +391,45 @@ const DebtorsAccountingTab: React.FC = () => {
           remainingAmount={selectedInvoice.total_amount - selectedInvoice.total_paid}
           onSuccess={fetchDebtorInvoices}
         />
+      )}
+
+      {/* Print Modal */}
+      <Dialog open={showPrintModal} onOpenChange={setShowPrintModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Imprimer la facture</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Format d'impression</label>
+              <Select value={printFormat} onValueChange={(v: 'a4' | 'restaurant') => setPrintFormat(v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="a4">Format A4 (Professionnel)</SelectItem>
+                  <SelectItem value="restaurant">Format Restaurant (Ticket)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={executePrint} className="w-full">
+              <Printer className="h-4 w-4 mr-2" />
+              Imprimer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hidden Print View */}
+      {printInvoice && (
+        <div className="hidden">
+          <div ref={printRef}>
+            <InvoicePrintView
+              invoice={printInvoice}
+              format={printFormat}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
