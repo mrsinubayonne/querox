@@ -1,34 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 
 const OnboardingTour: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const [hasSeenTour, setHasSeenTour] = useState(true);
+  const tourStartedRef = useRef(false);
 
   useEffect(() => {
-    const checkOnboardingStatus = async () => {
-      if (!user) return;
+    // Ne pas exécuter si pas d'utilisateur ou si le tour a déjà été démarré
+    if (!user || tourStartedRef.current) return;
 
-      // Only run on dashboard or protected routes, NOT on landing page
-      if (location.pathname === '/' || location.pathname === '/auth' || location.pathname.startsWith('/team')) {
-        return;
-      }
+    // Seulement sur le dashboard
+    if (location.pathname !== '/dashboard') return;
 
-      // Vérifier si l'utilisateur a déjà vu le tour
-      const seenTour = localStorage.getItem(`querox_onboarding_${user.id}`);
-      
-      if (!seenTour && location.pathname === '/dashboard') {
-        setHasSeenTour(false);
-        setTimeout(() => startTour(), 1500); // Démarrer après 1.5 secondes
-      }
-    };
+    // Vérifier si l'utilisateur a déjà vu le tour
+    const seenTour = localStorage.getItem(`querox_onboarding_${user.id}`);
+    
+    if (seenTour) return;
 
-    checkOnboardingStatus();
+    // Marquer comme démarré immédiatement pour éviter les doublons
+    tourStartedRef.current = true;
+    
+    // Marquer comme vu dans localStorage AVANT de démarrer
+    localStorage.setItem(`querox_onboarding_${user.id}`, 'true');
+    
+    const timeout = setTimeout(() => startTour(), 1500);
+    
+    return () => clearTimeout(timeout);
   }, [user, location.pathname]);
 
   const startTour = () => {
@@ -43,10 +44,6 @@ const OnboardingTour: React.FC = () => {
       overlayColor: 'rgba(0, 0, 0, 0.85)',
       smoothScroll: true,
       onDestroyStarted: () => {
-        // Marquer le tour comme terminé
-        if (user) {
-          localStorage.setItem(`querox_onboarding_${user.id}`, 'true');
-        }
         driverObj.destroy();
       },
       steps: [
