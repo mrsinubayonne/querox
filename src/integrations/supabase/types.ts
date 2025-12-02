@@ -562,9 +562,12 @@ export type Database = {
           id: string
           invoice_title: string
           logo_url: string | null
+          nif_number: string | null
+          other_registration: string | null
           outlet_id: string | null
           payment_terms: string | null
           primary_color: string | null
+          rccm_number: string | null
           tax_id: string | null
           updated_at: string
           user_id: string
@@ -579,9 +582,12 @@ export type Database = {
           id?: string
           invoice_title?: string
           logo_url?: string | null
+          nif_number?: string | null
+          other_registration?: string | null
           outlet_id?: string | null
           payment_terms?: string | null
           primary_color?: string | null
+          rccm_number?: string | null
           tax_id?: string | null
           updated_at?: string
           user_id: string
@@ -596,9 +602,12 @@ export type Database = {
           id?: string
           invoice_title?: string
           logo_url?: string | null
+          nif_number?: string | null
+          other_registration?: string | null
           outlet_id?: string | null
           payment_terms?: string | null
           primary_color?: string | null
+          rccm_number?: string | null
           tax_id?: string | null
           updated_at?: string
           user_id?: string

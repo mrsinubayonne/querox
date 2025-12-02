@@ -27,6 +27,9 @@ export const InvoiceSettingsTab: React.FC = () => {
     company_phone: '',
     company_email: '',
     tax_id: '',
+    rccm_number: '',
+    nif_number: '',
+    other_registration: '',
     payment_terms: 'Paiement à effectuer sous 30 jours à compter de la date de facturation.',
     footer_note: '',
     logo_url: '',
@@ -97,6 +100,9 @@ export const InvoiceSettingsTab: React.FC = () => {
           company_phone: data.company_phone || '',
           company_email: data.company_email || '',
           tax_id: data.tax_id || '',
+          rccm_number: (data as any).rccm_number || '',
+          nif_number: (data as any).nif_number || '',
+          other_registration: (data as any).other_registration || '',
           payment_terms: data.payment_terms || 'Paiement à effectuer sous 30 jours à compter de la date de facturation.',
           footer_note: data.footer_note || '',
           logo_url: typeof data.logo_url === 'string' ? data.logo_url : (data.logo_url as any)?.value || '',
@@ -320,6 +326,43 @@ export const InvoiceSettingsTab: React.FC = () => {
                 onChange={(e) => handleChange('tax_id', e.target.value)}
                 placeholder="123 456 789 00012"
               />
+            </div>
+
+            {/* Numéros d'entreprise optionnels */}
+            <div className="space-y-4 pt-4 border-t border-border">
+              <h4 className="text-sm font-medium text-muted-foreground">Numéros d'entreprise (optionnel)</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="rccm_number">Numéro RCCM</Label>
+                  <Input
+                    id="rccm_number"
+                    value={formData.rccm_number}
+                    onChange={(e) => handleChange('rccm_number', e.target.value)}
+                    placeholder="Ex: RCCM-AB-XXX-2024-B-12345"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="nif_number">Numéro NIF</Label>
+                  <Input
+                    id="nif_number"
+                    value={formData.nif_number}
+                    onChange={(e) => handleChange('nif_number', e.target.value)}
+                    placeholder="Ex: 12345678901234"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="other_registration">Autre numéro d'immatriculation</Label>
+                <Input
+                  id="other_registration"
+                  value={formData.other_registration}
+                  onChange={(e) => handleChange('other_registration', e.target.value)}
+                  placeholder="Ex: Numéro de registre professionnel, licence..."
+                />
+              </div>
             </div>
           </div>
 
