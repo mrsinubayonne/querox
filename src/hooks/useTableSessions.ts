@@ -163,6 +163,15 @@ export function useTableSessions() {
   const markSessionAsPaid = useCallback(
     async (sessionId: string) => {
       try {
+        // Vérifier si c'est une session débiteur (B2B)
+        const { data: session } = await supabase
+          .from("table_sessions" as any)
+          .select("debtor_id")
+          .eq("id", sessionId)
+          .maybeSingle();
+
+        const isDebtorSession = (session as any)?.debtor_id !== null;
+
         // Update session status to paid
         const { error: sessionError } = await supabase
           .from("table_sessions" as any)
@@ -171,23 +180,27 @@ export function useTableSessions() {
 
         if (sessionError) throw sessionError;
 
-        // Update associated invoice to paid
-        const { error: invoiceError } = await supabase
-          .from("invoices")
-          .update({ 
-            status: "paid",
-            paid_date: new Date().toISOString()
-          })
-          .eq("session_id", sessionId);
+        // NE PAS mettre à jour les factures B2B (débiteurs) - elles restent impayées
+        // jusqu'à ce que le débiteur paie réellement
+        if (!isDebtorSession) {
+          const { error: invoiceError } = await supabase
+            .from("invoices")
+            .update({ 
+              status: "paid",
+              paid_date: new Date().toISOString()
+            })
+            .eq("session_id", sessionId);
 
-        // Don't throw on invoice error - invoice might not exist yet
-        if (invoiceError) {
-          console.warn("Invoice update error (may not exist):", invoiceError);
+          if (invoiceError) {
+            console.warn("Invoice update error (may not exist):", invoiceError);
+          }
         }
 
         toast({
           title: "Paiement enregistré",
-          description: "La session et la facture ont été marquées comme payées.",
+          description: isDebtorSession 
+            ? "La session a été fermée. La facture reste impayée jusqu'au paiement du débiteur."
+            : "La session et la facture ont été marquées comme payées.",
         });
 
         await fetchSessions();
