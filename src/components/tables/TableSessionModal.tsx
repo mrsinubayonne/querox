@@ -120,7 +120,8 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           }
         }, 500);
 
-        onMarkAsPaid();
+        // Ne PAS appeler onMarkAsPaid() pour les débiteurs - juste fermer le modal
+        onClose();
         sonnerToast.success('Crédit enregistré pour le débiteur');
         return;
       }
