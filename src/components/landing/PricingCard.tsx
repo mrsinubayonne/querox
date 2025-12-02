@@ -33,22 +33,23 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
   const [processing, setProcessing] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
 
-  const getPaymentUrl = (tier: string, isAnnual: boolean = false) => {
+  const getProductDocumentId = (tier: string, isAnnual: boolean = false) => {
+    // Map des productDocumentIds Maketou
     if (isAnnual) {
-      const annualUrls = {
-        starter: 'https://querox-me.mymaketou.store/fr/products/abonnement-annuel-pro-0/checkout',
-        premium: 'https://querox-me.mymaketou.store/fr/products/abonnement-annuel-pro/checkout',
-        pro: 'https://querox-me.mymaketou.store/fr/products/abonnement-annuel-pro-5/checkout'
+      const annualIds = {
+        starter: 'ANNUAL_STARTER_ID', // À remplacer
+        premium: 'ANNUAL_PREMIUM_ID', // À remplacer
+        pro: 'ANNUAL_PRO_ID' // À remplacer
       };
-      return annualUrls[tier as keyof typeof annualUrls];
+      return annualIds[tier as keyof typeof annualIds];
     }
     
-    const urls = {
-      starter: 'https://querox.maketou.com/products/plan-starter-querox/checkout',
-      premium: 'https://querox.maketou.com/products/plan-starter-querox-6/checkout',
-      pro: 'https://querox.maketou.com/products/plan-starter-querox-6-1/checkout'
+    const monthlyIds = {
+      starter: 'a1fa51b3-2dca-4b3b-9bcf-c601a8f0069d', // ID fourni par l'utilisateur
+      premium: 'MONTHLY_PREMIUM_ID', // À remplacer
+      pro: 'MONTHLY_PRO_ID' // À remplacer
     };
-    return urls[tier as keyof typeof urls];
+    return monthlyIds[tier as keyof typeof monthlyIds];
   };
 
   const handleSubscribe = async () => {
@@ -67,22 +68,42 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
     setProcessing(true);
 
     try {
-      const paymentUrl = getPaymentUrl(plan.tier, billingPeriod === 'annual');
+      const productDocumentId = getProductDocumentId(plan.tier, billingPeriod === 'annual');
       
-      if (paymentUrl) {
-        window.location.href = paymentUrl;
+      console.log('🎯 Création checkout Maketou:', { tier: plan.tier, billingPeriod, productDocumentId });
+      
+      // Appeler l'edge function pour créer la session de paiement
+      const response = await fetch('https://aufmphldtjrcddyayqoy.supabase.co/functions/v1/create-maketou-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productDocumentId,
+          tier: plan.tier,
+          billingPeriod
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erreur lors de la création du paiement');
+      }
+
+      const { checkoutUrl } = await response.json();
+      
+      console.log('✅ Checkout URL reçue:', checkoutUrl);
+      
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
       } else {
-        toast({
-          title: "Erreur",
-          description: "URL de paiement non configurée pour ce plan",
-          variant: "destructive",
-        });
+        throw new Error('URL de paiement non reçue');
       }
     } catch (error) {
       console.error('💥 Erreur lors du paiement:', error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la redirection",
+        description: error instanceof Error ? error.message : "Une erreur est survenue lors de la redirection",
         variant: "destructive",
       });
     } finally {
