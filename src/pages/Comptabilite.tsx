@@ -51,24 +51,43 @@ const Comptabilite = () => {
   const { outlets } = useOutlets();
 
   // Combiner transactions enregistrées et factures payées manquantes
+  // IMPORTANT: Exclure les factures débiteurs impayées et éviter les doublons
   const combinedTransactions = useMemo(() => {
     const base = transactions || [];
 
+    // Dédupliquer les transactions par numéro de facture (garder la plus récente)
+    const seenInvoiceNumbers = new Map<string, any>();
+    const deduplicatedBase: typeof base = [];
+    
+    for (const t of base) {
+      if (t.category === 'facture' && typeof t.title === 'string') {
+        const match = t.title.match(/INV-\d+-\d+/);
+        if (match) {
+          const invoiceNum = match[0];
+          const existing = seenInvoiceNumbers.get(invoiceNum);
+          if (!existing || new Date(t.created_at) > new Date(existing.created_at)) {
+            seenInvoiceNumbers.set(invoiceNum, t);
+          }
+          continue; // Ne pas ajouter maintenant, on ajoutera à la fin
+        }
+      }
+      deduplicatedBase.push(t);
+    }
+    
+    // Ajouter les transactions de facture dédupliquées
+    for (const t of seenInvoiceNumbers.values()) {
+      deduplicatedBase.push(t);
+    }
+
     // Extraire les numéros de factures des transactions existantes
-    // Gérer les formats: "Facture INV-..." et "Facture Débiteur INV-..."
     const invoiceNumbersFromTx = new Set(
-      base
-        .filter((t) => t.category === 'facture' && typeof t.title === 'string')
-        .map((t) => {
-          // Extraire le numéro INV-XXXXXX-XXXXX du titre
-          const match = t.title.match(/INV-\d+-\d+/);
-          return match ? match[0] : null;
-        })
-        .filter(Boolean)
+      Array.from(seenInvoiceNumbers.keys())
     );
 
+    // Ajouter les factures payées qui n'ont pas de transaction
+    // EXCLURE les factures B2B (débiteurs) impayées
     const syntheticFromInvoices = invoices
-      .filter((inv) => inv.status === 'paid')
+      .filter((inv) => inv.status === 'paid') // Seulement les factures payées
       .filter((inv) => !invoiceNumbersFromTx.has(inv.invoice_number))
       .map((inv) => ({
         id: `invoice-${inv.id}`,
@@ -86,7 +105,7 @@ const Comptabilite = () => {
         payment_method: (inv as any).payment_method || 'Espèces',
       }));
 
-    const all = [...base, ...syntheticFromInvoices];
+    const all = [...deduplicatedBase, ...syntheticFromInvoices];
 
     return all.sort((a, b) => {
       const da = new Date(a.date).getTime();
