@@ -200,6 +200,15 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy, 
           {settings?.tax_id && (
             <p className="text-xs text-black">SIRET/TVA: {settings.tax_id}</p>
           )}
+          {(settings as any)?.nif_number && (
+            <p className="text-xs text-black">NIU: {(settings as any).nif_number}</p>
+          )}
+          {(settings as any)?.rccm_number && (
+            <p className="text-xs text-black">RCCM: {(settings as any).rccm_number}</p>
+          )}
+          {(settings as any)?.other_registration && (
+            <p className="text-xs text-black">{(settings as any).other_registration}</p>
+          )}
         </div>
         <div className="text-right">
           <h2 
@@ -295,8 +304,8 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy, 
             {settings.footer_note}
           </p>
         )}
-        <p className="text-xs text-black text-center">
-          Généré par QUEROX - Logiciel de gestion, automatisation et optimisation
+        <p className="text-xs text-black text-center" style={{ fontStyle: 'italic' }}>
+          Généré par QUEROX.me - Logiciel de gestion, automatisation et optimisation
         </p>
       </div>
     </div>,

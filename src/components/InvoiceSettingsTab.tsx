@@ -344,12 +344,12 @@ export const InvoiceSettingsTab: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="nif_number">Numéro NIF</Label>
+                  <Label htmlFor="nif_number">Numéro NIU</Label>
                   <Input
                     id="nif_number"
                     value={formData.nif_number}
                     onChange={(e) => handleChange('nif_number', e.target.value)}
-                    placeholder="Ex: 12345678901234"
+                    placeholder="Ex: M012345678901A"
                   />
                 </div>
               </div>
