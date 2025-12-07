@@ -207,6 +207,36 @@ export type Database = {
           },
         ]
       }
+      button_click_tracking: {
+        Row: {
+          button_category: string
+          button_name: string
+          click_count: number
+          created_at: string
+          id: string
+          last_clicked_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          button_category?: string
+          button_name: string
+          click_count?: number
+          created_at?: string
+          id?: string
+          last_clicked_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          button_category?: string
+          button_name?: string
+          click_count?: number
+          created_at?: string
+          id?: string
+          last_clicked_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
@@ -2336,6 +2366,15 @@ export type Database = {
           new_subscribers: number
         }[]
       }
+      get_button_usage_stats: {
+        Args: never
+        Returns: {
+          button_category: string
+          button_name: string
+          click_count: number
+          last_clicked_at: string
+        }[]
+      }
       get_overdue_invoices: {
         Args: never
         Returns: {
@@ -2502,6 +2541,10 @@ export type Database = {
       public_reset_password: {
         Args: { new_password: string; user_email: string }
         Returns: Json
+      }
+      track_button_click: {
+        Args: { _button_category?: string; _button_name: string }
+        Returns: undefined
       }
       verify_outlet_access_code: {
         Args: { _access_code: string; _session_id: string }

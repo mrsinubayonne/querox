@@ -6,8 +6,10 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import ModernSidebar from '@/components/ModernSidebar';
 import UnauthorizedAccess from '@/components/admin/UnauthorizedAccess';
-import { Activity, ShoppingCart, Building2, TrendingUp, AlertTriangle, Clock } from 'lucide-react';
+import { Activity, ShoppingCart, Building2, TrendingUp, AlertTriangle, Clock, MousePointer } from 'lucide-react';
 import { toast } from 'sonner';
+import ButtonUsageStats from '@/components/admin/ButtonUsageStats';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface RealtimeOrder {
   id: string;
@@ -238,149 +240,168 @@ const AdminRealTime: React.FC = () => {
             </div>
           </div>
 
-          {/* Live Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium opacity-90">Revenus du jour</span>
-                  <TrendingUp className="w-5 h-5 opacity-90" />
-                </div>
-                <div className="text-3xl font-bold">
-                  {liveRevenue.toLocaleString('fr-FR')} FCFA
-                </div>
-                <p className="text-xs opacity-80 mt-1">Mis à jour en temps réel</p>
-              </CardContent>
-            </Card>
+          <Tabs defaultValue="orders" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="orders" className="flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4" />
+                Commandes
+              </TabsTrigger>
+              <TabsTrigger value="buttons" className="flex items-center gap-2">
+                <MousePointer className="w-4 h-4" />
+                Usage Boutons
+              </TabsTrigger>
+            </TabsList>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Commandes actives</span>
-                  <ShoppingCart className="w-5 h-5 text-blue-500" />
-                </div>
-                <div className="text-3xl font-bold">
-                  {recentOrders.filter(o => o.status === 'in_progress' || o.status === 'pending').length}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">en cours de traitement</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">PDV actifs aujourd'hui</span>
-                  <Building2 className="w-5 h-5 text-purple-500" />
-                </div>
-                <div className="text-3xl font-bold">
-                  {activeRestaurants}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">points de vente avec commandes</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Orders */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Commandes en temps réel
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentOrders.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Aucune commande récente</p>
-                  </div>
-                ) : (
-                  recentOrders.map((order) => (
-                    <div key={order.id} className="flex items-start justify-between p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/40 transition-colors">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${getStatusColor(order.status)}`}></div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-semibold">{order.customer_name}</p>
-                            <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                              <Building2 className="w-3 h-3" />
-                              {order.restaurant_name}
-                            </Badge>
-                            {order.table_number && (
-                              <Badge variant="outline" className="text-xs">
-                                Table {order.table_number}
-                              </Badge>
-                            )}
-                            {order.order_type && (
-                              <Badge variant="outline" className="text-xs capitalize">
-                                {order.order_type}
-                              </Badge>
-                            )}
-                          </div>
-                          {order.restaurant_address && (
-                            <p className="text-xs text-muted-foreground">{order.restaurant_address}</p>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(order.created_at).toLocaleString('fr-FR')}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <p className="font-bold text-lg">{order.total_amount.toLocaleString('fr-FR')} FCFA</p>
-                        <Badge variant="outline" className="capitalize text-xs">
-                          {order.status}
-                        </Badge>
-                      </div>
+            <TabsContent value="orders" className="space-y-6 mt-6">
+              {/* Live Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium opacity-90">Revenus du jour</span>
+                      <TrendingUp className="w-5 h-5 opacity-90" />
                     </div>
-                  ))
-                )}
+                    <div className="text-3xl font-bold">
+                      {liveRevenue.toLocaleString('fr-FR')} FCFA
+                    </div>
+                    <p className="text-xs opacity-80 mt-1">Mis à jour en temps réel</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-muted-foreground">Commandes actives</span>
+                      <ShoppingCart className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <div className="text-3xl font-bold">
+                      {recentOrders.filter(o => o.status === 'in_progress' || o.status === 'pending').length}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">en cours de traitement</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-muted-foreground">PDV actifs aujourd'hui</span>
+                      <Building2 className="w-5 h-5 text-purple-500" />
+                    </div>
+                    <div className="text-3xl font-bold">
+                      {activeRestaurants}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">points de vente avec commandes</p>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Daily Sales by Outlet */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                Ventes journalières par PDV
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {outletSales.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Aucune vente aujourd'hui</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {outletSales.map((outlet, index) => (
-                    <div key={outlet.outlet_id} className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/40 transition-colors">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-bold">
-                        {index + 1}
+              {/* Recent Orders */}
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    Commandes en temps réel
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {recentOrders.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p>Aucune commande récente</p>
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <p className="font-semibold text-lg">{outlet.outlet_name}</p>
-                        {outlet.outlet_address && (
-                          <p className="text-xs text-muted-foreground">{outlet.outlet_address}</p>
-                        )}
-                        <p className="text-sm text-muted-foreground">
-                          {outlet.order_count} commande{outlet.order_count > 1 ? 's' : ''}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-green-600">
-                          {outlet.daily_revenue.toLocaleString('fr-FR')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">FCFA</p>
-                      </div>
+                    ) : (
+                      recentOrders.map((order) => (
+                        <div key={order.id} className="flex items-start justify-between p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/40 transition-colors">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className={`w-2 h-2 rounded-full mt-2 ${getStatusColor(order.status)}`}></div>
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-semibold">{order.customer_name}</p>
+                                <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                                  <Building2 className="w-3 h-3" />
+                                  {order.restaurant_name}
+                                </Badge>
+                                {order.table_number && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Table {order.table_number}
+                                  </Badge>
+                                )}
+                                {order.order_type && (
+                                  <Badge variant="outline" className="text-xs capitalize">
+                                    {order.order_type}
+                                  </Badge>
+                                )}
+                              </div>
+                              {order.restaurant_address && (
+                                <p className="text-xs text-muted-foreground">{order.restaurant_address}</p>
+                              )}
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(order.created_at).toLocaleString('fr-FR')}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <p className="font-bold text-lg">{order.total_amount.toLocaleString('fr-FR')} FCFA</p>
+                            <Badge variant="outline" className="capitalize text-xs">
+                              {order.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Daily Sales by Outlet */}
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="w-5 h-5" />
+                    Ventes journalières par PDV
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {outletSales.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>Aucune vente aujourd'hui</p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  ) : (
+                    <div className="space-y-3">
+                      {outletSales.map((outlet, index) => (
+                        <div key={outlet.outlet_id} className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/40 transition-colors">
+                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-bold">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <p className="font-semibold text-lg">{outlet.outlet_name}</p>
+                            {outlet.outlet_address && (
+                              <p className="text-xs text-muted-foreground">{outlet.outlet_address}</p>
+                            )}
+                            <p className="text-sm text-muted-foreground">
+                              {outlet.order_count} commande{outlet.order_count > 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-green-600">
+                              {outlet.daily_revenue.toLocaleString('fr-FR')}
+                            </p>
+                            <p className="text-xs text-muted-foreground">FCFA</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="buttons" className="mt-6">
+              <ButtonUsageStats />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
