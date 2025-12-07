@@ -136,6 +136,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         if (multipleBreakdown.virement > 0) parts.push(`Virement: ${multipleBreakdown.virement} FCFA`);
         if (multipleBreakdown.carte > 0) parts.push(`Carte: ${multipleBreakdown.carte} FCFA`);
         if (multipleBreakdown.mobileMoney > 0) parts.push(`Mobile Money: ${multipleBreakdown.mobileMoney} FCFA`);
+        if (multipleBreakdown.debiteur > 0) parts.push(`Débiteur: ${multipleBreakdown.debiteur} FCFA`);
         notesForMultiple = parts.join(' | ');
         paymentMethodString = 'Multiple';
       }
@@ -169,6 +170,26 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         .eq('session_id', session.id);
 
       if (invoiceError) throw invoiceError;
+
+      // Handle debtor portion in multiple payment
+      if (paymentMethod === 'Multiple' && multipleBreakdown && multipleBreakdown.debiteur > 0 && multipleBreakdown.debiteurId) {
+        // Create a debtor payment record for the amount that needs to be paid later
+        const { data: debtor } = await supabase
+          .from('business_customers')
+          .select('current_debt')
+          .eq('id', multipleBreakdown.debiteurId)
+          .single();
+        
+        if (debtor) {
+          const currentDebt = (debtor as any)?.current_debt || 0;
+          const newDebt = currentDebt + multipleBreakdown.debiteur;
+          
+          await supabase
+            .from('business_customers')
+            .update({ current_debt: newDebt })
+            .eq('id', multipleBreakdown.debiteurId);
+        }
+      }
 
       celebrate();
       onMarkAsPaid();

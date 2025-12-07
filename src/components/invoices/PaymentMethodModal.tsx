@@ -24,6 +24,8 @@ export interface MultiplePaymentBreakdown {
   virement: number;
   carte: number;
   mobileMoney: number;
+  debiteur: number;
+  debiteurId?: string;
 }
 
 interface PaymentMethodModalProps {
@@ -50,7 +52,10 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
     virement: 0,
     carte: 0,
     mobileMoney: 0,
+    debiteur: 0,
+    debiteurId: undefined,
   });
+  const [multipleDebtorId, setMultipleDebtorId] = useState<string>('');
   const { outletId } = useRestaurant();
   const { customers: debtors, createCustomer, isCreating } = useDebtors(outletId || undefined);
 
@@ -62,7 +67,10 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
         virement: 0,
         carte: 0,
         mobileMoney: 0,
+        debiteur: 0,
+        debiteurId: undefined,
       });
+      setMultipleDebtorId('');
     }
   }, [open, totalAmount]);
 
@@ -75,8 +83,9 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
     { value: 'Debiteur', label: 'Débiteur (à crédit)', icon: UserPlus, color: 'text-red-600' },
   ];
 
-  const multiplePaymentTotal = multiplePayment.especes + multiplePayment.virement + multiplePayment.carte + multiplePayment.mobileMoney;
+  const multiplePaymentTotal = multiplePayment.especes + multiplePayment.virement + multiplePayment.carte + multiplePayment.mobileMoney + multiplePayment.debiteur;
   const isMultiplePaymentValid = selectedMethod !== 'Multiple' || Math.abs(multiplePaymentTotal - totalAmount) < 0.01;
+  const isDebiteurInMultipleValid = multiplePayment.debiteur === 0 || multipleDebtorId !== '';
 
   const handleConfirm = async () => {
     if (selectedMethod === 'Debiteur') {
@@ -103,7 +112,12 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
         return; // Need to select or create a debtor
       }
     } else if (selectedMethod === 'Multiple') {
-      onConfirm('Multiple', undefined, multiplePayment);
+      // Update multiplePayment with debiteurId if debiteur amount > 0
+      const finalBreakdown = {
+        ...multiplePayment,
+        debiteurId: multiplePayment.debiteur > 0 ? multipleDebtorId : undefined,
+      };
+      onConfirm('Multiple', undefined, finalBreakdown);
     } else {
       onConfirm(selectedMethod);
     }
@@ -123,7 +137,10 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
       virement: 0,
       carte: 0,
       mobileMoney: 0,
+      debiteur: 0,
+      debiteurId: undefined,
     });
+    setMultipleDebtorId('');
   };
 
   const formatCurrency = (amount: number) => {
@@ -228,13 +245,51 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
                   className="flex-1"
                 />
               </div>
+              
+              <div className="flex items-center gap-3">
+                <UserPlus className="h-4 w-4 text-red-600 shrink-0" />
+                <Label className="w-28 shrink-0">Débiteur</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={multiplePayment.debiteur || ''}
+                  onChange={(e) => setMultiplePayment(prev => ({ ...prev, debiteur: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0"
+                  className="flex-1"
+                />
+              </div>
+              
+              {/* Debtor selector for multiple payment */}
+              {multiplePayment.debiteur > 0 && (
+                <div className="ml-7 space-y-2">
+                  <Label className="text-sm">Sélectionner le débiteur</Label>
+                  <Select value={multipleDebtorId} onValueChange={setMultipleDebtorId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choisir un débiteur..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeDebtors.map((debtor) => (
+                        <SelectItem key={debtor.id} value={debtor.id}>
+                          {debtor.company_name}
+                          {debtor.contact_person && ` (${debtor.contact_person})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
-            <div className={`text-sm font-medium p-2 rounded ${isMultiplePaymentValid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            <div className={`text-sm font-medium p-2 rounded ${isMultiplePaymentValid && isDebiteurInMultipleValid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
               Total renseigné: {formatCurrency(multiplePaymentTotal)}
               {!isMultiplePaymentValid && (
                 <span className="block text-xs">
                   Différence: {formatCurrency(Math.abs(multiplePaymentTotal - totalAmount))}
+                </span>
+              )}
+              {!isDebiteurInMultipleValid && (
+                <span className="block text-xs">
+                  Veuillez sélectionner un débiteur
                 </span>
               )}
             </div>
@@ -323,7 +378,7 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
             disabled={
               isCreating ||
               (selectedMethod === 'Debiteur' && !selectedDebtorId && (!showNewDebtor || !newDebtorName)) ||
-              (selectedMethod === 'Multiple' && !isMultiplePaymentValid)
+              (selectedMethod === 'Multiple' && (!isMultiplePaymentValid || !isDebiteurInMultipleValid))
             }
           >
             {isCreating ? 'Création...' : 'Confirmer'}
