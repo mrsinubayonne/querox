@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,21 +14,30 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Banknote, CreditCard, Smartphone, Building, UserPlus, Plus } from 'lucide-react';
+import { Banknote, CreditCard, Smartphone, Building, UserPlus, Plus, Split } from 'lucide-react';
 import { useDebtors } from '@/hooks/useBusinessCustomers';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { useOutlets } from '@/hooks/useOutlets';
 
+export interface MultiplePaymentBreakdown {
+  especes: number;
+  virement: number;
+  carte: number;
+  mobileMoney: number;
+}
+
 interface PaymentMethodModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (method: string, debtorId?: string) => void;
+  onConfirm: (method: string, debtorId?: string, multipleBreakdown?: MultiplePaymentBreakdown) => void;
+  totalAmount?: number;
 }
 
 const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
   open,
   onOpenChange,
-  onConfirm
+  onConfirm,
+  totalAmount = 0
 }) => {
   const [selectedMethod, setSelectedMethod] = useState('Espèces');
   const [selectedDebtorId, setSelectedDebtorId] = useState<string>('');
@@ -36,16 +45,38 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
   const [newDebtorName, setNewDebtorName] = useState('');
   const [newDebtorContact, setNewDebtorContact] = useState('');
   const [newDebtorPhone, setNewDebtorPhone] = useState('');
+  const [multiplePayment, setMultiplePayment] = useState<MultiplePaymentBreakdown>({
+    especes: 0,
+    virement: 0,
+    carte: 0,
+    mobileMoney: 0,
+  });
   const { outletId } = useRestaurant();
   const { customers: debtors, createCustomer, isCreating } = useDebtors(outletId || undefined);
+
+  // Reset multiple payment when total changes
+  useEffect(() => {
+    if (open && totalAmount > 0) {
+      setMultiplePayment({
+        especes: totalAmount,
+        virement: 0,
+        carte: 0,
+        mobileMoney: 0,
+      });
+    }
+  }, [open, totalAmount]);
 
   const paymentMethods = [
     { value: 'Espèces', label: 'Espèces', icon: Banknote, color: 'text-green-600' },
     { value: 'Virement', label: 'Virement', icon: Building, color: 'text-blue-600' },
     { value: 'Visa/Mastercard', label: 'Visa/Mastercard', icon: CreditCard, color: 'text-purple-600' },
     { value: 'Mobile Money', label: 'Mobile Money', icon: Smartphone, color: 'text-orange-600' },
+    { value: 'Multiple', label: 'Moyen multiple', icon: Split, color: 'text-amber-600' },
     { value: 'Debiteur', label: 'Débiteur (à crédit)', icon: UserPlus, color: 'text-red-600' },
   ];
+
+  const multiplePaymentTotal = multiplePayment.especes + multiplePayment.virement + multiplePayment.carte + multiplePayment.mobileMoney;
+  const isMultiplePaymentValid = selectedMethod !== 'Multiple' || Math.abs(multiplePaymentTotal - totalAmount) < 0.01;
 
   const handleConfirm = async () => {
     if (selectedMethod === 'Debiteur') {
@@ -71,6 +102,8 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
       } else {
         return; // Need to select or create a debtor
       }
+    } else if (selectedMethod === 'Multiple') {
+      onConfirm('Multiple', undefined, multiplePayment);
     } else {
       onConfirm(selectedMethod);
     }
@@ -85,6 +118,16 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
     setNewDebtorName('');
     setNewDebtorContact('');
     setNewDebtorPhone('');
+    setMultiplePayment({
+      especes: 0,
+      virement: 0,
+      carte: 0,
+      mobileMoney: 0,
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
   };
 
   const activeDebtors = debtors.filter(d => d.is_active);
@@ -125,6 +168,78 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
             );
           })}
         </RadioGroup>
+
+        {/* Multiple Payment Section */}
+        {selectedMethod === 'Multiple' && (
+          <div className="space-y-4 border-t pt-4">
+            <div className="text-sm text-muted-foreground mb-2">
+              Total à répartir: <span className="font-semibold text-foreground">{formatCurrency(totalAmount)}</span>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Banknote className="h-4 w-4 text-green-600 shrink-0" />
+                <Label className="w-28 shrink-0">Espèces</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={multiplePayment.especes || ''}
+                  onChange={(e) => setMultiplePayment(prev => ({ ...prev, especes: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0"
+                  className="flex-1"
+                />
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Building className="h-4 w-4 text-blue-600 shrink-0" />
+                <Label className="w-28 shrink-0">Virement</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={multiplePayment.virement || ''}
+                  onChange={(e) => setMultiplePayment(prev => ({ ...prev, virement: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0"
+                  className="flex-1"
+                />
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <CreditCard className="h-4 w-4 text-purple-600 shrink-0" />
+                <Label className="w-28 shrink-0">Carte</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={multiplePayment.carte || ''}
+                  onChange={(e) => setMultiplePayment(prev => ({ ...prev, carte: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0"
+                  className="flex-1"
+                />
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Smartphone className="h-4 w-4 text-orange-600 shrink-0" />
+                <Label className="w-28 shrink-0">Mobile Money</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={multiplePayment.mobileMoney || ''}
+                  onChange={(e) => setMultiplePayment(prev => ({ ...prev, mobileMoney: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0"
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            <div className={`text-sm font-medium p-2 rounded ${isMultiplePaymentValid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              Total renseigné: {formatCurrency(multiplePaymentTotal)}
+              {!isMultiplePaymentValid && (
+                <span className="block text-xs">
+                  Différence: {formatCurrency(Math.abs(multiplePaymentTotal - totalAmount))}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Debtor Selection Section */}
         {selectedMethod === 'Debiteur' && (
@@ -207,7 +322,8 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
             onClick={handleConfirm}
             disabled={
               isCreating ||
-              (selectedMethod === 'Debiteur' && !selectedDebtorId && (!showNewDebtor || !newDebtorName))
+              (selectedMethod === 'Debiteur' && !selectedDebtorId && (!showNewDebtor || !newDebtorName)) ||
+              (selectedMethod === 'Multiple' && !isMultiplePaymentValid)
             }
           >
             {isCreating ? 'Création...' : 'Confirmer'}

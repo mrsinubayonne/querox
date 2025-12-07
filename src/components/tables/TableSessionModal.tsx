@@ -19,7 +19,7 @@ import QuickAddOrderToSessionModal from "./QuickAddOrderToSessionModal";
 import InvoicePrintView from "@/components/invoices/InvoicePrintView";
 import { Invoice } from "@/hooks/useInvoices";
 import { usePaidCelebration } from "@/hooks/usePaidCelebration";
-import PaymentMethodModal from "@/components/invoices/PaymentMethodModal";
+import PaymentMethodModal, { MultiplePaymentBreakdown } from "@/components/invoices/PaymentMethodModal";
 import { toast as sonnerToast } from "sonner";
 import { InvoicePreviewModal } from "./InvoicePreviewModal";
 interface Order {
@@ -57,7 +57,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
 
-  const handleMarkAsPaidWithMethod = async (paymentMethod: string, debtorId?: string) => {
+  const handleMarkAsPaidWithMethod = async (paymentMethod: string, debtorId?: string, multipleBreakdown?: MultiplePaymentBreakdown) => {
     if (!session) return;
     
     try {
@@ -126,25 +126,46 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         return;
       }
 
+      // Build payment method string for multiple payments
+      let paymentMethodString = paymentMethod;
+      let notesForMultiple = '';
+      
+      if (paymentMethod === 'Multiple' && multipleBreakdown) {
+        const parts: string[] = [];
+        if (multipleBreakdown.especes > 0) parts.push(`Espèces: ${multipleBreakdown.especes} FCFA`);
+        if (multipleBreakdown.virement > 0) parts.push(`Virement: ${multipleBreakdown.virement} FCFA`);
+        if (multipleBreakdown.carte > 0) parts.push(`Carte: ${multipleBreakdown.carte} FCFA`);
+        if (multipleBreakdown.mobileMoney > 0) parts.push(`Mobile Money: ${multipleBreakdown.mobileMoney} FCFA`);
+        notesForMultiple = parts.join(' | ');
+        paymentMethodString = 'Multiple';
+      }
+
       // Regular payment flow
       const { error: sessionError } = await supabase
         .from('table_sessions')
         .update({ 
           status: 'paid',
-          payment_method: paymentMethod
+          payment_method: paymentMethodString,
+          notes: paymentMethod === 'Multiple' ? notesForMultiple : session.notes
         })
         .eq('id', session.id);
 
       if (sessionError) throw sessionError;
 
       // Update invoice with payment method
+      const invoiceUpdate: any = { 
+        status: 'paid',
+        paid_date: new Date().toISOString(),
+        payment_method: paymentMethodString
+      };
+      
+      if (paymentMethod === 'Multiple' && notesForMultiple) {
+        invoiceUpdate.notes = notesForMultiple;
+      }
+      
       const { error: invoiceError } = await supabase
         .from('invoices')
-        .update({ 
-          status: 'paid',
-          paid_date: new Date().toISOString(),
-          payment_method: paymentMethod
-        })
+        .update(invoiceUpdate)
         .eq('session_id', session.id);
 
       if (invoiceError) throw invoiceError;
@@ -658,6 +679,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         open={showPaymentMethod}
         onOpenChange={setShowPaymentMethod}
         onConfirm={handleMarkAsPaidWithMethod}
+        totalAmount={session.total_amount}
       />
 
       <CelebrationMessage />
