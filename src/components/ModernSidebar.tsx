@@ -7,6 +7,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
 import { useUserProfiles, ProfileTitle } from '@/hooks/useUserProfiles';
+import { useButtonTracking, TRACKED_BUTTONS } from '@/hooks/useButtonTracking';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -43,6 +44,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const { isAdmin } = useSubscription();
   const { outlets, selectedOutletId, selectOutlet, canAddMoreOutlets, getOutletLimit } = useOutlets();
   const { profileSession, hasPermission, isProfileAuthenticated, logout: profileLogout } = useOutletProfile();
+  const { trackClick } = useButtonTracking();
   
   const [servicesExpanded, setServicesExpanded] = useState(location.pathname.includes('/service'));
   const [marketingExpanded, setMarketingExpanded] = useState(location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook'));
@@ -311,7 +313,11 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     }] : [])
   ];
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = (path: string, label?: string) => {
+    // Track navigation click
+    if (label) {
+      trackClick(`Navigation: ${label}`, 'navigation');
+    }
     navigate(path);
     if (path.includes('/service')) {
       setServicesExpanded(true);
@@ -484,7 +490,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
               return (
                 <button
                   key={item.path}
-                  onClick={() => handleNavigation(item.path)}
+                  onClick={() => handleNavigation(item.path, item.label)}
                   data-tour={dataTourAttr}
                   className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}
                 >
@@ -506,7 +512,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
               {/* Marketing Submenu */}
               {marketingExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
-                  {marketingItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
+                  {marketingItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path, item.label)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
                       <item.icon size={16} className="flex-shrink-0" />
                       <span className="ml-3">{item.label}</span>
                     </button>)}

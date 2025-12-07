@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useButtonTracking } from "@/hooks/useButtonTracking";
 
 interface OpenSessionModalProps {
   isOpen: boolean;
@@ -29,9 +30,11 @@ export const OpenSessionModal: React.FC<OpenSessionModalProps> = ({
 }) => {
   const [numberOfGuests, setNumberOfGuests] = useState("");
   const [notes, setNotes] = useState("");
+  const { trackClick } = useButtonTracking();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    trackClick('Tables: Ouvrir session', 'tables');
     const guests = parseInt(numberOfGuests) || 1;
     onConfirm(guests, notes);
     setNumberOfGuests("");
