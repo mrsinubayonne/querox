@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import ModernSidebar from '@/components/ModernSidebar';
 import UnauthorizedAccess from '@/components/admin/UnauthorizedAccess';
-import { Activity, ShoppingCart, Building2, TrendingUp, AlertTriangle, Clock, MousePointer } from 'lucide-react';
+import { Activity, ShoppingCart, Building2, TrendingUp, Clock, MousePointer, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import ButtonUsageStats from '@/components/admin/ButtonUsageStats';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+type PeriodFilter = 'today' | 'week' | 'month';
 
 interface RealtimeOrder {
   id: string;
@@ -43,6 +47,7 @@ const AdminRealTime: React.FC = () => {
   const [activeRestaurants, setActiveRestaurants] = useState(0);
   const [loading, setLoading] = useState(true);
   const [outletSales, setOutletSales] = useState<OutletDailySales[]>([]);
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('today');
 
   useEffect(() => {
     if (isAdmin) {
@@ -64,15 +69,43 @@ const AdminRealTime: React.FC = () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [isAdmin]);
+  }, [isAdmin, periodFilter]);
+
+  const getDateRange = () => {
+    const now = new Date();
+    let startDate = new Date();
+    
+    switch (periodFilter) {
+      case 'week':
+        startDate.setDate(now.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'month':
+        startDate.setMonth(now.getMonth() - 1);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'today':
+      default:
+        startDate.setHours(0, 0, 0, 0);
+        break;
+    }
+    
+    return startDate;
+  };
+
+  const getPeriodLabel = () => {
+    switch (periodFilter) {
+      case 'week': return 'de la semaine';
+      case 'month': return 'du mois';
+      default: return 'du jour';
+    }
+  };
 
   const fetchRealtimeData = async () => {
     try {
       setLoading(true);
       
-      // Calculate today's date range
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const startDate = getDateRange();
       
       // Get ALL orders from today with outlet information
       const { data: todayOrders, error: ordersError } = await supabase
@@ -94,7 +127,7 @@ const AdminRealTime: React.FC = () => {
             user_id
           )
         `)
-        .gte('created_at', today.toISOString())
+        .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false });
 
       if (ordersError) throw ordersError;
@@ -104,7 +137,7 @@ const AdminRealTime: React.FC = () => {
         .from('invoices')
         .select('id, total_amount, order_id, outlet_id')
         .eq('status', 'paid')
-        .gte('created_at', today.toISOString());
+        .gte('created_at', startDate.toISOString());
 
       if (invoicesError) throw invoicesError;
 
@@ -253,12 +286,36 @@ const AdminRealTime: React.FC = () => {
             </TabsList>
 
             <TabsContent value="orders" className="space-y-6 mt-6">
+              {/* Period Filter */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  Période:
+                </div>
+                <ToggleGroup 
+                  type="single" 
+                  value={periodFilter} 
+                  onValueChange={(value) => value && setPeriodFilter(value as PeriodFilter)}
+                  className="bg-muted rounded-lg p-1"
+                >
+                  <ToggleGroupItem value="today" className="text-sm px-4">
+                    Aujourd'hui
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="week" className="text-sm px-4">
+                    Semaine
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="month" className="text-sm px-4">
+                    Mois
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+
               {/* Live Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium opacity-90">Revenus du jour</span>
+                      <span className="text-sm font-medium opacity-90">Revenus {getPeriodLabel()}</span>
                       <TrendingUp className="w-5 h-5 opacity-90" />
                     </div>
                     <div className="text-3xl font-bold">
@@ -284,7 +341,7 @@ const AdminRealTime: React.FC = () => {
                 <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-muted-foreground">PDV actifs aujourd'hui</span>
+                      <span className="text-sm font-medium text-muted-foreground">PDV actifs {getPeriodLabel()}</span>
                       <Building2 className="w-5 h-5 text-purple-500" />
                     </div>
                     <div className="text-3xl font-bold">

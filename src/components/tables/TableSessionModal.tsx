@@ -22,6 +22,7 @@ import { usePaidCelebration } from "@/hooks/usePaidCelebration";
 import PaymentMethodModal, { MultiplePaymentBreakdown } from "@/components/invoices/PaymentMethodModal";
 import { toast as sonnerToast } from "sonner";
 import { InvoicePreviewModal } from "./InvoicePreviewModal";
+import { useButtonTracking } from "@/hooks/useButtonTracking";
 interface Order {
   id: string;
   customer_name: string;
@@ -56,9 +57,13 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [showPreview, setShowPreview] = useState(false);
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
+  const { trackClick } = useButtonTracking();
 
   const handleMarkAsPaidWithMethod = async (paymentMethod: string, debtorId?: string, multipleBreakdown?: MultiplePaymentBreakdown) => {
     if (!session) return;
+    
+    // Track payment method used
+    trackClick(`Paiement: ${paymentMethod}`, 'tables');
     
     try {
       // If debtor payment, handle differently
@@ -610,11 +615,17 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                 <Eye className="h-4 w-4 mr-2" />
                 Prévisualiser
               </Button>
-              <Button onClick={handleAddOrder} variant="secondary">
+              <Button onClick={() => {
+                trackClick('Tables: Ajouter commande', 'tables');
+                handleAddOrder();
+              }} variant="secondary">
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter une commande
               </Button>
-              <Button onClick={onCloseSession} variant="default">
+              <Button onClick={() => {
+                trackClick('Tables: Fermer session', 'tables');
+                onCloseSession();
+              }} variant="default">
                 <Receipt className="h-4 w-4 mr-2" />
                 {session.debtor_id ? "Fermer & Créer Crédit" : "Fermer & Générer Facture"}
               </Button>
@@ -622,17 +633,26 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           
           {session.status === "closed" && <>
               {onReopenSession && (
-                <Button onClick={onReopenSession} variant="outline">
+                <Button onClick={() => {
+                  trackClick('Tables: Réouvrir table', 'tables');
+                  onReopenSession();
+                }} variant="outline">
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Réouvrir
                 </Button>
               )}
-              <Button onClick={handlePrintSession} variant="outline">
+              <Button onClick={() => {
+                trackClick('Tables: Imprimer facture', 'tables');
+                handlePrintSession();
+              }} variant="outline">
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimer
               </Button>
               
-              <Button onClick={() => setShowPaymentMethod(true)}>
+              <Button onClick={() => {
+                trackClick('Tables: Marquer payée', 'tables');
+                setShowPaymentMethod(true);
+              }}>
                 Marquer comme Payée
               </Button>
             </>}
