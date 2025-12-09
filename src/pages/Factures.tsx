@@ -91,13 +91,13 @@ const Factures: React.FC = () => {
 
   const confirmPrint = () => {
     setShowServerDialog(false);
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => {
-        setPrintInvoice(null);
-        setServedBy('');
-      }, 100);
-    }, 100);
+    // L'impression est déclenchée automatiquement par InvoicePrintView
+    // quand printInvoice est défini
+  };
+
+  const handleAfterPrint = () => {
+    setPrintInvoice(null);
+    setServedBy('');
   };
 
   const handleDeleteClick = (invoice: Invoice) => {
@@ -366,7 +366,7 @@ const Factures: React.FC = () => {
               />
             </div>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setServedBy('')}>Annuler</AlertDialogCancel>
+              <AlertDialogCancel onClick={() => { setServedBy(''); setPrintInvoice(null); }}>Annuler</AlertDialogCancel>
               <AlertDialogAction onClick={confirmPrint}>
                 Imprimer
               </AlertDialogAction>
@@ -380,7 +380,14 @@ const Factures: React.FC = () => {
           onSelectFormat={handleFormatSelected}
         />
 
-        {printInvoice && <InvoicePrintView invoice={printInvoice} servedBy={servedBy} format={printFormat} />}
+        {printInvoice && !showServerDialog && !showFormatSelector && (
+          <InvoicePrintView 
+            invoice={printInvoice} 
+            servedBy={servedBy} 
+            format={printFormat}
+            onAfterPrint={handleAfterPrint}
+          />
+        )}
       </PageWithSidebar>
     </SubscriptionGuard>
   );
