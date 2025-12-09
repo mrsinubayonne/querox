@@ -168,6 +168,13 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
                 3 jours
               </Button>
               <Button 
+                onClick={() => grantQuickSubscription(5)}
+                variant="outline"
+                className="flex-1"
+              >
+                5 jours
+              </Button>
+              <Button 
                 onClick={() => grantQuickSubscription(14)}
                 variant="outline"
                 className="flex-1"
