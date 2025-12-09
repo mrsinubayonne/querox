@@ -99,13 +99,11 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   const confirmPrint = () => {
     setShowServerDialog(false);
     setIsPrinting(true);
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => {
-        setIsPrinting(false);
-        setServedBy('');
-      }, 100);
-    }, 100);
+  };
+
+  const handleAfterPrint = () => {
+    setIsPrinting(false);
+    setServedBy('');
   };
 
   return (
@@ -203,7 +201,7 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
           </div>
         </div>
 
-        {isPrinting && <InvoicePrintView invoice={invoice} servedBy={servedBy} />}
+        {isPrinting && <InvoicePrintView invoice={invoice} servedBy={servedBy} onAfterPrint={handleAfterPrint} />}
       </DialogContent>
 
       <AlertDialog open={showServerDialog} onOpenChange={setShowServerDialog}>
