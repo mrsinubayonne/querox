@@ -125,46 +125,75 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy, 
   return createPortal(
     <div id="invoice-print-portal" className="invoice-print-container" style={{ fontFamily: 'Arial, sans-serif', fontWeight: '600' }}>
       <style>{`
-        /* Masquer tout le contenu normal et n'afficher que la facture */
+        /* Styles pour l'impression - Compatible Safari/Mac */
         @media print {
+          /* Masquer tout sauf la facture */
           body > *:not(#invoice-print-portal) {
             display: none !important;
+            visibility: hidden !important;
           }
+          
+          html, body {
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
           #invoice-print-portal {
-            position: fixed !important;
+            display: block !important;
+            visibility: visible !important;
+            position: absolute !important;
             top: 0 !important;
             left: 0 !important;
             width: 100% !important;
-            height: 100% !important;
+            height: auto !important;
             background: white !important;
             z-index: 99999 !important;
+            overflow: visible !important;
           }
+          
           .invoice-print-container {
+            display: block !important;
+            visibility: visible !important;
             padding: ${format === 'a4' ? '15mm' : '8mm'} !important;
             width: ${format === 'a4' ? '210mm' : '148mm'} !important;
             max-width: 100% !important;
             height: auto !important;
-            overflow: hidden !important;
+            overflow: visible !important;
+            background: white !important;
+            color: black !important;
           }
-          * {
-            page-break-inside: avoid !important;
-            page-break-after: avoid !important;
-            page-break-before: avoid !important;
+          
+          .invoice-print-container * {
+            visibility: visible !important;
+            color: black !important;
           }
+          
           @page {
             size: ${format === 'a4' ? 'A4' : 'A5'} portrait;
-            margin: 0;
+            margin: 5mm;
           }
+          
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             font-family: 'Arial', sans-serif !important;
-            font-weight: 600 !important;
           }
         }
+        
+        /* Masquer à l'écran - utiliser visibility au lieu de display pour Safari */
         @media screen {
           #invoice-print-portal {
-            display: none;
+            position: absolute !important;
+            left: -9999px !important;
+            top: -9999px !important;
+            width: 1px !important;
+            height: 1px !important;
+            overflow: hidden !important;
           }
         }
       `}</style>
