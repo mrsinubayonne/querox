@@ -40,6 +40,12 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
+        // Empêche les "pages blanches" après une mise à jour (cache SW obsolète)
+        clientsClaim: true,
+        skipWaiting: true,
+        cleanupOutdatedCaches: true,
+        // Fallback SPA (deep links /commandes, /tables, etc.)
+        navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10 MB pour supporter le bundle principal
         runtimeCaching: [
