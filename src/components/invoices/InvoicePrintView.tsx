@@ -131,11 +131,9 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy, 
             display: none !important;
           }
           #invoice-print-portal {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
+            position: static !important;
+            display: block !important;
             width: 100% !important;
-            height: 100% !important;
             background: white !important;
             z-index: 99999 !important;
           }
@@ -144,17 +142,20 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy, 
             width: ${format === 'a4' ? '210mm' : '148mm'} !important;
             max-width: 100% !important;
             height: auto !important;
-            overflow: hidden !important;
-          }
-          * {
-            page-break-inside: avoid !important;
-            page-break-after: avoid !important;
-            page-break-before: avoid !important;
+            overflow: visible !important;
           }
           @page {
             size: ${format === 'a4' ? 'A4' : 'A5'} portrait;
-            margin: 0;
+            margin: ${format === 'a4' ? '10mm' : '5mm'};
           }
+          /* Permettre les sauts de page dans le tableau */
+          table { page-break-inside: auto !important; }
+          tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+          thead { display: table-header-group !important; }
+          tfoot { display: table-footer-group !important; }
+          /* Eviter les sauts de page dans l'en-tête et le footer */
+          .invoice-header { page-break-inside: avoid !important; }
+          .invoice-footer { page-break-inside: avoid !important; }
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
@@ -170,7 +171,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy, 
       `}</style>
 
       {/* En-tête */}
-      <div className="flex justify-between items-start mb-2 pb-1 border-b border-gray-300">
+      <div className="invoice-header flex justify-between items-start mb-2 pb-1 border-b border-gray-300">
         <div>
           {settings?.logo_url && (
             <img 
@@ -298,7 +299,7 @@ const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, servedBy, 
       </div>
 
       {/* Footer */}
-      <div className="border-t border-gray-300 pt-2 mt-2">
+      <div className="invoice-footer border-t border-gray-300 pt-2 mt-2">
         {settings?.footer_note && (
           <p className="text-xs text-black mb-1 whitespace-pre-line">
             {settings.footer_note}
