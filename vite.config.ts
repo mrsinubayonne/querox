@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => ({
         name: 'QUEROX - Gestion de Restaurant',
         short_name: 'QUEROX',
         description: 'Outil de gestion, d\'automatisation et d\'optimisation destiné aux restaurants',
+        start_url: '/',
+        scope: '/',
         theme_color: '#3B82F6',
         background_color: '#ffffff',
         display: 'standalone',

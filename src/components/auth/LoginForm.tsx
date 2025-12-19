@@ -46,7 +46,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setLoading(true);
-      
+
+      const email = data.email.trim().toLowerCase();
+
       if (useAccessCode) {
         const code = data.password.trim().toUpperCase();
         if (!/^[A-Z0-9]{6}$/.test(code)) {
@@ -60,7 +62,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
         // Team member login with access code
         const { data: memberData, error: verifyError } = await supabase
           .rpc('verify_team_access', {
-            _email: data.email,
+            _email: email,
             _access_code: code
           });
 
@@ -89,7 +91,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
           memberId: member.member_id,
           ownerId: member.owner_id,
           role: member.role,
-          email: data.email
+          email
         }));
         // Clean up legacy key if it exists
         try { localStorage.removeItem('team_member_session'); } catch { /* ignore */ }
@@ -105,29 +107,61 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
         }, 100);
       } else {
         // Normal owner login with password
-        const { error } = await signIn(data.email, data.password);
+        const { error } = await signIn(email, data.password);
 
         if (error) {
-          const isInvalidCreds = (error as any)?.code === 'invalid_credentials' ||
-            (typeof error.message === 'string' && error.message.toLowerCase().includes('invalid login credentials'));
+          const message = String((error as any)?.message ?? '');
+          const code = String((error as any)?.code ?? '');
+
+          const isInvalidCreds =
+            code === 'invalid_credentials' ||
+            message.toLowerCase().includes('invalid login credentials');
+
+          const isEmailNotConfirmed =
+            code === 'email_not_confirmed' ||
+            message.toLowerCase().includes('email not confirmed');
+
+          const isRateLimited =
+            code === 'too_many_requests' ||
+            message.toLowerCase().includes('too many requests');
+
+          if (isEmailNotConfirmed) {
+            toast({
+              title: "Email non confirmé",
+              description: "Confirmez votre email (vérifiez vos spams), puis réessayez.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          if (isRateLimited) {
+            toast({
+              title: "Trop de tentatives",
+              description: "Patientez quelques minutes puis réessayez.",
+              variant: "destructive",
+            });
+            return;
+          }
 
           if (isInvalidCreds) {
             toast({
-              title: "Pas de compte trouvé",
-              description: "Nous ne reconnaissons pas ces identifiants. Inscrivez-vous pour continuer.",
+              title: "Identifiants incorrects",
+              description: "Email ou mot de passe incorrect. Vous pouvez réinitialiser votre mot de passe.",
+              variant: "destructive",
               action: (
-                <ToastAction altText="S'inscrire" onClick={onSwitchToSignUp}>
-                  S'inscrire
+                <ToastAction altText="Mot de passe oublié" onClick={() => setShowResetModal(true)}>
+                  Mot de passe oublié
                 </ToastAction>
               ),
             });
-          } else {
-            toast({
-              title: "Erreur de connexion",
-              description: error.message || "Une erreur est survenue",
-              variant: "destructive",
-            });
+            return;
           }
+
+          toast({
+            title: "Erreur de connexion",
+            description: message || "Une erreur est survenue",
+            variant: "destructive",
+          });
           return;
         }
 
@@ -135,7 +169,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
           title: "Connexion réussie !",
           description: "Bienvenue sur QUEROX",
         });
-        
+
         // Redirect to outlet selection
         setTimeout(() => {
           navigate('/select-outlet');
