@@ -69,11 +69,14 @@ export const useOutlets = () => {
     }
 
     if (!userId) {
+      console.log('⚠️ loadOutlets: No user ID available');
       setLoading(false);
       return;
     }
 
     try {
+      console.log('🔄 Loading outlets for user:', userId);
+      
       const { data, error } = await supabase
         .from('outlets')
         .select('*')
@@ -81,19 +84,33 @@ export const useOutlets = () => {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching outlets:', error);
+        console.error('❌ Error fetching outlets:', error);
+        // Ne pas montrer d'erreur pour les erreurs RLS bénignes
+        if (error.code === 'PGRST116' || error.code === '42501') {
+          console.log('ℹ️ RLS/Permission issue - user may need to re-authenticate');
+          setOutlets([]);
+          setLoading(false);
+          return;
+        }
         throw error;
       }
       
+      console.log('✅ Outlets loaded:', data?.length || 0);
       setOutlets(data || []);
       
       // Auto-select first outlet if only one exists and none is selected
       if (data && data.length === 1 && !selectedOutletId) {
         await selectOutlet(data[0].id, true);
       }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Erreur lors du chargement des points de vente');
+    } catch (error: any) {
+      console.error('❌ Error loading outlets:', error);
+      // Message d'erreur plus explicite
+      const msg = error?.message || '';
+      if (msg.includes('JWT') || msg.includes('token') || msg.includes('session')) {
+        toast.error('Session expirée. Veuillez vous reconnecter.');
+      } else {
+        toast.error('Erreur lors du chargement des points de vente. Rechargez la page.');
+      }
     } finally {
       setLoading(false);
     }
