@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUserProfiles, ProfileTitle } from '@/hooks/useUserProfiles';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import {
@@ -97,7 +98,7 @@ const SelectProfile: React.FC = () => {
     }
   };
 
-  const handleAccessCodeSubmit = () => {
+  const handleAccessCodeSubmit = async () => {
     const profile = profiles.find(p => p.id === selectedProfileForAccess);
     
     if (!profile) {
@@ -113,11 +114,32 @@ const SelectProfile: React.FC = () => {
       enteredCode,
       storedCode,
       rawStoredCode: profile.access_code,
-      match: storedCode === enteredCode
     });
 
-    // Check against the stored access code in database (case-insensitive)
-    if (profile.access_code && storedCode === enteredCode) {
+    // First check against the stored access code in user_profiles (case-insensitive)
+    let isValid = profile.access_code && storedCode === enteredCode;
+
+    // If not valid, check against universal codes in profile_access_codes table
+    if (!isValid) {
+      try {
+        const { data: universalCodes } = await supabase
+          .from('profile_access_codes')
+          .select('access_code')
+          .eq('profile_title', profile.title)
+          .eq('is_active', true);
+        
+        if (universalCodes && universalCodes.length > 0) {
+          isValid = universalCodes.some(uc => uc.access_code.toUpperCase() === enteredCode);
+          if (isValid) {
+            console.log('✅ Code universel accepté pour', profile.title);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking universal codes:', error);
+      }
+    }
+
+    if (isValid) {
       console.log('✅ Code correct! Redirection...');
       if (selectedProfileForAccess) {
         selectProfile(selectedProfileForAccess);
