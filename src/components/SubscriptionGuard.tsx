@@ -25,17 +25,58 @@ const getTeamMemberFromStorage = (): boolean => {
   }
 };
 
+// PERSISTENT subscription proof - survives even if other caches fail
+const SUBSCRIPTION_PROOF_KEY = 'querox_subscription_proof';
+
+const saveSubscriptionProof = () => {
+  try {
+    const proof = {
+      verified: true,
+      lastVerified: new Date().toISOString(),
+      // Valid for 7 days - generous buffer for slow connections
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    };
+    localStorage.setItem(SUBSCRIPTION_PROOF_KEY, JSON.stringify(proof));
+    console.log('💾 Saved subscription proof');
+  } catch {
+    // Ignore
+  }
+};
+
+const hasValidSubscriptionProof = (): boolean => {
+  try {
+    const proofStr = localStorage.getItem(SUBSCRIPTION_PROOF_KEY);
+    if (!proofStr) return false;
+    
+    const proof = JSON.parse(proofStr);
+    if (proof.verified && new Date(proof.expiresAt) > new Date()) {
+      console.log('🔒 Found valid subscription proof (expires:', proof.expiresAt, ')');
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+};
+
 // Check if ANY valid subscription was ever cached (emergency fallback)
 const hasAnyValidCachedSubscription = (): boolean => {
   try {
+    // First check our persistent proof
+    if (hasValidSubscriptionProof()) {
+      return true;
+    }
+    
+    // Then check subscription caches
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith('subscription_cache_')) {
         const data = JSON.parse(localStorage.getItem(key) || '{}');
-        // Check if subscription is still valid
         if (data.subscription_status === 'active' || data.subscribed) {
           if (!data.subscription_end || new Date(data.subscription_end) > new Date()) {
             console.log('🔒 Found valid cached subscription in localStorage');
+            // Save proof for future slow connections
+            saveSubscriptionProof();
             return true;
           }
         }
@@ -107,14 +148,15 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   // Check for any cached valid subscription as emergency fallback
   const hasValidCache = useRef(hasAnyValidCachedSubscription());
   
-  // Grace period: EXTENDED to 5 seconds to allow all async operations to complete
+  // Grace period: EXTENDED to 15 seconds for slow connections/weak devices
   const [gracePeriodExpired, setGracePeriodExpired] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 5; // More retries for unreliable connections
   
   useEffect(() => {
     const timer = setTimeout(() => {
       setGracePeriodExpired(true);
-    }, 5000); // Extended to 5 seconds
+    }, 15000); // 15 seconds for slow connections
     return () => clearTimeout(timer);
   }, []);
 
@@ -124,14 +166,27 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     refetch(true);
   }, []);
   
-  // Retry refetch when grace period expires if still no subscription
+  // Retry refetch with exponential backoff for slow connections
   useEffect(() => {
-    if (gracePeriodExpired && !isSubscriptionActive && !loading && retryCount < 2) {
-      console.log('🔄 Grace period expired without subscription, retrying...');
-      setRetryCount(prev => prev + 1);
-      refetch(true);
+    if (gracePeriodExpired && !isSubscriptionActive && !loading && retryCount < maxRetries) {
+      const delay = Math.min(2000 * Math.pow(1.5, retryCount), 10000); // 2s, 3s, 4.5s, 6.75s, 10s
+      console.log(`🔄 Retry ${retryCount + 1}/${maxRetries} in ${delay}ms...`);
+      
+      const timer = setTimeout(() => {
+        setRetryCount(prev => prev + 1);
+        refetch(true);
+      }, delay);
+      
+      return () => clearTimeout(timer);
     }
   }, [gracePeriodExpired, isSubscriptionActive, loading, retryCount]);
+  
+  // Save proof when subscription is confirmed active
+  useEffect(() => {
+    if (isSubscriptionActive || subscription?.subscription_status === 'active') {
+      saveSubscriptionProof();
+    }
+  }, [isSubscriptionActive, subscription]);
 
   const handleRefresh = async () => {
     console.log('🔄 Rafraîchissement manuel de l\'abonnement');
@@ -208,13 +263,17 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   }
 
   // Priority 5: Grace period - always show spinner, never paywall early
-  if (!gracePeriodExpired || loading || retryCount < 2) {
-    console.log('⏳ Grace period/loading/retry, showing verification spinner...');
+  // Extended conditions for slow connections
+  if (!gracePeriodExpired || loading || retryCount < maxRetries) {
+    console.log(`⏳ Verification in progress (retry ${retryCount}/${maxRetries}, grace: ${gracePeriodExpired}, loading: ${loading})`);
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Vérification de l'abonnement...</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Vérification de l'abonnement...
+            {retryCount > 0 && <span className="block text-xs mt-1">Tentative {retryCount}/{maxRetries}</span>}
+          </p>
         </div>
       </div>
     );
