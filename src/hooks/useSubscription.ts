@@ -32,7 +32,7 @@ interface CachedSubscription extends Subscription {
   cached_at: number;
 }
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes (reduced for faster sync)
 
 const getSubscriptionCacheKey = (userId: string) => `subscription_cache_${userId}`;
 
@@ -150,7 +150,7 @@ export const useSubscription = () => {
   }, [user]);
 
 
-  const fetchSubscription = useCallback(async () => {
+  const fetchSubscription = useCallback(async (forceRefresh = false) => {
     if (!user) {
       setSubscription(null);
       setLoading(false);
@@ -158,9 +158,12 @@ export const useSubscription = () => {
       return;
     }
 
+    console.log('🔍 Fetching subscription for user:', user.id, user.email, { forceRefresh });
+
     const isAdmin = await isAdminUser();
     
     if (isAdmin) {
+      console.log('👑 User is admin, granting full access');
       const adminSubscription = {
         id: 'admin-override',
         user_id: user.id,
@@ -226,13 +229,21 @@ export const useSubscription = () => {
         console.error('Erreur récupération abonnement (user_id):', userErr);
       }
 
-      setSubscription(record);
-      setCachedSubscription(user.id, record);
-      console.log('✅ Abonnement récupéré et mis en cache:', { 
-        tier: record?.subscription_tier, 
-        status: record?.subscription_status,
-        userId: user.id 
-      });
+      if (record) {
+        console.log('✅ Abonnement trouvé:', { 
+          tier: record.subscription_tier, 
+          status: record.subscription_status,
+          subscribed: record.subscribed,
+          userId: user.id,
+          email: user.email
+        });
+        setSubscription(record);
+        setCachedSubscription(user.id, record);
+      } else {
+        console.warn('⚠️ Aucun abonnement trouvé pour:', { userId: user.id, email: user.email });
+        setSubscription(null);
+        setCachedSubscription(user.id, null);
+      }
     } catch (error) {
       console.error('Erreur fetchSubscription:', error);
       setSubscription(null);

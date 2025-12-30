@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,12 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   const { isSubscriptionActive, loading, refetch, isAdmin, subscription, hasCachedData } = useSubscription();
   const navigate = useNavigate();
   const { isTeamMember } = useTeamPermissions();
+
+  // Force refetch on mount to ensure fresh data
+  useEffect(() => {
+    console.log('🔄 SubscriptionGuard mounted, triggering refetch...');
+    refetch();
+  }, []);
 
   const handleRefresh = async () => {
     console.log('🔄 Rafraîchissement manuel de l\'abonnement');
@@ -42,12 +48,10 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
 
   // Allow team members to bypass subscription checks (after admin check)
   if (isTeamMember()) {
+    console.log('👥 Team member detected, bypassing subscription check');
     return <>{children}</>;
   }
 
-  // Déterminer si on a des données connues (cache ou subscription existante)
-  const hasKnownSubscription = !!subscription || hasCachedData;
-  
   // Vérifier l'abonnement - plusieurs façons de valider
   const isActive = isSubscriptionActive ||
     (subscription?.subscription_status === 'active') ||
@@ -68,6 +72,9 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   if (isActive) {
     return <>{children}</>;
   }
+
+  // Déterminer si on a des données connues (cache ou subscription existante)
+  const hasKnownSubscription = !!subscription || hasCachedData;
 
   // Si on a des données en cache qui montrent un abonnement actif, laisser passer
   if (hasCachedData && !loading) {
