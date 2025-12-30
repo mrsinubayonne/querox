@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,18 +13,37 @@ interface SubscriptionGuardProps {
 }
 
 // Helper function to detect team member from localStorage (synchronous, instant)
-const getTeamMemberFromStorage = (): { memberId: string; ownerId: string } | null => {
+const getTeamMemberFromStorage = (): boolean => {
   try {
     const teamMemberStr = localStorage.getItem('teamMember') || localStorage.getItem('team_member_session');
-    if (!teamMemberStr) return null;
+    if (!teamMemberStr) return false;
     
     const member = JSON.parse(teamMemberStr);
-    if (member?.memberId && member?.ownerId) {
-      return member;
-    }
-    return null;
+    return !!(member?.memberId && member?.ownerId);
   } catch {
-    return null;
+    return false;
+  }
+};
+
+// Check if ANY valid subscription was ever cached (emergency fallback)
+const hasAnyValidCachedSubscription = (): boolean => {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('subscription_cache_')) {
+        const data = JSON.parse(localStorage.getItem(key) || '{}');
+        // Check if subscription is still valid
+        if (data.subscription_status === 'active' || data.subscribed) {
+          if (!data.subscription_end || new Date(data.subscription_end) > new Date()) {
+            console.log('🔒 Found valid cached subscription in localStorage');
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  } catch {
+    return false;
   }
 };
 
@@ -33,8 +52,7 @@ const repairApplicationCache = async () => {
   console.log('🔧 Starting application cache repair...');
   
   try {
-    // Clear subscription-related localStorage keys
-    const keysToRemove = [];
+    const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && (
@@ -48,7 +66,6 @@ const repairApplicationCache = async () => {
     keysToRemove.forEach(key => localStorage.removeItem(key));
     console.log('🗑️ Cleared localStorage keys:', keysToRemove);
 
-    // Unregister service workers
     if ('serviceWorker' in navigator) {
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of registrations) {
@@ -57,7 +74,6 @@ const repairApplicationCache = async () => {
       }
     }
 
-    // Clear PWA caches
     if ('caches' in window) {
       const cacheNames = await caches.keys();
       for (const cacheName of cacheNames) {
@@ -68,7 +84,6 @@ const repairApplicationCache = async () => {
 
     toast.success('Cache réparé ! L\'application va redémarrer...');
     
-    // Force reload after a brief delay
     setTimeout(() => {
       window.location.reload();
     }, 1000);
@@ -87,28 +102,41 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   const navigate = useNavigate();
   
   // INSTANT team member detection from localStorage (no async delay)
-  const [isTeamMember] = useState(() => getTeamMemberFromStorage() !== null);
+  const isTeamMember = getTeamMemberFromStorage();
   
-  // Grace period: don't show paywall for first 3 seconds to allow data to load
+  // Check for any cached valid subscription as emergency fallback
+  const hasValidCache = useRef(hasAnyValidCachedSubscription());
+  
+  // Grace period: EXTENDED to 5 seconds to allow all async operations to complete
   const [gracePeriodExpired, setGracePeriodExpired] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   
   useEffect(() => {
     const timer = setTimeout(() => {
       setGracePeriodExpired(true);
-    }, 3000);
+    }, 5000); // Extended to 5 seconds
     return () => clearTimeout(timer);
   }, []);
 
-  // Force refetch on mount to ensure fresh data
+  // Force refetch on mount AND after grace period
   useEffect(() => {
     console.log('🔄 SubscriptionGuard mounted, triggering refetch...');
-    refetch(true); // Force refresh, ignore cache
+    refetch(true);
   }, []);
+  
+  // Retry refetch when grace period expires if still no subscription
+  useEffect(() => {
+    if (gracePeriodExpired && !isSubscriptionActive && !loading && retryCount < 2) {
+      console.log('🔄 Grace period expired without subscription, retrying...');
+      setRetryCount(prev => prev + 1);
+      refetch(true);
+    }
+  }, [gracePeriodExpired, isSubscriptionActive, loading, retryCount]);
 
   const handleRefresh = async () => {
     console.log('🔄 Rafraîchissement manuel de l\'abonnement');
     toast.info('Actualisation en cours...');
-    await refetch(true); // Force refresh
+    await refetch(true);
     toast.success('Statut actualisé');
   };
 
@@ -120,6 +148,8 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
       loading,
       gracePeriodExpired,
       hasCachedData,
+      hasValidCache: hasValidCache.current,
+      retryCount,
       subscription: subscription ? {
         tier: subscription.subscription_tier,
         status: subscription.subscription_status,
@@ -128,7 +158,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
       } : null,
       isSubscriptionActive
     });
-  }, [isAdmin, isTeamMember, loading, gracePeriodExpired, hasCachedData, subscription, isSubscriptionActive]);
+  }, [isAdmin, isTeamMember, loading, gracePeriodExpired, hasCachedData, subscription, isSubscriptionActive, retryCount]);
 
   // Priority 1: Admin bypass
   if (isAdmin) {
@@ -166,20 +196,20 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     (subscription?.subscription_status === 'active') ||
     (subscription?.subscribed && (!subscription?.subscription_end || new Date(subscription.subscription_end) > new Date()));
   
-  // Priority 3: Active subscription
+  // Priority 3: Active subscription confirmed
   if (isActive) {
     return <>{children}</>;
   }
 
-  // If we have cached data showing active, trust it during loading
-  if (hasCachedData && loading) {
-    console.log('⏳ Loading with cache, showing children...');
+  // Priority 4: If we have ANY cached valid subscription, trust it while loading/refreshing
+  if (hasValidCache.current || hasCachedData) {
+    console.log('⏳ Has valid cache, showing children while confirming...');
     return <>{children}</>;
   }
 
-  // Grace period: show spinner instead of paywall
-  if (!gracePeriodExpired || loading) {
-    console.log('⏳ Grace period or loading, showing verification spinner...');
+  // Priority 5: Grace period - always show spinner, never paywall early
+  if (!gracePeriodExpired || loading || retryCount < 2) {
+    console.log('⏳ Grace period/loading/retry, showing verification spinner...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -206,13 +236,6 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
           <p className="text-muted-foreground">
             Pour accéder à {feature}, vous devez avoir un abonnement QUEROX actif.
           </p>
-          
-          {/* Debug info (hidden by default, visible in console) */}
-          <div className="text-xs text-left bg-muted/50 p-2 rounded hidden">
-            <p>User subscription status: {subscription?.subscription_status || 'null'}</p>
-            <p>Tier: {subscription?.subscription_tier || 'null'}</p>
-            <p>End: {subscription?.subscription_end || 'null'}</p>
-          </div>
           
           <div className="space-y-2">
             <Button 
