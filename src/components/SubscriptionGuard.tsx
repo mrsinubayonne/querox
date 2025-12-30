@@ -48,6 +48,33 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   // Déterminer si on a des données connues (cache ou subscription existante)
   const hasKnownSubscription = !!subscription || hasCachedData;
   
+  // Vérifier l'abonnement - plusieurs façons de valider
+  const isActive = isSubscriptionActive ||
+    (subscription?.subscription_status === 'active') ||
+    (subscription?.subscribed && (!subscription?.subscription_end || new Date(subscription.subscription_end) > new Date()));
+  
+  console.log('🔐 SubscriptionGuard check:', {
+    isActive,
+    tier: subscription?.subscription_tier,
+    status: subscription?.subscription_status,
+    subscribed: subscription?.subscribed,
+    hasSubscription: !!subscription,
+    hasCachedData,
+    loading,
+    isSubscriptionActive
+  });
+
+  // Si on est actif, laisser passer immédiatement (priorité maximale)
+  if (isActive) {
+    return <>{children}</>;
+  }
+
+  // Si on a des données en cache qui montrent un abonnement actif, laisser passer
+  if (hasCachedData && !loading) {
+    // Le cache existe mais l'abonnement n'est pas actif - on continue vers le blocage
+    console.log('⚠️ Cache présent mais abonnement inactif');
+  }
+  
   // Ne bloquer que lors du tout premier chargement sans aucune donnée
   const isInitialLoading = loading && !hasKnownSubscription && !isAdmin;
   
@@ -63,27 +90,14 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     );
   }
 
-  // Si on est en train de refetch mais qu'on a déjà des données, on laisse passer
+  // Si on est en train de refetch mais qu'on a déjà des données, attendre un peu
+  // SAUF si on sait déjà que l'abonnement est actif
   if (loading && hasKnownSubscription) {
-    console.log('🔄 Refetch en cours, utilisation des données existantes');
-  }
-
-  // Vérifier l'abonnement
-  const isActive = isSubscriptionActive ||
-    (subscription?.subscription_status === 'active') ||
-    (subscription?.subscribed && (!subscription?.subscription_end || new Date(subscription.subscription_end) > new Date()));
-
-  console.log('🔐 SubscriptionGuard check:', {
-    isActive,
-    tier: subscription?.subscription_tier,
-    status: subscription?.subscription_status,
-    hasSubscription: !!subscription,
-    hasCachedData,
-    loading
-  });
-
-  if (isActive) {
-    return <>{children}</>;
+    console.log('🔄 Refetch en cours, utilisation des données existantes - en attente...');
+    // Laisser passer si le cache indique un abonnement potentiellement valide
+    if (subscription?.subscription_status === 'active' || subscription?.subscribed) {
+      return <>{children}</>;
+    }
   }
 
   return (
