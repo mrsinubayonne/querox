@@ -158,7 +158,27 @@ export const useSubscription = () => {
       return;
     }
 
+    // Set loading true at the START of refetch to trigger grace period in guard
+    setLoading(true);
+    
     console.log('🔍 Fetching subscription for user:', user.id, user.email, { forceRefresh });
+
+    // If not force refresh, check cache first
+    if (!forceRefresh) {
+      const cached = getCachedSubscription(user.id);
+      if (cached) {
+        console.log('📦 Using cached subscription:', { 
+          tier: cached.subscription_tier, 
+          status: cached.subscription_status 
+        });
+        setSubscription(cached);
+        setHasCachedData(true);
+        setLoading(false);
+        return;
+      }
+    } else {
+      console.log('🔄 Force refresh: ignoring cache');
+    }
 
     const isAdmin = await isAdminUser();
     
@@ -219,6 +239,7 @@ export const useSubscription = () => {
               .update({ user_id: user.id })
               .eq('id', record.id);
             record.user_id = user.id;
+            console.log('🔗 Linked user_id to subscriber record');
           } catch (linkErr) {
             console.warn('Impossible de lier user_id au subscriber:', linkErr);
           }
@@ -234,23 +255,28 @@ export const useSubscription = () => {
           tier: record.subscription_tier, 
           status: record.subscription_status,
           subscribed: record.subscribed,
+          end: record.subscription_end,
           userId: user.id,
           email: user.email
         });
         setSubscription(record);
         setCachedSubscription(user.id, record);
+        setHasCachedData(true);
       } else {
         console.warn('⚠️ Aucun abonnement trouvé pour:', { userId: user.id, email: user.email });
         setSubscription(null);
-        setCachedSubscription(user.id, null);
+        // Don't cache null - allow retry on next check
       }
     } catch (error) {
       console.error('Erreur fetchSubscription:', error);
-      setSubscription(null);
+      // Don't clear subscription on error - keep last known good state
+      if (!subscription) {
+        setSubscription(null);
+      }
     } finally {
       setLoading(false);
     }
-  }, [user, isAdminUser]);
+  }, [user, isAdminUser, subscription]);
 
   // Charger le cache au montage
   useEffect(() => {
