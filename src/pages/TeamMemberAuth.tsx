@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Lock } from 'lucide-react';
+import { Users, Lock, Loader2 } from 'lucide-react';
 
 const TeamMemberAuth: React.FC = () => {
   const navigate = useNavigate();
@@ -22,14 +22,17 @@ const TeamMemberAuth: React.FC = () => {
     setLoading(true);
 
     try {
-      // Verify access code
-      const { data: memberData, error: verifyError } = await supabase
-        .rpc('verify_team_access', {
+      // Use team_member_login RPC for secure login
+      const { data: memberData, error: loginError } = await supabase
+        .rpc('team_member_login', {
           _email: formData.email,
           _access_code: formData.accessCode.toUpperCase()
         });
 
-      if (verifyError) throw verifyError;
+      if (loginError) {
+        console.error('Login RPC error:', loginError);
+        throw loginError;
+      }
 
       if (!memberData || memberData.length === 0) {
         toast({
@@ -43,16 +46,6 @@ const TeamMemberAuth: React.FC = () => {
 
       const member = memberData[0];
 
-      // outlet_id is already returned by verify_team_access, no extra fetch needed
-
-      // Update last login
-      await supabase
-        .from('team_members')
-        .update({ 
-          last_login_at: new Date().toISOString()
-        })
-        .eq('id', member.member_id);
-
       // Store team member session info in localStorage with 8-hour expiration
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 8);
@@ -61,47 +54,29 @@ const TeamMemberAuth: React.FC = () => {
         memberId: member.member_id,
         ownerId: member.owner_id,
         memberEmail: formData.email,
-        role: member.role,
+        role: member.member_role,
         outletId: member.outlet_id,
         expiresAt: expiresAt.toISOString()
       }));
 
-      // CRITICAL: Ensure outlet is properly set before navigation
+      // Set outlet if assigned
       if (member.outlet_id) {
-        // 1. Store in localStorage FIRST (highest priority)
         localStorage.setItem('selectedOutletId', member.outlet_id);
         console.log('✅ Outlet set in localStorage:', member.outlet_id);
-        
-        // 2. Update profile in database
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ selected_outlet_id: member.outlet_id })
-            .eq('id', user.id);
-          
-          if (profileError) {
-            console.error('Error updating profile outlet:', profileError);
-          } else {
-            console.log('✅ Profile outlet updated in database');
-          }
-        }
       } else {
         console.warn('⚠️ No outlet_id assigned to this team member');
       }
 
-      // Log activity
-      await supabase
-        .from('team_activity_logs')
-        .insert({
-          team_member_id: member.member_id,
-          action_type: 'login',
-          action_description: 'Connexion réussie'
-        });
+      // Log activity using RPC function
+      await supabase.rpc('log_team_activity', {
+        _member_id: member.member_id,
+        _action_type: 'login',
+        _action_description: 'Connexion réussie'
+      });
 
       toast({
         title: "Connexion réussie ✅",
-        description: `Bienvenue ! Vous êtes connecté en tant que ${member.role}`
+        description: `Bienvenue ! Vous êtes connecté en tant que ${member.member_role}`
       });
 
       console.log('🔄 Redirecting to dashboard...');
@@ -172,7 +147,14 @@ const TeamMemberAuth: React.FC = () => {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Connexion...' : 'Se connecter'}
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Connexion...
+                </>
+              ) : (
+                'Se connecter'
+              )}
             </Button>
 
             <div className="text-center text-sm">

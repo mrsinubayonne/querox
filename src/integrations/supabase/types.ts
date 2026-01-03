@@ -2318,6 +2318,16 @@ export type Database = {
       }
     }
     Functions: {
+      accept_team_invitation: {
+        Args: { _email: string; _token: string }
+        Returns: {
+          full_name: string
+          member_id: string
+          member_role: string
+          outlet_id: string
+          owner_id: string
+        }[]
+      }
       admin_revenue_stats_policy: { Args: never; Returns: boolean }
       calculate_churn_rate: {
         Args: { period_months?: number }
@@ -2534,6 +2544,14 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_current_user_admin: { Args: never; Returns: boolean }
+      log_team_activity: {
+        Args: {
+          _action_description?: string
+          _action_type: string
+          _member_id: string
+        }
+        Returns: undefined
+      }
       logout_outlet_profile: {
         Args: { _profile_id: string }
         Returns: undefined
@@ -2541,6 +2559,16 @@ export type Database = {
       public_reset_password: {
         Args: { new_password: string; user_email: string }
         Returns: Json
+      }
+      team_member_login: {
+        Args: { _access_code: string; _email: string }
+        Returns: {
+          full_name: string
+          member_id: string
+          member_role: string
+          outlet_id: string
+          owner_id: string
+        }[]
       }
       track_button_click: {
         Args: { _button_category?: string; _button_name: string }
@@ -2565,6 +2593,18 @@ export type Database = {
         Args: { _access_code: string; _email: string }
         Returns: {
           member_id: string
+          outlet_id: string
+          owner_id: string
+          role: string
+          status: string
+        }[]
+      }
+      verify_team_invitation: {
+        Args: { _token: string }
+        Returns: {
+          full_name: string
+          id: string
+          member_email: string
           outlet_id: string
           owner_id: string
           role: string
