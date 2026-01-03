@@ -143,11 +143,11 @@ const SelectProfile: React.FC = () => {
       console.log('✅ Code correct! Redirection...');
       if (selectedProfileForAccess) {
         selectProfile(selectedProfileForAccess);
-        // Rediriger vers les rapports pour Serveur et Caissier
+        // Rediriger vers les rapports pour Serveur et Caissier, sinon dashboard
         if (profile.title === 'Serveur' || profile.title === 'Caissier(e)') {
           navigate('/rapports');
         } else {
-          navigate('/select-outlet');
+          navigate('/dashboard');
         }
       }
       setIsAccessCodeDialogOpen(false);
