@@ -50,6 +50,15 @@ const Equipe: React.FC = () => {
       return;
     }
 
+    if (!email.trim()) {
+      toast({
+        title: "Email requis",
+        description: "Veuillez entrer l'adresse email du membre",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (selectedOutlets.length === 0) {
       toast({
         title: "PDV requis",
@@ -59,7 +68,7 @@ const Equipe: React.FC = () => {
       return;
     }
 
-    await inviteMember(email || undefined, selectedRole, fullName, phone, selectedOutlets);
+    await inviteMember(email, selectedRole, fullName, phone, selectedOutlets);
     
     // Small delay then fetch the newly created member
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -175,17 +184,15 @@ const Equipe: React.FC = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="email">Adresse email (optionnel)</Label>
+                    <Label htmlFor="email">Adresse email *</Label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="email@exemple.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      required
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      L'email est optionnel. Le membre pourra utiliser uniquement le code d'accès.
-                    </p>
                   </div>
 
                   <div>
