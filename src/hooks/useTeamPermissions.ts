@@ -66,19 +66,19 @@ export const useTeamPermissions = () => {
       const member: TeamMemberSession = JSON.parse(teamMemberStr);
       setTeamMember(member);
 
-      // Get permissions from database for this role
+      // Get permissions using the new RPC function that handles direct permissions with role fallback
       const { data, error } = await supabase
-        .rpc('get_role_permissions', {
-          _role_name: member.role
+        .rpc('get_team_member_permissions', {
+          _member_id: member.memberId
         });
 
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const dbPermissions = data.map((p: any) => p.permission_name);
-        setPermissions(dbPermissions);
+        const memberPermissions = data.map((p: any) => p.permission_name);
+        setPermissions(memberPermissions);
       } else {
-        // Fallback to predefined permissions
+        // Fallback to predefined permissions if no DB permissions found
         setPermissions(ROLE_PERMISSIONS[member.role] || []);
       }
     } catch (error) {

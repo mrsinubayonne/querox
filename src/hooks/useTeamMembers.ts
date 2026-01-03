@@ -93,10 +93,11 @@ export const useTeamMembers = () => {
 
   const inviteMember = async (
     email?: string,
-    role: string = 'serveur',
+    role: string = 'membre',
     fullName?: string,
     phone?: string,
-    outletIds?: string[]
+    outletIds?: string[],
+    permissionIds?: string[]
   ) => {
     if (!canAddMoreMembers()) {
       toast({
@@ -148,6 +149,22 @@ export const useTeamMembers = () => {
 
         if (outletsError) {
           console.error('Error inserting team member outlets:', outletsError);
+        }
+      }
+
+      // Insert direct permissions if provided
+      if (newMember && permissionIds && permissionIds.length > 0) {
+        const permissionInserts = permissionIds.map(permissionId => ({
+          team_member_id: newMember.id,
+          permission_id: permissionId
+        }));
+
+        const { error: permissionsError } = await supabase
+          .from('team_member_permissions')
+          .insert(permissionInserts);
+
+        if (permissionsError) {
+          console.error('Error inserting team member permissions:', permissionsError);
         }
       }
 

@@ -1743,6 +1743,42 @@ export type Database = {
           },
         ]
       }
+      team_member_permissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          permission_id: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          permission_id: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          permission_id?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_member_permissions_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           accepted_at: string | null
@@ -2576,6 +2612,14 @@ export type Database = {
         Returns: {
           outlet_id: string
           outlet_name: string
+        }[]
+      }
+      get_team_member_permissions: {
+        Args: { _member_id: string }
+        Returns: {
+          category: string
+          description: string
+          permission_name: string
         }[]
       }
       has_role: {
