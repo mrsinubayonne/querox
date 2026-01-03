@@ -3,14 +3,15 @@ import PageWithSidebar from '@/components/PageWithSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useOutlets } from '@/hooks/useOutlets';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, Mail, UserPlus, Trash2, Shield, Copy, Key, Share2 } from 'lucide-react';
 import { InvitationShareOptions } from '@/components/team/InvitationShareOptions';
+import { PermissionSelector } from '@/components/team/PermissionSelector';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -18,23 +19,16 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-const ROLES = [
-  { value: 'manager', label: 'Manager', description: 'Gestion complète sauf équipe' },
-  { value: 'serveur', label: 'Serveur', description: 'Commandes, réservations, clients' },
-  { value: 'caissier', label: 'Caissier', description: 'Commandes, paiements, factures' },
-  { value: 'cuisinier', label: 'Cuisinier', description: 'Consultation commandes et menu' },
-  { value: 'livreur', label: 'Livreur', description: 'Consultation commandes et clients' }
-];
-
 const Equipe: React.FC = () => {
   const { teamMembers, loading, inviteMember, removeMember, toggleMemberStatus, canAddMoreMembers, getTeamLimit } = useTeamMembers();
   const { subscription } = useSubscription();
   const { outlets, loading: outletsLoading } = useOutlets();
+  const { permissions, loading: permissionsLoading } = usePermissions();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedRole, setSelectedRole] = useState('serveur');
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [selectedOutlets, setSelectedOutlets] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState<{show: boolean, member: any} | null>(null);
@@ -68,7 +62,16 @@ const Equipe: React.FC = () => {
       return;
     }
 
-    await inviteMember(email, selectedRole, fullName, phone, selectedOutlets);
+    if (selectedPermissions.length === 0) {
+      toast({
+        title: "Permissions requises",
+        description: "Veuillez sélectionner au moins une permission",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    await inviteMember(email, 'membre', fullName, phone, selectedOutlets, selectedPermissions);
     
     // Small delay then fetch the newly created member
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -86,7 +89,7 @@ const Equipe: React.FC = () => {
     setEmail('');
     setFullName('');
     setPhone('');
-    setSelectedRole('serveur');
+    setSelectedPermissions([]);
     setSelectedOutlets([]);
     setOpen(false);
   };
@@ -210,22 +213,16 @@ const Equipe: React.FC = () => {
                   </div>
                   
                   <div>
-                    <Label htmlFor="role">Rôle *</Label>
-                    <Select value={selectedRole} onValueChange={setSelectedRole}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROLES.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            <div>
-                              <div className="font-medium">{role.label}</div>
-                              <div className="text-xs text-gray-500">{role.description}</div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Permissions *</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Sélectionnez les accès que ce membre aura
+                    </p>
+                    <PermissionSelector
+                      permissions={permissions}
+                      selectedPermissions={selectedPermissions}
+                      onChange={setSelectedPermissions}
+                      loading={permissionsLoading}
+                    />
                   </div>
 
                   <div>
@@ -242,7 +239,7 @@ const Equipe: React.FC = () => {
                         Aucun point de vente disponible. Créez d'abord un PDV.
                       </div>
                     ) : (
-                      <div className="space-y-2 border rounded-md p-3 max-h-48 overflow-y-auto">
+                      <div className="space-y-2 border rounded-md p-3 max-h-32 overflow-y-auto">
                         {outlets.map((outlet) => (
                           <label 
                             key={outlet.id} 
@@ -274,7 +271,7 @@ const Equipe: React.FC = () => {
                   <Button 
                     onClick={handleInvite} 
                     className="w-full bg-purple-600 hover:bg-purple-700"
-                    disabled={selectedOutlets.length === 0}
+                    disabled={selectedOutlets.length === 0 || selectedPermissions.length === 0}
                   >
                     <Share2 className="w-4 h-4 mr-2" />
                     Créer l'invitation
@@ -334,10 +331,6 @@ const Equipe: React.FC = () => {
                           </div>
                           <p className="text-sm text-gray-500 mb-2">{member.member_email} {member.phone && `• ${member.phone}`}</p>
                           <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                            <span className="flex items-center gap-1">
-                              <Shield className="w-4 h-4" />
-                              {ROLES.find(r => r.value === member.role)?.label || member.role}
-                            </span>
                             <span>Ajouté le {formatDate(member.invited_at)}</span>
                             {member.last_login_at && <span>• Dernière connexion: {formatDate(member.last_login_at)}</span>}
                             <span>• {member.actions_count} actions</span>
