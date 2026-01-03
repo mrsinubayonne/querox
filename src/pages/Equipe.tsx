@@ -332,6 +332,17 @@ const Equipe: React.FC = () => {
                             {member.last_login_at && <span>• Dernière connexion: {formatDate(member.last_login_at)}</span>}
                             <span>• {member.actions_count} actions</span>
                           </div>
+                          {/* Afficher les PDV assignés */}
+                          {member.outlets && member.outlets.length > 0 && (
+                            <div className="flex items-center gap-2 flex-wrap mt-2">
+                              <span className="text-xs text-muted-foreground">PDV:</span>
+                              {member.outlets.map((outlet) => (
+                                <Badge key={outlet.outlet_id} variant="outline" className="text-xs">
+                                  {outlet.outlet_name}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                           {(member as any).access_code && (
                             <div className="mt-3">
                               <Button
