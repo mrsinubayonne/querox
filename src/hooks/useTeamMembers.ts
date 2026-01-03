@@ -4,6 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from './useSubscription';
 
+export interface TeamMemberOutlet {
+  outlet_id: string;
+  outlet_name: string;
+}
+
 export interface TeamMember {
   id: string;
   owner_id: string;
@@ -20,6 +25,7 @@ export interface TeamMember {
   is_active: boolean;
   last_login_at: string | null;
   actions_count: number;
+  outlets?: TeamMemberOutlet[];
 }
 
 const TEAM_LIMITS = {
@@ -54,14 +60,30 @@ export const useTeamMembers = () => {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch team members
+      const { data: members, error } = await supabase
         .from('team_members')
         .select('*')
         .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTeamMembers((data || []) as TeamMember[]);
+
+      // Fetch outlets for each member using the RPC function
+      const membersWithOutlets: TeamMember[] = await Promise.all(
+        (members || []).map(async (member) => {
+          const { data: outlets } = await supabase
+            .rpc('get_team_member_outlets', { _member_id: member.id });
+          
+          return {
+            ...member,
+            outlets: (outlets || []) as TeamMemberOutlet[]
+          } as TeamMember;
+        })
+      );
+
+      setTeamMembers(membersWithOutlets);
     } catch (error: any) {
       console.error('Error fetching team members:', error);
     } finally {
@@ -92,13 +114,11 @@ export const useTeamMembers = () => {
       // Generate unique access code (used as invitation token too) - 6 characters max
       const accessCode = Math.random().toString(36).substr(2, 6).toUpperCase();
 
-      // Determine outlet_id: use first from outletIds array, or null
-      const outletId = outletIds && outletIds.length > 0 ? outletIds[0] : null;
-
       // Email is now optional - generate temp email if not provided
       const memberEmail = email || `temp_${accessCode}@querox.local`;
 
-      const { error } = await supabase
+      // Insert team member (outlet_id kept for backwards compat, but we use team_member_outlets now)
+      const { data: newMember, error } = await supabase
         .from('team_members')
         .insert({
           owner_id: user.id,
@@ -107,11 +127,29 @@ export const useTeamMembers = () => {
           full_name: fullName,
           phone,
           access_code: accessCode,
-          outlet_id: outletId,
+          outlet_id: outletIds && outletIds.length > 0 ? outletIds[0] : null,
           status: 'pending'
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      // Insert into team_member_outlets for all selected outlets
+      if (newMember && outletIds && outletIds.length > 0) {
+        const outletInserts = outletIds.map(outletId => ({
+          team_member_id: newMember.id,
+          outlet_id: outletId
+        }));
+
+        const { error: outletsError } = await supabase
+          .from('team_member_outlets')
+          .insert(outletInserts);
+
+        if (outletsError) {
+          console.error('Error inserting team member outlets:', outletsError);
+        }
+      }
 
       toast({
         title: "Membre invité ✅",
@@ -131,6 +169,7 @@ export const useTeamMembers = () => {
 
   const removeMember = async (memberId: string) => {
     try {
+      // team_member_outlets will be deleted automatically via CASCADE
       const { error } = await supabase
         .from('team_members')
         .delete()
@@ -179,6 +218,44 @@ export const useTeamMembers = () => {
     }
   };
 
+  const updateMemberOutlets = async (memberId: string, outletIds: string[]) => {
+    try {
+      // Delete existing outlets
+      await supabase
+        .from('team_member_outlets')
+        .delete()
+        .eq('team_member_id', memberId);
+
+      // Insert new outlets
+      if (outletIds.length > 0) {
+        const outletInserts = outletIds.map(outletId => ({
+          team_member_id: memberId,
+          outlet_id: outletId
+        }));
+
+        const { error } = await supabase
+          .from('team_member_outlets')
+          .insert(outletInserts);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "PDV mis à jour",
+        description: "Les points de vente assignés ont été modifiés",
+      });
+
+      await fetchTeamMembers();
+    } catch (error: any) {
+      console.error('Error updating member outlets:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour les PDV",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     fetchTeamMembers();
   }, [fetchTeamMembers]);
@@ -189,6 +266,7 @@ export const useTeamMembers = () => {
     inviteMember,
     removeMember,
     toggleMemberStatus,
+    updateMemberOutlets,
     canAddMoreMembers,
     getTeamLimit,
     refetch: fetchTeamMembers

@@ -1707,6 +1707,42 @@ export type Database = {
           },
         ]
       }
+      team_member_outlets: {
+        Row: {
+          created_at: string | null
+          id: string
+          outlet_id: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          outlet_id: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          outlet_id?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_outlets_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_member_outlets_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           accepted_at: string | null
@@ -2533,6 +2569,13 @@ export type Database = {
           month: string
           monthly_revenue: number
           new_subscribers: number
+        }[]
+      }
+      get_team_member_outlets: {
+        Args: { _member_id: string }
+        Returns: {
+          outlet_id: string
+          outlet_name: string
         }[]
       }
       has_role: {
