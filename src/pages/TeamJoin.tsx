@@ -8,17 +8,28 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Loader2, CheckCircle } from 'lucide-react';
 
+interface MemberData {
+  id: string;
+  full_name: string | null;
+  member_email: string;
+  role: string;
+  status: string;
+  owner_id: string;
+  outlet_id: string | null;
+}
+
 const TeamJoin: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
-  const [memberData, setMemberData] = useState<any>(null);
+  const [memberData, setMemberData] = useState<MemberData | null>(null);
   const [email, setEmail] = useState('');
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    if (!token) {
+    const inviteToken = searchParams.get('token');
+    if (!inviteToken) {
       toast({
         title: "Lien invalide",
         description: "Ce lien d'invitation n'est pas valide",
@@ -28,16 +39,20 @@ const TeamJoin: React.FC = () => {
       return;
     }
 
-    // Verify invitation token
+    setToken(inviteToken);
+
+    // Verify invitation token using RPC function
     const verifyToken = async () => {
       try {
         const { data, error } = await supabase
-          .from('team_members')
-          .select('*')
-          .eq('access_code', token)
-          .single();
+          .rpc('verify_team_invitation', { _token: inviteToken });
 
-        if (error || !data) {
+        if (error) {
+          console.error('RPC error:', error);
+          throw error;
+        }
+
+        if (!data || data.length === 0) {
           toast({
             title: "Invitation invalide",
             description: "Cette invitation n'existe pas ou a expiré",
@@ -47,9 +62,10 @@ const TeamJoin: React.FC = () => {
           return;
         }
 
-        setMemberData(data);
-        if (data.member_email) {
-          setEmail(data.member_email);
+        const member = data[0] as MemberData;
+        setMemberData(member);
+        if (member.member_email && !member.member_email.includes('@querox.local')) {
+          setEmail(member.member_email);
         }
       } catch (error) {
         console.error('Error verifying token:', error);
@@ -68,69 +84,63 @@ const TeamJoin: React.FC = () => {
   }, [searchParams, navigate, toast]);
 
   const handleContinue = async () => {
-    if (!email || !memberData) return;
+    if (!email || !memberData || !token) return;
 
     try {
       setLoading(true);
 
-      // Update member email if needed
-      if (email !== memberData.member_email) {
-        await supabase
-          .from('team_members')
-          .update({ member_email: email })
-          .eq('id', memberData.id);
+      // Accept invitation using RPC function
+      const { data: acceptData, error: acceptError } = await supabase
+        .rpc('accept_team_invitation', {
+          _token: token,
+          _email: email
+        });
+
+      if (acceptError) {
+        console.error('Accept error:', acceptError);
+        throw acceptError;
       }
 
-      // Update last login
-      await supabase
-        .from('team_members')
-        .update({ last_login_at: new Date().toISOString() })
-        .eq('id', memberData.id);
+      if (!acceptData || acceptData.length === 0) {
+        throw new Error('Échec de l\'acceptation de l\'invitation');
+      }
+
+      const acceptedMember = acceptData[0];
 
       // Store team member session
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 8);
 
       localStorage.setItem('teamMember', JSON.stringify({
-        memberId: memberData.id,
-        ownerId: memberData.owner_id,
+        memberId: acceptedMember.member_id,
+        ownerId: acceptedMember.owner_id,
         memberEmail: email,
-        role: memberData.role,
-        outletId: memberData.outlet_id,
+        role: acceptedMember.member_role,
+        outletId: acceptedMember.outlet_id,
         expiresAt: expiresAt.toISOString()
       }));
 
       // Set outlet if assigned
-      if (memberData.outlet_id) {
-        localStorage.setItem('selectedOutletId', memberData.outlet_id);
-        
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase
-            .from('profiles')
-            .update({ selected_outlet_id: memberData.outlet_id })
-            .eq('id', user.id);
-        }
+      if (acceptedMember.outlet_id) {
+        localStorage.setItem('selectedOutletId', acceptedMember.outlet_id);
       }
 
-      // Log activity
-      await supabase
-        .from('team_activity_logs')
-        .insert({
-          team_member_id: memberData.id,
-          action_type: 'login',
-          action_description: 'Connexion via lien d\'invitation'
-        });
+      // Log activity using RPC function
+      await supabase.rpc('log_team_activity', {
+        _member_id: acceptedMember.member_id,
+        _action_type: 'login',
+        _action_description: 'Connexion via lien d\'invitation'
+      });
 
       toast({
         title: "Bienvenue ! 🎉",
-        description: `Vous êtes connecté en tant que ${memberData.role}`
+        description: `Vous êtes connecté en tant que ${acceptedMember.member_role}`
       });
 
       // Force navigation to dashboard with outlet
       setTimeout(() => {
         navigate('/dashboard', { replace: true });
-        window.location.reload(); // Force refresh to ensure outlet is loaded
+        window.location.reload();
       }, 500);
 
     } catch (error: any) {

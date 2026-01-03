@@ -40,32 +40,46 @@ const Equipe: React.FC = () => {
   const [showShareOptions, setShowShareOptions] = useState<{show: boolean, member: any} | null>(null);
 
   const handleInvite = async () => {
-    if (selectedOutlets.length > 0) {
-      await inviteMember(email || undefined, selectedRole, fullName, phone, selectedOutlets);
-      
-      // Fetch updated members to get the newly created member with access code
-      const updatedMembers = await new Promise<any[]>((resolve) => {
-        setTimeout(async () => {
-          const { data } = await supabase
-            .from('team_members')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(1);
-          resolve(data || []);
-        }, 500);
+    // Validation
+    if (!fullName.trim()) {
+      toast({
+        title: "Nom requis",
+        description: "Veuillez entrer le nom complet du membre",
+        variant: "destructive"
       });
-      
-      if (updatedMembers.length > 0) {
-        setShowShareOptions({ show: true, member: updatedMembers[0] });
-      }
-      
-      setEmail('');
-      setFullName('');
-      setPhone('');
-      setSelectedRole('serveur');
-      setSelectedOutlets([]);
-      setOpen(false);
+      return;
     }
+
+    if (selectedOutlets.length === 0) {
+      toast({
+        title: "PDV requis",
+        description: "Veuillez sélectionner au moins un point de vente",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    await inviteMember(email || undefined, selectedRole, fullName, phone, selectedOutlets);
+    
+    // Small delay then fetch the newly created member
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const { data: updatedMembers } = await supabase
+      .from('team_members')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    if (updatedMembers && updatedMembers.length > 0) {
+      setShowShareOptions({ show: true, member: updatedMembers[0] });
+    }
+    
+    setEmail('');
+    setFullName('');
+    setPhone('');
+    setSelectedRole('serveur');
+    setSelectedOutlets([]);
+    setOpen(false);
   };
   
   const toggleOutletSelection = (outletId: string) => {
