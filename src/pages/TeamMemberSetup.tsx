@@ -15,6 +15,7 @@ const TeamMemberSetup: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [memberData, setMemberData] = useState<any>(null);
+  const [accessCodeChoice, setAccessCodeChoice] = useState<'keep' | 'change' | null>(null);
   const [newAccessCode, setNewAccessCode] = useState('');
   const [confirmAccessCode, setConfirmAccessCode] = useState('');
 
@@ -63,32 +64,48 @@ const TeamMemberSetup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newAccessCode.length !== 6) {
+    if (!accessCodeChoice) {
       toast({
-        title: "Code invalide",
-        description: "Le code d'accès doit contenir exactement 6 caractères",
+        title: "Choix requis",
+        description: "Veuillez choisir si vous souhaitez garder ou changer votre code d'accès",
         variant: "destructive"
       });
       return;
     }
 
-    if (newAccessCode !== confirmAccessCode) {
-      toast({
-        title: "Erreur",
-        description: "Les codes d'accès ne correspondent pas",
-        variant: "destructive"
-      });
-      return;
+    // Si l'utilisateur veut changer son code
+    if (accessCodeChoice === 'change') {
+      if (newAccessCode.length !== 6) {
+        toast({
+          title: "Code invalide",
+          description: "Le code d'accès doit contenir exactement 6 caractères",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (newAccessCode !== confirmAccessCode) {
+        toast({
+          title: "Erreur",
+          description: "Les codes d'accès ne correspondent pas",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     setLoading(true);
 
     try {
-      // Mettre à jour le membre avec le nouveau code d'accès
+      const finalAccessCode = accessCodeChoice === 'keep' 
+        ? memberData.access_code 
+        : newAccessCode.toUpperCase();
+
+      // Mettre à jour le membre avec le code d'accès (nouveau ou existant)
       const { error: updateError } = await supabase
         .from('team_members')
         .update({
-          access_code: newAccessCode.toUpperCase(),
+          access_code: finalAccessCode,
           status: 'accepted',
           accepted_at: new Date().toISOString(),
           needs_password_setup: false,
@@ -104,12 +121,16 @@ const TeamMemberSetup: React.FC = () => {
         .insert({
           team_member_id: memberData.id,
           action_type: 'setup',
-          action_description: 'Configuration initiale du compte'
+          action_description: accessCodeChoice === 'keep' 
+            ? 'Configuration initiale - code conservé' 
+            : 'Configuration initiale - nouveau code défini'
         });
 
       toast({
         title: "Configuration réussie ! 🎉",
-        description: "Votre code d'accès a été défini avec succès",
+        description: accessCodeChoice === 'keep' 
+          ? "Votre compte est prêt. Utilisez votre code actuel pour vous connecter."
+          : "Votre nouveau code d'accès a été défini avec succès",
       });
 
       // Rediriger vers la page de connexion
@@ -120,7 +141,7 @@ const TeamMemberSetup: React.FC = () => {
       console.error('Error setting up access code:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de configurer votre code d'accès",
+        description: "Impossible de configurer votre compte",
         variant: "destructive"
       });
     } finally {
@@ -170,53 +191,115 @@ const TeamMemberSetup: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="newAccessCode">Nouveau code d'accès *</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="newAccessCode"
-                  type="text"
-                  required
-                  value={newAccessCode}
-                  onChange={(e) => setNewAccessCode(e.target.value.toUpperCase())}
-                  placeholder="XXXXXX"
-                  maxLength={6}
-                  className="pl-10 uppercase font-mono tracking-wider"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Choisissez un code à 6 caractères (lettres et chiffres)
+            {/* Afficher le code actuel */}
+            <div className="p-4 bg-muted rounded-lg border">
+              <p className="text-sm font-medium mb-2">Votre code d'accès actuel :</p>
+              <p className="text-2xl font-mono tracking-widest text-center font-bold text-purple-600">
+                {memberData?.access_code}
               </p>
             </div>
 
-            <div>
-              <Label htmlFor="confirmAccessCode">Confirmer le code *</Label>
-              <div className="relative">
-                <CheckCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="confirmAccessCode"
-                  type="text"
-                  required
-                  value={confirmAccessCode}
-                  onChange={(e) => setConfirmAccessCode(e.target.value.toUpperCase())}
-                  placeholder="XXXXXX"
-                  maxLength={6}
-                  className="pl-10 uppercase font-mono tracking-wider"
-                />
+            {/* Choix : garder ou changer */}
+            <div className="space-y-3">
+              <Label>Que souhaitez-vous faire ?</Label>
+              
+              <div 
+                onClick={() => setAccessCodeChoice('keep')}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  accessCodeChoice === 'keep' 
+                    ? 'border-purple-500 bg-purple-50' 
+                    : 'border-border hover:border-purple-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    accessCodeChoice === 'keep' ? 'border-purple-500' : 'border-muted-foreground'
+                  }`}>
+                    {accessCodeChoice === 'keep' && (
+                      <div className="w-3 h-3 bg-purple-500 rounded-full" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium">Garder ce code</p>
+                    <p className="text-sm text-muted-foreground">Continuer avec le code actuel</p>
+                  </div>
+                </div>
+              </div>
+
+              <div 
+                onClick={() => setAccessCodeChoice('change')}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  accessCodeChoice === 'change' 
+                    ? 'border-purple-500 bg-purple-50' 
+                    : 'border-border hover:border-purple-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    accessCodeChoice === 'change' ? 'border-purple-500' : 'border-muted-foreground'
+                  }`}>
+                    {accessCodeChoice === 'change' && (
+                      <div className="w-3 h-3 bg-purple-500 rounded-full" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium">Changer le code</p>
+                    <p className="text-sm text-muted-foreground">Définir un nouveau code personnel</p>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Formulaire de nouveau code (visible seulement si "change" est sélectionné) */}
+            {accessCodeChoice === 'change' && (
+              <div className="space-y-4 pt-2">
+                <div>
+                  <Label htmlFor="newAccessCode">Nouveau code d'accès *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      id="newAccessCode"
+                      type="text"
+                      value={newAccessCode}
+                      onChange={(e) => setNewAccessCode(e.target.value.toUpperCase())}
+                      placeholder="XXXXXX"
+                      maxLength={6}
+                      className="pl-10 uppercase font-mono tracking-wider"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Choisissez un code à 6 caractères (lettres et chiffres)
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="confirmAccessCode">Confirmer le code *</Label>
+                  <div className="relative">
+                    <CheckCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      id="confirmAccessCode"
+                      type="text"
+                      value={confirmAccessCode}
+                      onChange={(e) => setConfirmAccessCode(e.target.value.toUpperCase())}
+                      placeholder="XXXXXX"
+                      maxLength={6}
+                      className="pl-10 uppercase font-mono tracking-wider"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" 
-              disabled={loading}
+              disabled={loading || !accessCodeChoice}
             >
-              {loading ? 'Configuration...' : 'Définir mon code d\'accès'}
+              {loading ? 'Configuration...' : accessCodeChoice === 'keep' ? 'Confirmer et continuer' : 'Définir mon nouveau code'}
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              <p>Vous pourrez utiliser ce code pour vous connecter ultérieurement</p>
+              <p>Vous utiliserez ce code pour vous connecter ultérieurement</p>
             </div>
           </form>
         </CardContent>
