@@ -260,6 +260,9 @@ export const TeamInvitationSystem: React.FC = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      L'email est requis. Le membre se connectera avec cet email et son code d'accès.
+                    </p>
                   </div>
 
                   <div>
