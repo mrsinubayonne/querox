@@ -32,14 +32,20 @@ export const EquipeTab: React.FC = () => {
   const [open, setOpen] = useState(false);
 
   const handleInvite = async () => {
-    if (email) {
-      await inviteMember(email, selectedRole, fullName, phone);
-      setEmail('');
-      setFullName('');
-      setPhone('');
-      setSelectedRole('serveur');
-      setOpen(false);
+    if (!email || !email.trim()) {
+      toast({
+        title: "Email requis",
+        description: "Veuillez entrer l'adresse email du membre",
+        variant: "destructive"
+      });
+      return;
     }
+    await inviteMember(email, selectedRole, fullName, phone);
+    setEmail('');
+    setFullName('');
+    setPhone('');
+    setSelectedRole('serveur');
+    setOpen(false);
   };
 
   const copyAccessCode = (code: string) => {
@@ -102,13 +108,14 @@ export const EquipeTab: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="email">Adresse email</Label>
+                <Label htmlFor="email">Adresse email *</Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="email@exemple.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
 
