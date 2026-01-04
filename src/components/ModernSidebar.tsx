@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, UserCircle, Utensils, UserPlus, Award } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, Utensils, UserPlus, Award, User } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
-import { useUserProfiles, ProfileTitle } from '@/hooks/useUserProfiles';
+
 import { useButtonTracking, TRACKED_BUTTONS } from '@/hooks/useButtonTracking';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,48 +51,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const [adminExpanded, setAdminExpanded] = useState(location.pathname.includes('/admin'));
 
   const selectedOutlet = outlets.find(o => o.id === selectedOutletId);
-
-  const { profiles, selectedProfileId, selectProfile: selectUserProfile, canAddMoreProfiles, getProfileLimit } = useUserProfiles();
-  const selectedProfile = profiles.find(p => p.id === selectedProfileId);
-
-  const [isAccessCodeDialogOpen, setIsAccessCodeDialogOpen] = useState(false);
-  const [selectedProfileForAccess, setSelectedProfileForAccess] = useState<{ id: string; title: ProfileTitle } | null>(null);
-  const [accessCode, setAccessCode] = useState('');
-
-  const ACCESS_CODES: Record<ProfileTitle, string[]> = {
-    'Admin': ['QRX-27A79'],
-    'Comptable': ['QRX-C8218'],
-    'Caissier(e)': ['QRX-B2A15', 'QRX-CAS77'],
-    'Serveur': ['QRX-B2A15', 'QRX-CAS77'],
-  };
-  
-  const handleProfileChange = (profileId: string) => {
-    const profile = profiles.find(p => p.id === profileId);
-    if (profile) {
-      setSelectedProfileForAccess({ id: profileId, title: profile.title });
-      setIsAccessCodeDialogOpen(true);
-    }
-  };
-
-  const handleAccessCodeSubmit = async () => {
-    if (!selectedProfileForAccess) return;
-
-    const validCodes = ACCESS_CODES[selectedProfileForAccess.title];
-    if (validCodes.includes(accessCode.toUpperCase())) {
-      await selectUserProfile(selectedProfileForAccess.id);
-      setIsAccessCodeDialogOpen(false);
-      setAccessCode('');
-      setSelectedProfileForAccess(null);
-      window.location.reload();
-    } else {
-      toast.error('Code d\'accès incorrect');
-    }
-  };
-
-  const handleLogoutProfile = () => {
-    localStorage.removeItem('selectedProfileId');
-    navigate('/select-profile');
-  };
 
   const handleOutletChange = async (outletId: string) => {
     await selectOutlet(outletId);
@@ -187,34 +145,9 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     permission: 'support'
   }].filter(item => hasPermission(item.permission as any));
 
-  // Filter menu items based on profile (AFTER menuItems is defined)
-  const getFilteredMenuItems = () => {
-    if (!selectedProfile) return menuItems;
-    
-    const title = selectedProfile.title;
-    
-    if (title === 'Admin') {
-      return menuItems; // Admin has access to everything
-    } else if (title === 'Caissier(e)') {
-      return menuItems.filter(item => 
-        ['Commandes', 'Tables', 'Factures', 'Clients (CRM)', 'Réservations', 'Rapports', 'Support'].includes(item.label)
-      );
-    } else if (title === 'Comptable') {
-      return menuItems.filter(item => 
-        ['Inventaire', 'Comptabilité', 'Statistiques', 'Rapports'].includes(item.label)
-      );
-    } else if (title === 'Serveur') {
-      return menuItems.filter(item => 
-        ['Commandes', 'Tables', 'Clients (CRM)', 'Rapports'].includes(item.label)
-      );
-    }
-    
-    return menuItems;
-  };
+  const filteredMenuItems = menuItems;
 
-  const filteredMenuItems = getFilteredMenuItems();
-
-  const marketingItems = hasPermission('marketing') && selectedProfile?.title === 'Admin' ? [{
+  const marketingItems = hasPermission('marketing') ? [{
     icon: TrendingUp,
     label: 'Aperçu Marketing',
     path: '/marketing'
@@ -232,7 +165,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/publicite-facebook'
   }] : [];
 
-  const servicesItems = selectedProfile?.title === 'Admin' ? [{
+  const servicesItems = [{
     icon: Headphones,
     label: 'Aperçu Services',
     path: '/services'
@@ -240,7 +173,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     icon: UserCheck,
     label: 'Consulting',
     path: '/consulting'
-  }] : [];
+  }];
 
   const adminItems = [
     {
@@ -296,21 +229,16 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   ];
 
   const bottomMenuItems = [
-    ...(hasPermission('settings') && selectedProfile?.title === 'Admin' ? [{
+    ...(hasPermission('settings') ? [{
       icon: Settings,
       label: 'Paramètres',
       path: '/parametres'
     }] : []),
-    ...(hasPermission('team') && selectedProfile?.title === 'Admin' ? [{
-      icon: Users,
-      label: 'Équipe',
-      path: '/parametres?tab=equipe'
-    }] : []),
-    ...(selectedProfile?.title === 'Admin' ? [{
+    {
       icon: CreditCard,
       label: 'Abonnement',
       path: '/abonnement'
-    }] : [])
+    }
   ];
 
   const handleNavigation = (path: string, label?: string) => {
@@ -357,66 +285,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
         </button>
       </div>
 
-      {/* Profile Selector - Hidden for admins */}
-      {!isAdmin && profiles.length > 0 && (
-        <div className={`p-3 border-b border-gray-200 ${collapsed ? 'flex justify-center' : ''}`}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className={`w-full justify-start ${collapsed ? 'w-10 h-10 p-0' : ''}`}>
-                <UserCircle size={18} className={collapsed ? '' : 'mr-2'} />
-                {!collapsed && (
-                  <span className="truncate text-sm">
-                    {selectedProfile?.name || selectedProfile?.title || 'Sélectionner...'}
-                  </span>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              {profiles.map((p) => (
-                <DropdownMenuItem
-                  key={p.id}
-                  onClick={() => handleProfileChange(p.id)}
-                  className="flex items-center justify-between cursor-pointer"
-                >
-                  <div className="flex items-center">
-                    <UserCircle size={16} className="mr-2" />
-                    <span>{p.name || p.title}</span>
-                  </div>
-                  {p.id === selectedProfileId && (
-                    <Check size={16} className="text-primary" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  if (canAddMoreProfiles()) {
-                    navigate('/select-profile');
-                  } else {
-                    navigate('/abonnement');
-                  }
-                }}
-                className="flex items-center cursor-pointer text-primary"
-              >
-                <Plus size={16} className="mr-2" />
-                <span>
-                  {canAddMoreProfiles()
-                    ? 'Ajouter un profil'
-                    : `Limite atteinte (${getProfileLimit()} max)`}
-                </span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleLogoutProfile}
-                className="flex items-center cursor-pointer text-red-600 hover:text-red-700"
-              >
-                <LogOut size={16} className="mr-2" />
-                <span>Fermer la session</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
 
       {/* Outlet Selector - Hidden for admins */}
       {!isAdmin && outlets.length > 0 && (
@@ -569,7 +437,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
           {profileSession && (
             <div className={`px-3 py-2 mb-2 rounded-lg bg-purple-50 border border-purple-200 ${collapsed ? 'hidden' : ''}`}>
               <div className="flex items-center gap-2 mb-1">
-                <UserCircle size={16} className="text-purple-600" />
+                <User size={16} className="text-purple-600" />
                 <span className="text-xs font-semibold text-purple-900">{profileSession.profileName}</span>
               </div>
               <p className="text-xs text-purple-600 capitalize">{profileSession.role}</p>
@@ -608,9 +476,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
           >
             <LogOut size={20} className="flex-shrink-0" />
             {!collapsed && (
-              <span className="ml-3">
-                {selectedProfile?.title === 'Admin' ? 'Déconnexion' : 'Fermer la session'}
-              </span>
+              <span className="ml-3">Déconnexion</span>
             )}
           </button>
         </div>
@@ -632,41 +498,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
         </div>
       )}
 
-      {/* Access Code Dialog */}
-      <AlertDialog open={isAccessCodeDialogOpen} onOpenChange={setIsAccessCodeDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Code d'accès requis</AlertDialogTitle>
-            <AlertDialogDescription>
-              Entrez le code d'accès pour ce profil
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Input
-              type="text"
-              placeholder="Code d'accès"
-              value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleAccessCodeSubmit();
-                }
-              }}
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setAccessCode('');
-              setSelectedProfileForAccess(null);
-            }}>
-              Annuler
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleAccessCodeSubmit}>
-              Valider
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>;
 };
 
