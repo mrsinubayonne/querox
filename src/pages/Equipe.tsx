@@ -4,14 +4,12 @@ import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useOutlets } from '@/hooks/useOutlets';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Users, Mail, UserPlus, Trash2, Shield, Copy, Key, Share2 } from 'lucide-react';
+import { Users, UserPlus, Trash2, Shield, Share2 } from 'lucide-react';
 import { InvitationShareOptions } from '@/components/team/InvitationShareOptions';
-import { PermissionSelector } from '@/components/team/PermissionSelector';
+import { AddMemberWizard } from '@/components/team/AddMemberWizard';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -25,52 +23,16 @@ const Equipe: React.FC = () => {
   const { outlets, loading: outletsLoading } = useOutlets();
   const { permissions, loading: permissionsLoading } = usePermissions();
   const { toast } = useToast();
-  const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
-  const [selectedOutlets, setSelectedOutlets] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState<{show: boolean, member: any} | null>(null);
 
-  const handleInvite = async () => {
-    // Validation
-    if (!fullName.trim()) {
-      toast({
-        title: "Nom requis",
-        description: "Veuillez entrer le nom complet du membre",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!email.trim()) {
-      toast({
-        title: "Email requis",
-        description: "Veuillez entrer l'adresse email du membre",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (selectedOutlets.length === 0) {
-      toast({
-        title: "PDV requis",
-        description: "Veuillez sélectionner au moins un point de vente",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (selectedPermissions.length === 0) {
-      toast({
-        title: "Permissions requises",
-        description: "Veuillez sélectionner au moins une permission",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    await inviteMember(email, 'membre', fullName, '', selectedOutlets, selectedPermissions);
+  const handleInvite = async (data: {
+    fullName: string;
+    email: string;
+    selectedPermissions: string[];
+    selectedOutlets: string[];
+  }) => {
+    await inviteMember(data.email, 'membre', data.fullName, '', data.selectedOutlets, data.selectedPermissions);
     
     // Small delay then fetch the newly created member
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -85,19 +47,7 @@ const Equipe: React.FC = () => {
       setShowShareOptions({ show: true, member: updatedMembers[0] });
     }
     
-    setEmail('');
-    setFullName('');
-    setSelectedPermissions([]);
-    setSelectedOutlets([]);
     setOpen(false);
-  };
-  
-  const toggleOutletSelection = (outletId: string) => {
-    setSelectedOutlets(prev => 
-      prev.includes(outletId) 
-        ? prev.filter(id => id !== outletId)
-        : [...prev, outletId]
-    );
   };
 
   const copyAccessCode = (code: string) => {
@@ -166,105 +116,20 @@ const Equipe: React.FC = () => {
                   Ajouter un membre
                 </Button>
               </DialogTrigger>
-              <DialogContent>
-                  <DialogHeader>
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
                   <DialogTitle>Ajouter un membre d'équipe</DialogTitle>
                   <DialogDescription>
-                    Un code d'accès unique sera généré pour ce membre. Il pourra se connecter sur la page de connexion principale avec son email et ce code.
+                    Un code d'accès unique sera généré pour ce membre.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div>
-                    <Label htmlFor="fullName">Nom complet</Label>
-                    <Input
-                      id="fullName"
-                      placeholder="Jean Dupont"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="email">Adresse email *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="email@exemple.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      L'email est requis. Le membre se connectera avec cet email et son code d'accès.
-                    </p>
-                  </div>
-
-                  
-                  <div>
-                    <Label>Permissions *</Label>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Sélectionnez les accès que ce membre aura
-                    </p>
-                    <PermissionSelector
-                      permissions={permissions}
-                      selectedPermissions={selectedPermissions}
-                      onChange={setSelectedPermissions}
-                      loading={permissionsLoading}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Points de vente assignés *</Label>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Sélectionnez les PDV auxquels ce membre aura accès
-                    </p>
-                    {outletsLoading ? (
-                      <div className="flex items-center justify-center p-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
-                      </div>
-                    ) : outlets.length === 0 ? (
-                      <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
-                        Aucun point de vente disponible. Créez d'abord un PDV.
-                      </div>
-                    ) : (
-                      <div className="space-y-2 border rounded-md p-3 max-h-32 overflow-y-auto">
-                        {outlets.map((outlet) => (
-                          <label 
-                            key={outlet.id} 
-                            className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedOutlets.includes(outlet.id)}
-                              onChange={() => toggleOutletSelection(outlet.id)}
-                              className="w-4 h-4 text-purple-600 rounded"
-                            />
-                            <div className="flex-1">
-                              <div className="font-medium text-sm">{outlet.name}</div>
-                              {outlet.address && (
-                                <div className="text-xs text-muted-foreground">{outlet.address}</div>
-                              )}
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                    {selectedOutlets.length > 0 && (
-                      <p className="text-xs text-purple-600 mt-2">
-                        {selectedOutlets.length} PDV sélectionné{selectedOutlets.length > 1 ? 's' : ''}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <Button 
-                    onClick={handleInvite} 
-                    className="w-full bg-purple-600 hover:bg-purple-700"
-                    disabled={selectedOutlets.length === 0 || selectedPermissions.length === 0}
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Créer l'invitation
-                  </Button>
-                </div>
+                <AddMemberWizard
+                  permissions={permissions}
+                  permissionsLoading={permissionsLoading}
+                  outlets={outlets}
+                  outletsLoading={outletsLoading}
+                  onSubmit={handleInvite}
+                />
               </DialogContent>
             </Dialog>
           </div>
