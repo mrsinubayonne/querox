@@ -86,6 +86,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
 
         const member = memberData[0];
 
+        // Check if this is a first-time login (status = pending) - redirect to setup
+        if (member.status === 'pending') {
+          toast({
+            title: "Configuration requise",
+            description: "Veuillez configurer votre compte avant de continuer"
+          });
+          setTimeout(() => {
+            navigate(`/team-setup?token=${code}`);
+          }, 100);
+          return;
+        }
+
         // Store team member session (normalized key)
         localStorage.setItem('teamMember', JSON.stringify({
           memberId: member.member_id,
