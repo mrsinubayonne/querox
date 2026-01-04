@@ -12,7 +12,14 @@ import {
   CalendarDays, 
   BarChart3, 
   Settings, 
-  UserCog 
+  UserCog,
+  LayoutGrid,
+  Calculator,
+  Calendar,
+  Globe,
+  QrCode,
+  FileText,
+  CreditCard
 } from 'lucide-react';
 
 export interface Permission {
@@ -39,55 +46,13 @@ const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ElementType; 
   analytics: { label: 'Statistiques', icon: BarChart3, color: 'text-indigo-600' },
   settings: { label: 'Paramètres', icon: Settings, color: 'text-gray-600' },
   team: { label: 'Équipe', icon: UserCog, color: 'text-red-600' },
-};
-
-// Profils types avec leurs permissions
-const ROLE_PRESETS: Record<string, { label: string; permissions: string[] }> = {
-  manager: {
-    label: 'Manager',
-    permissions: [
-      'view_orders', 'manage_orders',
-      'view_menu', 'manage_menu',
-      'view_customers', 'manage_customers',
-      'view_invoices', 'manage_invoices',
-      'view_inventory', 'manage_inventory',
-      'view_reservations', 'manage_reservations',
-      'view_analytics'
-    ]
-  },
-  serveur: {
-    label: 'Serveur',
-    permissions: [
-      'view_orders', 'manage_orders',
-      'view_menu',
-      'view_customers', 'manage_customers',
-      'view_reservations', 'manage_reservations'
-    ]
-  },
-  caissier: {
-    label: 'Caissier',
-    permissions: [
-      'view_orders', 'manage_orders',
-      'view_menu',
-      'view_invoices', 'manage_invoices',
-      'view_analytics'
-    ]
-  },
-  cuisinier: {
-    label: 'Cuisinier',
-    permissions: [
-      'view_orders',
-      'view_menu',
-      'view_inventory'
-    ]
-  },
-  livreur: {
-    label: 'Livreur',
-    permissions: [
-      'view_orders',
-      'view_customers'
-    ]
-  }
+  tables: { label: 'Tables', icon: LayoutGrid, color: 'text-cyan-600' },
+  accounting: { label: 'Comptabilité', icon: Calculator, color: 'text-emerald-600' },
+  events: { label: 'Événements', icon: Calendar, color: 'text-violet-600' },
+  website: { label: 'Site Web', icon: Globe, color: 'text-sky-600' },
+  qrcodes: { label: 'QR Codes', icon: QrCode, color: 'text-lime-600' },
+  reports: { label: 'Rapports', icon: FileText, color: 'text-rose-600' },
+  debtors: { label: 'Débiteurs', icon: CreditCard, color: 'text-teal-600' },
 };
 
 export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
@@ -131,17 +96,6 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
     }
   };
 
-  const applyPreset = (presetKey: string) => {
-    const preset = ROLE_PRESETS[presetKey];
-    if (!preset) return;
-    
-    const presetPermissionIds = permissions
-      .filter(p => preset.permissions.includes(p.name))
-      .map(p => p.id);
-    
-    onChange(presetPermissionIds);
-  };
-
   const selectAll = () => {
     onChange(permissions.map(p => p.id));
   };
@@ -160,25 +114,6 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Presets */}
-      <div>
-        <Label className="text-sm font-medium mb-2 block">Profils types (raccourcis)</Label>
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(ROLE_PRESETS).map(([key, preset]) => (
-            <Button
-              key={key}
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => applyPreset(key)}
-              className="text-xs"
-            >
-              {preset.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
       {/* Quick actions */}
       <div className="flex gap-2">
         <Button type="button" variant="ghost" size="sm" onClick={selectAll} className="text-xs">

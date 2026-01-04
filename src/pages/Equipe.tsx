@@ -27,7 +27,6 @@ const Equipe: React.FC = () => {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [selectedOutlets, setSelectedOutlets] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
@@ -71,7 +70,7 @@ const Equipe: React.FC = () => {
       return;
     }
 
-    await inviteMember(email, 'membre', fullName, phone, selectedOutlets, selectedPermissions);
+    await inviteMember(email, 'membre', fullName, '', selectedOutlets, selectedPermissions);
     
     // Small delay then fetch the newly created member
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -88,7 +87,6 @@ const Equipe: React.FC = () => {
     
     setEmail('');
     setFullName('');
-    setPhone('');
     setSelectedPermissions([]);
     setSelectedOutlets([]);
     setOpen(false);
@@ -201,16 +199,6 @@ const Equipe: React.FC = () => {
                     </p>
                   </div>
 
-                  <div>
-                    <Label htmlFor="phone">Téléphone</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+33 6 12 34 56 78"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                  </div>
                   
                   <div>
                     <Label>Permissions *</Label>
