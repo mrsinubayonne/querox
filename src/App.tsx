@@ -68,8 +68,6 @@ import Clients from '@/pages/Clients';
 import Debiteurs from '@/pages/Debiteurs';
 import PerformancePersonnel from '@/pages/PerformancePersonnel';
 import SelectOutlet from '@/pages/SelectOutlet';
-import SelectProfile from '@/pages/SelectProfile';
-import ProfileLogin from '@/pages/ProfileLogin';
 import TeamMemberAuth from '@/pages/TeamMemberAuth';
 import TeamJoin from '@/pages/TeamJoin';
 import TeamMemberSetup from '@/pages/TeamMemberSetup';
@@ -100,9 +98,7 @@ function App() {
               <Route path="/team-setup" element={<TeamMemberSetup />} />
 
               {/* Routes protégées */}
-              <Route path="/select-profile" element={<ProtectedRoute><SelectProfile /></ProtectedRoute>} />
               <Route path="/select-outlet" element={<ProtectedRoute><SelectOutlet /></ProtectedRoute>} />
-              <Route path="/profile-login" element={<ProtectedRoute><ProfileLogin /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/menus" element={<ProtectedRoute><Menus /></ProtectedRoute>} />
               <Route path="/all-menus" element={<ProtectedRoute><AllMenus /></ProtectedRoute>} />

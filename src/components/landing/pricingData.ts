@@ -22,7 +22,7 @@ export const plans = [
       "Menu digital QR code (commandes sur place)",
       "Jusqu'à 8 catégories de plats",
       "Jusqu'à 12 tables",
-      "1 administrateur + 2 employés max",
+      "Jusqu'à 2 membres d'équipe (connexion par email)",
       "Gestion des réservations simple",
       "Factures simples",
       "Statistiques basiques (commandes du jour)"
@@ -45,7 +45,7 @@ export const plans = [
       "Site web avancé (design pro + SEO basique)",
       "Menu digital QR code (commandes en salle ET en ligne, livraison & click&collect)",
       "Catégories et plats illimités",
-      "Jusqu'à 10 membres d'équipe",
+      "Jusqu'à 10 membres d'équipe (connexion par email)",
       "Tables illimitées",
       "Fidélisation clients (CRM + base de données clients)",
       "Statistiques avancées (ventes par période, plats rentables, suivi tendances)",

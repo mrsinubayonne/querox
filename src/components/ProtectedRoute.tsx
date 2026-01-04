@@ -2,7 +2,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserProfiles } from '@/hooks/useUserProfiles';
 import { useOutlets } from '@/hooks/useOutlets';
 
 interface ProtectedRouteProps {
@@ -15,13 +14,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiresSubscription = false 
 }) => {
   const { user, loading: authLoading, isTeamMember, teamMemberSession } = useAuth();
-  const { selectedProfileId, profiles, loading: profilesLoading } = useUserProfiles();
   const { selectedOutletId, loading: outletsLoading } = useOutlets();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Team members don't need profile/outlet checks - they have direct access
-  const loading = isTeamMember ? authLoading : (authLoading || (user && (profilesLoading || outletsLoading)));
+  // Team members don't need outlet checks - they have direct access
+  const loading = isTeamMember ? authLoading : (authLoading || (user && outletsLoading));
 
   useEffect(() => {
     // Ne rien faire pendant le chargement initial auth
@@ -42,8 +40,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
 
     // === REGULAR USER PATH ===
-    // Attendre le chargement des profiles/outlets pour utilisateurs normaux
-    if (profilesLoading || outletsLoading) {
+    // Attendre le chargement des outlets pour utilisateurs normaux
+    if (outletsLoading) {
       return;
     }
 
@@ -55,29 +53,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
     // Ne pas rediriger si on est déjà sur les pages de sélection ou d'abonnement
     if (
-      location.pathname === '/select-profile' || 
       location.pathname === '/select-outlet' ||
       location.pathname === '/abonnement'
     ) {
       return;
     }
 
-    // Vérifier profil et outlet pour utilisateurs normaux
-    const localProfileId = localStorage.getItem('selectedProfileId');
+    // Vérifier outlet pour utilisateurs normaux
     const localOutletId = localStorage.getItem('selectedOutletId');
-    const effectiveProfileId = selectedProfileId || localProfileId;
     const effectiveOutletId = selectedOutletId || localOutletId;
-
-    if (!effectiveProfileId) {
-      navigate('/select-profile', { replace: true });
-      return;
-    }
 
     if (!effectiveOutletId) {
       navigate('/select-outlet', { replace: true });
       return;
     }
-  }, [user, authLoading, isTeamMember, teamMemberSession, selectedProfileId, profilesLoading, selectedOutletId, outletsLoading, navigate, location.pathname]);
+  }, [user, authLoading, isTeamMember, teamMemberSession, selectedOutletId, outletsLoading, navigate, location.pathname]);
 
   // Show loading state while checking authentication
   if (loading) {
