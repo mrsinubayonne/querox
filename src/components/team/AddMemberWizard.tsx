@@ -9,6 +9,7 @@ import {
   Building2, 
   ChevronRight, 
   ChevronLeft,
+  ChevronDown,
   Check,
   UserCog,
   UtensilsCrossed,
@@ -261,7 +262,7 @@ export const AddMemberWizard: React.FC<AddMemberWizardProps> = ({
                         profile.color
                       )}
                     >
-                      <Icon className="w-5 h-5 mb-1" />
+                      <Icon className="w-4 h-4 mb-1" />
                       <span className="font-medium text-sm">{profile.name}</span>
                       <span className="text-xs opacity-75 text-center">{profile.description}</span>
                     </button>
@@ -271,7 +272,10 @@ export const AddMemberWizard: React.FC<AddMemberWizardProps> = ({
             </div>
 
             <div className="border-t pt-4">
-              <Label className="mb-2 block">Ou personnalisez les permissions</Label>
+              <div className="flex flex-col items-center gap-1 mb-3 text-muted-foreground">
+                <span className="text-sm">Ou personnalisez les permissions</span>
+                <ChevronDown className="w-4 h-4" />
+              </div>
               <PermissionSelector
                 permissions={permissions}
                 selectedPermissions={selectedPermissions}
