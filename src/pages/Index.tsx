@@ -12,6 +12,7 @@ import LandingPricing from '../components/landing/LandingPricing';
 import FAQ from '../components/landing/FAQ';
 import FinalCTA from '../components/landing/FinalCTA';
 import LandingFooter from '../components/landing/LandingFooter';
+import UpdateAnnouncementModal from '../components/UpdateAnnouncementModal';
 
 const Index: React.FC = () => {
   const { loading } = useAuth();
@@ -38,6 +39,7 @@ const Index: React.FC = () => {
   // Afficher la landing page pour tous les utilisateurs
   return (
     <div className="min-h-screen w-full bg-white">
+      <UpdateAnnouncementModal />
       <LandingNavigation />
       <main className="pt-16 lg:pt-20">
         <SalesFunnelHero />
