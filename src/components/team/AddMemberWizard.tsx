@@ -262,7 +262,7 @@ export const AddMemberWizard: React.FC<AddMemberWizardProps> = ({
                         profile.color
                       )}
                     >
-                      <Icon className="w-4 h-4 mb-1" />
+                      <Icon className="w-3 h-3 mb-1" />
                       <span className="font-medium text-sm">{profile.name}</span>
                       <span className="text-xs opacity-75 text-center">{profile.description}</span>
                     </button>
