@@ -1,30 +1,42 @@
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { WifiOff, Wifi, RefreshCw } from 'lucide-react';
+import { WifiOff, Wifi, RefreshCw, CloudOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { getPendingCount } from '@/lib/offlineQueue';
 
 export const NetworkStatusBanner = () => {
   const { status, isOffline, isUnstable, retryConnection } = useNetworkStatus();
   const [wasOffline, setWasOffline] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+  const queryClient = useQueryClient();
+  const pendingCount = getPendingCount();
 
-  // Show toast when connection is restored
+  // Show toast and sync when connection is restored
   useEffect(() => {
     if (wasOffline && status === 'online') {
       toast({
         title: 'Connexion rétablie',
-        description: 'Votre connexion internet est de nouveau stable.',
+        description: 'Synchronisation des données en cours...',
+      });
+      // Resume paused mutations and refetch data
+      queryClient.resumePausedMutations().then(() => {
+        queryClient.invalidateQueries();
       });
     }
     setWasOffline(isOffline || isUnstable);
-  }, [status, wasOffline, isOffline, isUnstable]);
+  }, [status, wasOffline, isOffline, isUnstable, queryClient]);
 
   const handleRetry = async () => {
     setIsRetrying(true);
     retryConnection();
+    // Resume paused mutations and refetch
+    queryClient.resumePausedMutations().then(() => {
+      queryClient.invalidateQueries();
+    });
     // Small delay to show loading state
-    setTimeout(() => setIsRetrying(false), 1000);
+    setTimeout(() => setIsRetrying(false), 1500);
   };
 
   if (status === 'online') {
@@ -47,9 +59,16 @@ export const NetworkStatusBanner = () => {
       
       <span className="text-center">
         {isOffline
-          ? 'Vous êtes hors ligne. Vérifiez votre connexion internet.'
-          : 'Connexion internet instable. Certaines fonctionnalités peuvent ne pas fonctionner.'}
+          ? 'Vous êtes hors ligne. Vos données sont disponibles en lecture seule.'
+          : 'Connexion instable. Les données seront synchronisées automatiquement.'}
       </span>
+
+      {pendingCount > 0 && (
+        <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded text-xs">
+          <CloudOff className="h-3 w-3" />
+          {pendingCount} en attente
+        </span>
+      )}
 
       <Button
         variant="ghost"

@@ -2,12 +2,13 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { registerSW } from 'virtual:pwa-register'
 import { toast } from '@/hooks/use-toast'
 import { markRequestFailed, markRequestSuccess } from '@/hooks/useNetworkStatus'
 import { NetworkStatusBanner } from '@/components/NetworkStatusBanner'
+import { cleanupQueue } from '@/lib/offlineQueue'
 
 // Helper to detect network errors
 const isNetworkError = (error: unknown): boolean => {
@@ -17,45 +18,66 @@ const isNetworkError = (error: unknown): boolean => {
       message.includes('failed to fetch') ||
       message.includes('network') ||
       message.includes('timeout') ||
-      message.includes('aborted')
+      message.includes('aborted') ||
+      message.includes('net::err')
     );
   }
   return false;
 };
 
+// Configure online manager to use browser's online status
+onlineManager.setEventListener((setOnline) => {
+  const onlineHandler = () => setOnline(true);
+  const offlineHandler = () => setOnline(false);
+  
+  window.addEventListener('online', onlineHandler);
+  window.addEventListener('offline', offlineHandler);
+  
+  return () => {
+    window.removeEventListener('online', onlineHandler);
+    window.removeEventListener('offline', offlineHandler);
+  };
+});
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30 * 1000,
-      gcTime: 5 * 60 * 1000,
+      staleTime: 60 * 1000, // 1 minute - keep data fresh longer
+      gcTime: 30 * 60 * 1000, // 30 minutes - keep cache longer
       retry: (failureCount, error) => {
         // Don't retry on network errors when offline
         if (!navigator.onLine) return false;
-        // Limit retries for network errors
+        // Retry more times for network errors with exponential backoff
         if (isNetworkError(error)) {
           markRequestFailed();
-          return failureCount < 1;
+          return failureCount < 3;
         }
-        return failureCount < 1;
+        return failureCount < 2;
       },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       refetchOnReconnect: true,
+      // Keep showing stale data while refetching
+      placeholderData: (previousData: unknown) => previousData,
+      // Network mode: always try to fetch, but don't fail if offline
+      networkMode: 'offlineFirst',
     },
     mutations: {
       retry: (failureCount, error) => {
-        if (!navigator.onLine) return false;
+        if (!navigator.onLine) {
+          // Will be paused and retried when online
+          return true;
+        }
         if (isNetworkError(error)) {
           markRequestFailed();
-          return false;
+          return failureCount < 3;
         }
-        return failureCount < 1;
+        return failureCount < 2;
       },
-      onError: (error) => {
-        if (isNetworkError(error)) {
-          markRequestFailed();
-        }
-      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      // Pause mutations when offline
+      networkMode: 'offlineFirst',
     },
   },
 });
@@ -65,6 +87,33 @@ queryClient.getQueryCache().subscribe((event) => {
   if (event.type === 'updated' && event.query.state.status === 'success') {
     markRequestSuccess();
   }
+});
+
+// Track mutation states
+queryClient.getMutationCache().subscribe((event) => {
+  if (event.type === 'updated') {
+    if (event.mutation?.state.status === 'success') {
+      markRequestSuccess();
+    } else if (event.mutation?.state.status === 'error' && isNetworkError(event.mutation?.state.error)) {
+      // Show toast for paused mutations
+      toast({
+        title: 'Action en attente',
+        description: 'Votre action sera exécutée dès que la connexion sera rétablie.',
+      });
+    }
+  }
+});
+
+// Clean up old queued mutations on startup
+cleanupQueue();
+
+// Retry paused mutations when coming back online
+window.addEventListener('online', () => {
+  // Resume paused mutations
+  queryClient.resumePausedMutations().then(() => {
+    // Refetch stale queries
+    queryClient.invalidateQueries();
+  });
 });
 
 // PWA hardening: avoid white screens after update / stale cache
