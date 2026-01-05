@@ -71,6 +71,7 @@ const DebtorPaymentModal: React.FC<DebtorPaymentModalProps> = ({
         payment_method: paymentMethod,
         notes: notes || undefined,
         outlet_id: outletId || undefined,
+        debtor_name: invoice.debtor_name, // Pass debtor name for transaction title
       });
 
       onOpenChange(false);

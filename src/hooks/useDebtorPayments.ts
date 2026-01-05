@@ -45,16 +45,86 @@ export function useDebtorPayments(outletId?: string) {
   });
 
   const createPayment = useMutation({
-    mutationFn: async (payment: Omit<DebtorPayment, "id" | "user_id" | "created_at">) => {
+    mutationFn: async (payment: Omit<DebtorPayment, "id" | "user_id" | "created_at"> & { debtor_name?: string }) => {
       if (!user?.id) throw new Error("User not authenticated");
 
+      // 1. Create the debtor payment
       const { data, error } = await supabase
         .from("debtor_payments" as any)
-        .insert([{ ...payment, user_id: user.id }])
+        .insert([{ 
+          invoice_id: payment.invoice_id,
+          debtor_id: payment.debtor_id,
+          amount: payment.amount,
+          payment_date: payment.payment_date,
+          payment_method: payment.payment_method,
+          notes: payment.notes,
+          outlet_id: payment.outlet_id,
+          user_id: user.id 
+        }])
         .select()
         .single();
 
       if (error) throw error;
+
+      // 2. Create accounting transaction for the payment
+      const transactionTitle = payment.debtor_name 
+        ? `Paiement débiteur - ${payment.debtor_name}`
+        : `Paiement débiteur`;
+
+      await supabase
+        .from("transactions")
+        .insert({
+          title: transactionTitle,
+          amount: payment.amount,
+          type: "income",
+          category: "paiement_debiteur",
+          date: payment.payment_date,
+          status: "completed",
+          payment_method: payment.payment_method,
+          description: payment.notes || `Paiement sur facture`,
+          user_id: user.id,
+          outlet_id: payment.outlet_id || null,
+        });
+
+      // 3. Check if invoice is fully paid and update status
+      const { data: allPayments } = await supabase
+        .from("debtor_payments" as any)
+        .select("amount")
+        .eq("invoice_id", payment.invoice_id);
+
+      const totalPaid = (allPayments || []).reduce((sum: number, p: any) => sum + p.amount, 0);
+
+      // Get invoice total
+      const { data: invoice } = await supabase
+        .from("invoices")
+        .select("total_amount")
+        .eq("id", payment.invoice_id)
+        .single();
+
+      if (invoice && totalPaid >= invoice.total_amount) {
+        await supabase
+          .from("invoices")
+          .update({ 
+            status: "paid",
+            paid_date: new Date().toISOString()
+          })
+          .eq("id", payment.invoice_id);
+
+        // Update debtor's current_debt
+        const { data: debtorInvoices } = await supabase
+          .from("invoices")
+          .select("total_amount")
+          .eq("business_customer_id", payment.debtor_id)
+          .neq("status", "paid");
+
+        const remainingDebt = (debtorInvoices || []).reduce((sum: number, inv: any) => sum + inv.total_amount, 0);
+
+        await supabase
+          .from("business_customers")
+          .update({ current_debt: remainingDebt })
+          .eq("id", payment.debtor_id);
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -64,7 +134,7 @@ export function useDebtorPayments(outletId?: string) {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       toast({
         title: "Paiement enregistré",
-        description: "Le paiement a été enregistré avec succès",
+        description: "Le paiement et la transaction comptable ont été enregistrés",
       });
     },
     onError: (error: Error) => {
