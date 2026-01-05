@@ -313,12 +313,31 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col overflow-hidden p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
-          <DialogTitle>Ouvrir la Table {tableNumber}</DialogTitle>
-          <DialogDescription>
-            Entrez le nombre de personnes et ajoutez les plats commandés.
-          </DialogDescription>
-        </DialogHeader>
+        {/* Header avec bouton d'action principal */}
+        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b bg-background">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <DialogTitle className="text-lg font-semibold">Ouvrir la Table {tableNumber}</DialogTitle>
+              <DialogDescription className="text-sm mt-1">
+                Ajoutez les plats commandés
+              </DialogDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={loading}>
+                Annuler
+              </Button>
+              <Button 
+                type="submit" 
+                size="sm"
+                disabled={loading || cart.length === 0}
+                onClick={handleSubmit}
+                className="min-w-[140px]"
+              >
+                {loading ? "Ouverture..." : `Ouvrir${cart.length > 0 ? ` (${totalAmount.toLocaleString()})` : ""}`}
+              </Button>
+            </div>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 md:gap-6 flex-1 overflow-hidden px-6">
           {/* FORMULAIRE - GAUCHE */}
@@ -499,21 +518,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             )}
           </div>
         </form>
-
-        {/* Footer sticky avec boutons */}
-        <div className="flex flex-col-reverse sm:flex-row gap-2 p-6 pt-4 border-t bg-background flex-shrink-0">
-          <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto">
-            Annuler
-          </Button>
-          <Button 
-            type="submit" 
-            className="w-full sm:flex-1"
-            disabled={loading || cart.length === 0}
-            onClick={handleSubmit}
-          >
-            {loading ? "Ouverture..." : "Ouvrir & Commander"}
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
