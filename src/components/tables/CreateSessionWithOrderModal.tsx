@@ -328,12 +328,12 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
               </Button>
               <Button 
                 type="submit" 
-                size="sm"
+                size="lg"
                 disabled={loading || cart.length === 0}
                 onClick={handleSubmit}
-                className="min-w-[140px]"
+                className="min-w-[180px] text-base font-semibold animate-pulse hover:animate-none shadow-lg"
               >
-                {loading ? "Ouverture..." : `Ouvrir${cart.length > 0 ? ` (${totalAmount.toLocaleString()})` : ""}`}
+                {loading ? "Ouverture..." : `Ouvrir & Commander${cart.length > 0 ? ` (${totalAmount.toLocaleString()})` : ""}`}
               </Button>
             </div>
           </div>
