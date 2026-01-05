@@ -139,6 +139,18 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
                       Tél: {settings.company_phone}
                     </p>
                   )}
+                  {settings?.tax_id && (
+                    <p className="text-sm text-muted-foreground">SIRET/TVA: {settings.tax_id}</p>
+                  )}
+                  {settings?.nif_number && (
+                    <p className="text-sm text-muted-foreground">NIU: {settings.nif_number}</p>
+                  )}
+                  {settings?.rccm_number && (
+                    <p className="text-sm text-muted-foreground">RCCM: {settings.rccm_number}</p>
+                  )}
+                  {settings?.other_registration && (
+                    <p className="text-sm text-muted-foreground">{settings.other_registration}</p>
+                  )}
                 </div>
                 <div className="text-right">
                   <Badge variant="secondary" className="mb-2">

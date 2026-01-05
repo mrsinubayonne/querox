@@ -9,6 +9,9 @@ interface InvoicePreviewProps {
     company_phone?: string;
     company_email?: string;
     tax_id?: string;
+    nif_number?: string;
+    rccm_number?: string;
+    other_registration?: string;
     payment_terms?: string;
     footer_note?: string;
     logo_url?: string;
@@ -43,6 +46,15 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
           )}
           {settings.tax_id && (
             <p className="text-xs text-black">SIRET/TVA: {settings.tax_id}</p>
+          )}
+          {settings.nif_number && (
+            <p className="text-xs text-black">NIU: {settings.nif_number}</p>
+          )}
+          {settings.rccm_number && (
+            <p className="text-xs text-black">RCCM: {settings.rccm_number}</p>
+          )}
+          {settings.other_registration && (
+            <p className="text-xs text-black">{settings.other_registration}</p>
           )}
         </div>
         <div className="text-right">
