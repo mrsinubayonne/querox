@@ -312,23 +312,20 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-[95vw] max-h-[85vh] p-0 gap-0 overflow-hidden">
-        {/* Header compact */}
-        <div className="p-4 pb-3 border-b bg-gradient-to-r from-primary/5 to-transparent">
-          <DialogTitle className="text-lg font-semibold">
-            Table {tableNumber}
-          </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground mt-0.5">
-            Ajoutez les plats commandés
+      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col overflow-hidden p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
+          <DialogTitle>Ouvrir la Table {tableNumber}</DialogTitle>
+          <DialogDescription>
+            Entrez le nombre de personnes et ajoutez les plats commandés.
           </DialogDescription>
-        </div>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
-          {/* Contenu scrollable */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Nombre de personnes - compact */}
-            <div className="flex items-center gap-3">
-              <Label htmlFor="guests" className="text-sm whitespace-nowrap">Personnes :</Label>
+        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 md:gap-6 flex-1 overflow-hidden px-6">
+          {/* FORMULAIRE - GAUCHE */}
+          <div className="flex-1 space-y-4 overflow-y-auto pr-2 md:pr-4 min-h-0">
+            {/* Nombre de personnes */}
+            <div className="space-y-2">
+              <Label htmlFor="guests">Nombre de personnes (optionnel)</Label>
               <Input
                 id="guests"
                 type="number"
@@ -336,122 +333,127 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                 placeholder="Ex: 4"
                 value={numberOfGuests}
                 onChange={(e) => setNumberOfGuests(e.target.value)}
-                className="w-24 h-9"
               />
             </div>
 
+
+            <Separator />
+
             {/* Recherche de plats */}
             <div className="space-y-2">
+              <Label htmlFor="search">Rechercher un plat</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher un plat..."
+                  id="search"
+                  placeholder="Nom du plat..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-10"
+                  className="pl-10"
                 />
               </div>
-              
               {filteredItems.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1">
-                  {filteredItems.slice(0, 8).map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => addToCart(item)}
-                      className="text-left p-3 bg-muted/50 hover:bg-primary/10 hover:border-primary/30 border rounded-lg transition-colors flex justify-between items-center gap-2"
-                    >
-                      <span className="font-medium text-sm truncate">{item.name}</span>
-                      <span className="text-xs text-primary font-semibold whitespace-nowrap">
-                        {item.price.toLocaleString()} F
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <ScrollArea className="h-36 md:h-48 border rounded-md">
+                  <div className="p-2 space-y-1">
+                    {filteredItems.slice(0, 10).map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => addToCart(item)}
+                        className="w-full text-left p-2 hover:bg-accent rounded-md text-sm flex justify-between items-center"
+                      >
+                        <span>{item.name}</span>
+                        <span className="text-muted-foreground">
+                          {item.price.toLocaleString()} FCFA
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
               )}
-              
-              {filteredItems.length === 0 && activeMenuId && searchTerm && (
-                <p className="text-sm text-muted-foreground text-center py-2">Aucun plat trouvé</p>
+              {filteredItems.length === 0 && activeMenuId && (
+                <p className="text-sm text-muted-foreground">Aucun plat trouvé</p>
               )}
             </div>
+          </div>
 
-            {/* Bouton article libre */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCustomItem(!showCustomItem)}
-              className="w-full border-dashed"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Ajouter un article libre
-            </Button>
+          {/* PANIER - DROITE */}
+          <div className="w-full md:w-[400px] flex flex-col border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-6 min-h-0">
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-base font-semibold">Panier ({cart.length})</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCustomItem(!showCustomItem)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Article libre
+              </Button>
+            </div>
 
             {/* Custom item form */}
             {showCustomItem && (
-              <div className="p-4 border rounded-lg bg-accent/5 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="custom-name" className="text-xs">Nom *</Label>
-                    <Input
-                      id="custom-name"
-                      placeholder="Plat du jour"
-                      value={customItemName}
-                      onChange={(e) => setCustomItemName(e.target.value)}
-                      className="h-9 mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="custom-price" className="text-xs">Prix (FCFA) *</Label>
-                    <Input
-                      id="custom-price"
-                      type="number"
-                      min="0"
-                      placeholder="5000"
-                      value={customItemPrice}
-                      onChange={(e) => setCustomItemPrice(e.target.value)}
-                      className="h-9 mt-1"
-                    />
-                  </div>
+              <div className="space-y-3 p-3 mb-3 border rounded-md bg-accent/10">
+                <div className="space-y-2">
+                  <Label htmlFor="custom-name">Nom de l'article *</Label>
+                  <Input
+                    id="custom-name"
+                    placeholder="Ex: Plat du jour"
+                    value={customItemName}
+                    onChange={(e) => setCustomItemName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="custom-price">Prix (FCFA) *</Label>
+                  <Input
+                    id="custom-price"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="Ex: 5000"
+                    value={customItemPrice}
+                    onChange={(e) => setCustomItemPrice(e.target.value)}
+                  />
                 </div>
                 <div className="flex gap-2">
-                  <Button type="button" size="sm" onClick={addCustomItem} className="flex-1 h-8">
+                  <Button type="button" size="sm" onClick={addCustomItem} className="flex-1">
                     Ajouter
                   </Button>
-                  <Button 
-                    type="button" 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => {
-                      setShowCustomItem(false);
-                      setCustomItemName("");
-                      setCustomItemPrice("");
-                    }}
-                    className="h-8"
-                  >
+                  <Button type="button" size="sm" variant="outline" onClick={() => {
+                    setShowCustomItem(false);
+                    setCustomItemName("");
+                    setCustomItemPrice("");
+                  }}>
                     Annuler
                   </Button>
                 </div>
               </div>
             )}
-
-            {/* Panier */}
-            {cart.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Commande ({cart.length} article{cart.length > 1 ? 's' : ''})</Label>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+            
+            <ScrollArea className="h-32 md:h-[300px] border rounded-md bg-muted/20 mb-4 flex-1 min-h-0">
+              {cart.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-8 px-4">
+                  <p className="text-center">Aucun plat ajouté</p>
+                  <p className="text-sm text-center mt-2">Recherchez et ajoutez des plats</p>
+                </div>
+              ) : (
+                <div className="space-y-2 p-3">
                   {cart.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center gap-2 p-2 bg-background border rounded-lg"
+                      className="flex items-center justify-between p-2 md:p-3 bg-background border rounded-md shadow-sm"
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.price.toLocaleString()} F × {item.quantity}
+                      <div className="flex-1 min-w-0 pr-2 md:pr-3">
+                        <p className="font-medium truncate text-sm md:text-base">{item.name}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">
+                          {item.price.toLocaleString()} × {item.quantity} ={" "}
+                          <span className="font-semibold text-foreground">
+                            {(item.price * item.quantity).toLocaleString()}
+                          </span>
                         </p>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         <Button
                           type="button"
                           size="icon"
@@ -476,7 +478,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                           size="icon"
                           variant="ghost"
                           onClick={() => removeFromCart(item.id)}
-                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          className="h-7 w-7 text-destructive hover:text-destructive ml-1"
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -484,38 +486,34 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Footer fixe */}
-          <div className="border-t bg-muted/30 p-4 space-y-3">
+              )}
+            </ScrollArea>
+            
             {cart.length > 0 && (
-              <div className="flex justify-between items-center px-1">
-                <span className="font-semibold">Total</span>
-                <span className="text-xl font-bold text-primary">{totalAmount.toLocaleString()} FCFA</span>
+              <div className="mb-4 p-3 md:p-4 bg-primary/10 border border-primary/20 rounded-md flex-shrink-0">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-base md:text-lg">Total</span>
+                  <span className="font-bold text-lg md:text-xl text-primary">{totalAmount.toLocaleString()} FCFA</span>
+                </div>
               </div>
             )}
-            <div className="flex gap-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose} 
-                disabled={loading}
-                className="flex-1 h-11"
-              >
-                Annuler
-              </Button>
-              <Button 
-                type="submit" 
-                className="flex-1 h-11 font-semibold"
-                disabled={loading || cart.length === 0}
-              >
-                {loading ? "Ouverture..." : "Ouvrir & Commander"}
-              </Button>
-            </div>
           </div>
         </form>
+
+        {/* Footer sticky avec boutons */}
+        <div className="flex flex-col-reverse sm:flex-row gap-2 p-6 pt-4 border-t bg-background flex-shrink-0">
+          <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto">
+            Annuler
+          </Button>
+          <Button 
+            type="submit" 
+            className="w-full sm:flex-1"
+            disabled={loading || cart.length === 0}
+            onClick={handleSubmit}
+          >
+            {loading ? "Ouverture..." : "Ouvrir & Commander"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
