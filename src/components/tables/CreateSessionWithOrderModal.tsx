@@ -312,17 +312,17 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl max-h-[90vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col overflow-hidden p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
           <DialogTitle>Ouvrir la Table {tableNumber}</DialogTitle>
           <DialogDescription>
             Entrez le nombre de personnes et ajoutez les plats commandés.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex gap-6 overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 md:gap-6 flex-1 overflow-hidden px-6">
           {/* FORMULAIRE - GAUCHE */}
-          <div className="flex-1 space-y-4 overflow-y-auto pr-4">
+          <div className="flex-1 space-y-4 overflow-y-auto pr-2 md:pr-4 min-h-0">
             {/* Nombre de personnes */}
             <div className="space-y-2">
               <Label htmlFor="guests">Nombre de personnes (optionnel)</Label>
@@ -353,7 +353,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                 />
               </div>
               {filteredItems.length > 0 && (
-                <ScrollArea className="h-48 border rounded-md">
+                <ScrollArea className="h-36 md:h-48 border rounded-md">
                   <div className="p-2 space-y-1">
                     {filteredItems.slice(0, 10).map((item) => (
                       <button
@@ -378,7 +378,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           </div>
 
           {/* PANIER - DROITE */}
-          <div className="w-[400px] flex flex-col border-l pl-6">
+          <div className="w-full md:w-[400px] flex flex-col border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-6 min-h-0">
             <div className="flex items-center justify-between mb-3">
               <Label className="text-base font-semibold">Panier ({cart.length})</Label>
               <Button
@@ -431,9 +431,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
               </div>
             )}
             
-            <ScrollArea className="h-[400px] border rounded-md bg-muted/20 mb-4">
+            <ScrollArea className="h-32 md:h-[300px] border rounded-md bg-muted/20 mb-4 flex-1 min-h-0">
               {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12 px-4">
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-8 px-4">
                   <p className="text-center">Aucun plat ajouté</p>
                   <p className="text-sm text-center mt-2">Recherchez et ajoutez des plats</p>
                 </div>
@@ -442,11 +442,11 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                   {cart.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-3 bg-background border rounded-md shadow-sm"
+                      className="flex items-center justify-between p-2 md:p-3 bg-background border rounded-md shadow-sm"
                     >
-                      <div className="flex-1 min-w-0 pr-3">
-                        <p className="font-medium truncate">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="flex-1 min-w-0 pr-2 md:pr-3">
+                        <p className="font-medium truncate text-sm md:text-base">{item.name}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           {item.price.toLocaleString()} × {item.quantity} ={" "}
                           <span className="font-semibold text-foreground">
                             {(item.price * item.quantity).toLocaleString()}
@@ -490,28 +490,30 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             </ScrollArea>
             
             {cart.length > 0 && (
-              <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-md">
+              <div className="mb-4 p-3 md:p-4 bg-primary/10 border border-primary/20 rounded-md flex-shrink-0">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-lg">Total</span>
-                  <span className="font-bold text-xl text-primary">{totalAmount.toLocaleString()} FCFA</span>
+                  <span className="font-bold text-base md:text-lg">Total</span>
+                  <span className="font-bold text-lg md:text-xl text-primary">{totalAmount.toLocaleString()} FCFA</span>
                 </div>
               </div>
             )}
-
-            <div className="flex flex-col gap-2">
-              <Button 
-                type="submit" 
-                className="w-full"
-                disabled={loading || cart.length === 0}
-              >
-                {loading ? "Ouverture..." : "Ouvrir & Commander"}
-              </Button>
-              <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="w-full">
-                Annuler
-              </Button>
-            </div>
           </div>
         </form>
+
+        {/* Footer sticky avec boutons */}
+        <div className="flex flex-col-reverse sm:flex-row gap-2 p-6 pt-4 border-t bg-background flex-shrink-0">
+          <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto">
+            Annuler
+          </Button>
+          <Button 
+            type="submit" 
+            className="w-full sm:flex-1"
+            disabled={loading || cart.length === 0}
+            onClick={handleSubmit}
+          >
+            {loading ? "Ouverture..." : "Ouvrir & Commander"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
