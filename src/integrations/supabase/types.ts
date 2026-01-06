@@ -1278,6 +1278,33 @@ export type Database = {
           },
         ]
       }
+      rate_limit_log: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          ip_address: unknown
+          request_count: number | null
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          ip_address: unknown
+          request_count?: number | null
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          ip_address?: unknown
+          request_count?: number | null
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           commission_amount: number
@@ -2622,13 +2649,15 @@ export type Database = {
           permission_name: string
         }[]
       }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["user_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      has_role:
+        | { Args: { _role: string; _user_id: string }; Returns: boolean }
+        | {
+            Args: {
+              _role: Database["public"]["Enums"]["user_role"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
       is_admin: { Args: never; Returns: boolean }
       is_current_user_admin: { Args: never; Returns: boolean }
       log_team_activity: {
