@@ -1,8 +1,9 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useOfflineData } from './useOfflineData';
+import { useOfflineInsert } from './useOfflineMutation';
 
 interface Transaction {
   id: string;
@@ -23,21 +24,12 @@ interface Transaction {
 export const useTransactions = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const outletId = localStorage.getItem('selectedOutletId') || undefined;
 
-  const fetchTransactions = useCallback(async () => {
-    if (!user) {
-      setTransactions([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      // Fetch ALL transactions for the user (not filtered by outlet)
-      // The outlet filter will be applied in the UI
+  const { data: transactions, isLoading: loading, refetch: fetchTransactions, isOffline } = useOfflineData<Transaction>({
+    table: 'transactions',
+    queryKey: ['transactions'],
+    buildQuery: async (userId) => {
       const { data, error } = await supabase
         .from('transactions')
         .select(`
@@ -46,164 +38,77 @@ export const useTransactions = () => {
             name
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('date', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching transactions:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les transactions",
-          variant: "destructive",
-        });
-        setTransactions([]);
-      } else {
-        const transformedTransactions: Transaction[] = (data || []).map(transaction => ({
-          id: transaction.id,
-          title: transaction.title,
-          amount: Number(transaction.amount),
-          type: transaction.type as 'income' | 'expense',
-          category: transaction.category,
-          date: transaction.date,
-          status: transaction.status as 'pending' | 'completed' | 'cancelled',
-          description: transaction.description,
-          created_at: transaction.created_at,
-          user_id: transaction.user_id,
-          outlet_id: transaction.outlet_id,
-          outlet_name: transaction.outlets?.name || 'Non défini',
-          payment_method: transaction.payment_method || 'Espèces',
-        }));
-        console.log('[useTransactions] fetched transactions:', transformedTransactions.length, transformedTransactions.slice(0, 5));
-        setTransactions(transformedTransactions);
-      }
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      setTransactions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, toast]);
+      if (error) return { data: null, error };
+
+      const transformedTransactions: Transaction[] = (data || []).map(transaction => ({
+        id: transaction.id,
+        title: transaction.title,
+        amount: Number(transaction.amount),
+        type: transaction.type as 'income' | 'expense',
+        category: transaction.category,
+        date: transaction.date,
+        status: transaction.status as 'pending' | 'completed' | 'cancelled',
+        description: transaction.description,
+        created_at: transaction.created_at,
+        user_id: transaction.user_id,
+        outlet_id: transaction.outlet_id,
+        outlet_name: transaction.outlets?.name || 'Non défini',
+        payment_method: transaction.payment_method || 'Espèces',
+      }));
+
+      return { data: transformedTransactions, error: null };
+    },
+    enabled: !!user,
+  });
+
+  const insertMutation = useOfflineInsert({
+    table: 'transactions',
+    queryKey: ['transactions', user?.id, outletId],
+    onSuccess: () => {
+      toast({
+        title: "Succès",
+        description: "Transaction ajoutée avec succès",
+      });
+    },
+  });
 
   const createTransaction = useCallback(async (transactionData: Omit<Transaction, 'id' | 'created_at' | 'user_id'>) => {
     if (!user) return false;
 
-    try {
-      // Get selected outlet
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId: string | null = null;
-
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = userProfile?.selected_outlet_id ?? null;
-      } else {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        outletId = userProfile?.selected_outlet_id ?? null;
-      }
-
-      if (!outletId) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('selected_outlet_id')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        outletId = profile?.selected_outlet_id ?? null;
-      }
-
-      if (!outletId) {
-        toast({
-          title: "Erreur",
-          description: "Aucun point de vente sélectionné",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert({
-          ...transactionData,
-          user_id: user.id,
-          outlet_id: outletId,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error adding transaction:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible d'ajouter la transaction",
-          variant: "destructive",
-        });
-        return false;
-      } else {
-        const newTransaction: Transaction = {
-          id: data.id,
-          title: data.title,
-          amount: Number(data.amount),
-          type: data.type as 'income' | 'expense',
-          category: data.category,
-          date: data.date,
-          status: data.status as 'pending' | 'completed' | 'cancelled',
-          description: data.description,
-          created_at: data.created_at,
-          user_id: data.user_id,
-        };
-        setTransactions(prev => [newTransaction, ...prev]);
-        toast({
-          title: "Succès",
-          description: "Transaction ajoutée avec succès",
-        });
-        return true;
-      }
-    } catch (error) {
-      console.error('Error adding transaction:', error);
+    if (!outletId) {
+      toast({
+        title: "Erreur",
+        description: "Aucun point de vente sélectionné",
+        variant: "destructive"
+      });
       return false;
     }
-  }, [user, toast]);
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
-
-  // Real-time listener for transactions
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('transactions-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'transactions',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          // Refetch transactions when any change occurs
-          fetchTransactions();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, fetchTransactions]);
+    try {
+      await insertMutation.mutateAsync({
+        ...transactionData,
+        user_id: user.id,
+        outlet_id: outletId,
+      } as unknown as Record<string, unknown>);
+      return true;
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter la transaction",
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [user, outletId, insertMutation, toast]);
 
   return {
     transactions,
     loading,
+    isOffline,
     createTransaction,
     addTransaction: createTransaction, // Keep both names for backward compatibility
     refetch: fetchTransactions,

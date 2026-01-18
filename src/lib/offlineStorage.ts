@@ -165,13 +165,14 @@ export async function clearAllMutations(): Promise<void> {
 // ============= AUTH STORAGE =============
 
 export interface OfflineAuthData {
-  userId: string;
-  email: string;
+  user: Record<string, unknown>;
+  userId?: string;
+  email?: string;
   accessToken: string;
   refreshToken: string;
-  expiresAt: number;
-  userMetadata: Record<string, unknown>;
-  cachedAt: number;
+  expiresAt?: number;
+  userMetadata?: Record<string, unknown>;
+  cachedAt?: number;
 }
 
 export async function storeAuthData(auth: OfflineAuthData): Promise<void> {
