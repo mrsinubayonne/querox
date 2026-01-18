@@ -36,7 +36,7 @@ export function useOfflineInsert<T extends Record<string, unknown>>(options: Use
 
       const { data, error } = await supabase.from(table).insert(variables as never).select().single();
       if (error) throw error;
-      return data as T;
+      return data as unknown as T;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey }); onSuccess?.(); },
     onError: (error: Error) => { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); onError?.(error); },
@@ -61,7 +61,7 @@ export function useOfflineUpdate<T extends Record<string, unknown>>(options: Use
       }
       const { data, error } = await supabase.from(table).update(variables as never).eq('id', variables.id).select().single();
       if (error) throw error;
-      return data as T;
+      return data as unknown as T;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey }); onSuccess?.(); },
     onError: (error: Error) => { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); onError?.(error); },
