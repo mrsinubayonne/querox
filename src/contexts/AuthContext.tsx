@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { storeAuthData, getAuthData, clearAuthData } from '@/lib/offlineStorage';
+import { preloadCriticalData } from '@/hooks/useOfflineData';
 
 interface TeamMemberSession {
   memberId: string;
@@ -17,6 +19,7 @@ interface AuthContextType {
   loading: boolean;
   isTeamMember: boolean;
   teamMemberSession: TeamMemberSession | null;
+  isOfflineMode: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName?: string, metadata?: any) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -60,6 +63,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(!initialState.isTeamMember);
   const [isTeamMember, setIsTeamMember] = useState(initialState.isTeamMember);
   const [teamMemberSession, setTeamMemberSession] = useState<TeamMemberSession | null>(initialState.session);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+
+  // Load cached auth data for offline mode
+  useEffect(() => {
+    const loadOfflineAuth = async () => {
+      if (!navigator.onLine) {
+        const cachedAuth = await getAuthData();
+        if (cachedAuth && cachedAuth.user) {
+          console.log('📱 Loading cached auth for offline mode');
+          setUser(cachedAuth.user as unknown as User);
+          setIsOfflineMode(true);
+          setLoading(false);
+        }
+      }
+    };
+    loadOfflineAuth();
+  }, []);
 
   useEffect(() => {
     // Check for team member session in localStorage
@@ -98,22 +118,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('Auth event:', event);
         setSession(session);
         setUser(session?.user ?? null);
+        setIsOfflineMode(false);
         
         // Only set loading to false if not a team member
         if (!hasTeamSession) {
           setLoading(false);
         }
         
+        // Store auth data for offline use when user signs in
+        if (event === 'SIGNED_IN' && session?.user) {
+          const outletId = localStorage.getItem('selectedOutletId') || undefined;
+          
+          // Store auth in IndexedDB
+          storeAuthData({
+            user: session.user as unknown as Record<string, unknown>,
+            accessToken: session.access_token,
+            refreshToken: session.refresh_token,
+          });
+          
+          // Preload critical data for offline use (deferred)
+          setTimeout(() => {
+            preloadCriticalData(session.user.id, outletId);
+          }, 0);
+        }
+        
         // Auto-refresh token when it's about to expire
         if (event === 'TOKEN_REFRESHED') {
           console.log('Token refreshed successfully');
+          // Update stored auth data
+          if (session) {
+            storeAuthData({
+              user: session.user as unknown as Record<string, unknown>,
+              accessToken: session.access_token,
+              refreshToken: session.refresh_token,
+            });
+          }
         }
         
         // Handle signed out event
         if (event === 'SIGNED_OUT') {
-          localStorage.clear(); // Clear all local data on sign out
+          localStorage.clear();
+          clearAuthData();
           setIsTeamMember(false);
           setTeamMemberSession(null);
+          setIsOfflineMode(false);
         }
       }
     );
@@ -124,6 +172,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Store for offline if we have a session
+        if (session?.user) {
+          storeAuthData({
+            user: session.user as unknown as Record<string, unknown>,
+            accessToken: session.access_token,
+            refreshToken: session.refresh_token,
+          });
+        }
       });
     }
 
@@ -163,8 +220,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     // Clear all localStorage data before signing out
     localStorage.clear();
+    await clearAuthData();
     setIsTeamMember(false);
     setTeamMemberSession(null);
+    setIsOfflineMode(false);
     await supabase.auth.signOut();
   };
 
@@ -174,6 +233,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loading,
     isTeamMember,
     teamMemberSession,
+    isOfflineMode,
     signIn,
     signUp,
     signOut,

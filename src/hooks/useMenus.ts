@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useOutlets } from '@/hooks/useOutlets';
+import { useOfflineData } from './useOfflineData';
 
 export interface Menu {
   id: string;
@@ -43,7 +44,6 @@ export interface MenuItem {
 }
 
 export const useMenus = () => {
-  const [menus, setMenus] = useState<Menu[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,10 +56,30 @@ export const useMenus = () => {
 
   const navigate = useNavigate();
   const tokenExpiredHandledRef = useRef(false);
-  const fetchMenus = useCallback(async () => {
-    if (!user || fetchingRef.current) {
-      if (!user) {
-        setMenus([]);
+
+  // Use offline data for menus
+  const { data: menus, isLoading: menusLoading, refetch: refetchMenus, isOffline } = useOfflineData<Menu>({
+    table: 'menus',
+    queryKey: ['menus'],
+    buildQuery: async (userId, outletId) => {
+      if (!outletId) return { data: [], error: null };
+      
+      const { data, error } = await supabase
+        .from('menus')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('outlet_id', outletId)
+        .order('created_at', { ascending: true });
+
+      return { data: data as Menu[] | null, error };
+    },
+    enabled: !!user && !!selectedOutletId,
+  });
+
+  // Fetch categories and items when menus change
+  const fetchCategoriesAndItems = useCallback(async () => {
+    if (!user || fetchingRef.current || !menus || menus.length === 0) {
+      if (!menus || menus.length === 0) {
         setCategories([]);
         setItems([]);
         setLoading(false);
@@ -69,49 +89,9 @@ export const useMenus = () => {
 
     try {
       fetchingRef.current = true;
-      setLoading(true);
       setError(null);
 
-      console.log('🔄 Fetching menus for user:', user.id);
-
-      // Filter by outlet - strict filtering
-      if (!selectedOutletId) {
-        console.log('⚠️ No outlet selected, showing no menus');
-        setMenus([]);
-        setCategories([]);
-        setItems([]);
-        setLoading(false);
-        return;
-      }
-
-      console.log('📍 Loading menus for outlet:', selectedOutletId);
-
-      let query = supabase
-        .from('menus')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('outlet_id', selectedOutletId);
-
-      const { data: menusData, error: menusError } = await query
-        .order('created_at', { ascending: true });
-
-      if (menusError) {
-        console.error('Error fetching menus:', menusError);
-        throw menusError;
-      }
-
-      console.log('📋 Menus found:', menusData?.length || 0);
-      setMenus(menusData || []);
-
-      // Si aucun menu, ne pas continuer
-      if (!menusData || menusData.length === 0) {
-        setCategories([]);
-        setItems([]);
-        return;
-      }
-
-      // Récupérer les catégories pour tous les menus de l'utilisateur
-      const menuIds = menusData.map(menu => menu.id);
+      const menuIds = menus.map(menu => menu.id);
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('menu_categories')
         .select('*')
@@ -119,15 +99,10 @@ export const useMenus = () => {
         .order('menu_id')
         .order('order_index', { ascending: true });
 
-      if (categoriesError) {
-        console.error('Error fetching categories:', categoriesError);
-        throw categoriesError;
-      }
+      if (categoriesError) throw categoriesError;
 
-      console.log('📂 Categories found:', categoriesData?.length || 0);
       setCategories(categoriesData || []);
 
-      // Récupérer les items pour toutes les catégories
       if (categoriesData && categoriesData.length > 0) {
         const categoryIds = categoriesData.map(cat => cat.id);
         
@@ -142,10 +117,7 @@ export const useMenus = () => {
           .order('order_index', { ascending: true })
           .order('name');
 
-        if (itemsError) {
-          console.error('Error fetching menu items:', itemsError);
-          throw itemsError;
-        }
+        if (itemsError) throw itemsError;
 
         const transformedItems: MenuItem[] = (itemsData || []).map(item => ({
           ...item,
@@ -153,17 +125,16 @@ export const useMenus = () => {
           category_name: item.menu_categories?.name || 'Sans catégorie'
         }));
 
-        console.log('🍽️ Menu items found:', transformedItems.length);
         setItems(transformedItems);
       } else {
         setItems([]);
       }
 
     } catch (error: any) {
-      console.error('🚨 Error in fetchMenus:', error);
+      console.error('Error fetching categories/items:', error);
       const code = error?.code;
       const message = error?.message || '';
-      // Gestion spécifique de l'expiration du JWT
+      
       if ((code === 'PGRST301' || message.includes('JWT expired')) && !tokenExpiredHandledRef.current) {
         tokenExpiredHandledRef.current = true;
         toast({
@@ -179,25 +150,27 @@ export const useMenus = () => {
         return;
       }
 
-      const errorMessage = message || 'Erreur lors du chargement des menus';
-      setError(errorMessage);
-      toast({
-        title: "Erreur",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      setError(message || 'Erreur lors du chargement');
     } finally {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [user?.id, selectedOutletId, toast, signOut, navigate]);
+  }, [user, menus, toast, signOut, navigate]);
+
+  useEffect(() => {
+    if (menus) {
+      fetchCategoriesAndItems();
+    }
+  }, [menus, fetchCategoriesAndItems]);
+
+  useEffect(() => {
+    setLoading(menusLoading);
+  }, [menusLoading]);
 
   const createDefaultMenu = useCallback(async () => {
     if (!user) return null;
 
     try {
-      console.log('🔧 Creating default menu for user:', user.id);
-
       if (!selectedOutletId) {
         toast({
           title: "Erreur",
@@ -219,14 +192,8 @@ export const useMenus = () => {
         .select()
         .single();
 
-      if (menuError) {
-        console.error('Error creating default menu:', menuError);
-        throw menuError;
-      }
+      if (menuError) throw menuError;
 
-      console.log('✅ Default menu created:', menu.id);
-
-      // Créer les catégories par défaut
       const defaultCategories = [
         { name: 'Entrées', order_index: 0 },
         { name: 'Plats principaux', order_index: 1 },
@@ -243,24 +210,18 @@ export const useMenus = () => {
         .from('menu_categories')
         .insert(categoriesToInsert);
 
-      if (categoriesError) {
-        console.error('Error creating default categories:', categoriesError);
-        throw categoriesError;
-      }
-
-      console.log('✅ Default categories created');
+      if (categoriesError) throw categoriesError;
 
       toast({
         title: "Menu créé",
         description: "Votre menu par défaut a été créé avec succès",
       });
 
-      // Recharger les données
-      await fetchMenus();
+      await refetchMenus();
       return menu.id;
 
     } catch (error: any) {
-      console.error('🚨 Error creating default menu:', error);
+      console.error('Error creating default menu:', error);
       toast({
         title: "Erreur",
         description: "Impossible de créer le menu par défaut",
@@ -268,11 +229,11 @@ export const useMenus = () => {
       });
       return null;
     }
-  }, [user?.id, selectedOutletId, toast, fetchMenus]);
+  }, [user?.id, selectedOutletId, toast, refetchMenus]);
 
   const refetch = useCallback(() => {
-    return fetchMenus();
-  }, [fetchMenus]);
+    return refetchMenus();
+  }, [refetchMenus]);
 
   const transferMenu = useCallback(async (menuId: string, newOutletId: string): Promise<boolean> => {
     try {
@@ -283,7 +244,6 @@ export const useMenus = () => {
         .eq('user_id', user?.id);
 
       if (error) {
-        console.error('Error transferring menu:', error);
         toast({
           title: "Erreur",
           description: "Impossible de transférer le menu",
@@ -296,7 +256,7 @@ export const useMenus = () => {
         title: "Succès",
         description: "Menu transféré avec succès"
       });
-      await fetchMenus();
+      await refetchMenus();
       return true;
     } catch (error) {
       console.error('Error transferring menu:', error);
@@ -307,17 +267,7 @@ export const useMenus = () => {
       });
       return false;
     }
-  }, [user?.id, toast, fetchMenus]);
-
-  const fetchMenusRef = useRef(fetchMenus);
-
-  useEffect(() => {
-    fetchMenusRef.current = fetchMenus;
-  }, [fetchMenus]);
-
-  useEffect(() => {
-    if (user) fetchMenusRef.current();
-  }, [user?.id, selectedOutletId]);
+  }, [user?.id, toast, refetchMenus]);
 
   const fetchAllMenus = useCallback(async (): Promise<Menu[]> => {
     if (!user) return [];
@@ -369,6 +319,7 @@ export const useMenus = () => {
     items,
     loading,
     error,
+    isOffline,
     refetch,
     createDefaultMenu,
     transferMenu,

@@ -1,8 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
+import { useOfflineData } from './useOfflineData';
+import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from './useOfflineMutation';
 
 interface OrderItem {
   id: string;
@@ -25,6 +27,8 @@ export interface Order {
   created_at: string;
   table_number?: string | null;
   order_type?: string | null;
+  user_id?: string;
+  outlet_id?: string | null;
 }
 
 const playNotificationSound = () => {
@@ -54,39 +58,25 @@ export const useOptimizedOrders = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const outletId = localStorage.getItem('selectedOutletId') || undefined;
 
-  const getOutletId = async () => {
-    const selectedProfileId = localStorage.getItem('selectedProfileId');
-    if (selectedProfileId) {
-      const { data } = await supabase
-        .from('user_profiles')
-        .select('selected_outlet_id')
-        .eq('id', selectedProfileId)
-        .maybeSingle();
-      if (data?.selected_outlet_id) return data.selected_outlet_id;
-    }
-    return localStorage.getItem('selectedOutletId');
-  };
-
-  const { data: orders = [], isLoading, error } = useQuery({
-    queryKey: ['orders', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
+  const { data: orders, isLoading, refetch, isOffline } = useOfflineData<Order>({
+    table: 'orders',
+    queryKey: ['orders'],
+    buildQuery: async (userId, outletId) => {
+      if (!outletId) return { data: [], error: null };
       
-      const outletId = await getOutletId();
-      if (!outletId) return [];
-
       const { data, error } = await supabase
         .from('orders')
-        .select('id, customer_name, customer_email, customer_phone, items, total_amount, status, notes, delivery_address, delivery_time, created_at, table_number, order_type')
-        .eq('user_id', user.id)
+        .select('id, customer_name, customer_email, customer_phone, items, total_amount, status, notes, delivery_address, delivery_time, created_at, table_number, order_type, user_id, outlet_id')
+        .eq('user_id', userId)
         .eq('outlet_id', outletId)
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (error) throw error;
+      if (error) return { data: null, error };
 
-      return (data || []).map(order => ({
+      const transformed = (data || []).map(order => ({
         id: order.id,
         customer_name: order.customer_name,
         customer_email: order.customer_email,
@@ -100,13 +90,33 @@ export const useOptimizedOrders = () => {
         created_at: order.created_at,
         table_number: order.table_number,
         order_type: order.order_type,
+        user_id: order.user_id,
+        outlet_id: order.outlet_id,
       }));
+
+      return { data: transformed, error: null };
     },
     enabled: !!user,
   });
 
+  // Offline mutations
+  const insertMutation = useOfflineInsert({
+    table: 'orders',
+    queryKey: ['orders', user?.id, outletId],
+  });
+
+  const updateMutation = useOfflineUpdate({
+    table: 'orders',
+    queryKey: ['orders', user?.id, outletId],
+  });
+
+  const deleteMutation = useOfflineDelete({
+    table: 'orders',
+    queryKey: ['orders', user?.id, outletId],
+  });
+
   useEffect(() => {
-    if (!user) return;
+    if (!user || isOffline) return;
 
     const channel = supabase
       .channel('orders-realtime')
@@ -117,7 +127,7 @@ export const useOptimizedOrders = () => {
         filter: `user_id=eq.${user.id}`
       }, async (payload) => {
         const newOrder = payload.new as any;
-        queryClient.setQueryData(['orders', user.id], (old: Order[] = []) => [{
+        queryClient.setQueryData(['orders', user.id, outletId], (old: Order[] = []) => [{
           id: newOrder.id,
           customer_name: newOrder.customer_name,
           customer_email: newOrder.customer_email,
@@ -143,19 +153,15 @@ export const useOptimizedOrders = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, queryClient, toast]);
-
-  if (error) {
-    toast({
-      title: "Erreur",
-      description: "Impossible de charger les commandes",
-      variant: "destructive"
-    });
-  }
+  }, [user, queryClient, toast, outletId, isOffline]);
 
   return {
     orders,
     loading: isLoading,
-    refetch: () => queryClient.invalidateQueries({ queryKey: ['orders', user?.id] })
+    isOffline,
+    refetch,
+    createOrder: insertMutation.mutate,
+    updateOrder: updateMutation.mutate,
+    deleteOrder: deleteMutation.mutate,
   };
 };

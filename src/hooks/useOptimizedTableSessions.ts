@@ -1,9 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
 import { useEffect } from 'react';
+import { useOfflineData } from './useOfflineData';
+import { queueMutation, generateLocalId } from '@/lib/offlineStorage';
+import { useNetworkStatus } from './useNetworkStatus';
 
 export interface TableSession {
   id: string;
@@ -27,16 +30,16 @@ export const useOptimizedTableSessions = () => {
   const { toast } = useToast();
   const { outletId, loading: outletLoading } = useOptimizedOutlet();
   const queryClient = useQueryClient();
+  const { isOffline } = useNetworkStatus();
 
-  const { data: sessions = [], isLoading } = useQuery({
-    queryKey: ['table-sessions', user?.id, outletId],
-    queryFn: async () => {
-      if (!user || outletLoading) return [];
-
+  const { data: sessions, isLoading, refetch, isOffline: dataOffline } = useOfflineData<TableSession>({
+    table: 'table_sessions',
+    queryKey: ['table-sessions'],
+    buildQuery: async (userId, outletId) => {
       let query = supabase
         .from('table_sessions' as any)
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('started_at', { ascending: false })
         .limit(50) as any;
 
@@ -45,8 +48,7 @@ export const useOptimizedTableSessions = () => {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
-      return (data as any) || [];
+      return { data: (data as TableSession[]) || [], error };
     },
     enabled: !!user && !outletLoading,
   });
@@ -58,17 +60,34 @@ export const useOptimizedTableSessions = () => {
       notes?: string;
       debtorId?: string;
     }) => {
+      const sessionData = {
+        user_id: user?.id,
+        outlet_id: outletId,
+        table_number: tableNumber,
+        number_of_guests: numberOfGuests,
+        notes: notes,
+        debtor_id: debtorId,
+        status: 'active',
+      };
+
+      if (isOffline) {
+        const localId = generateLocalId();
+        await queueMutation({
+          table: 'table_sessions',
+          operation: 'insert',
+          data: sessionData as Record<string, unknown>,
+          localId,
+          userId: user?.id || '',
+          outletId: outletId || undefined,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+        return { ...sessionData, id: localId, table_number: tableNumber };
+      }
+
       const { data, error } = await supabase
         .from('table_sessions' as any)
-        .insert([{
-          user_id: user?.id,
-          outlet_id: outletId,
-          table_number: tableNumber,
-          number_of_guests: numberOfGuests,
-          notes: notes,
-          debtor_id: debtorId,
-          status: 'active',
-        }])
+        .insert([sessionData])
         .select()
         .single();
 
@@ -86,6 +105,20 @@ export const useOptimizedTableSessions = () => {
 
   const closeSessionMutation = useMutation({
     mutationFn: async (sessionId: string) => {
+      if (isOffline) {
+        await queueMutation({
+          table: 'table_sessions',
+          operation: 'update',
+          data: { id: sessionId, status: 'closed', closed_at: new Date().toISOString() },
+          localId: generateLocalId(),
+          userId: user?.id || '',
+          outletId: outletId || undefined,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+        return { hasDebtor: false };
+      }
+
       const { data: session } = await supabase
         .from('table_sessions' as any)
         .select('debtor_id')
@@ -115,7 +148,7 @@ export const useOptimizedTableSessions = () => {
   });
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || dataOffline) return;
 
     const channel = supabase
       .channel('table-sessions-realtime')
@@ -130,13 +163,14 @@ export const useOptimizedTableSessions = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, queryClient]);
+  }, [user, queryClient, dataOffline]);
 
   return {
     sessions,
     loading: isLoading || outletLoading,
+    isOffline: dataOffline,
     createSession: createSessionMutation.mutate,
     closeSession: closeSessionMutation.mutate,
-    refetch: () => queryClient.invalidateQueries({ queryKey: ['table-sessions'] }),
+    refetch,
   };
 };

@@ -2,13 +2,16 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query'
+import { QueryClient, onlineManager } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { registerSW } from 'virtual:pwa-register'
 import { toast } from '@/hooks/use-toast'
 import { markRequestFailed, markRequestSuccess } from '@/hooks/useNetworkStatus'
 import { NetworkStatusBanner } from '@/components/NetworkStatusBanner'
+import { SyncStatusIndicator } from '@/components/SyncStatusIndicator'
 import { cleanupQueue } from '@/lib/offlineQueue'
+import { createIDBPersister } from '@/lib/idbPersister'
 
 // Helper to detect network errors
 const isNetworkError = (error: unknown): boolean => {
@@ -43,7 +46,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60 * 1000, // 1 minute - keep data fresh longer
-      gcTime: 30 * 60 * 1000, // 30 minutes - keep cache longer
+      gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep cache for offline
       retry: (failureCount, error) => {
         // Don't retry on network errors when offline
         if (!navigator.onLine) return false;
@@ -81,6 +84,9 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Create IDB persister for React Query cache
+const persister = createIDBPersister();
 
 // Track successful queries to mark connection as stable
 queryClient.getQueryCache().subscribe((event) => {
@@ -165,11 +171,19 @@ const updateSW = registerSW({
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        buster: 'v1',
+      }}
+    >
       <AuthProvider>
         <NetworkStatusBanner />
+        <SyncStatusIndicator />
         <App />
       </AuthProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   </ErrorBoundary>
 );
