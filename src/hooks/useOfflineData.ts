@@ -18,6 +18,20 @@ interface UseOfflineDataOptions<TData> {
   staleTime?: number;
 }
 
+async function fetchFromSupabase(table: string, select: string, userId: string): Promise<unknown[]> {
+  // Completely bypass Supabase's complex type system
+  const client = supabase as unknown as {
+    from: (t: string) => {
+      select: (s: string) => {
+        eq: (col: string, val: string) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+      };
+    };
+  };
+  const { data, error } = await client.from(table).select(select).eq('user_id', userId);
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
 export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
   const {
     table,
@@ -49,10 +63,10 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
       return data;
     }
 
-    const { data, error } = await supabase.from(table).select(select).eq('user_id', userId);
-    if (error) throw error;
-    await storeData(table, data as TData[], userId || '', outletId);
-    return data as TData[];
+    const data = await fetchFromSupabase(table, select, userId || '');
+    const result = data as TData[];
+    await storeData(table, result, userId || '', outletId);
+    return result;
   }, [table, select, buildQuery, userId, outletId, isOffline]);
 
   const query = useQuery({
@@ -81,7 +95,7 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
 export async function preloadCriticalData(userId: string, outletId?: string): Promise<void> {
   const tables: OfflineDataType[] = ['menus', 'menu_categories', 'menu_items', 'inventory_items', 'business_customers', 'invoice_settings', 'suppliers'];
   await Promise.allSettled(tables.map(async (table) => {
-    const { data } = await supabase.from(table).select('*').eq('user_id', userId);
+    const data = await fetchFromSupabase(table, '*', userId);
     if (data) await storeData(table, data, userId, outletId);
   }));
 }
