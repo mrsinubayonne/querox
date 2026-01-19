@@ -23,7 +23,8 @@ export type OfflineDataType =
   | 'invoice_settings'
   | 'business_periods'
   | 'stock_movements'
-  | 'debtor_payments';
+  | 'debtor_payments'
+  | 'events';
 
 export interface StoredData<T> {
   data: T;

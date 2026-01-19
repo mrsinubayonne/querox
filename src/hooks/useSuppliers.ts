@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useOfflineData } from '@/hooks/useOfflineData';
+import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from '@/hooks/useOfflineMutation';
 
 export interface Supplier {
   id: string;
@@ -17,132 +18,54 @@ export interface Supplier {
 }
 
 export const useSuppliers = () => {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { toast } = useToast();
 
-  const fetchSuppliers = useCallback(async () => {
-    if (!user) {
-      setSuppliers([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
+  const { data: suppliers, isLoading: loading, refetch: fetchSuppliers } = useOfflineData<Supplier>({
+    table: 'suppliers',
+    queryKey: ['suppliers'],
+    enabled: !!user,
+    buildQuery: async (userId) => {
       const { data, error } = await supabase
         .from('suppliers')
         .select('id, user_id, name, contact_person, email, phone, address, notes, created_at, updated_at')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('name');
+      return { data: (data || []) as Supplier[], error };
+    },
+  });
 
-      if (error) throw error;
-      setSuppliers((data || []) as Supplier[]);
-    } catch (error: any) {
-      console.error('Suppliers fetch error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les fournisseurs",
-        variant: "destructive"
-      });
-      setSuppliers([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, toast]);
+  const insertMutation = useOfflineInsert({
+    table: 'suppliers',
+    queryKey: ['suppliers'],
+  });
 
-  const createSupplier = async (supplierData: Omit<Supplier, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const updateMutation = useOfflineUpdate({
+    table: 'suppliers',
+    queryKey: ['suppliers'],
+  });
+
+  const deleteMutation = useOfflineDelete({
+    table: 'suppliers',
+    queryKey: ['suppliers'],
+  });
+
+  const createSupplier = useCallback(async (supplierData: Omit<Supplier, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return false;
+    insertMutation.mutate({ ...supplierData, user_id: user.id } as unknown as Record<string, unknown>);
+    return true;
+  }, [user, insertMutation]);
 
-    try {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .insert({ ...supplierData, user_id: user.id })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setSuppliers(prev => [...prev, data]);
-      toast({
-        title: "Succès",
-        description: "Fournisseur créé avec succès"
-      });
-
-      return data;
-    } catch (error: any) {
-      console.error('Supplier creation error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer le fournisseur",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  const updateSupplier = async (id: string, updates: Partial<Supplier>) => {
+  const updateSupplier = useCallback(async (id: string, updates: Partial<Supplier>) => {
     if (!user) return false;
+    updateMutation.mutate({ id, ...updates } as unknown as Record<string, unknown> & { id: string });
+    return true;
+  }, [user, updateMutation]);
 
-    try {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setSuppliers(prev => prev.map(s => s.id === id ? data : s));
-      toast({
-        title: "Succès",
-        description: "Fournisseur mis à jour"
-      });
-      return data;
-    } catch (error: any) {
-      console.error('Update error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le fournisseur",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  const deleteSupplier = async (id: string) => {
+  const deleteSupplier = useCallback(async (id: string) => {
     if (!user) return false;
-
-    try {
-      const { error } = await supabase
-        .from('suppliers')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setSuppliers(prev => prev.filter(s => s.id !== id));
-      toast({
-        title: "Succès",
-        description: "Fournisseur supprimé avec succès"
-      });
-      return true;
-    } catch (error: any) {
-      console.error('Delete error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le fournisseur",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    fetchSuppliers();
-  }, [fetchSuppliers]);
+    deleteMutation.mutate(id);
+    return true;
+  }, [user, deleteMutation]);
 
   return {
     suppliers,

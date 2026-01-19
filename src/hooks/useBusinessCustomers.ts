@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOfflineData } from "@/hooks/useOfflineData";
+import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from "@/hooks/useOfflineMutation";
 
 export interface Debtor {
   id: string;
@@ -27,123 +27,79 @@ export type BusinessCustomer = Debtor;
 
 export function useDebtors(outletId?: string) {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { data: customers, isLoading } = useQuery({
-    queryKey: ["business-customers", user?.id, outletId],
-    queryFn: async () => {
-      if (!user?.id) return [];
-
+  const { data: customers, isLoading, refetch } = useOfflineData<Debtor>({
+    table: 'business_customers',
+    queryKey: ['business-customers', outletId || ''],
+    enabled: !!user?.id,
+    buildQuery: async (userId, outlet) => {
       let query = supabase
         .from("business_customers")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .order("company_name");
 
-      if (outletId) {
-        query = query.or(`outlet_id.eq.${outletId},outlet_id.is.null`);
+      if (outlet) {
+        query = query.or(`outlet_id.eq.${outlet},outlet_id.is.null`);
       }
 
       const { data, error } = await query;
-
-      if (error) throw error;
-      return data as Debtor[];
-    },
-    enabled: !!user?.id,
-  });
-
-  const createCustomer = useMutation({
-    mutationFn: async (customer: Omit<Debtor, "id" | "user_id" | "current_debt" | "created_at" | "updated_at">) => {
-      if (!user?.id) throw new Error("User not authenticated");
-
-      const { data, error } = await supabase
-        .from("business_customers")
-        .insert([{ ...customer, user_id: user.id, outlet_id: outletId }])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["business-customers"] });
-      toast({
-        title: "Client créé",
-        description: "Le client entreprise a été créé avec succès",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive",
-      });
+      return { data: (data || []) as Debtor[], error };
     },
   });
 
-  const updateCustomer = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Debtor> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("business_customers")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["business-customers"] });
-      toast({
-        title: "Client mis à jour",
-        description: "Les informations du client ont été mises à jour",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+  const insertMutation = useOfflineInsert({
+    table: 'business_customers',
+    queryKey: ['business-customers'],
   });
 
-  const deleteCustomer = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("business_customers")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["business-customers"] });
-      toast({
-        title: "Client supprimé",
-        description: "Le client a été supprimé avec succès",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+  const updateMutation = useOfflineUpdate({
+    table: 'business_customers',
+    queryKey: ['business-customers'],
   });
+
+  const deleteMutation = useOfflineDelete({
+    table: 'business_customers',
+    queryKey: ['business-customers'],
+  });
+
+  const createCustomer = (
+    customer: Omit<Debtor, "id" | "user_id" | "current_debt" | "created_at" | "updated_at">,
+    options?: { onSuccess?: (data: unknown) => void; onError?: (error: Error) => void }
+  ) => {
+    if (!user?.id) return;
+    insertMutation.mutate(
+      {
+        ...customer,
+        user_id: user.id,
+        outlet_id: outletId,
+        current_debt: 0,
+      } as unknown as Record<string, unknown>,
+      {
+        onSuccess: options?.onSuccess,
+        onError: options?.onError,
+      }
+    );
+  };
+
+  const updateCustomer = ({ id, ...updates }: Partial<Debtor> & { id: string }) => {
+    updateMutation.mutate({ id, ...updates } as unknown as Record<string, unknown> & { id: string });
+  };
+
+  const deleteCustomer = (id: string) => {
+    deleteMutation.mutate(id);
+  };
 
   return {
-    customers: customers || [],
+    customers,
     isLoading,
-    createCustomer: createCustomer.mutate,
-    updateCustomer: updateCustomer.mutate,
-    deleteCustomer: deleteCustomer.mutate,
-    isCreating: createCustomer.isPending,
-    isUpdating: updateCustomer.isPending,
-    isDeleting: deleteCustomer.isPending,
+    createCustomer,
+    updateCustomer,
+    deleteCustomer,
+    isCreating: insertMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+    refetch,
   };
 }
 
