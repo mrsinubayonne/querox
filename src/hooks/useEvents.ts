@@ -1,8 +1,9 @@
-
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOfflineData } from '@/hooks/useOfflineData';
+import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from '@/hooks/useOfflineMutation';
 
 interface Event {
   id: string;
@@ -22,150 +23,84 @@ interface Event {
 export const useEvents = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchEvents = async () => {
-    if (!user) {
-      setEvents([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
+  const { data: events, isLoading: loading, refetch } = useOfflineData<Event>({
+    table: 'events',
+    queryKey: ['events'],
+    enabled: !!user,
+    buildQuery: async (userId) => {
       const { data, error } = await supabase
         .from('events')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('date', { ascending: true });
+      return { data: (data || []) as Event[], error };
+    },
+  });
 
-      if (error) {
-        console.error('Error fetching events:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les événements",
-          variant: "destructive",
-        });
-      } else {
-        setEvents(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching events:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const insertMutation = useOfflineInsert({
+    table: 'events',
+    queryKey: ['events'],
+    onSuccess: () => {
+      toast({
+        title: "Succès",
+        description: "Événement ajouté avec succès",
+      });
+    },
+  });
 
-  const addEvent = async (eventData: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'registered'>) => {
+  const updateMutation = useOfflineUpdate({
+    table: 'events',
+    queryKey: ['events'],
+    onSuccess: () => {
+      toast({
+        title: "Succès",
+        description: "Événement modifié avec succès",
+      });
+    },
+  });
+
+  const deleteMutation = useOfflineDelete({
+    table: 'events',
+    queryKey: ['events'],
+    onSuccess: () => {
+      toast({
+        title: "Succès",
+        description: "Événement supprimé avec succès",
+      });
+    },
+  });
+
+  const addEvent = useCallback(async (eventData: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'registered'>) => {
+    if (!user) return false;
+    
+    insertMutation.mutate({
+      ...eventData,
+      user_id: user.id,
+      registered: 0
+    } as unknown as Record<string, unknown>);
+    
+    return true;
+  }, [user, insertMutation]);
+
+  const updateEvent = useCallback(async (id: string, updates: Partial<Event>) => {
     if (!user) return false;
 
-    try {
-      const { data, error } = await supabase
-        .from('events')
-        .insert({
-          ...eventData,
-          user_id: user.id,
-          registered: 0
-        })
-        .select()
-        .single();
+    updateMutation.mutate({
+      id,
+      ...updates,
+      updated_at: new Date().toISOString()
+    } as unknown as Record<string, unknown> & { id: string });
+    
+    return true;
+  }, [user, updateMutation]);
 
-      if (error) {
-        console.error('Error adding event:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible d'ajouter l'événement",
-          variant: "destructive",
-        });
-        return false;
-      } else {
-        setEvents(prev => [...prev, data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-        toast({
-          title: "Succès",
-          description: "Événement ajouté avec succès",
-        });
-        return true;
-      }
-    } catch (error) {
-      console.error('Error adding event:', error);
-      return false;
-    }
-  };
-
-  const updateEvent = async (id: string, updates: Partial<Event>) => {
+  const deleteEvent = useCallback(async (id: string) => {
     if (!user) return false;
 
-    try {
-      const { data, error } = await supabase
-        .from('events')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating event:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de modifier l'événement",
-          variant: "destructive",
-        });
-        return false;
-      } else {
-        setEvents(prev => prev.map(event => 
-          event.id === id ? data : event
-        ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-        toast({
-          title: "Succès",
-          description: "Événement modifié avec succès",
-        });
-        return true;
-      }
-    } catch (error) {
-      console.error('Error updating event:', error);
-      return false;
-    }
-  };
-
-  const deleteEvent = async (id: string) => {
-    if (!user) return false;
-
-    try {
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error deleting event:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de supprimer l'événement",
-          variant: "destructive",
-        });
-        return false;
-      } else {
-        setEvents(prev => prev.filter(event => event.id !== id));
-        toast({
-          title: "Succès",
-          description: "Événement supprimé avec succès",
-        });
-        return true;
-      }
-    } catch (error) {
-      console.error('Error deleting event:', error);
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    fetchEvents();
-  }, [user]);
+    deleteMutation.mutate(id);
+    return true;
+  }, [user, deleteMutation]);
 
   return {
     events,
@@ -173,6 +108,6 @@ export const useEvents = () => {
     addEvent,
     updateEvent,
     deleteEvent,
-    refetch: fetchEvents,
+    refetch,
   };
 };

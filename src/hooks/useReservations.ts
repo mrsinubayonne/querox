@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOfflineData } from '@/hooks/useOfflineData';
+import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from '@/hooks/useOfflineMutation';
 
 export interface Reservation {
   id: string;
@@ -20,165 +22,107 @@ export interface Reservation {
 }
 
 export const useReservations = () => {
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [outletId, setOutletId] = useState<string | null>(null);
 
-  const fetchReservations = useCallback(async () => {
-    if (!user) {
-      setReservations([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      // Get selected outlet
-      const { data: profile } = await supabase
+  // Fetch outlet on mount
+  useState(() => {
+    if (user) {
+      supabase
         .from('profiles')
         .select('selected_outlet_id')
         .eq('id', user.id)
-        .maybeSingle();
-      
-      const outletId = profile?.selected_outlet_id;
-      if (!outletId) {
-        setReservations([]);
-        setLoading(false);
-        return;
-      }
-      
+        .maybeSingle()
+        .then(({ data }) => {
+          setOutletId(data?.selected_outlet_id || null);
+        });
+    }
+  });
+
+  const { data: reservations, isLoading: loading, refetch: fetchReservations } = useOfflineData<Reservation>({
+    table: 'reservations',
+    queryKey: ['reservations'],
+    enabled: !!user && !!outletId,
+    buildQuery: async (userId, outlet) => {
       const { data, error } = await supabase
         .from('reservations')
         .select('id, user_id, customer_name, customer_email, customer_phone, reservation_date, reservation_time, party_size, status, table_number, special_requests, created_at, updated_at')
-        .eq('user_id', user.id)
-        .eq('outlet_id', outletId)
+        .eq('user_id', userId)
+        .eq('outlet_id', outlet || '')
         .order('reservation_date', { ascending: true })
         .order('reservation_time', { ascending: true })
         .limit(200);
+      return { data: (data || []) as Reservation[], error };
+    },
+  });
 
-      if (error) throw error;
-      setReservations((data || []) as Reservation[]);
-    } catch (error: any) {
-      console.error('Reservations fetch error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les réservations",
-        variant: "destructive"
-      });
-      setReservations([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, toast]);
-
-  const createReservation = async (reservationData: Omit<Reservation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    if (!user) return false;
-
-    try {
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      const outletId = profile?.selected_outlet_id;
-      if (!outletId) {
-        toast({
-          title: "Erreur",
-          description: "Aucun point de vente sélectionné",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      const { data, error } = await supabase
-        .from('reservations')
-        .insert({ ...reservationData, user_id: user.id, outlet_id: outletId })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setReservations(prev => [...prev, data as Reservation]);
+  const insertMutation = useOfflineInsert({
+    table: 'reservations',
+    queryKey: ['reservations'],
+    onSuccess: () => {
       toast({
         title: "Succès",
         description: "Réservation créée avec succès"
       });
+    },
+  });
 
-      return data;
-    } catch (error: any) {
-      console.error('Reservation creation error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer la réservation",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  const updateReservation = async (id: string, updates: Partial<Reservation>) => {
-    if (!user) return false;
-
-    try {
-      const { data, error } = await supabase
-        .from('reservations')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setReservations(prev => prev.map(r => r.id === id ? data as Reservation : r));
+  const updateMutation = useOfflineUpdate({
+    table: 'reservations',
+    queryKey: ['reservations'],
+    onSuccess: () => {
       toast({
         title: "Succès",
         description: "Réservation mise à jour"
       });
-      return data;
-    } catch (error: any) {
-      console.error('Update error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour la réservation",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
+    },
+  });
 
-  const deleteReservation = async (id: string) => {
-    if (!user) return false;
-
-    try {
-      const { error } = await supabase
-        .from('reservations')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setReservations(prev => prev.filter(r => r.id !== id));
+  const deleteMutation = useOfflineDelete({
+    table: 'reservations',
+    queryKey: ['reservations'],
+    onSuccess: () => {
       toast({
         title: "Succès",
         description: "Réservation supprimée avec succès"
       });
-      return true;
-    } catch (error: any) {
-      console.error('Delete error:', error);
+    },
+  });
+
+  const createReservation = useCallback(async (reservationData: Omit<Reservation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    if (!user) return false;
+
+    if (!outletId) {
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer la réservation",
+        description: "Aucun point de vente sélectionné",
         variant: "destructive"
       });
       return false;
     }
-  };
+    
+    insertMutation.mutate({
+      ...reservationData,
+      user_id: user.id,
+      outlet_id: outletId,
+    } as unknown as Record<string, unknown>);
+    return true;
+  }, [user, outletId, toast, insertMutation]);
 
-  const getReservationStats = () => {
+  const updateReservation = useCallback(async (id: string, updates: Partial<Reservation>) => {
+    if (!user) return false;
+    updateMutation.mutate({ id, ...updates } as unknown as Record<string, unknown> & { id: string });
+    return true;
+  }, [user, updateMutation]);
+
+  const deleteReservation = useCallback(async (id: string) => {
+    if (!user) return false;
+    deleteMutation.mutate(id);
+    return true;
+  }, [user, deleteMutation]);
+
+  const getReservationStats = useCallback(() => {
     const today = new Date().toISOString().split('T')[0];
     const todayReservations = reservations.filter(r => r.reservation_date === today);
     
@@ -205,25 +149,7 @@ export const useReservations = () => {
       monthGuestsCount: totalGuests,
       confirmedRate: Math.round((reservations.filter(r => r.status === 'confirmed').length / (reservations.length || 1)) * 100)
     };
-  };
-
-  useEffect(() => {
-    fetchReservations();
-
-    if (!user) return;
-
-    const channel = supabase
-      .channel('reservations-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'reservations', filter: `user_id=eq.${user.id}` },
-        () => fetchReservations()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchReservations, user?.id]);
+  }, [reservations]);
 
   return {
     reservations,

@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOfflineData } from '@/hooks/useOfflineData';
+import { useOfflineInsert } from '@/hooks/useOfflineMutation';
 
 interface StockMovement {
   id: string;
@@ -22,91 +24,68 @@ interface StockMovement {
 }
 
 export const useStockMovements = () => {
-  const [movements, setMovements] = useState<StockMovement[]>([]);
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
-
-  const fetchMovements = useCallback(async (filters?: {
+  const [filters, setFilters] = useState<{
     itemId?: string;
     startDate?: string;
     endDate?: string;
     movementType?: string;
-  }) => {
-    if (!user) {
-      setMovements([]);
-      setLoading(false);
-      return;
-    }
+  }>({});
 
-    try {
-      setLoading(true);
-      
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId = null;
-      
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = userProfile?.selected_outlet_id;
-      }
-      
-      if (!outletId) {
-        outletId = localStorage.getItem('selectedOutletId');
-      }
-
+  const { data: movements, isLoading: loading, refetch } = useOfflineData<StockMovement>({
+    table: 'stock_movements',
+    queryKey: ['stock-movements', JSON.stringify(filters)],
+    enabled: !!user,
+    buildQuery: async (userId, outlet) => {
       let query = supabase
         .from('stock_movements')
         .select(`
           *,
           inventory_items!inner(name, unit, user_id, outlet_id)
         `)
-        .eq('inventory_items.user_id', user.id)
+        .eq('inventory_items.user_id', userId)
         .order('created_at', { ascending: false })
         .limit(500);
 
-      if (outletId) {
-        query = query.eq('inventory_items.outlet_id', outletId);
+      if (outlet) {
+        query = query.eq('inventory_items.outlet_id', outlet);
       }
 
-      if (filters?.itemId) {
+      if (filters.itemId) {
         query = query.eq('item_id', filters.itemId);
       }
 
-      if (filters?.movementType) {
+      if (filters.movementType) {
         query = query.eq('movement_type', filters.movementType);
       }
 
-      if (filters?.startDate) {
+      if (filters.startDate) {
         query = query.gte('created_at', filters.startDate);
       }
 
-      if (filters?.endDate) {
+      if (filters.endDate) {
         query = query.lte('created_at', filters.endDate);
       }
 
       const { data, error } = await query;
+      return { data: (data || []) as StockMovement[], error };
+    },
+  });
 
-      if (error) throw error;
+  const insertMutation = useOfflineInsert({
+    table: 'stock_movements',
+    queryKey: ['stock-movements'],
+  });
 
-      setMovements((data || []) as StockMovement[]);
-    } catch (error: any) {
-      console.error('Stock movements fetch error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger l'historique",
-        variant: "destructive"
-      });
-      setMovements([]);
-    } finally {
-      setLoading(false);
+  const fetchMovements = useCallback((newFilters?: typeof filters) => {
+    if (newFilters) {
+      setFilters(newFilters);
     }
-  }, [user, toast]);
+    refetch();
+  }, [refetch]);
 
-  const createMovement = async (movementData: {
+  const createMovement = useCallback(async (movementData: {
     item_id: string;
     quantity: number;
     movement_type: string;
@@ -118,54 +97,13 @@ export const useStockMovements = () => {
   }) => {
     if (!user) return false;
 
-    try {
-      const { data, error } = await supabase
-        .from('stock_movements')
-        .insert({
-          ...movementData,
-          performed_by_user_id: user.id
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      await fetchMovements();
-      return data;
-    } catch (error: any) {
-      console.error('Create movement error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'enregistrer le mouvement",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    fetchMovements();
-
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel('stock-movements-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'stock_movements'
-        },
-        () => {
-          fetchMovements();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchMovements]);
+    insertMutation.mutate({
+      ...movementData,
+      performed_by_user_id: user.id
+    } as unknown as Record<string, unknown>);
+    
+    return true;
+  }, [user, insertMutation]);
 
   return {
     movements,
