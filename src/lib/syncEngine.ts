@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { QueuedMutation, getPendingMutations, updateMutation, storeIdMapping, isLocalId, getServerIdForLocalId, OfflineDataType, setLastSyncTime, getStorageStats, clearSyncedMutations, generateLocalId } from './offlineStorage';
+import { QueuedMutation, getPendingMutations, getFailedMutations, updateMutation, storeIdMapping, isLocalId, getServerIdForLocalId, OfflineDataType, setLastSyncTime, getStorageStats, clearSyncedMutations, generateLocalId } from './offlineStorage';
 
 export interface SyncResult { success: boolean; synced: number; failed: number; errors: string[]; }
 export interface SyncStatus { isSyncing: boolean; lastSyncTime: Date | null; pendingCount: number; failedCount: number; progress: number; }
@@ -124,8 +124,8 @@ class SyncEngine {
   async forceSync(): Promise<SyncResult> { this.stopBackgroundSync(); const r = await this.sync(); this.startBackgroundSync(); return r; }
   async getStatus(): Promise<SyncStatus> { const s = await getStorageStats(); return { isSyncing: this.isSyncing, lastSyncTime: this.lastSyncTime, pendingCount: s.pendingCount, failedCount: s.failedCount, progress: this.currentProgress }; }
   async retryFailed(): Promise<SyncResult> {
-    const all = await getPendingMutations();
-    for (const m of all.filter(m => m.failed)) await updateMutation(m.id, { failed: false, retryCount: 0, errorMessage: undefined });
+    const failedMutations = await getFailedMutations();
+    for (const m of failedMutations) await updateMutation(m.id, { failed: false, retryCount: 0, errorMessage: undefined });
     return this.sync();
   }
 }
