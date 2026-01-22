@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useSubscription } from './useSubscription';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { getData, storeData } from '@/lib/offlineStorage';
 
 const OUTLET_LIMITS = {
   'starter': 1,
@@ -28,6 +30,7 @@ type UpdateOutletData = Partial<Pick<Outlet, 'name' | 'address' | 'phone'>>;
 export const useOutlets = () => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { subscription, refetch: refetchSubscription } = useSubscription();
+  const { isOffline } = useNetworkStatus();
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
@@ -74,6 +77,27 @@ export const useOutlets = () => {
       return;
     }
 
+    // Offline: load outlets from cache to avoid blocking route guards
+    if (isOffline) {
+      try {
+        console.log('📴 Offline: loading outlets from cache');
+        const cached = await getData<Outlet[]>('outlets', userId);
+        setOutlets(cached?.data || []);
+
+        // Ensure we still have a selected outlet for ProtectedRoute fallback
+        const localSelected = localStorage.getItem('selectedOutletId');
+        if (localSelected) {
+          setSelectedOutletId(localSelected);
+        }
+      } catch (error) {
+        console.warn('⚠️ Offline: failed to read outlets cache', error);
+        setOutlets([]);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     try {
       console.log('🔄 Loading outlets for user:', userId);
       
@@ -97,6 +121,9 @@ export const useOutlets = () => {
       
       console.log('✅ Outlets loaded:', data?.length || 0);
       setOutlets(data || []);
+
+      // Cache for offline usage (NOT outlet-scoped)
+      await storeData('outlets', data || [], userId);
       
       // Auto-select first outlet if only one exists and none is selected
       if (data && data.length === 1 && !selectedOutletId) {
@@ -104,6 +131,18 @@ export const useOutlets = () => {
       }
     } catch (error: any) {
       console.error('❌ Error loading outlets:', error);
+
+      // Fallback to cache even if online fetch fails (unstable connection)
+      try {
+        const cached = await getData<Outlet[]>('outlets', userId);
+        if (cached?.data?.length) {
+          console.log('↩️ Using cached outlets after fetch error');
+          setOutlets(cached.data);
+        }
+      } catch {
+        // ignore
+      }
+
       // Message d'erreur plus explicite
       const msg = error?.message || '';
       if (msg.includes('JWT') || msg.includes('token') || msg.includes('session')) {
@@ -118,6 +157,13 @@ export const useOutlets = () => {
 
   const loadSelectedOutlet = async (): Promise<void> => {
     if (!user?.id) return;
+
+    // Offline: rely on localStorage only
+    if (isOffline) {
+      const fallbackLocal = typeof window !== 'undefined' ? localStorage.getItem('selectedOutletId') : null;
+      setSelectedOutletId((fallbackLocal as string | null) ?? null);
+      return;
+    }
 
     try {
       // Get the selected profile ID from localStorage
@@ -158,7 +204,7 @@ export const useOutlets = () => {
       loadOutlets();
       loadSelectedOutlet();
     }
-  }, [user?.id, isTeamMember, teamMemberSession]);
+  }, [user?.id, isTeamMember, teamMemberSession, isOffline]);
 
   // Recharger le outlet sélectionné quand le profil change
   useEffect(() => {
@@ -168,6 +214,10 @@ export const useOutlets = () => {
   }, [selectedProfileId, user?.id]);
 
   const createOutlet = async (outletData: CreateOutletData): Promise<Outlet | undefined> => {
+    if (isOffline) {
+      toast.error('Impossible de créer un point de vente hors ligne');
+      return undefined;
+    }
     // Determine which user_id to use
     let userId = user?.id;
     
@@ -220,6 +270,10 @@ export const useOutlets = () => {
   };
 
   const updateOutlet = async (id: string, updates: UpdateOutletData): Promise<void> => {
+    if (isOffline) {
+      toast.error('Impossible de modifier un point de vente hors ligne');
+      return;
+    }
     try {
       const { error } = await supabase
         .from('outlets')
@@ -237,6 +291,10 @@ export const useOutlets = () => {
   };
 
   const deleteOutlet = async (id: string): Promise<void> => {
+    if (isOffline) {
+      toast.error('Impossible de supprimer un point de vente hors ligne');
+      return;
+    }
     try {
       const { error } = await supabase
         .from('outlets')
@@ -255,6 +313,16 @@ export const useOutlets = () => {
 
   const selectOutlet = async (outletId: string, silent = false): Promise<void> => {
     if (!user?.id) return;
+
+    // Offline: keep it local only
+    if (isOffline) {
+      setSelectedOutletId(outletId);
+      localStorage.setItem('selectedOutletId', outletId);
+      if (!silent) {
+        toast.success('Point de vente sélectionné (hors ligne)');
+      }
+      return;
+    }
 
     try {
       // Get the selected profile ID from localStorage

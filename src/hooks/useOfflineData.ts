@@ -119,6 +119,7 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
     'business_customers', 
     'invoice_settings', 
     'suppliers',
+    'outlets',         // Needed for outlet selection & route guards
     'table_sessions',  // Critical for Tables page
     'orders',          // Critical for Orders page  
     'invoices',        // Critical for Invoices page
@@ -133,7 +134,9 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
     try {
       const data = await fetchFromSupabase(table, '*', userId);
       if (data) {
-        await storeData(table, data, userId, outletId);
+        // Some tables should NOT be scoped by outlet in storage (ex: outlets)
+        const storageOutletId = table === 'outlets' ? undefined : outletId;
+        await storeData(table, data, userId, storageOutletId);
         console.log(`[Offline] Preloaded ${table}:`, data.length, 'items');
       }
     } catch (error) {

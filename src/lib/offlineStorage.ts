@@ -13,6 +13,7 @@ export type OfflineDataType =
   | 'menu_items'
   | 'menu_categories'
   | 'menus'
+  | 'outlets'
   | 'inventory_items'
   | 'invoices'
   | 'transactions'

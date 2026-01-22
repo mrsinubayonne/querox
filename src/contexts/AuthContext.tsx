@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { storeAuthData, getAuthData, clearAuthData } from '@/lib/offlineStorage';
@@ -65,15 +65,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [teamMemberSession, setTeamMemberSession] = useState<TeamMemberSession | null>(initialState.session);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
+  // Track whether we've restored cached auth (so Supabase INITIAL_SESSION doesn't wipe it when offline)
+  const offlineAuthLoadedRef = useRef(false);
+  const offlineAuthCheckDoneRef = useRef(false);
+  const explicitSignOutRef = useRef(false);
+
   // Load cached auth data for offline mode
   useEffect(() => {
     const loadOfflineAuth = async () => {
       if (!navigator.onLine) {
-        const cachedAuth = await getAuthData();
-        if (cachedAuth && cachedAuth.user) {
-          console.log('📱 Loading cached auth for offline mode');
-          setUser(cachedAuth.user as unknown as User);
-          setIsOfflineMode(true);
+        try {
+          const cachedAuth = await getAuthData();
+          if (cachedAuth && cachedAuth.user) {
+            console.log('📱 Loading cached auth for offline mode');
+            setUser(cachedAuth.user as unknown as User);
+            setIsOfflineMode(true);
+            offlineAuthLoadedRef.current = true;
+          }
+        } finally {
+          offlineAuthCheckDoneRef.current = true;
           setLoading(false);
         }
       }
@@ -116,9 +126,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth event:', event);
+
+        const currentlyOffline = !navigator.onLine;
+
+        // If we're offline and still checking cached auth, don't process null-session events yet.
+        // Otherwise the app can redirect to /auth before cached user is restored.
+        if (currentlyOffline && !offlineAuthCheckDoneRef.current && !session) {
+          console.log('📴 Offline: waiting for cached auth before processing auth event:', event);
+          return;
+        }
+
+        // If we already restored cached auth for offline use, don't let a null session wipe it out.
+        // This typically happens on INITIAL_SESSION when offline.
+        if (currentlyOffline && offlineAuthLoadedRef.current && !session) {
+          // If the user explicitly signed out, we allow the normal SIGNED_OUT behavior.
+          if (!(event === 'SIGNED_OUT' && explicitSignOutRef.current)) {
+            console.log('📴 Offline mode: ignoring auth event that would clear user:', event);
+            setIsOfflineMode(true);
+            setLoading(false);
+            return;
+          }
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
-        setIsOfflineMode(false);
+        if (navigator.onLine) {
+          setIsOfflineMode(false);
+        }
         
         // Only set loading to false if not a team member
         if (!hasTeamSession) {
@@ -162,13 +196,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setIsTeamMember(false);
           setTeamMemberSession(null);
           setIsOfflineMode(false);
+
+          // Reset refs
+          offlineAuthLoadedRef.current = false;
+          explicitSignOutRef.current = false;
         }
       }
     );
 
     // Check for existing Supabase session only if not a team member
-    if (!hasTeamSession) {
+    if (!hasTeamSession && navigator.onLine) {
       supabase.auth.getSession().then(({ data: { session } }) => {
+        // If offline auth is already restored, don't wipe it out with a null session.
+        if (!navigator.onLine && offlineAuthLoadedRef.current && !session) {
+          setIsOfflineMode(true);
+          setLoading(false);
+          return;
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -218,6 +263,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
+    explicitSignOutRef.current = true;
     // Clear all localStorage data before signing out
     localStorage.clear();
     await clearAuthData();
