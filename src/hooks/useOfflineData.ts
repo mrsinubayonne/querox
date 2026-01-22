@@ -50,23 +50,40 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
   const outletId = localStorage.getItem('selectedOutletId') || undefined;
 
   const fetchData = useCallback(async (): Promise<TData[]> => {
+    // Always try to get cached data first
+    const cached = await getData<TData[]>(table, userId || '', outletId);
+    
     if (isOffline) {
-      const cached = await getData<TData[]>(table, userId || '', outletId);
+      // Return cached data in offline mode
+      console.log(`[Offline] Loading ${table} from cache:`, cached?.data?.length || 0, 'items');
       return cached?.data || [];
     }
 
-    if (buildQuery) {
-      const result = await buildQuery(userId || '', outletId);
-      if (result.error) throw result.error;
-      const data = result.data || [];
-      await storeData(table, data, userId || '', outletId);
-      return data;
+    // Online: try to fetch fresh data
+    try {
+      let freshData: TData[];
+      
+      if (buildQuery) {
+        const result = await buildQuery(userId || '', outletId);
+        if (result.error) throw result.error;
+        freshData = result.data || [];
+      } else {
+        const data = await fetchFromSupabase(table, select, userId || '');
+        freshData = data as TData[];
+      }
+      
+      // Store for offline use
+      await storeData(table, freshData, userId || '', outletId);
+      console.log(`[Online] Cached ${table}:`, freshData.length, 'items');
+      return freshData;
+    } catch (error) {
+      // Network error while online - fallback to cache
+      console.warn(`[Fallback] Network error for ${table}, using cache:`, error);
+      if (cached?.data) {
+        return cached.data;
+      }
+      throw error;
     }
-
-    const data = await fetchFromSupabase(table, select, userId || '');
-    const result = data as TData[];
-    await storeData(table, result, userId || '', outletId);
-    return result;
   }, [table, select, buildQuery, userId, outletId, isOffline]);
 
   const query = useQuery({
@@ -93,9 +110,36 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
 }
 
 export async function preloadCriticalData(userId: string, outletId?: string): Promise<void> {
-  const tables: OfflineDataType[] = ['menus', 'menu_categories', 'menu_items', 'inventory_items', 'business_customers', 'invoice_settings', 'suppliers'];
+  // All critical tables that need to work offline
+  const tables: OfflineDataType[] = [
+    'menus', 
+    'menu_categories', 
+    'menu_items', 
+    'inventory_items', 
+    'business_customers', 
+    'invoice_settings', 
+    'suppliers',
+    'table_sessions',  // Critical for Tables page
+    'orders',          // Critical for Orders page  
+    'invoices',        // Critical for Invoices page
+    'reservations',    // Critical for Reservations page
+    'customers',       // Critical for Clients page
+    'transactions',    // Critical for Accounting page
+  ];
+  
+  console.log('[Offline] Preloading critical data for user:', userId);
+  
   await Promise.allSettled(tables.map(async (table) => {
-    const data = await fetchFromSupabase(table, '*', userId);
-    if (data) await storeData(table, data, userId, outletId);
+    try {
+      const data = await fetchFromSupabase(table, '*', userId);
+      if (data) {
+        await storeData(table, data, userId, outletId);
+        console.log(`[Offline] Preloaded ${table}:`, data.length, 'items');
+      }
+    } catch (error) {
+      console.warn(`[Offline] Failed to preload ${table}:`, error);
+    }
   }));
+  
+  console.log('[Offline] Preloading complete');
 }
