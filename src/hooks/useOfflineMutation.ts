@@ -28,8 +28,9 @@ export function useOfflineInsert<T extends Record<string, unknown>>(options: Use
 
       if (isOffline) {
         await queueMutation({ table, operation: 'insert', data: dataWithId, localId, userId: user?.id || '', outletId, maxRetries: 3, conflictResolution: 'client-wins' });
-        const cached = await getData<T[]>(table, user?.id || '', outletId);
-        await storeData(table, [...(cached?.data || []), dataWithId as T], user?.id || '', outletId);
+        const userId = user?.id || '';
+        const cached = (await getData<T[]>(table, userId, outletId)) ?? (outletId ? await getData<T[]>(table, userId) : undefined);
+        await storeData(table, [...(cached?.data || []), dataWithId as T], userId, outletId);
         toast({ title: 'Enregistré localement', description: 'Sera synchronisé à la reconnexion' });
         return dataWithId as T;
       }
@@ -54,8 +55,16 @@ export function useOfflineUpdate<T extends Record<string, unknown>>(options: Use
       const outletId = localStorage.getItem('selectedOutletId') || undefined;
       if (isOffline) {
         await queueMutation({ table, operation: 'update', data: variables, localId: variables.id, userId: user?.id || '', outletId, maxRetries: 3, conflictResolution: 'client-wins' });
-        const cached = await getData<T[]>(table, user?.id || '', outletId);
-        if (cached?.data) await storeData(table, cached.data.map(item => (item as { id?: string }).id === variables.id ? { ...item, ...variables } : item), user?.id || '', outletId);
+        const userId = user?.id || '';
+        const cached = (await getData<T[]>(table, userId, outletId)) ?? (outletId ? await getData<T[]>(table, userId) : undefined);
+        if (cached?.data) {
+          await storeData(
+            table,
+            cached.data.map(item => (item as { id?: string }).id === variables.id ? { ...item, ...variables } : item),
+            userId,
+            outletId
+          );
+        }
         toast({ title: 'Modifié localement' });
         return variables as T;
       }
@@ -79,8 +88,9 @@ export function useOfflineDelete(options: UseOfflineMutationOptions) {
       const outletId = localStorage.getItem('selectedOutletId') || undefined;
       if (isOffline) {
         await queueMutation({ table, operation: 'delete', data: { id }, localId: id, userId: user?.id || '', outletId, maxRetries: 3, conflictResolution: 'client-wins' });
-        const cached = await getData<{ id: string }[]>(table, user?.id || '', outletId);
-        if (cached?.data) await storeData(table, cached.data.filter(item => item.id !== id), user?.id || '', outletId);
+        const userId = user?.id || '';
+        const cached = (await getData<{ id: string }[]>(table, userId, outletId)) ?? (outletId ? await getData<{ id: string }[]>(table, userId) : undefined);
+        if (cached?.data) await storeData(table, cached.data.filter(item => item.id !== id), userId, outletId);
         toast({ title: 'Supprimé localement' });
         return { id };
       }
