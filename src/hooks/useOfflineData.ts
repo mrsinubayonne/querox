@@ -32,6 +32,32 @@ async function fetchFromSupabase(table: string, select: string, userId: string):
   return data || [];
 }
 
+async function getCachedWithFallback<T>(
+  table: OfflineDataType,
+  userId: string,
+  outletId?: string
+) {
+  if (!userId) return undefined;
+  const scoped = await getData<T>(table, userId, outletId);
+  if (scoped?.data !== undefined) return scoped;
+  if (outletId) return getData<T>(table, userId);
+  return scoped;
+}
+
+function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string): T[] {
+  if (!outletId) return data;
+  if (!Array.isArray(data) || data.length === 0) return data;
+
+  const first: unknown = data[0];
+  if (typeof first !== 'object' || first === null) return data;
+  if (!('outlet_id' in (first as Record<string, unknown>))) return data;
+
+  return data.filter((item) => {
+    if (typeof item !== 'object' || item === null) return true;
+    return (item as Record<string, unknown>).outlet_id === outletId;
+  });
+}
+
 export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
   const {
     table,
@@ -50,13 +76,14 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
   const outletId = localStorage.getItem('selectedOutletId') || undefined;
 
   const fetchData = useCallback(async (): Promise<TData[]> => {
-    // Always try to get cached data first
-    const cached = await getData<TData[]>(table, userId || '', outletId);
+    // Always try to get cached data first (with fallback to non outlet-scoped cache)
+    const cached = await getCachedWithFallback<TData[]>(table, userId || '', outletId);
+    const cachedList = filterArrayByOutletIfPossible((cached?.data || []) as TData[], outletId);
     
     if (isOffline) {
       // Return cached data in offline mode
-      console.log(`[Offline] Loading ${table} from cache:`, cached?.data?.length || 0, 'items');
-      return cached?.data || [];
+      console.log(`[Offline] Loading ${table} from cache:`, cachedList.length, 'items');
+      return cachedList;
     }
 
     // Online: try to fetch fresh data
@@ -79,8 +106,8 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
     } catch (error) {
       // Network error while online - fallback to cache
       console.warn(`[Fallback] Network error for ${table}, using cache:`, error);
-      if (cached?.data) {
-        return cached.data;
+      if (cachedList.length) {
+        return cachedList;
       }
       throw error;
     }
@@ -110,39 +137,92 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
 }
 
 export async function preloadCriticalData(userId: string, outletId?: string): Promise<void> {
-  // All critical tables that need to work offline
-  const tables: OfflineDataType[] = [
-    'menus', 
-    'menu_categories', 
-    'menu_items', 
-    'inventory_items', 
-    'business_customers', 
-    'invoice_settings', 
-    'suppliers',
-    'outlets',         // Needed for outlet selection & route guards
-    'table_sessions',  // Critical for Tables page
-    'orders',          // Critical for Orders page  
-    'invoices',        // Critical for Invoices page
-    'reservations',    // Critical for Reservations page
-    'customers',       // Critical for Clients page
-    'transactions',    // Critical for Accounting page
-  ];
-  
-  console.log('[Offline] Preloading critical data for user:', userId);
-  
-  await Promise.allSettled(tables.map(async (table) => {
+  const logPrefix = '[Offline]';
+  if (!userId) return;
+
+  console.log(`${logPrefix} Preloading critical data for user:`, userId);
+
+  // NOTE: we store preloaded data WITHOUT outlet scoping.
+  // This prevents empty caches when selectedOutletId changes or is not set yet.
+  // useOfflineData will filter by outletId client-side when possible.
+
+  const safeFetchAndStore = async (table: OfflineDataType) => {
     try {
       const data = await fetchFromSupabase(table, '*', userId);
-      if (data) {
-        // Some tables should NOT be scoped by outlet in storage (ex: outlets)
-        const storageOutletId = table === 'outlets' ? undefined : outletId;
-        await storeData(table, data, userId, storageOutletId);
-        console.log(`[Offline] Preloaded ${table}:`, data.length, 'items');
-      }
+      await storeData(table, data, userId);
+      console.log(`${logPrefix} Preloaded ${table}:`, data.length, 'items');
     } catch (error) {
-      console.warn(`[Offline] Failed to preload ${table}:`, error);
+      console.warn(`${logPrefix} Failed to preload ${table}:`, error);
     }
-  }));
-  
-  console.log('[Offline] Preloading complete');
+  };
+
+  // Fetch menus first (needed to fetch categories/items which don't have user_id)
+  let menus: Array<{ id: string }> = [];
+  try {
+    const { data, error } = await supabase
+      .from('menus')
+      .select('*')
+      .eq('user_id', userId);
+    if (error) throw error;
+    menus = (data || []) as Array<{ id: string }>;
+    await storeData('menus', data || [], userId);
+    console.log(`${logPrefix} Preloaded menus:`, (data || []).length, 'items');
+  } catch (error) {
+    console.warn(`${logPrefix} Failed to preload menus:`, error);
+  }
+
+  // menu_categories (no user_id)
+  let categories: Array<{ id: string }> = [];
+  try {
+    const menuIds = menus.map(m => m.id).filter(Boolean);
+    if (menuIds.length > 0) {
+      const { data, error } = await supabase
+        .from('menu_categories')
+        .select('*')
+        .in('menu_id', menuIds);
+      if (error) throw error;
+      categories = (data || []) as Array<{ id: string }>;
+      await storeData('menu_categories', data || [], userId);
+      console.log(`${logPrefix} Preloaded menu_categories:`, (data || []).length, 'items');
+    } else {
+      await storeData('menu_categories', [], userId);
+    }
+  } catch (error) {
+    console.warn(`${logPrefix} Failed to preload menu_categories:`, error);
+  }
+
+  // menu_items (no user_id)
+  try {
+    const categoryIds = categories.map(c => c.id).filter(Boolean);
+    if (categoryIds.length > 0) {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('*')
+        .in('category_id', categoryIds);
+      if (error) throw error;
+      await storeData('menu_items', data || [], userId);
+      console.log(`${logPrefix} Preloaded menu_items:`, (data || []).length, 'items');
+    } else {
+      await storeData('menu_items', [], userId);
+    }
+  } catch (error) {
+    console.warn(`${logPrefix} Failed to preload menu_items:`, error);
+  }
+
+  // Other user-scoped tables (these all have user_id)
+  await Promise.allSettled([
+    safeFetchAndStore('outlets'),
+    safeFetchAndStore('inventory_items'),
+    safeFetchAndStore('business_customers'),
+    safeFetchAndStore('invoice_settings'),
+    safeFetchAndStore('suppliers'),
+    safeFetchAndStore('table_sessions'),
+    safeFetchAndStore('orders'),
+    safeFetchAndStore('invoices'),
+    safeFetchAndStore('reservations'),
+    safeFetchAndStore('customers'),
+    safeFetchAndStore('transactions'),
+  ]);
+
+  console.log(`${logPrefix} Preloading complete`, { outletId });
 }

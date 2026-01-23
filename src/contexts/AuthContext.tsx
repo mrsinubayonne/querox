@@ -69,6 +69,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const offlineAuthLoadedRef = useRef(false);
   const offlineAuthCheckDoneRef = useRef(false);
   const explicitSignOutRef = useRef(false);
+  const preloadTriggeredRef = useRef(false);
+
+  const triggerPreloadOnce = (userId: string) => {
+    if (!userId) return;
+    if (!navigator.onLine) return;
+    if (preloadTriggeredRef.current) return;
+    preloadTriggeredRef.current = true;
+
+    const outletId = localStorage.getItem('selectedOutletId') || undefined;
+    // Defer to avoid blocking auth/render path
+    setTimeout(() => {
+      preloadCriticalData(userId, outletId);
+    }, 0);
+  };
 
   // Load cached auth data for offline mode
   useEffect(() => {
@@ -161,19 +175,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Store auth data for offline use when user signs in
         if (event === 'SIGNED_IN' && session?.user) {
-          const outletId = localStorage.getItem('selectedOutletId') || undefined;
-          
           // Store auth in IndexedDB
           storeAuthData({
             user: session.user as unknown as Record<string, unknown>,
             accessToken: session.access_token,
             refreshToken: session.refresh_token,
           });
-          
-          // Preload critical data for offline use (deferred)
-          setTimeout(() => {
-            preloadCriticalData(session.user.id, outletId);
-          }, 0);
+
+          // Preload critical data for offline use
+          triggerPreloadOnce(session.user.id);
         }
         
         // Auto-refresh token when it's about to expire
@@ -186,6 +196,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               accessToken: session.access_token,
               refreshToken: session.refresh_token,
             });
+
+            // Ensure we preload at least once even if user never hits SIGNED_IN in this tab
+            triggerPreloadOnce(session.user.id);
           }
         }
         
@@ -200,6 +213,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Reset refs
           offlineAuthLoadedRef.current = false;
           explicitSignOutRef.current = false;
+          preloadTriggeredRef.current = false;
         }
       }
     );
@@ -225,6 +239,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             accessToken: session.access_token,
             refreshToken: session.refresh_token,
           });
+
+          // IMPORTANT: when the user is already signed in, SIGNED_IN might not fire.
+          // We still need to preload critical tables at least once while online.
+          triggerPreloadOnce(session.user.id);
         }
       });
     }

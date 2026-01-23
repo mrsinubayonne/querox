@@ -59,7 +59,7 @@ export const NetworkStatusBanner = () => {
       
       <span className="text-center">
         {isOffline
-          ? 'Vous êtes hors ligne. Vos données sont disponibles en lecture seule.'
+          ? 'Vous êtes hors ligne. Les modifications seront enregistrées localement et synchronisées à la reconnexion.'
           : 'Connexion instable. Les données seront synchronisées automatiquement.'}
       </span>
 
