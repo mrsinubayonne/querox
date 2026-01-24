@@ -122,16 +122,24 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
     networkMode: 'offlineFirst',
   });
 
+  // Memoize queryKey to prevent subscription recreation
+  const queryKeyString = queryKey.join('_');
+  
   useEffect(() => {
     if (!userId || isOffline) return;
+    
+    const channelName = `${table}_changes_${userId}_${Date.now()}`;
     const channel = supabase
-      .channel(`${table}_changes_${userId}`)
+      .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` }, () => {
-        queryClient.invalidateQueries({ queryKey: [...queryKey, userId, outletId] });
+        queryClient.invalidateQueries({ queryKey: queryKey.concat([userId, outletId]) });
       })
       .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [table, userId, outletId, isOffline, queryKey, queryClient]);
+    
+    return () => { 
+      supabase.removeChannel(channel);
+    };
+  }, [table, userId, outletId, isOffline, queryKeyString, queryClient]);
 
   return { data: query.data || [], isLoading: query.isLoading, isError: query.isError, error: query.error, refetch: query.refetch, isOffline };
 }
