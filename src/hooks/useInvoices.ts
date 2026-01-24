@@ -34,15 +34,21 @@ export const useInvoices = () => {
   const { data: invoices, isLoading: loading, refetch } = useOfflineData<Invoice>({
     table: 'invoices',
     queryKey: ['invoices'],
-    enabled: !!user && !outletLoading && !!outletId,
+    enabled: !!user && !outletLoading,
     buildQuery: async (userId, outlet) => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('invoices')
         .select('*')
         .eq('user_id', userId)
-        .eq('outlet_id', outlet || '')
         .order('created_at', { ascending: false })
         .limit(100);
+      
+      // Filtrer par outlet seulement s'il est défini
+      if (outlet) {
+        query = query.eq('outlet_id', outlet);
+      }
+      
+      const { data, error } = await query;
       return { data: (data || []) as Invoice[], error };
     },
   });
