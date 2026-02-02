@@ -13,12 +13,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Minus, Search, X } from "lucide-react";
+import { Plus, Minus, Search, X, WifiOff } from "lucide-react";
 import { useMenuData } from "@/hooks/useMenuData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { queueMutation, generateLocalId } from "@/lib/offlineStorage";
+import { Badge } from "@/components/ui/badge";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CreateSessionWithOrderModalProps {
   isOpen: boolean;
@@ -43,6 +47,8 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const { user } = useAuth();
   const { toast } = useToast();
   const { outletId } = useRestaurant();
+  const { isOffline } = useNetworkStatus();
+  const queryClient = useQueryClient();
   const [numberOfGuests, setNumberOfGuests] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -229,22 +235,100 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
     try {
       if (!user) throw new Error("Non authentifié");
 
+      const orderItems = cart.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+
+      if (isOffline) {
+        // Offline mode: create session and order locally
+        const sessionId = generateLocalId();
+        const orderId = generateLocalId();
+
+        // Queue session creation
+        await queueMutation({
+          table: 'table_sessions',
+          operation: 'insert',
+          data: {
+            id: sessionId,
+            user_id: user.id,
+            outlet_id: outletId,
+            table_number: tableNumber,
+            number_of_guests: parseInt(numberOfGuests) || 1,
+            status: 'active',
+            total_amount: totalAmount,
+            started_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          localId: sessionId,
+          userId: user.id,
+          outletId: outletId || undefined,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+
+        // Queue order creation
+        await queueMutation({
+          table: 'orders',
+          operation: 'insert',
+          data: {
+            id: orderId,
+            user_id: user.id,
+            outlet_id: outletId,
+            session_id: sessionId,
+            table_number: tableNumber,
+            order_type: 'sur_place',
+            customer_name: `Table ${tableNumber}`,
+            items: orderItems,
+            total_amount: totalAmount,
+            status: 'pending',
+            created_at: new Date().toISOString(),
+          },
+          localId: orderId,
+          userId: user.id,
+          outletId: outletId || undefined,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+
+        // Invalidate queries to refresh UI
+        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+
+        toast({
+          title: "Session créée (hors ligne)",
+          description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s). Sera synchronisée.`,
+        });
+
+        setNumberOfGuests("");
+        setCart([]);
+        setSearchTerm("");
+        onSuccess();
+        onClose();
+        return;
+      }
+
+      // Online mode
       const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId: string | null = null;
-      if (selectedProfileId) {
+      let resolvedOutletId: string | null = outletId;
+      if (!resolvedOutletId && selectedProfileId) {
         const { data: userProfile } = await supabase
           .from('user_profiles')
           .select('selected_outlet_id')
           .eq('id', selectedProfileId)
           .maybeSingle();
-        outletId = (userProfile as any)?.selected_outlet_id ?? null;
-      } else {
+        resolvedOutletId = (userProfile as any)?.selected_outlet_id ?? null;
+      }
+      if (!resolvedOutletId) {
         const { data: profile } = await supabase
           .from('user_profiles')
           .select('selected_outlet_id')
           .eq('user_id', user.id)
           .maybeSingle();
-        outletId = (profile as any)?.selected_outlet_id ?? null;
+        resolvedOutletId = (profile as any)?.selected_outlet_id ?? null;
       }
 
       // 1. Créer la session
@@ -253,7 +337,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         .insert([
           {
             user_id: user.id,
-            outlet_id: outletId,
+            outlet_id: resolvedOutletId,
             table_number: tableNumber,
             number_of_guests: parseInt(numberOfGuests) || 1,
             status: "active",
@@ -265,17 +349,10 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       if (sessionError) throw sessionError;
 
       // 2. Créer la commande avec les items
-      const orderItems = cart.map((item) => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-      }));
-
       const { error: orderError } = await supabase.from("orders").insert([
         {
           user_id: user.id,
-          outlet_id: outletId,
+          outlet_id: resolvedOutletId,
           session_id: session.id,
           table_number: tableNumber,
           order_type: "sur_place",
@@ -317,7 +394,15 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b bg-background">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <DialogTitle className="text-lg font-semibold">Ouvrir la Table {tableNumber}</DialogTitle>
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-lg font-semibold">Ouvrir la Table {tableNumber}</DialogTitle>
+                {isOffline && (
+                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                    <WifiOff className="h-3 w-3 mr-1" />
+                    Hors ligne
+                  </Badge>
+                )}
+              </div>
               <DialogDescription className="text-sm mt-1">
                 Ajoutez les plats commandés
               </DialogDescription>
