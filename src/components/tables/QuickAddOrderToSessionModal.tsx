@@ -11,16 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Minus, Search, X, WifiOff } from "lucide-react";
+import { Plus, Minus, Search, X } from "lucide-react";
 import { useMenuData } from "@/hooks/useMenuData";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { queueMutation, generateLocalId } from "@/lib/offlineStorage";
-import { useQueryClient } from "@tanstack/react-query";
-import { useRestaurant } from "@/contexts/RestaurantContext";
 
 interface Props {
   isOpen: boolean;
@@ -46,9 +41,6 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { outletId } = useRestaurant();
-  const { isOffline } = useNetworkStatus();
-  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -227,6 +219,28 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
     try {
       if (!user) throw new Error("Non authentifié");
 
+      // Get selected outlet from user_profiles first, then fallback to profiles
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId = null;
+      
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = userProfile?.selected_outlet_id;
+      }
+      
+      if (!outletId) {
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("selected_outlet_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        outletId = profile?.selected_outlet_id;
+      }
+
       const orderItems = cart.map((item) => ({
         id: item.id,
         name: item.name,
@@ -234,77 +248,10 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         quantity: item.quantity,
       }));
 
-      if (isOffline) {
-        // Offline mode
-        const orderId = generateLocalId();
-
-        await queueMutation({
-          table: 'orders',
-          operation: 'insert',
-          data: {
-            id: orderId,
-            user_id: user.id,
-            outlet_id: outletId,
-            session_id: sessionId,
-            table_number: tableNumber,
-            order_type: 'sur_place',
-            customer_name: `Table ${tableNumber}`,
-            items: orderItems,
-            total_amount: totalAmount,
-            status: 'pending',
-            created_at: new Date().toISOString(),
-          },
-          localId: orderId,
-          userId: user.id,
-          outletId: outletId || undefined,
-          maxRetries: 3,
-          conflictResolution: 'client-wins',
-        });
-
-        // Invalidate queries
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-        queryClient.invalidateQueries({ queryKey: ['orders'] });
-
-        toast({
-          title: "Commande ajoutée (hors ligne)",
-          description: `${cart.length} plat(s) ajoutés. Sera synchronisée.`,
-        });
-
-        window.dispatchEvent(new CustomEvent("session-updated"));
-        setCart([]);
-        setSearchTerm("");
-        onSuccess?.();
-        onClose();
-        return;
-      }
-
-      // Online mode
-      let resolvedOutletId = outletId;
-      if (!resolvedOutletId) {
-        const selectedProfileId = localStorage.getItem('selectedProfileId');
-        if (selectedProfileId) {
-          const { data: userProfile } = await supabase
-            .from('user_profiles')
-            .select('selected_outlet_id')
-            .eq('id', selectedProfileId)
-            .maybeSingle();
-          resolvedOutletId = userProfile?.selected_outlet_id || null;
-        }
-        
-        if (!resolvedOutletId) {
-          const { data: profile } = await supabase
-            .from("user_profiles")
-            .select("selected_outlet_id")
-            .eq("user_id", user.id)
-            .maybeSingle();
-          resolvedOutletId = profile?.selected_outlet_id || null;
-        }
-      }
-
       const { error } = await supabase.from("orders").insert([
         {
           user_id: user.id,
-          outlet_id: resolvedOutletId,
+          outlet_id: outletId,
           session_id: sessionId,
           table_number: tableNumber,
           order_type: "sur_place",
@@ -322,7 +269,9 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         description: `${cart.length} plat(s) ajoutés à la session.`,
       });
 
+      // Notify parent/real-time
       window.dispatchEvent(new CustomEvent("session-updated"));
+
       setCart([]);
       setSearchTerm("");
       onSuccess?.();
@@ -339,15 +288,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <DialogTitle>Ajouter une commande</DialogTitle>
-            {isOffline && (
-              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
-                <WifiOff className="h-3 w-3 mr-1" />
-                Hors ligne
-              </Badge>
-            )}
-          </div>
+          <DialogTitle>Ajouter une commande</DialogTitle>
           <DialogDescription>
             Recherchez et ajoutez des plats pour la Table {tableNumber}.
           </DialogDescription>
