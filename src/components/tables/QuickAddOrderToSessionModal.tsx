@@ -57,50 +57,59 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState("");
 
+  // Fetch user's active menu - use localStorage for offline support
   useEffect(() => {
     const fetchActiveMenu = async () => {
       if (!user) return;
 
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId: string | null = null;
-
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = (userProfile as any)?.selected_outlet_id ?? null;
-      } else {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        outletId = (profile as any)?.selected_outlet_id ?? null;
+      // Get outlet from context or localStorage (works offline)
+      const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
+      
+      // If offline, try to get cached menu ID
+      if (isOffline) {
+        const cachedMenuId = localStorage.getItem('activeMenuId');
+        if (cachedMenuId) {
+          setActiveMenuId(cachedMenuId);
+          return;
+        }
       }
 
-      let { data: menus } = await supabase
-        .from("menus")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .eq("outlet_id", outletId)
-        .limit(1)
-        .maybeSingle();
-
-      if (!menus) {
-        const fallback = await supabase
+      try {
+        // Try to fetch menu from Supabase
+        let { data: menus } = await supabase
           .from("menus")
           .select("id")
           .eq("user_id", user.id)
           .eq("is_active", true)
+          .eq("outlet_id", resolvedOutletId)
           .limit(1)
           .maybeSingle();
-        menus = fallback.data as any;
-      }
 
-      if (menus) setActiveMenuId((menus as any).id); else setActiveMenuId(null);
+        if (!menus) {
+          const fallback = await supabase
+            .from("menus")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .limit(1)
+            .maybeSingle();
+          menus = fallback.data as any;
+        }
+
+        if (menus) {
+          setActiveMenuId((menus as any).id);
+          // Cache for offline use
+          localStorage.setItem('activeMenuId', (menus as any).id);
+        } else {
+          setActiveMenuId(null);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch menu, using cached:', error);
+        const cachedMenuId = localStorage.getItem('activeMenuId');
+        if (cachedMenuId) {
+          setActiveMenuId(cachedMenuId);
+        }
+      }
     };
 
     if (isOpen) {
@@ -108,7 +117,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       setCart([]);
       setSearchTerm("");
     }
-  }, [user, isOpen]);
+  }, [user, isOpen, outletId, isOffline]);
 
   const { menuItems } = useMenuData(activeMenuId);
 
@@ -278,28 +287,8 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         return;
       }
 
-      // Online mode
-      let resolvedOutletId = outletId;
-      if (!resolvedOutletId) {
-        const selectedProfileId = localStorage.getItem('selectedProfileId');
-        if (selectedProfileId) {
-          const { data: userProfile } = await supabase
-            .from('user_profiles')
-            .select('selected_outlet_id')
-            .eq('id', selectedProfileId)
-            .maybeSingle();
-          resolvedOutletId = userProfile?.selected_outlet_id || null;
-        }
-        
-        if (!resolvedOutletId) {
-          const { data: profile } = await supabase
-            .from("user_profiles")
-            .select("selected_outlet_id")
-            .eq("user_id", user.id)
-            .maybeSingle();
-          resolvedOutletId = profile?.selected_outlet_id || null;
-        }
-      }
+      // Online mode - use outletId from context or localStorage
+      const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
 
       const { error } = await supabase.from("orders").insert([
         {
