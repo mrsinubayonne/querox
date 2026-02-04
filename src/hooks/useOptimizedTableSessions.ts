@@ -7,8 +7,6 @@ import { useEffect, useCallback } from 'react';
 import { useOfflineData } from './useOfflineData';
 import { queueMutation, generateLocalId, storeData, getData } from '@/lib/offlineStorage';
 import { useNetworkStatus } from './useNetworkStatus';
-import type { Invoice } from '@/hooks/useInvoices';
-import type { Order } from '@/hooks/useOptimizedOrders';
 
 export interface TableSession {
   id: string;
@@ -41,14 +39,6 @@ export const useOptimizedTableSessions = () => {
   const { outletId, loading: outletLoading } = useOptimizedOutlet();
   const queryClient = useQueryClient();
   const { isOffline } = useNetworkStatus();
-
-  // IMPORTANT: useOfflineData appends [userId, outletId] to queryKey internally.
-  // Any setQueryData/getQueryData must use the *same* final key.
-  const resolvedUserId = user?.id || '';
-  const scopedOutletId = (localStorage.getItem('selectedOutletId') || outletId || undefined) as string | undefined;
-  const sessionsQueryKey = ['table-sessions', resolvedUserId, scopedOutletId] as const;
-  const invoicesQueryKey = ['invoices', resolvedUserId, scopedOutletId] as const;
-  const ordersQueryKey = ['orders', resolvedUserId, scopedOutletId] as const;
 
   const { data: sessions, isLoading, refetch, isOffline: dataOffline } = useOfflineData<TableSession>({
     table: 'table_sessions',
@@ -86,63 +76,24 @@ export const useOptimizedTableSessions = () => {
     const updatedSessions = currentSessions.map(s => 
       s.id === updatedSession.id ? { ...s, ...updatedSession } : s
     );
-    queryClient.setQueryData(sessionsQueryKey, updatedSessions);
+    queryClient.setQueryData(['table-sessions'], updatedSessions);
     
     // Also store in IndexedDB
     if (user) {
-      await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
+      await storeData('table_sessions', updatedSessions, user.id, outletId || undefined);
     }
-  }, [sessions, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
+  }, [sessions, queryClient, user, outletId]);
 
   // Helper to add to local cache
   const addToLocalCache = useCallback(async (newSession: TableSession) => {
     const currentSessions = sessions || [];
     const updatedSessions = [newSession, ...currentSessions];
-    queryClient.setQueryData(sessionsQueryKey, updatedSessions);
+    queryClient.setQueryData(['table-sessions'], updatedSessions);
     
     if (user) {
-      await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
+      await storeData('table_sessions', updatedSessions, user.id, outletId || undefined);
     }
-  }, [sessions, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
-
-  const upsertInvoiceInCache = useCallback(async (invoice: Invoice) => {
-    if (!resolvedUserId) return;
-    const current = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
-    const exists = current.some((i) => i.id === invoice.id);
-    const next = exists ? current.map((i) => (i.id === invoice.id ? { ...i, ...invoice } : i)) : [invoice, ...current];
-    queryClient.setQueryData(invoicesQueryKey, next);
-    await storeData('invoices', next, resolvedUserId, scopedOutletId);
-  }, [queryClient, invoicesQueryKey, resolvedUserId, scopedOutletId]);
-
-  const updateInvoiceInCache = useCallback(async (invoiceId: string, patch: Partial<Invoice>) => {
-    if (!resolvedUserId) return;
-    const current = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
-    const next = current.map((i) => (i.id === invoiceId ? ({ ...i, ...patch } as Invoice) : i));
-    queryClient.setQueryData(invoicesQueryKey, next);
-    await storeData('invoices', next, resolvedUserId, scopedOutletId);
-  }, [queryClient, invoicesQueryKey, resolvedUserId, scopedOutletId]);
-
-  const removeInvoiceFromCacheById = useCallback(async (invoiceId: string) => {
-    if (!resolvedUserId) return;
-    const current = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
-    const next = current.filter((i) => i.id !== invoiceId);
-    queryClient.setQueryData(invoicesQueryKey, next);
-    await storeData('invoices', next, resolvedUserId, scopedOutletId);
-  }, [queryClient, invoicesQueryKey, resolvedUserId, scopedOutletId]);
-
-  const getOrdersForSession = useCallback(async (sessionId: string): Promise<Order[]> => {
-    // Try React Query cache first
-    const cachedFromQuery = queryClient.getQueryData(ordersQueryKey) as Order[] | undefined;
-    if (cachedFromQuery?.length) {
-      return cachedFromQuery.filter((o) => (o as any).session_id === sessionId);
-    }
-
-    // Fallback to IndexedDB
-    if (!resolvedUserId) return [];
-    const cached = await getData<Order[]>('orders', resolvedUserId, scopedOutletId);
-    const list = (cached?.data || []) as Order[];
-    return list.filter((o) => (o as any).session_id === sessionId);
-  }, [queryClient, ordersQueryKey, resolvedUserId, scopedOutletId]);
+  }, [sessions, queryClient, user, outletId]);
 
   const createSessionMutation = useMutation({
     mutationFn: async ({ tableNumber, numberOfGuests, notes, debtorId }: {
@@ -155,7 +106,7 @@ export const useOptimizedTableSessions = () => {
       const sessionData: Partial<TableSession> = {
         id: localId,
         user_id: user?.id || '',
-        outlet_id: scopedOutletId || null,
+        outlet_id: outletId,
         table_number: tableNumber,
         number_of_guests: numberOfGuests || null,
         notes: notes || null,
@@ -175,7 +126,7 @@ export const useOptimizedTableSessions = () => {
           data: sessionData as Record<string, unknown>,
           localId,
           userId: user?.id || '',
-          outletId: scopedOutletId,
+          outletId: outletId || undefined,
           maxRetries: 3,
           conflictResolution: 'client-wins',
         });
@@ -190,7 +141,7 @@ export const useOptimizedTableSessions = () => {
         .from('table_sessions')
         .insert([{
           user_id: user?.id,
-          outlet_id: scopedOutletId,
+          outlet_id: outletId,
           table_number: tableNumber,
           number_of_guests: numberOfGuests,
           notes: notes,
@@ -225,7 +176,7 @@ export const useOptimizedTableSessions = () => {
           data: { id: sessionId, status: newStatus, closed_at: new Date().toISOString() },
           localId: generateLocalId(),
           userId: user?.id || '',
-          outletId: scopedOutletId,
+          outletId: outletId || undefined,
           maxRetries: 3,
           conflictResolution: 'client-wins',
         });
@@ -233,62 +184,29 @@ export const useOptimizedTableSessions = () => {
         // Create offline invoice
         const invoiceNumber = generateOfflineInvoiceNumber();
         const invoiceId = generateLocalId();
-
-        // Build items from cached orders (best-effort, so printing works offline)
-        const ordersForSession = await getOrdersForSession(sessionId);
-        const items: unknown[] = [];
-        for (const o of ordersForSession) {
-          const list = Array.isArray(o.items) ? o.items : [];
-          items.push(...list);
-        }
-
-        const invoiceToCache: Invoice = {
-          id: invoiceId,
-          user_id: resolvedUserId,
-          outlet_id: scopedOutletId || null,
-          order_id: null,
-          session_id: sessionId,
-          invoice_number: invoiceNumber,
-          total_amount: Number(session?.total_amount || 0),
-          status: hasDebtor ? 'unpaid' : 'unpaid',
-          due_date: null,
-          paid_date: null,
-          notes: `Facture (hors ligne) - Table ${session?.table_number || ''}`.trim(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          customer_name: `Table ${session?.table_number || ''}`.trim(),
-          customer_email: null,
-          customer_phone: null,
-          items,
-          payment_method: null,
-        };
-
         await queueMutation({
           table: 'invoices',
           operation: 'insert',
           data: {
             id: invoiceId,
             user_id: user?.id,
-            outlet_id: scopedOutletId,
+            outlet_id: outletId,
             session_id: sessionId,
             invoice_number: invoiceNumber,
             total_amount: session?.total_amount || 0,
-            status: hasDebtor ? 'unpaid' : 'unpaid',
+            status: hasDebtor ? 'unpaid' : 'paid',
             invoice_type: hasDebtor ? 'b2b' : 'b2c',
             business_customer_id: session?.debtor_id || null,
             customer_name: `Table ${session?.table_number}`,
-            items,
+            items: [],
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
           },
           localId: invoiceId,
           userId: user?.id || '',
-          outletId: scopedOutletId,
+          outletId: outletId || undefined,
           maxRetries: 3,
           conflictResolution: 'client-wins',
         });
-
-        await upsertInvoiceInCache(invoiceToCache);
 
         // Update local cache
         await updateLocalCache({ id: sessionId, status: newStatus as any, closed_at: new Date().toISOString() });
@@ -337,40 +255,28 @@ export const useOptimizedTableSessions = () => {
           data: { id: sessionId, status: 'paid', payment_method: paymentMethod || 'Espèces' },
           localId: generateLocalId(),
           userId: user?.id || '',
-          outletId: scopedOutletId,
+          outletId: outletId || undefined,
           maxRetries: 3,
           conflictResolution: 'client-wins',
         });
 
         // Also mark invoice as paid if not debtor
         if (!isDebtorSession) {
-          const invoicesCached = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
-          const invoiceForSession = invoicesCached.find((inv) => inv.session_id === sessionId);
-          if (invoiceForSession) {
-            await queueMutation({
-              table: 'invoices',
-              operation: 'update',
-              data: {
-                id: invoiceForSession.id,
-                status: 'paid',
-                paid_date: new Date().toISOString(),
-                payment_method: paymentMethod || 'Espèces',
-                updated_at: new Date().toISOString(),
-              },
-              localId: generateLocalId(),
-              userId: user?.id || '',
-              outletId: scopedOutletId,
-              maxRetries: 3,
-              conflictResolution: 'client-wins',
-            });
-
-            await updateInvoiceInCache(invoiceForSession.id, {
-              status: 'paid',
-              paid_date: new Date().toISOString().split('T')[0] as any,
-              payment_method: paymentMethod || 'Espèces',
-              updated_at: new Date().toISOString(),
-            } as any);
-          }
+          await queueMutation({
+            table: 'invoices',
+            operation: 'update',
+            data: { 
+              session_id: sessionId, 
+              status: 'paid', 
+              paid_date: new Date().toISOString(),
+              payment_method: paymentMethod || 'Espèces'
+            },
+            localId: generateLocalId(),
+            userId: user?.id || '',
+            outletId: outletId || undefined,
+            maxRetries: 3,
+            conflictResolution: 'client-wins',
+          });
 
           // Create transaction
           await queueMutation({
@@ -379,7 +285,7 @@ export const useOptimizedTableSessions = () => {
             data: {
               id: generateLocalId(),
               user_id: user?.id,
-              outlet_id: scopedOutletId,
+              outlet_id: outletId,
               title: `Paiement Table ${session?.table_number}`,
               amount: session?.total_amount || 0,
               type: 'income',
@@ -390,7 +296,7 @@ export const useOptimizedTableSessions = () => {
             },
             localId: generateLocalId(),
             userId: user?.id || '',
-            outletId: scopedOutletId,
+            outletId: outletId || undefined,
             maxRetries: 3,
             conflictResolution: 'client-wins',
           });
@@ -451,27 +357,22 @@ export const useOptimizedTableSessions = () => {
           data: { id: sessionId, status: 'active', closed_at: null },
           localId: generateLocalId(),
           userId: user?.id || '',
-          outletId: scopedOutletId,
+          outletId: outletId || undefined,
           maxRetries: 3,
           conflictResolution: 'client-wins',
         });
 
-        // Delete invoice(s) by ID (syncEngine requires id)
-        const invoicesCached = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
-        const invoicesForSession = invoicesCached.filter((inv) => inv.session_id === sessionId);
-        for (const inv of invoicesForSession) {
-          await queueMutation({
-            table: 'invoices',
-            operation: 'delete',
-            data: { id: inv.id },
-            localId: generateLocalId(),
-            userId: user?.id || '',
-            outletId: scopedOutletId,
-            maxRetries: 3,
-            conflictResolution: 'client-wins',
-          });
-          await removeInvoiceFromCacheById(inv.id);
-        }
+        // Delete invoice (will be recreated on close)
+        await queueMutation({
+          table: 'invoices',
+          operation: 'delete',
+          data: { session_id: sessionId },
+          localId: generateLocalId(),
+          userId: user?.id || '',
+          outletId: outletId || undefined,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
 
         await updateLocalCache({ id: sessionId, status: 'active', closed_at: null });
         return;
@@ -544,11 +445,11 @@ export const useOptimizedTableSessions = () => {
     sessions: sessions || [],
     loading: isLoading || outletLoading,
     isOffline: dataOffline,
-    createSession: createSessionMutation.mutateAsync,
-    closeSession: closeSessionMutation.mutateAsync,
-    markSessionAsPaid: (sessionId: string, paymentMethod?: string) =>
-      markSessionAsPaidMutation.mutateAsync({ sessionId, paymentMethod }),
-    reopenSession: reopenSessionMutation.mutateAsync,
+    createSession: createSessionMutation.mutate,
+    closeSession: closeSessionMutation.mutate,
+    markSessionAsPaid: (sessionId: string, paymentMethod?: string) => 
+      markSessionAsPaidMutation.mutate({ sessionId, paymentMethod }),
+    reopenSession: reopenSessionMutation.mutate,
     getActiveSessionForTable,
     refetch,
   };
