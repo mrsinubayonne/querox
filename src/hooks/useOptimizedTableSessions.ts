@@ -44,28 +44,19 @@ export const useOptimizedTableSessions = () => {
     table: 'table_sessions',
     queryKey: ['table-sessions'],
     buildQuery: async (userId, outletId) => {
-      try {
-        let query = supabase
-          .from('table_sessions')
-          .select('*')
-          .eq('user_id', userId)
-          .order('started_at', { ascending: false })
-          .limit(50);
+      let query = supabase
+        .from('table_sessions' as any)
+        .select('*')
+        .eq('user_id', userId)
+        .order('started_at', { ascending: false })
+        .limit(50) as any;
 
-        if (outletId) {
-          query = query.eq('outlet_id', outletId);
-        }
-
-        const { data, error } = await query;
-        if (error) {
-          console.error('Error fetching table sessions:', error);
-          return { data: [], error };
-        }
-        return { data: (data as unknown as TableSession[]) || [], error: null };
-      } catch (e) {
-        console.error('Exception fetching table sessions:', e);
-        return { data: [], error: e };
+      if (outletId) {
+        query = query.eq('outlet_id', outletId);
       }
+
+      const { data, error } = await query;
+      return { data: (data as TableSession[]) || [], error };
     },
     enabled: !!user && !outletLoading,
   });
@@ -138,7 +129,7 @@ export const useOptimizedTableSessions = () => {
       }
 
       const { data, error } = await supabase
-        .from('table_sessions')
+        .from('table_sessions' as any)
         .insert([{
           user_id: user?.id,
           outlet_id: outletId,
@@ -215,15 +206,15 @@ export const useOptimizedTableSessions = () => {
       }
 
       const { data: sessionData } = await supabase
-        .from('table_sessions')
+        .from('table_sessions' as any)
         .select('debtor_id')
         .eq('id', sessionId)
         .maybeSingle();
 
-      const hasDebtorDb = sessionData?.debtor_id !== null;
+      const hasDebtorDb = (sessionData as any)?.debtor_id !== null;
 
       const { error } = await supabase
-        .from('table_sessions')
+        .from('table_sessions' as any)
         .update({
           status: hasDebtorDb ? 'paid' : 'closed',
           closed_at: new Date().toISOString(),
@@ -308,15 +299,15 @@ export const useOptimizedTableSessions = () => {
 
       // Online flow
       const { data: sessionData } = await supabase
-        .from('table_sessions')
+        .from('table_sessions' as any)
         .select('debtor_id')
         .eq('id', sessionId)
         .maybeSingle();
 
-      const isDebtorDb = sessionData?.debtor_id !== null;
+      const isDebtorDb = (sessionData as any)?.debtor_id !== null;
 
       const { error: sessionError } = await supabase
-        .from('table_sessions')
+        .from('table_sessions' as any)
         .update({ status: 'paid', payment_method: paymentMethod })
         .eq('id', sessionId);
 
@@ -401,7 +392,7 @@ export const useOptimizedTableSessions = () => {
 
       // Reopen session
       const { error } = await supabase
-        .from('table_sessions')
+        .from('table_sessions' as any)
         .update({ status: 'active', closed_at: null })
         .eq('id', sessionId);
 
