@@ -25,33 +25,22 @@ const getTeamMemberFromStorage = (): boolean => {
   }
 };
 
-// PERSISTENT subscription proof - mais avec date d'expiration d'abonnement
+// PERSISTENT subscription proof - survives even if other caches fail
 const SUBSCRIPTION_PROOF_KEY = 'querox_subscription_proof';
 
-const saveSubscriptionProof = (subscriptionEnd: string | null) => {
+const saveSubscriptionProof = () => {
   try {
-    // Si l'abonnement a une date de fin, utiliser cette date comme limite
-    // Sinon, preuve valide 24h max pour forcer la revérification régulière
-    const proofExpiry = subscriptionEnd 
-      ? new Date(subscriptionEnd).toISOString()
-      : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    
     const proof = {
       verified: true,
       lastVerified: new Date().toISOString(),
-      subscriptionEnd: subscriptionEnd,
-      expiresAt: proofExpiry
+      // Valid for 7 days - generous buffer for slow connections
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     };
     localStorage.setItem(SUBSCRIPTION_PROOF_KEY, JSON.stringify(proof));
-    console.log('💾 Saved subscription proof, expires:', proofExpiry);
+    console.log('💾 Saved subscription proof');
   } catch {
     // Ignore
   }
-};
-
-const clearSubscriptionProof = () => {
-  localStorage.removeItem(SUBSCRIPTION_PROOF_KEY);
-  console.log('🗑️ Cleared subscription proof');
 };
 
 const hasValidSubscriptionProof = (): boolean => {
@@ -60,24 +49,11 @@ const hasValidSubscriptionProof = (): boolean => {
     if (!proofStr) return false;
     
     const proof = JSON.parse(proofStr);
-    const now = new Date();
-    
-    // Vérifier que la preuve n'est pas expirée
-    if (new Date(proof.expiresAt) <= now) {
-      console.log('❌ Subscription proof expired:', proof.expiresAt);
-      clearSubscriptionProof();
-      return false;
+    if (proof.verified && new Date(proof.expiresAt) > new Date()) {
+      console.log('🔒 Found valid subscription proof (expires:', proof.expiresAt, ')');
+      return true;
     }
-    
-    // Vérifier que l'abonnement n'est pas expiré
-    if (proof.subscriptionEnd && new Date(proof.subscriptionEnd) <= now) {
-      console.log('❌ Subscription ended:', proof.subscriptionEnd);
-      clearSubscriptionProof();
-      return false;
-    }
-    
-    console.log('🔒 Valid subscription proof found');
-    return true;
+    return false;
   } catch {
     return false;
   }
@@ -86,40 +62,23 @@ const hasValidSubscriptionProof = (): boolean => {
 // Check if ANY valid subscription was ever cached (emergency fallback)
 const hasAnyValidCachedSubscription = (): boolean => {
   try {
-    const now = new Date();
-    
     // First check our persistent proof
     if (hasValidSubscriptionProof()) {
       return true;
     }
     
-    // Then check subscription caches - STRICT validation
+    // Then check subscription caches
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith('subscription_cache_')) {
         const data = JSON.parse(localStorage.getItem(key) || '{}');
-        
-        // CRITICAL: Vérifier TOUJOURS la date d'expiration
-        if (data.subscription_end && new Date(data.subscription_end) <= now) {
-          console.log('❌ Cached subscription expired:', data.subscription_end);
-          localStorage.removeItem(key); // Nettoyer le cache expiré
-          continue;
-        }
-        
-        // Vérifier le statut
-        const validStatus = data.subscription_status === 'active' || data.subscription_status === 'trialing';
-        const isExpired = data.subscription_status === 'expired' || data.subscription_status === 'cancelled';
-        
-        if (isExpired) {
-          console.log('❌ Cached subscription status invalid:', data.subscription_status);
-          localStorage.removeItem(key);
-          continue;
-        }
-        
-        if (validStatus || (data.subscribed && !data.subscription_end)) {
-          console.log('🔒 Found valid cached subscription');
-          saveSubscriptionProof(data.subscription_end);
-          return true;
+        if (data.subscription_status === 'active' || data.subscribed) {
+          if (!data.subscription_end || new Date(data.subscription_end) > new Date()) {
+            console.log('🔒 Found valid cached subscription in localStorage');
+            // Save proof for future slow connections
+            saveSubscriptionProof();
+            return true;
+          }
         }
       }
     }
@@ -222,17 +181,10 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     }
   }, [gracePeriodExpired, isSubscriptionActive, loading, retryCount]);
   
-  // Save proof when subscription is confirmed active, or clear if expired
+  // Save proof when subscription is confirmed active
   useEffect(() => {
-    if (subscription) {
-      // Vérifier d'abord si expiré
-      if (subscription.subscription_end && new Date(subscription.subscription_end) <= new Date()) {
-        console.log('🚫 Subscription expired, clearing proof');
-        clearSubscriptionProof();
-        hasValidCache.current = false;
-      } else if (isSubscriptionActive || subscription.subscription_status === 'active') {
-        saveSubscriptionProof(subscription.subscription_end);
-      }
+    if (isSubscriptionActive || subscription?.subscription_status === 'active') {
+      saveSubscriptionProof();
     }
   }, [isSubscriptionActive, subscription]);
 
@@ -294,36 +246,25 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     );
   }
 
-  // Check subscription status - STRICT validation with expiration check
-  const isExpired = subscription?.subscription_end && new Date(subscription.subscription_end) <= new Date();
+  // Check subscription status - multiple validation methods
+  const isActive = isSubscriptionActive ||
+    (subscription?.subscription_status === 'active') ||
+    (subscription?.subscribed && (!subscription?.subscription_end || new Date(subscription.subscription_end) > new Date()));
   
-  const isActive = !isExpired && (
-    isSubscriptionActive ||
-    (subscription?.subscription_status === 'active' && !isExpired) ||
-    (subscription?.subscription_status === 'trialing' && !isExpired)
-  );
-  
-  // Priority 3: Active subscription confirmed (and not expired)
+  // Priority 3: Active subscription confirmed
   if (isActive) {
     return <>{children}</>;
   }
 
-  // Priority 4: If we have valid cache AND subscription is not expired, trust it while loading
-  // CRITICAL: Do NOT trust cache if subscription is expired
-  if ((hasValidCache.current || hasCachedData) && !isExpired) {
+  // Priority 4: If we have ANY cached valid subscription, trust it while loading/refreshing
+  if (hasValidCache.current || hasCachedData) {
     console.log('⏳ Has valid cache, showing children while confirming...');
     return <>{children}</>;
   }
-  
-  // If subscription is DEFINITELY expired, show paywall immediately
-  if (isExpired) {
-    console.log('🚫 Subscription EXPIRED, blocking access immediately');
-    // Don't wait for grace period - block now
-  }
 
-  // Priority 5: Grace period - show spinner ONLY if not expired
-  // If subscription is expired, skip grace period and show paywall
-  if (!isExpired && (!gracePeriodExpired || loading || retryCount < maxRetries)) {
+  // Priority 5: Grace period - always show spinner, never paywall early
+  // Extended conditions for slow connections
+  if (!gracePeriodExpired || loading || retryCount < maxRetries) {
     console.log(`⏳ Verification in progress (retry ${retryCount}/${maxRetries}, grace: ${gracePeriodExpired}, loading: ${loading})`);
     return (
       <div className="min-h-screen flex items-center justify-center">
