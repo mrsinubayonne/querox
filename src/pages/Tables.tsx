@@ -146,18 +146,14 @@ const Tables: React.FC = () => {
     setSelectedTable(null);
   };
 
-  const handleCloseSession = async () => {
-    if (!selectedSession) return;
-
-    await closeSession(selectedSession.id);
+  const handleCloseSession = async (sessionId: string) => {
+    await closeSession(sessionId);
     setShowSessionModal(false);
     setSelectedSession(null);
   };
 
-  const handleMarkAsPaid = async () => {
-    if (!selectedSession) return;
-
-    await markSessionAsPaid(selectedSession.id);
+  const handleMarkAsPaid = async (sessionId: string, paymentMethod?: string) => {
+    await markSessionAsPaid(sessionId, paymentMethod);
     setShowSessionModal(false);
     setSelectedSession(null);
   };
@@ -348,7 +344,9 @@ const Tables: React.FC = () => {
             session={selectedSession}
             onCloseSession={handleCloseSession}
             onMarkAsPaid={handleMarkAsPaid}
-            onReopenSession={selectedSession ? () => handleTableReopen(selectedSession) : undefined}
+            onReopenSession={async (sessionId: string) => {
+              await reopenSession(sessionId);
+            }}
           />
 
           {sessionToRename && (

@@ -54,21 +54,26 @@ export const useMenuData = (menuId: string | null) => {
   }, []);
 
   const fetchMenu = useCallback(async (id: string) => {
-    setLoading(true);
     setError(null);
 
-    // If offline, try to load from cache first
-    if (isOffline) {
-      const cached = await loadFromCache(id);
-      if (cached) {
-        setMenuItems(cached.menuItems);
-        setMenuData(cached.menuData);
-        setRestaurantUserId(cached.userId);
-        setOutletId(cached.outletId);
+    // CACHE-FIRST: Always try to show cached data immediately (prevents "Aucun plat trouvé" during slow loads)
+    const cached = await loadFromCache(id);
+    if (cached && cached.menuItems.length > 0) {
+      setMenuItems(cached.menuItems);
+      setMenuData(cached.menuData);
+      setRestaurantUserId(cached.userId);
+      setOutletId(cached.outletId);
+      // Keep loading true only if we're online and will refresh
+      if (isOffline) {
         setLoading(false);
         return;
       }
-      // If no cache, show error
+    } else {
+      setLoading(true);
+    }
+
+    // If offline and nothing in cache, stop here
+    if (isOffline && (!cached || cached.menuItems.length === 0)) {
       setError("Mode hors ligne - Aucune donnée en cache");
       setLoading(false);
       return;
@@ -130,11 +135,11 @@ export const useMenuData = (menuId: string | null) => {
       const categoryIds = categoriesData.map((c: any) => c.id);
       
       // 3. Récupérer les plats
+      // Fetch all items (don't filter by is_available in DB - null should count as available)
       const { data: menuItemsData, error: itemsError } = await supabase
         .from('menu_items')
         .select('*')
         .in('category_id', categoryIds)
-        .eq('is_available', true)
         .order('order_index', { ascending: true });
 
       if (itemsError) {
@@ -153,15 +158,18 @@ export const useMenuData = (menuId: string | null) => {
       }
 
       // 4. Transformer les données
-      const transformedItems: MenuItem[] = menuItemsData.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description || '',
-        price: Number(item.price),
-        image_url: item.image_url || undefined,
-        category_name: categoryMap.get(item.category_id) || 'Autres',
-        is_available: item.is_available,
-      }));
+      // Transform and filter: null is_available means available (legacy rows)
+      const transformedItems: MenuItem[] = (menuItemsData || [])
+        .filter((item: any) => item.is_available !== false)
+        .map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          price: Number(item.price),
+          image_url: item.image_url || undefined,
+          category_name: categoryMap.get(item.category_id) || 'Autres',
+          is_available: item.is_available !== false,
+        }));
 
       setMenuItems(transformedItems);
 
