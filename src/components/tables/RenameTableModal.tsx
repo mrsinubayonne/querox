@@ -12,6 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { queueMutation, generateLocalId } from "@/lib/offlineStorage";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface RenameTableModalProps {
   isOpen: boolean;
@@ -31,6 +34,8 @@ export const RenameTableModal: React.FC<RenameTableModalProps> = ({
   const [newName, setNewName] = useState(currentName);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { isOffline } = useNetworkStatus();
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,17 +51,35 @@ export const RenameTableModal: React.FC<RenameTableModalProps> = ({
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("table_sessions")
-        .update({ custom_table_name: newName.trim() })
-        .eq("id", sessionId);
+      if (isOffline) {
+        // Queue mutation for offline sync
+        await queueMutation({
+          table: 'table_sessions',
+          operation: 'update',
+          data: { id: sessionId, custom_table_name: newName.trim() },
+          localId: generateLocalId(),
+          userId: user?.id || '',
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
 
-      if (error) throw error;
+        toast({
+          title: "Table renommée (hors ligne)",
+          description: `La table a été renommée en "${newName}". Sera synchronisé.`,
+        });
+      } else {
+        const { error } = await supabase
+          .from("table_sessions")
+          .update({ custom_table_name: newName.trim() })
+          .eq("id", sessionId);
 
-      toast({
-        title: "Table renommée",
-        description: `La table a été renommée en "${newName}".`,
-      });
+        if (error) throw error;
+
+        toast({
+          title: "Table renommée",
+          description: `La table a été renommée en "${newName}".`,
+        });
+      }
 
       onSuccess();
       onClose();
