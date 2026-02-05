@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TableSession } from "@/hooks/useTableSessions";
+import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -15,14 +15,18 @@ import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import QuickAddOrderToSessionModal from "./QuickAddOrderToSessionModal";
-import InvoicePrintView from "@/components/invoices/InvoicePrintView";
+import InvoicePrintView, { InvoicePrintViewRef } from "@/components/invoices/InvoicePrintView";
 import { Invoice } from "@/hooks/useInvoices";
 import { usePaidCelebration } from "@/hooks/usePaidCelebration";
 import PaymentMethodModal, { MultiplePaymentBreakdown } from "@/components/invoices/PaymentMethodModal";
 import { toast as sonnerToast } from "sonner";
 import { InvoicePreviewModal } from "./InvoicePreviewModal";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { getData } from "@/lib/offlineStorage";
+
 interface Order {
   id: string;
   customer_name: string;
@@ -30,14 +34,16 @@ interface Order {
   total_amount: number;
   status: string;
   created_at: string;
+  session_id?: string;
 }
+
 interface TableSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
   session: TableSession | null;
-  onCloseSession: () => void;
-  onMarkAsPaid: () => void;
-  onReopenSession?: () => void;
+  onCloseSession: (sessionId: string) => Promise<void> | void;
+  onMarkAsPaid: (sessionId: string, paymentMethod?: string) => Promise<void> | void;
+  onReopenSession?: (sessionId: string) => Promise<void> | void;
 }
 export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   isOpen,
@@ -56,9 +62,12 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [invoiceToPrint, setInvoiceToPrint] = useState<Invoice | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
+  const [printReady, setPrintReady] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
   const { trackClick } = useButtonTracking();
-
+  const { isOffline } = useNetworkStatus();
+  const queryClient = useQueryClient();
+  const printViewRef = useRef<InvoicePrintViewRef>(null);
   const handleMarkAsPaidWithMethod = async (paymentMethod: string, debtorId?: string, multipleBreakdown?: MultiplePaymentBreakdown) => {
     if (!session) return;
     
@@ -197,7 +206,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
       }
 
       celebrate();
-      onMarkAsPaid();
+      await onMarkAsPaid(session.id, paymentMethodString);
       sonnerToast.success('Table marquée comme payée');
     } catch (error) {
       console.error('Error marking as paid:', error);
@@ -253,12 +262,24 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     if (!session) return;
     setLoading(true);
     try {
-      const {
-        data,
-        error
-      } = await supabase.from("orders" as any).select("*").eq("session_id", session.id).order("created_at", {
-        ascending: true
-      });
+      // Offline: load from cache
+      if (isOffline) {
+        const userId = user?.id || '';
+        const outletId = (session as any).outlet_id || localStorage.getItem('selectedOutletId') || undefined;
+        const cached = await getData<Order[]>('orders', userId, outletId);
+        const list = (cached?.data || []) as Order[];
+        const sessionOrders = list.filter((o) => (o as any).session_id === session.id);
+        setOrders(sessionOrders);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("orders" as any)
+        .select("*")
+        .eq("session_id", session.id)
+        .order("created_at", { ascending: true });
+
       if (error) throw error;
       setOrders(data as any || []);
     } catch (error) {
@@ -486,19 +507,34 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
       });
     }
   };
+  // Called when InvoicePrintView has loaded its data
+  const handlePrintReady = useCallback(() => {
+    setPrintReady(true);
+  }, []);
+
   const handleConfirmPrint = () => {
     setShowPrintDialog(false);
-    // InvoicePrintView gère automatiquement l'impression après chargement des données
-    // Nettoyer après l'impression
+    // Print using ref (user gesture preserved)
     setTimeout(() => {
-      setInvoiceToPrint(null);
-      setServedBy("");
-    }, 2000);
+      if (printViewRef.current) {
+        printViewRef.current.print();
+      } else {
+        window.print();
+      }
+      // Clean up after printing
+      setTimeout(() => {
+        setInvoiceToPrint(null);
+        setServedBy("");
+        setPrintReady(false);
+      }, 500);
+    }, 100);
   };
+
   const handleClosePrintDialog = () => {
     setShowPrintDialog(false);
     setInvoiceToPrint(null);
     setServedBy("");
+    setPrintReady(false);
   };
   if (!session) return null;
   return <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -622,9 +658,11 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter une commande
               </Button>
-              <Button onClick={() => {
+              <Button onClick={async () => {
                 trackClick('Tables: Fermer session', 'tables');
-                onCloseSession();
+                await onCloseSession(session.id);
+                // Refresh invoices list
+                queryClient.invalidateQueries({ queryKey: ['invoices'] });
               }} variant="default">
                 <Receipt className="h-4 w-4 mr-2" />
                 {session.debtor_id ? "Fermer & Créer Crédit" : "Fermer & Générer Facture"}
@@ -633,9 +671,9 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           
           {session.status === "closed" && <>
               {onReopenSession && (
-                <Button onClick={() => {
+                <Button onClick={async () => {
                   trackClick('Tables: Réouvrir table', 'tables');
-                  onReopenSession();
+                  await onReopenSession(session.id);
                 }} variant="outline">
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Réouvrir
@@ -659,7 +697,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
           {session.status === "paid" && <>
               {onReopenSession && (
-                <Button onClick={onReopenSession} variant="outline">
+                <Button onClick={() => onReopenSession(session.id)} variant="outline">
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Réouvrir
                 </Button>
@@ -705,8 +743,17 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Invoice Print View */}
-      {invoiceToPrint && !showPrintDialog && <InvoicePrintView invoice={invoiceToPrint} servedBy={servedBy || undefined} />}
+      {/* Invoice Print View - mount early to load data, print via ref */}
+      {invoiceToPrint && (
+        <InvoicePrintView
+          ref={printViewRef}
+          invoice={invoiceToPrint}
+          servedBy={servedBy || undefined}
+          format="restaurant"
+          autoPrint={false}
+          onReady={handlePrintReady}
+        />
+      )}
       
       {/* Invoice Preview Modal */}
       <InvoicePreviewModal
