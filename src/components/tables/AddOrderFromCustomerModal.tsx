@@ -16,10 +16,8 @@ import { Plus, Minus, Search, X, User } from "lucide-react";
 import { useMenuData } from "@/hooks/useMenuData";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 interface AddOrderFromCustomerModalProps {
   isOpen: boolean;
@@ -43,8 +41,6 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { outletId } = useRestaurant();
-  const { isOffline } = useNetworkStatus();
   const { customers } = useCustomers();
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -53,58 +49,53 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
   const [loading, setLoading] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-  // Fetch user's active menu - use localStorage for offline support
+  // Fetch user's active menu
   React.useEffect(() => {
     const fetchActiveMenu = async () => {
       if (!user) return;
-
-      // Get outlet from context or localStorage (works offline)
-      const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
       
-      // If offline, try to get cached menu ID
-      if (isOffline) {
-        const cachedMenuId = localStorage.getItem('activeMenuId');
-        if (cachedMenuId) {
-          setActiveMenuId(cachedMenuId);
-          return;
-        }
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = (userProfile as any)?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = (profile as any)?.selected_outlet_id ?? null;
       }
 
-      try {
-        // Try to fetch menu from Supabase
-        let { data: menus } = await supabase
+      let { data: menus } = await supabase
+        .from("menus")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .eq("outlet_id", outletId)
+        .limit(1)
+        .maybeSingle();
+
+      if (!menus) {
+        const fallback = await supabase
           .from("menus")
           .select("id")
           .eq("user_id", user.id)
           .eq("is_active", true)
-          .eq("outlet_id", resolvedOutletId)
           .limit(1)
           .maybeSingle();
+        menus = fallback.data as any;
+      }
 
-        if (!menus) {
-          const fallback = await supabase
-            .from("menus")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("is_active", true)
-            .limit(1)
-            .maybeSingle();
-          menus = fallback.data as any;
-        }
-
-        if (menus) {
-          setActiveMenuId((menus as any).id);
-          // Cache for offline use
-          localStorage.setItem('activeMenuId', (menus as any).id);
-        } else {
-          setActiveMenuId(null);
-        }
-      } catch (error) {
-        console.warn('Failed to fetch menu, using cached:', error);
-        const cachedMenuId = localStorage.getItem('activeMenuId');
-        if (cachedMenuId) {
-          setActiveMenuId(cachedMenuId);
-        }
+      if (menus) {
+        setActiveMenuId((menus as any).id);
+      } else {
+        setActiveMenuId(null);
       }
     };
 
@@ -114,7 +105,7 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
       setCustomerSearch("");
       setCart([]);
     }
-  }, [user, isOpen, outletId, isOffline]);
+  }, [user, isOpen]);
 
   const { menuItems } = useMenuData(activeMenuId);
 
