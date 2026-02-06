@@ -18,7 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { queueMutation, generateLocalId } from "@/lib/offlineStorage";
+import { queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 
@@ -247,13 +247,27 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         // Offline mode
         const orderId = generateLocalId();
 
+        const resolvedOutletId = outletId || localStorage.getItem("selectedOutletId");
+        if (!resolvedOutletId) {
+          toast({
+            title: "Erreur",
+            description: "Aucun point de vente sélectionné.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const outletKey = resolvedOutletId || undefined;
+        const ordersKey = ["orders", user.id, outletKey] as const;
+        const sessionsKey = ["table-sessions", user.id, outletKey] as const;
+
         await queueMutation({
           table: 'orders',
           operation: 'insert',
           data: {
             id: orderId,
             user_id: user.id,
-            outlet_id: outletId,
+            outlet_id: resolvedOutletId,
             session_id: sessionId,
             table_number: tableNumber,
             order_type: 'sur_place',
@@ -262,17 +276,49 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
             total_amount: totalAmount,
             status: 'pending',
             created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           },
           localId: orderId,
           userId: user.id,
-          outletId: outletId || undefined,
+          outletId: outletKey,
           maxRetries: 3,
           conflictResolution: 'client-wins',
         });
 
-        // Invalidate queries
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-        queryClient.invalidateQueries({ queryKey: ['orders'] });
+        // Update caches immediately
+        const currentOrders = (queryClient.getQueryData(ordersKey) as any[] | undefined) || [];
+        const nextOrders = [
+          {
+            id: orderId,
+            user_id: user.id,
+            outlet_id: resolvedOutletId,
+            session_id: sessionId,
+            table_number: tableNumber,
+            order_type: 'sur_place',
+            customer_name: `Table ${tableNumber}`,
+            items: orderItems,
+            total_amount: totalAmount,
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          ...currentOrders,
+        ];
+        queryClient.setQueryData(ordersKey, nextOrders);
+        await storeData('orders', nextOrders as any, user.id, outletKey);
+
+        const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
+        const nextSessions = currentSessions.map((s: any) =>
+          s.id === sessionId
+            ? {
+                ...s,
+                total_amount: Number(s.total_amount || 0) + Number(totalAmount || 0),
+                updated_at: new Date().toISOString(),
+              }
+            : s
+        );
+        queryClient.setQueryData(sessionsKey, nextSessions);
+        await storeData('table_sessions', nextSessions as any, user.id, outletKey);
 
         toast({
           title: "Commande ajoutée (hors ligne)",

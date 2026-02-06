@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, Clock, Sparkles, Pencil } from "lucide-react";
-import { TableSession } from "@/hooks/useTableSessions";
+import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
