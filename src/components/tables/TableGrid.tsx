@@ -1,6 +1,6 @@
 import React from "react";
 import { TableCard } from "./TableCard";
-import type { TableSession } from "@/hooks/useOptimizedTableSessions";
+import { TableSession } from "@/hooks/useTableSessions";
 
 interface TableGridProps {
   sessions: TableSession[];
@@ -21,9 +21,7 @@ export const TableGrid: React.FC<TableGridProps> = ({
   
   const getSessionForTable = (tableNumber: string) => {
     return sessions.find(
-      (s) =>
-        s.table_number === tableNumber &&
-        (s.status === "active" || s.status === "closed" || s.status === "paid")
+      (s) => s.table_number === tableNumber && (s.status === "active" || s.status === "closed")
     ) || null;
   };
 

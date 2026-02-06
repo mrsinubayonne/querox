@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Download, Check, X, Clock, Building2, Calendar, CreditCard, Printer } from 'lucide-react';
 import { Invoice } from '@/hooks/useInvoices';
-import InvoicePrintView, { InvoicePrintViewRef } from './InvoicePrintView';
+import InvoicePrintView from './InvoicePrintView';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,28 +36,11 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   onOpenChange,
   onMarkAsPaid
 }) => {
+  const [isPrinting, setIsPrinting] = useState(false);
   const [showServerDialog, setShowServerDialog] = useState(false);
   const [servedBy, setServedBy] = useState('');
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
-  const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
-  const [printReady, setPrintReady] = useState(false);
-  const printViewRef = useRef<InvoicePrintViewRef>(null);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
-
-  useEffect(() => {
-    if (!printInvoice) return;
-    const cleanup = () => {
-      setPrintInvoice(null);
-      setServedBy('');
-      setPrintReady(false);
-    };
-    window.addEventListener('afterprint', cleanup);
-    return () => window.removeEventListener('afterprint', cleanup);
-  }, [printInvoice]);
-
-  const handlePrintReady = useCallback(() => {
-    setPrintReady(true);
-  }, []);
 
   const handleMarkAsPaid = async (paymentMethod: string) => {
     if (!invoice) return;
@@ -110,18 +93,19 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   };
 
   const handlePrint = () => {
-    setPrintInvoice(invoice);
-    setPrintReady(false);
     setShowServerDialog(true);
   };
 
   const confirmPrint = () => {
-    if (!printReady) {
-      toast.message('Préparation de la facture…', { description: 'Veuillez patienter une seconde.' });
-      return;
-    }
     setShowServerDialog(false);
-    printViewRef.current?.print();
+    setIsPrinting(true);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        setIsPrinting(false);
+        setServedBy('');
+      }, 100);
+    }, 100);
   };
 
   return (
@@ -219,15 +203,7 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
           </div>
         </div>
 
-        {printInvoice && (
-          <InvoicePrintView
-            ref={printViewRef}
-            invoice={printInvoice}
-            servedBy={servedBy}
-            autoPrint={false}
-            onReady={handlePrintReady}
-          />
-        )}
+        {isPrinting && <InvoicePrintView invoice={invoice} servedBy={servedBy} />}
       </DialogContent>
 
       <AlertDialog open={showServerDialog} onOpenChange={setShowServerDialog}>

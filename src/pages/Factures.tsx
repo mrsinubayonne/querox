@@ -111,16 +111,23 @@ const Factures: React.FC = () => {
   }, []);
 
   const confirmPrint = () => {
-    if (!printReady) {
-      toast({
-        title: 'Préparation de la facture…',
-        description: 'Veuillez patienter une seconde.',
-      });
-      return;
-    }
-
     setShowServerDialog(false);
-    printViewRef.current?.print();
+    // Wait for the portal to be in the DOM and data loaded
+    // Use a small timeout to ensure React has rendered
+    setTimeout(() => {
+      if (printViewRef.current) {
+        printViewRef.current.print();
+      } else {
+        // Fallback: direct print
+        window.print();
+      }
+      // Reset after a short delay
+      setTimeout(() => {
+        setPrintInvoice(null);
+        setServedBy('');
+        setPrintReady(false);
+      }, 500);
+    }, 100);
   };
 
   const handleDeleteClick = (invoice: Invoice) => {
