@@ -2,14 +2,14 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import PageWithSidebar from "@/components/PageWithSidebar";
 import SubscriptionGuard from "@/components/SubscriptionGuard";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Plus, UserPlus, Filter, WifiOff } from "lucide-react";
+import { RefreshCw, Plus, UserPlus, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TableGrid } from "@/components/tables/TableGrid";
 import { CreateSessionWithOrderModal } from "@/components/tables/CreateSessionWithOrderModal";
 import { AddOrderFromCustomerModal } from "@/components/tables/AddOrderFromCustomerModal";
 import { TableSessionModal } from "@/components/tables/TableSessionModal";
 import { RenameTableModal } from "@/components/tables/RenameTableModal";
-import { useOptimizedTableSessions, TableSession } from "@/hooks/useOptimizedTableSessions";
+import { useTableSessions, TableSession } from "@/hooks/useTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -23,13 +23,12 @@ const Tables: React.FC = () => {
   const {
     sessions,
     loading,
-    isOffline,
     createSession,
     closeSession,
     markSessionAsPaid,
     reopenSession,
     refetch,
-  } = useOptimizedTableSessions();
+  } = useTableSessions();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddOrderModal, setShowAddOrderModal] = useState(false);
@@ -146,14 +145,18 @@ const Tables: React.FC = () => {
     setSelectedTable(null);
   };
 
-  const handleCloseSession = async (sessionId: string) => {
-    await closeSession(sessionId);
+  const handleCloseSession = async () => {
+    if (!selectedSession) return;
+
+    await closeSession(selectedSession.id);
     setShowSessionModal(false);
     setSelectedSession(null);
   };
 
-  const handleMarkAsPaid = async (sessionId: string, paymentMethod?: string) => {
-    await markSessionAsPaid(sessionId, paymentMethod);
+  const handleMarkAsPaid = async () => {
+    if (!selectedSession) return;
+
+    await markSessionAsPaid(selectedSession.id);
     setShowSessionModal(false);
     setSelectedSession(null);
   };
@@ -174,22 +177,14 @@ const Tables: React.FC = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold">🪑 Gestion des Tables</h1>
-                {isOffline && (
-                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
-                    <WifiOff className="h-3 w-3 mr-1" />
-                    Hors ligne
-                  </Badge>
-                )}
-              </div>
+              <h1 className="text-3xl font-bold">🪑 Gestion des Tables</h1>
               <p className="text-muted-foreground mt-1">
-                {isOffline ? "Mode hors ligne - Les données seront synchronisées" : "Gérez vos tables et sessions en temps réel"}
+                Gérez vos tables et sessions en temps réel
               </p>
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={() => refetch()} variant="outline" size="icon" disabled={loading}>
+              <Button onClick={refetch} variant="outline" size="icon" disabled={loading}>
                 <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               </Button>
               
@@ -344,9 +339,7 @@ const Tables: React.FC = () => {
             session={selectedSession}
             onCloseSession={handleCloseSession}
             onMarkAsPaid={handleMarkAsPaid}
-            onReopenSession={async (sessionId: string) => {
-              await reopenSession(sessionId);
-            }}
+            onReopenSession={selectedSession ? () => handleTableReopen(selectedSession) : undefined}
           />
 
           {sessionToRename && (

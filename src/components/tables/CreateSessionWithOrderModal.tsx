@@ -13,16 +13,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Minus, Search, X, WifiOff } from "lucide-react";
+import { Plus, Minus, Search, X } from "lucide-react";
 import { useMenuData } from "@/hooks/useMenuData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
-import { Badge } from "@/components/ui/badge";
-import { useQueryClient } from "@tanstack/react-query";
 
 interface CreateSessionWithOrderModalProps {
   isOpen: boolean;
@@ -47,8 +43,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const { user } = useAuth();
   const { toast } = useToast();
   const { outletId } = useRestaurant();
-  const { isOffline } = useNetworkStatus();
-  const queryClient = useQueryClient();
   const [numberOfGuests, setNumberOfGuests] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -59,65 +53,59 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const [customItemPrice, setCustomItemPrice] = useState("");
 
   // Fetch user's active menu
-  // Fetch user's active menu - use localStorage for offline support
   React.useEffect(() => {
     const fetchActiveMenu = async () => {
       if (!user) return;
-
-      // Get outlet from context or localStorage (works offline)
-      const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
       
-      // If offline, try to get cached menu ID
-      if (isOffline) {
-        const cachedMenuId = localStorage.getItem('activeMenuId');
-        if (cachedMenuId) {
-          setActiveMenuId(cachedMenuId);
-          return;
-        }
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = (userProfile as any)?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = (profile as any)?.selected_outlet_id ?? null;
       }
 
-      try {
-        // Try to fetch menu from Supabase
-        let { data: menus } = await supabase
+      let { data: menus } = await supabase
+        .from("menus")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .eq("outlet_id", outletId)
+        .limit(1)
+        .maybeSingle();
+
+      if (!menus) {
+        const fallback = await supabase
           .from("menus")
           .select("id")
           .eq("user_id", user.id)
           .eq("is_active", true)
-          .eq("outlet_id", resolvedOutletId)
           .limit(1)
           .maybeSingle();
+        menus = fallback.data as any;
+      }
 
-        if (!menus) {
-          const fallback = await supabase
-            .from("menus")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("is_active", true)
-            .limit(1)
-            .maybeSingle();
-          menus = fallback.data as any;
-        }
-
-        if (menus) {
-          setActiveMenuId((menus as any).id);
-          // Cache for offline use
-          localStorage.setItem('activeMenuId', (menus as any).id);
-        } else {
-          setActiveMenuId(null);
-        }
-      } catch (error) {
-        console.warn('Failed to fetch menu, using cached:', error);
-        const cachedMenuId = localStorage.getItem('activeMenuId');
-        if (cachedMenuId) {
-          setActiveMenuId(cachedMenuId);
-        }
+      if (menus) {
+        setActiveMenuId((menus as any).id);
+      } else {
+        setActiveMenuId(null);
       }
     };
 
     if (isOpen) {
       fetchActiveMenu();
     }
-  }, [user, isOpen, outletId, isOffline]);
+  }, [user, isOpen]);
 
   const { menuItems } = useMenuData(activeMenuId);
 
@@ -241,143 +229,31 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
     try {
       if (!user) throw new Error("Non authentifié");
 
-      const resolvedOutletId = outletId || localStorage.getItem("selectedOutletId");
-      if (!resolvedOutletId) {
-        toast({
-          title: "Erreur",
-          description: "Aucun point de vente sélectionné.",
-          variant: "destructive",
-        });
-        return;
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      let outletId: string | null = null;
+      if (selectedProfileId) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+        outletId = (userProfile as any)?.selected_outlet_id ?? null;
+      } else {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        outletId = (profile as any)?.selected_outlet_id ?? null;
       }
 
-      const outletKey = resolvedOutletId || undefined;
-      const sessionsKey = ["table-sessions", user.id, outletKey] as const;
-      const ordersKey = ["orders", user.id, outletKey] as const;
-
-      const orderItems = cart.map((item) => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-      }));
-
-      if (isOffline) {
-        // Offline mode: create session and order locally
-        const sessionId = generateLocalId();
-        const orderId = generateLocalId();
-        const nowIso = new Date().toISOString();
-
-        // Queue session creation
-        await queueMutation({
-          table: 'table_sessions',
-          operation: 'insert',
-          data: {
-            id: sessionId,
-            user_id: user.id,
-            outlet_id: resolvedOutletId,
-            table_number: tableNumber,
-            number_of_guests: parseInt(numberOfGuests) || 1,
-            status: 'active',
-            total_amount: totalAmount,
-            started_at: nowIso,
-            created_at: nowIso,
-            updated_at: nowIso,
-          },
-          localId: sessionId,
-          userId: user.id,
-          outletId: outletKey,
-          maxRetries: 3,
-          conflictResolution: 'client-wins',
-        });
-
-        // Queue order creation
-        await queueMutation({
-          table: 'orders',
-          operation: 'insert',
-          data: {
-            id: orderId,
-            user_id: user.id,
-            outlet_id: resolvedOutletId,
-            session_id: sessionId,
-            table_number: tableNumber,
-            order_type: 'sur_place',
-            customer_name: `Table ${tableNumber}`,
-            items: orderItems,
-            total_amount: totalAmount,
-            status: 'pending',
-            created_at: nowIso,
-            updated_at: nowIso,
-          },
-          localId: orderId,
-          userId: user.id,
-          outletId: outletKey,
-          maxRetries: 3,
-          conflictResolution: 'client-wins',
-        });
-
-        // Update caches immediately (offline: invalidation alone doesn't refresh UI)
-        const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
-        const newSession = {
-          id: sessionId,
-          user_id: user.id,
-          outlet_id: resolvedOutletId,
-          debtor_id: null,
-          table_number: tableNumber,
-          custom_table_name: null,
-          status: 'active',
-          started_at: nowIso,
-          closed_at: null,
-          number_of_guests: parseInt(numberOfGuests) || 1,
-          total_amount: totalAmount,
-          notes: null,
-          created_at: nowIso,
-          updated_at: nowIso,
-        };
-        const nextSessions = [newSession, ...currentSessions];
-        queryClient.setQueryData(sessionsKey, nextSessions);
-        await storeData('table_sessions', nextSessions as any, user.id, outletKey);
-
-        const currentOrders = (queryClient.getQueryData(ordersKey) as any[] | undefined) || [];
-        const newOrder = {
-          id: orderId,
-          user_id: user.id,
-          outlet_id: resolvedOutletId,
-          session_id: sessionId,
-          table_number: tableNumber,
-          order_type: 'sur_place',
-          customer_name: `Table ${tableNumber}`,
-          items: orderItems,
-          total_amount: totalAmount,
-          status: 'pending',
-          created_at: nowIso,
-          updated_at: nowIso,
-        };
-        const nextOrders = [newOrder, ...currentOrders];
-        queryClient.setQueryData(ordersKey, nextOrders);
-        await storeData('orders', nextOrders as any, user.id, outletKey);
-
-        toast({
-          title: "Session créée (hors ligne)",
-          description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s). Sera synchronisée.`,
-        });
-
-        setNumberOfGuests("");
-        setCart([]);
-        setSearchTerm("");
-        onSuccess();
-        onClose();
-        return;
-      }
-
-      // Online mode
       // 1. Créer la session
       const { data: session, error: sessionError } = await supabase
         .from("table_sessions")
         .insert([
           {
             user_id: user.id,
-            outlet_id: resolvedOutletId,
+            outlet_id: outletId,
             table_number: tableNumber,
             number_of_guests: parseInt(numberOfGuests) || 1,
             status: "active",
@@ -389,10 +265,17 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       if (sessionError) throw sessionError;
 
       // 2. Créer la commande avec les items
+      const orderItems = cart.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+
       const { error: orderError } = await supabase.from("orders").insert([
         {
           user_id: user.id,
-          outlet_id: resolvedOutletId,
+          outlet_id: outletId,
           session_id: session.id,
           table_number: tableNumber,
           order_type: "sur_place",
@@ -434,15 +317,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b bg-background">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2">
-                <DialogTitle className="text-lg font-semibold">Ouvrir la Table {tableNumber}</DialogTitle>
-                {isOffline && (
-                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
-                    <WifiOff className="h-3 w-3 mr-1" />
-                    Hors ligne
-                  </Badge>
-                )}
-              </div>
+              <DialogTitle className="text-lg font-semibold">Ouvrir la Table {tableNumber}</DialogTitle>
               <DialogDescription className="text-sm mt-1">
                 Ajoutez les plats commandés
               </DialogDescription>

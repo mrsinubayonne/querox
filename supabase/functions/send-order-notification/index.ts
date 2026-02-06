@@ -138,11 +138,10 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Error in send-order-notification:', error);
     return new Response(
       JSON.stringify({ 
-        error: message 
+        error: error.message 
       }),
       {
         status: 500,
