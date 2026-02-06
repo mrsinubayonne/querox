@@ -20,7 +20,7 @@ import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { queueMutation, generateLocalId } from "@/lib/offlineStorage";
+import { queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -241,6 +241,20 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
     try {
       if (!user) throw new Error("Non authentifié");
 
+      const resolvedOutletId = outletId || localStorage.getItem("selectedOutletId");
+      if (!resolvedOutletId) {
+        toast({
+          title: "Erreur",
+          description: "Aucun point de vente sélectionné.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const outletKey = resolvedOutletId || undefined;
+      const sessionsKey = ["table-sessions", user.id, outletKey] as const;
+      const ordersKey = ["orders", user.id, outletKey] as const;
+
       const orderItems = cart.map((item) => ({
         id: item.id,
         name: item.name,
@@ -252,6 +266,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         // Offline mode: create session and order locally
         const sessionId = generateLocalId();
         const orderId = generateLocalId();
+        const nowIso = new Date().toISOString();
 
         // Queue session creation
         await queueMutation({
@@ -260,18 +275,18 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           data: {
             id: sessionId,
             user_id: user.id,
-            outlet_id: outletId,
+            outlet_id: resolvedOutletId,
             table_number: tableNumber,
             number_of_guests: parseInt(numberOfGuests) || 1,
             status: 'active',
             total_amount: totalAmount,
-            started_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            started_at: nowIso,
+            created_at: nowIso,
+            updated_at: nowIso,
           },
           localId: sessionId,
           userId: user.id,
-          outletId: outletId || undefined,
+          outletId: outletKey,
           maxRetries: 3,
           conflictResolution: 'client-wins',
         });
@@ -283,7 +298,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           data: {
             id: orderId,
             user_id: user.id,
-            outlet_id: outletId,
+            outlet_id: resolvedOutletId,
             session_id: sessionId,
             table_number: tableNumber,
             order_type: 'sur_place',
@@ -291,18 +306,56 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             items: orderItems,
             total_amount: totalAmount,
             status: 'pending',
-            created_at: new Date().toISOString(),
+            created_at: nowIso,
+            updated_at: nowIso,
           },
           localId: orderId,
           userId: user.id,
-          outletId: outletId || undefined,
+          outletId: outletKey,
           maxRetries: 3,
           conflictResolution: 'client-wins',
         });
 
-        // Invalidate queries to refresh UI
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-        queryClient.invalidateQueries({ queryKey: ['orders'] });
+        // Update caches immediately (offline: invalidation alone doesn't refresh UI)
+        const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
+        const newSession = {
+          id: sessionId,
+          user_id: user.id,
+          outlet_id: resolvedOutletId,
+          debtor_id: null,
+          table_number: tableNumber,
+          custom_table_name: null,
+          status: 'active',
+          started_at: nowIso,
+          closed_at: null,
+          number_of_guests: parseInt(numberOfGuests) || 1,
+          total_amount: totalAmount,
+          notes: null,
+          created_at: nowIso,
+          updated_at: nowIso,
+        };
+        const nextSessions = [newSession, ...currentSessions];
+        queryClient.setQueryData(sessionsKey, nextSessions);
+        await storeData('table_sessions', nextSessions as any, user.id, outletKey);
+
+        const currentOrders = (queryClient.getQueryData(ordersKey) as any[] | undefined) || [];
+        const newOrder = {
+          id: orderId,
+          user_id: user.id,
+          outlet_id: resolvedOutletId,
+          session_id: sessionId,
+          table_number: tableNumber,
+          order_type: 'sur_place',
+          customer_name: `Table ${tableNumber}`,
+          items: orderItems,
+          total_amount: totalAmount,
+          status: 'pending',
+          created_at: nowIso,
+          updated_at: nowIso,
+        };
+        const nextOrders = [newOrder, ...currentOrders];
+        queryClient.setQueryData(ordersKey, nextOrders);
+        await storeData('orders', nextOrders as any, user.id, outletKey);
 
         toast({
           title: "Session créée (hors ligne)",
@@ -318,25 +371,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       }
 
       // Online mode
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let resolvedOutletId: string | null = outletId;
-      if (!resolvedOutletId && selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        resolvedOutletId = (userProfile as any)?.selected_outlet_id ?? null;
-      }
-      if (!resolvedOutletId) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        resolvedOutletId = (profile as any)?.selected_outlet_id ?? null;
-      }
-
       // 1. Créer la session
       const { data: session, error: sessionError } = await supabase
         .from("table_sessions")

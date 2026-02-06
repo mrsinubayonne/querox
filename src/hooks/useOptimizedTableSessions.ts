@@ -216,7 +216,8 @@ export const useOptimizedTableSessions = () => {
     mutationFn: async (sessionId: string) => {
       const session = sessions?.find(s => s.id === sessionId);
       const hasDebtor = session?.debtor_id !== null;
-      const newStatus = hasDebtor ? 'paid' : 'closed';
+      // Closing generates the invoice; payment is a separate action.
+      const newStatus: TableSession["status"] = 'closed';
 
       if (isOffline) {
         await queueMutation({
@@ -304,13 +305,13 @@ export const useOptimizedTableSessions = () => {
 
       const hasDebtorDb = sessionData?.debtor_id !== null;
 
-      const { error } = await supabase
-        .from('table_sessions')
-        .update({
-          status: hasDebtorDb ? 'paid' : 'closed',
-          closed_at: new Date().toISOString(),
-        })
-        .eq('id', sessionId);
+       const { error } = await supabase
+         .from('table_sessions')
+         .update({
+           status: 'closed',
+           closed_at: new Date().toISOString(),
+         })
+         .eq('id', sessionId);
 
       if (error) throw error;
       return { hasDebtor: hasDebtorDb };

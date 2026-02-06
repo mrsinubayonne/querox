@@ -68,7 +68,24 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const printViewRef = useRef<InvoicePrintViewRef>(null);
-  const handleMarkAsPaidWithMethod = async (paymentMethod: string, debtorId?: string, multipleBreakdown?: MultiplePaymentBreakdown) => {
+
+  // Cleanup print state after browser print dialog closes
+  useEffect(() => {
+    if (!invoiceToPrint) return;
+    const cleanup = () => {
+      setInvoiceToPrint(null);
+      setServedBy("");
+      setPrintReady(false);
+    };
+    window.addEventListener('afterprint', cleanup);
+    return () => window.removeEventListener('afterprint', cleanup);
+  }, [invoiceToPrint]);
+
+  const handleMarkAsPaidWithMethod = async (
+    paymentMethod: string,
+    debtorId?: string,
+    multipleBreakdown?: MultiplePaymentBreakdown
+  ) => {
     if (!session) return;
     
     // Track payment method used
@@ -373,6 +390,26 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     if (!session) return;
 
     try {
+      // Offline: use cached invoice if available
+      if (isOffline) {
+        const userId = user?.id || '';
+        const outlet = (session as any).outlet_id || localStorage.getItem('selectedOutletId') || undefined;
+        const cached = await getData<Invoice[]>('invoices', userId, outlet);
+        const list = (cached?.data || []) as Invoice[];
+        const inv = list.find((i) => (i as any).session_id === session.id);
+        if (!inv) {
+          toast({
+            title: 'Facture indisponible',
+            description: "Fermez d'abord la table pour générer la facture (hors ligne).",
+            variant: 'destructive',
+          });
+          return;
+        }
+        setInvoiceToPrint(inv);
+        setShowPrintDialog(true);
+        return;
+      }
+
       // 1) Chercher d'abord une facture existante pour cette session
       const {
         data: existingInvoice,
@@ -513,21 +550,14 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   }, []);
 
   const handleConfirmPrint = () => {
+    if (!printReady) {
+      sonnerToast.message('Préparation de la facture…', { description: 'Veuillez patienter une seconde.' });
+      return;
+    }
+
+    // Print via ref (avoid setTimeout: preserves user gesture on tablets)
+    printViewRef.current?.print();
     setShowPrintDialog(false);
-    // Print using ref (user gesture preserved)
-    setTimeout(() => {
-      if (printViewRef.current) {
-        printViewRef.current.print();
-      } else {
-        window.print();
-      }
-      // Clean up after printing
-      setTimeout(() => {
-        setInvoiceToPrint(null);
-        setServedBy("");
-        setPrintReady(false);
-      }, 500);
-    }, 100);
   };
 
   const handleClosePrintDialog = () => {
