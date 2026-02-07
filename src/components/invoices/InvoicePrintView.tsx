@@ -206,7 +206,14 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
           }
           @media screen {
             #invoice-print-portal {
-              display: none;
+              position: fixed !important;
+              left: -99999px !important;
+              top: -99999px !important;
+              width: 1px !important;
+              height: 1px !important;
+              overflow: hidden !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
             }
           }
         `}</style>
