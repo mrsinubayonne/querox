@@ -310,6 +310,7 @@ export const useSubscription = () => {
 
 
   const isSubscriptionActive = useCallback(() => {
+    // Admin bypass
     if (userRole?.role === 'admin') {
       return true;
     }
@@ -318,23 +319,41 @@ export const useSubscription = () => {
       return false;
     }
     
-    // If status says active, trust it
-    if (subscription.subscription_status === 'active') {
+    // CRITICAL: TOUJOURS vérifier la date d'expiration en premier
+    if (subscription.subscription_end) {
+      const endDate = new Date(subscription.subscription_end);
+      const now = new Date();
+      
+      if (endDate <= now) {
+        console.log('❌ Abonnement EXPIRÉ:', {
+          email: subscription.email,
+          endDate: subscription.subscription_end,
+          now: now.toISOString()
+        });
+        return false; // EXPIRÉ - bloquer l'accès
+      }
+    }
+    
+    // Si pas expiré, vérifier le statut
+    if (subscription.subscription_status === 'active' || subscription.subscription_status === 'trialing') {
       return true;
     }
     
-    // Fallbacks for legacy rows
+    // Statuts inactifs
+    if (subscription.subscription_status === 'cancelled' || 
+        subscription.subscription_status === 'expired' ||
+        subscription.subscription_status === 'past_due') {
+      console.log('❌ Statut abonnement inactif:', subscription.subscription_status);
+      return false;
+    }
+    
+    // Fallback pour les anciennes lignes sans status
     if (!subscription.subscribed) {
       return false;
     }
     
-    if (!subscription.subscription_end) {
-      return true;
-    }
-    
-    const endDate = new Date(subscription.subscription_end);
-    const now = new Date();
-    return endDate > now;
+    // Si subscribed=true et pas de date de fin, c'est actif (permanent)
+    return true;
   }, [subscription, userRole]);
 
   const getDaysRemaining = () => {
