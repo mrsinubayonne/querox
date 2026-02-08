@@ -168,11 +168,19 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
         <style>{`
           /* Hide everything except the invoice during print */
           @media print {
-            body > *:not(#invoice-print-portal) {
-              display: none !important;
+            /* Hide absolutely everything */
+            body * {
+              visibility: hidden !important;
+            }
+            /* Then show only the invoice portal and its children */
+            #invoice-print-portal,
+            #invoice-print-portal * {
+              visibility: visible !important;
             }
             #invoice-print-portal {
-              position: static !important;
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
               display: block !important;
               width: 100% !important;
               background: white !important;

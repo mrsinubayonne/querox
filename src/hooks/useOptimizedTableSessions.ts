@@ -297,23 +297,100 @@ export const useOptimizedTableSessions = () => {
         return { hasDebtor, invoiceNumber };
       }
 
+      // Fetch session details for invoice generation
       const { data: sessionData } = await supabase
         .from('table_sessions')
-        .select('debtor_id')
+        .select('*')
         .eq('id', sessionId)
-        .maybeSingle();
+        .single();
 
-      const hasDebtorDb = sessionData?.debtor_id !== null;
+      if (!sessionData) throw new Error('Session introuvable');
 
-       const { error } = await supabase
-         .from('table_sessions')
-         .update({
-           status: 'closed',
-           closed_at: new Date().toISOString(),
-         })
-         .eq('id', sessionId);
+      const hasDebtorDb = sessionData.debtor_id !== null;
+
+      // Close the session
+      const { error } = await supabase
+        .from('table_sessions')
+        .update({
+          status: 'closed',
+          closed_at: new Date().toISOString(),
+        })
+        .eq('id', sessionId);
 
       if (error) throw error;
+
+      // Generate invoice inline (no DB trigger exists)
+      try {
+        // Fetch orders for this session
+        const { data: ordersForSession } = await supabase
+          .from('orders')
+          .select('items, customer_name, customer_email, customer_phone')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: true });
+
+        const ordersList = (ordersForSession ?? []) as any[];
+        const allItems: any[] = [];
+        ordersList.forEach((order: any) => {
+          const orderItems = Array.isArray(order.items) ? order.items : [];
+          allItems.push(...orderItems);
+        });
+        const firstOrder = ordersList[0] || null;
+
+        // Generate invoice number
+        const { data: invoiceNumber, error: invoiceNumError } = await supabase.rpc('generate_invoice_number');
+        if (invoiceNumError || !invoiceNumber) throw invoiceNumError || new Error('No invoice number');
+
+        // Handle debtor-specific fields
+        let dueDate: string | null = null;
+        let paymentTermsDays: number | null = null;
+        let businessCustomerId: string | null = null;
+        let invoiceType = 'b2c';
+        let billingAddress: string | null = null;
+        let siret: string | null = null;
+
+        if (hasDebtorDb && sessionData.debtor_id) {
+          invoiceType = 'b2b';
+          businessCustomerId = sessionData.debtor_id;
+          const { data: debtor } = await supabase
+            .from('business_customers')
+            .select('payment_terms_days, address, siret')
+            .eq('id', businessCustomerId)
+            .maybeSingle();
+
+          paymentTermsDays = (debtor as any)?.payment_terms_days ?? 30;
+          const now = new Date();
+          now.setDate(now.getDate() + paymentTermsDays);
+          dueDate = now.toISOString().split('T')[0];
+          billingAddress = (debtor as any)?.address ?? null;
+          siret = (debtor as any)?.siret ?? null;
+        }
+
+        await supabase
+          .from('invoices')
+          .insert([{
+            user_id: sessionData.user_id,
+            outlet_id: sessionData.outlet_id,
+            session_id: sessionId,
+            business_customer_id: businessCustomerId,
+            invoice_number: invoiceNumber,
+            invoice_type: invoiceType,
+            total_amount: sessionData.total_amount ?? 0,
+            status: 'unpaid',
+            due_date: dueDate,
+            payment_terms_days: paymentTermsDays,
+            notes: `Facture - Table ${sessionData.table_number}`,
+            billing_address: billingAddress,
+            siret,
+            customer_name: firstOrder?.customer_name ?? 'Client',
+            customer_email: firstOrder?.customer_email ?? null,
+            customer_phone: firstOrder?.customer_phone ?? null,
+            items: allItems,
+          }]);
+      } catch (invoiceError) {
+        console.error('Error generating invoice on close:', invoiceError);
+        // Don't throw - session is closed, invoice generation is best-effort
+      }
+
       return { hasDebtor: hasDebtorDb };
     },
     onSuccess: ({ hasDebtor }) => {
