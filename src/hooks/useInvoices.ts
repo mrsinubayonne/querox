@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { useOfflineInsert, useOfflineUpdate } from '@/hooks/useOfflineMutation';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 export interface Invoice {
   id: string;
@@ -25,21 +24,12 @@ export interface Invoice {
   customer_email: string | null;
   customer_phone: string | null;
   items: unknown[];
-  payment_method?: string | null;
-}
-
-// Generate offline invoice number
-function generateOfflineInvoiceNumber(): string {
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `OFF-${timestamp}-${random}`;
 }
 
 export const useInvoices = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { outletId, loading: outletLoading } = useOptimizedOutlet();
-  const { isOffline } = useNetworkStatus();
 
   const { data: invoices, isLoading: loading, refetch } = useOfflineData<Invoice>({
     table: 'invoices',
@@ -68,8 +58,8 @@ export const useInvoices = () => {
     queryKey: ['invoices'],
     onSuccess: () => {
       toast({
-        title: isOffline ? "Facture créée (hors ligne)" : "Facture créée",
-        description: isOffline ? "Sera synchronisée au retour en ligne" : "Facture générée avec succès",
+        title: "Facture créée",
+        description: "Facture générée avec succès",
       });
     },
   });
@@ -79,23 +69,21 @@ export const useInvoices = () => {
     queryKey: ['invoices'],
     onSuccess: () => {
       toast({
-        title: isOffline ? "Statut mis à jour (hors ligne)" : "Statut mis à jour",
-        description: isOffline ? "Sera synchronisé au retour en ligne" : "Le statut de la facture a été mis à jour",
+        title: "Statut mis à jour",
+        description: "Le statut de la facture a été mis à jour",
       });
     },
   });
 
   const generateInvoiceNumber = async () => {
-    // If offline, generate local invoice number
-    if (isOffline) {
-      return generateOfflineInvoiceNumber();
-    }
-
     const { data, error } = await supabase.rpc('generate_invoice_number');
     if (error) {
       console.error('Error generating invoice number:', error);
-      // Fallback to offline format if RPC fails
-      return generateOfflineInvoiceNumber();
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const timestamp = Date.now().toString().slice(-4);
+      return `INV-${year}${month}-${timestamp}`;
     }
     return data;
   };
@@ -126,15 +114,12 @@ export const useInvoices = () => {
       due_date: dueDate.toISOString().split('T')[0],
       notes,
     } as unknown as Record<string, unknown>);
-  }, [user, outletId, toast, insertMutation, isOffline]);
+  }, [user, outletId, toast, insertMutation]);
 
-  const updateInvoiceStatus = useCallback(async (invoiceId: string, status: 'paid' | 'unpaid' | 'overdue', paymentMethod?: string) => {
+  const updateInvoiceStatus = useCallback(async (invoiceId: string, status: 'paid' | 'unpaid' | 'overdue') => {
     const updateData: Record<string, unknown> = { id: invoiceId, status };
     if (status === 'paid') {
       updateData.paid_date = new Date().toISOString().split('T')[0];
-      if (paymentMethod) {
-        updateData.payment_method = paymentMethod;
-      }
     }
     updateMutation.mutate(updateData as unknown as Record<string, unknown> & { id: string });
   }, [updateMutation]);
@@ -142,11 +127,8 @@ export const useInvoices = () => {
   return {
     invoices,
     loading,
-    isOffline,
     createInvoice,
     updateInvoiceStatus,
-    refetch,
-    generateInvoiceNumber,
+    refetch
   };
 };
-
