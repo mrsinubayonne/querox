@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { getData } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
 import { DateRange } from 'react-day-picker';
 import { format, endOfDay, startOfDay, setHours, setMinutes } from 'date-fns';
@@ -31,6 +33,7 @@ interface UseDailyReportsProps {
 
 export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: UseDailyReportsProps) => {
   const { user } = useAuth();
+  const { isOffline } = useNetworkStatus();
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -38,7 +41,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
     if (user && dateRange?.from && dateRange?.to) {
       fetchReports();
     }
-  }, [user, outletId, dateRange, reportType, timeRange]);
+  }, [user, outletId, dateRange, reportType, timeRange, isOffline]);
 
   const fetchReports = async () => {
     if (!user || !dateRange?.from || !dateRange?.to) return;
@@ -48,7 +51,6 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
       let start = startOfDay(dateRange.from);
       let end = endOfDay(dateRange.to);
 
-      // Apply time range if specified
       if (timeRange) {
         const [startHour, startMinute] = timeRange.start.split(':').map(Number);
         const [endHour, endMinute] = timeRange.end.split(':').map(Number);
@@ -59,67 +61,82 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
       const startISO = start.toISOString();
       const endISO = end.toISOString();
 
-      // Determine the outlet to scope data
-      let scopedOutletId = outletId;
-      if (!scopedOutletId) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('selected_outlet_id')
-          .eq('id', user.id)
-          .maybeSingle();
-        scopedOutletId = profile?.selected_outlet_id || undefined;
-      }
-
-      // Fetch outlets map for names (only the scoped outlet for efficiency)
-      let outletsQuery = supabase
-        .from('outlets')
-        .select('id, name')
-        .eq('user_id', user.id);
-      if (scopedOutletId) outletsQuery = outletsQuery.eq('id', scopedOutletId);
-
-      const { data: outlets, error: outletsError } = await outletsQuery;
-      if (outletsError) throw outletsError;
+      let orders: any[] = [];
+      let invoices: any[] = [];
       const outletNameById = new Map<string, string>();
-      (outlets || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
-      const timeLabel = timeRange && (timeRange.start !== '00:00' || timeRange.end !== '23:59') 
-        ? `${timeRange.start}-${timeRange.end}`
-        : undefined;
+      if (isOffline) {
+        // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
+        const cachedOrders = await getData<any[]>('orders', user.id);
+        const cachedInvoices = await getData<any[]>('invoices', user.id);
+        const cachedOutlets = await getData<any[]>('outlets', user.id);
 
-      // Orders
-      let ordersQuery = supabase
-        .from('orders')
-        .select('id, total_amount, created_at, outlet_id, customer_name')
-        .eq('user_id', user.id)
-        .gte('created_at', startISO)
-        .lte('created_at', endISO);
+        // Outlets map
+        ((cachedOutlets?.data as any[]) || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
-      if (scopedOutletId) {
-        ordersQuery = ordersQuery.eq('outlet_id', scopedOutletId);
+        // Filtrer par date et outlet
+        orders = ((cachedOrders?.data as any[]) || []).filter((o: any) => {
+          const d = o.created_at;
+          if (!d) return false;
+          if (d < startISO || d > endISO) return false;
+          if (outletId && o.outlet_id !== outletId) return false;
+          return true;
+        });
+
+        invoices = ((cachedInvoices?.data as any[]) || []).filter((inv: any) => {
+          const d = inv.created_at;
+          if (!d) return false;
+          if (d < startISO || d > endISO) return false;
+          if (outletId && inv.outlet_id !== outletId) return false;
+          return true;
+        });
+
+        console.log('[Offline] Rapports depuis cache — commandes:', orders.length, '| factures:', invoices.length);
+      } else {
+        // --- MODE EN LIGNE ---
+        let scopedOutletId = outletId;
+        if (!scopedOutletId) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('selected_outlet_id')
+            .eq('id', user.id)
+            .maybeSingle();
+          scopedOutletId = profile?.selected_outlet_id || undefined;
+        }
+
+        let outletsQuery = supabase.from('outlets').select('id, name').eq('user_id', user.id);
+        if (scopedOutletId) outletsQuery = outletsQuery.eq('id', scopedOutletId);
+        const { data: outletsData, error: outletsError } = await outletsQuery;
+        if (outletsError) throw outletsError;
+        (outletsData || []).forEach((o: any) => outletNameById.set(o.id, o.name));
+
+        let ordersQuery = supabase
+          .from('orders')
+          .select('id, total_amount, created_at, outlet_id, customer_name')
+          .eq('user_id', user.id)
+          .gte('created_at', startISO)
+          .lte('created_at', endISO);
+        if (scopedOutletId) ordersQuery = ordersQuery.eq('outlet_id', scopedOutletId);
+        const { data: ordersData, error: ordersError } = await ordersQuery;
+        if (ordersError) throw ordersError;
+        orders = ordersData || [];
+
+        let invoicesQuery = supabase
+          .from('invoices')
+          .select('id, total_amount, status, created_at, outlet_id')
+          .eq('user_id', user.id)
+          .gte('created_at', startISO)
+          .lte('created_at', endISO);
+        if (scopedOutletId) invoicesQuery = invoicesQuery.eq('outlet_id', scopedOutletId);
+        const { data: invoicesData, error: invoicesError } = await invoicesQuery;
+        if (invoicesError) throw invoicesError;
+        invoices = invoicesData || [];
       }
 
-      const { data: orders, error: ordersError } = await ordersQuery;
-      if (ordersError) throw ordersError;
-
-      // Invoices
-      let invoicesQuery = supabase
-        .from('invoices')
-        .select('id, total_amount, status, created_at, outlet_id')
-        .eq('user_id', user.id)
-        .gte('created_at', startISO)
-        .lte('created_at', endISO);
-
-      if (scopedOutletId) {
-        invoicesQuery = invoicesQuery.eq('outlet_id', scopedOutletId);
-      }
-
-      const { data: invoices, error: invoicesError } = await invoicesQuery;
-      if (invoicesError) throw invoicesError;
-
-      // Build reports
+      // Build reports map
       const reportsMap = new Map<string, DailyReport>();
 
-      (orders || []).forEach((order: any) => {
+      orders.forEach((order: any) => {
         const orderDate = new Date(order.created_at);
         const dateKey = format(orderDate, 'yyyy-MM-dd');
         const outletKey = `${dateKey}-${order.outlet_id}`;
@@ -145,7 +162,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         report.total_revenue += Number(order.total_amount);
       });
 
-      (invoices || []).forEach((invoice: any) => {
+      invoices.forEach((invoice: any) => {
         const invoiceDate = new Date(invoice.created_at);
         const dateKey = format(invoiceDate, 'yyyy-MM-dd');
         const outletKey = `${dateKey}-${invoice.outlet_id}`;
@@ -175,7 +192,6 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         }
       });
 
-      // Calculate averages
       reportsMap.forEach((report) => {
         if (report.total_orders > 0) {
           report.average_order_value = report.total_revenue / report.total_orders;
@@ -203,7 +219,6 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
 
     try {
       if (downloadFormat === 'excel') {
-        // Create Excel file
         const worksheet = XLSX.utils.json_to_sheet(
           reports.map((report) => ({
             Date: report.date,
@@ -220,31 +235,27 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
 
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Rapports');
-        
         const fileName = `rapport_${reportType}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
         XLSX.writeFile(workbook, fileName);
-        
         toast.success('Rapport Excel téléchargé avec succès');
-      } else if (downloadFormat === 'pdf') {
-        // Generate PDF
+      } else {
         const doc = new jsPDF();
-        
-        // Add title
+
         doc.setFontSize(18);
         doc.text(`Rapport ${reportType}`, 14, 20);
-        
-        // Add date
         doc.setFontSize(11);
         doc.text(`Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm')}`, 14, 28);
 
-        // Add selected period and time
         const periodText = `Période: ${dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : ''} - ${dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : ''}`;
         doc.text(periodText, 14, 36);
         if (timeRange) {
           doc.text(`Heures: ${timeRange.start} - ${timeRange.end}`, 14, 42);
         }
+        if (isOffline) {
+          doc.setFontSize(9);
+          doc.text('(Données locales — mode hors ligne)', 14, timeRange ? 48 : 42);
+        }
 
-        // Prepare table data
         const tableData = reports.map((report) => [
           report.date,
           report.time || '-',
@@ -257,7 +268,6 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
           `${report.average_order_value.toLocaleString()} CFA`,
         ]);
 
-        // Add totals row
         const totalOrders = reports.reduce((sum, r) => sum + r.total_orders, 0);
         const totalRevenue = reports.reduce((sum, r) => sum + r.total_revenue, 0);
         const totalInvoices = reports.reduce((sum, r) => sum + r.total_invoices, 0);
@@ -266,9 +276,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
         tableData.push([
-          'Total',
-          '',
-          '',
+          'Total', '', '',
           totalOrders.toString(),
           `${totalRevenue.toLocaleString()} CFA`,
           totalInvoices.toString(),
@@ -277,11 +285,10 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
           `${avgOrder.toLocaleString()} CFA`,
         ]);
 
-        // Create table
         autoTable(doc, {
           head: [['Date', 'Heure', 'Point de vente', 'Commandes', 'CA', 'Factures', 'Payées', 'Impayées', 'Panier moyen']],
           body: tableData,
-          startY: timeRange ? 48 : 44,
+          startY: isOffline ? (timeRange ? 54 : 48) : (timeRange ? 48 : 44),
           theme: 'grid',
           headStyles: { fillColor: [59, 130, 246] },
           styles: { fontSize: 8 },
@@ -289,7 +296,6 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
 
         const fileName = `rapport_${reportType}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
         doc.save(fileName);
-        
         toast.success('Rapport PDF téléchargé avec succès');
       }
     } catch (error) {
