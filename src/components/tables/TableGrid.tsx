@@ -23,7 +23,7 @@ export const TableGrid: React.FC<TableGridProps> = ({
     return sessions.find(
       (s) =>
         s.table_number === tableNumber &&
-        (s.status === "active" || s.status === "closed" || s.status === "paid")
+        (s.status === "active" || s.status === "closed")
     ) || null;
   };
 
