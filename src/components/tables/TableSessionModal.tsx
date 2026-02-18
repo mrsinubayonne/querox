@@ -265,7 +265,16 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         paymentMethodString = 'Multiple';
       }
 
-      // Regular payment flow
+      // Offline: delegate entirely to the hook (which handles queue + local cache)
+      if (isOffline) {
+        await onMarkAsPaid(session.id, paymentMethodString);
+        celebrate();
+        sonnerToast.success('Paiement enregistré (hors ligne)');
+        onClose();
+        return;
+      }
+
+      // Regular payment flow (online only)
       const { error: sessionError } = await supabase
         .from('table_sessions')
         .update({ 
@@ -297,7 +306,6 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
       // Handle debtor portion in multiple payment
       if (paymentMethod === 'Multiple' && multipleBreakdown && multipleBreakdown.debiteur > 0 && multipleBreakdown.debiteurId) {
-        // Create a debtor payment record for the amount that needs to be paid later
         const { data: debtor } = await supabase
           .from('business_customers')
           .select('current_debt')
