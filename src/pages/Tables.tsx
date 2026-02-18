@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import PageWithSidebar from "@/components/PageWithSidebar";
 import SubscriptionGuard from "@/components/SubscriptionGuard";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Plus, UserPlus, Filter, WifiOff } from "lucide-react";
+import { RefreshCw, Plus, UserPlus, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TableGrid } from "@/components/tables/TableGrid";
 import { CreateSessionWithOrderModal } from "@/components/tables/CreateSessionWithOrderModal";
@@ -23,7 +23,6 @@ const Tables: React.FC = () => {
   const {
     sessions,
     loading,
-    isOffline,
     createSession,
     closeSession,
     markSessionAsPaid,
@@ -153,17 +152,9 @@ const Tables: React.FC = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold">🪑 Gestion des Tables</h1>
-                {isOffline && (
-                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
-                    <WifiOff className="h-3 w-3 mr-1" />
-                    Hors ligne
-                  </Badge>
-                )}
-              </div>
+              <h1 className="text-3xl font-bold">🪑 Gestion des Tables</h1>
               <p className="text-muted-foreground mt-1">
-                {isOffline ? "Mode hors ligne - Les données seront synchronisées" : "Gérez vos tables et sessions en temps réel"}
+                Gérez vos tables et sessions en temps réel
               </p>
             </div>
 
