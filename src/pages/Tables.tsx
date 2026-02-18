@@ -11,7 +11,7 @@ import { TableSessionModal } from "@/components/tables/TableSessionModal";
 import { RenameTableModal } from "@/components/tables/RenameTableModal";
 import { useOptimizedTableSessions, TableSession } from "@/hooks/useOptimizedTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,42 +93,21 @@ const Tables: React.FC = () => {
     }
   }, [tableNumbers, sessions, statusFilter]);
 
-  // Écouter les mises à jour de session depuis le modal et en temps réel
+  // Sync selected session when sessions update
   useEffect(() => {
-    const handleSessionUpdate = () => {
-      refetch();
-      // Si le modal est ouvert, mettre à jour la session affichée
-      if (selectedSession) {
-        const updatedSession = sessions.find(s => s.id === selectedSession.id);
-        if (updatedSession) {
-          setSelectedSession(updatedSession);
-        }
+    if (selectedSession) {
+      const updatedSession = sessions.find(s => s.id === selectedSession.id);
+      if (updatedSession) {
+        setSelectedSession(updatedSession);
       }
-    };
+    }
+  }, [sessions]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    const handleSessionUpdate = () => refetch();
     window.addEventListener("session-updated", handleSessionUpdate);
-    
-    // Écouter les changements en temps réel sur les sessions (nouvelles commandes créant des sessions)
-    const channel = supabase
-      .channel('table-sessions-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'table_sessions'
-        },
-        () => {
-          refetch();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      window.removeEventListener("session-updated", handleSessionUpdate);
-      supabase.removeChannel(channel);
-    };
-  }, [refetch, selectedSession, sessions]);
+    return () => window.removeEventListener("session-updated", handleSessionUpdate);
+  }, [refetch]);
 
   const handleTableClick = (tableNumber: string, session: TableSession | null) => {
     setSelectedTable(tableNumber);
