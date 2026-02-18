@@ -168,8 +168,8 @@ createRoot(document.getElementById("root")!).render(
       client={queryClient}
       persistOptions={{
         persister,
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 JOURS (au lieu de 24h)
-        buster: 'v2', // Incrémenté pour invalider l'ancien cache
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 JOURS
+        buster: 'v1', // Garder v1 pour ne pas invalider le cache existant
       }}
     >
       <AuthProvider>
