@@ -182,9 +182,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
           description: "Bienvenue sur QUEROX",
         });
 
-        // Redirect to profile selection (which will then go to dashboard)
         setTimeout(() => {
-          navigate('/select-profile');
+          navigate('/dashboard');
         }, 100);
       }
     } catch (error: any) {
