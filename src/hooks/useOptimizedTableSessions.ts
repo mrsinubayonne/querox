@@ -77,7 +77,7 @@ export const useOptimizedTableSessions = () => {
         return { data: [], error: e };
       }
     },
-    enabled: !!user && !outletLoading,
+    enabled: !!user, // Don't wait for outletLoading — IndexedDB cache loads immediately
   });
 
   // Helper to update local cache for immediate UI feedback
