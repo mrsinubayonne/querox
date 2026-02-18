@@ -241,6 +241,15 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
     safeFetchAndStore('business_customers'),
     safeFetchAndStore('invoice_settings'),
     safeFetchAndStore('suppliers'),
+    safeFetchAndStore('business_periods', async () => {
+      const { data } = await supabase
+        .from('business_periods')
+        .select('*')
+        .eq('user_id', userId)
+        .order('started_at', { ascending: false })
+        .limit(100);
+      return data || [];
+    }),
     safeFetchAndStore('table_sessions', async () => {
       const { data } = await supabase
         .from('table_sessions')

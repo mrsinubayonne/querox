@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { getData } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
 import { format as formatDate } from 'date-fns';
 import * as XLSX from 'xlsx';
@@ -28,6 +30,7 @@ interface UseDetailedReportsProps {
 
 export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsProps) => {
   const { user } = useAuth();
+  const { isOffline } = useNetworkStatus();
   const [transactions, setTransactions] = useState<DetailedTransaction[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -35,121 +38,138 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
     if (user && periodId) {
       fetchTransactions();
     }
-  }, [user, outletId, periodId]);
+  }, [user, outletId, periodId, isOffline]);
 
-  // Real-time updates for orders and invoices
+  // Real-time updates (online only)
   useEffect(() => {
-    if (!user || !periodId) return;
+    if (!user || !periodId || isOffline) return;
 
     const ordersChannel = supabase
       .channel('orders-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchTransactions();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, () => fetchTransactions())
       .subscribe();
 
     const invoicesChannel = supabase
       .channel('invoices-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'invoices',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchTransactions();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `user_id=eq.${user.id}` }, () => fetchTransactions())
       .subscribe();
 
     return () => {
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(invoicesChannel);
     };
-  }, [user, periodId]);
+  }, [user, periodId, isOffline]);
 
   const fetchTransactions = async () => {
     if (!user || !periodId) return;
 
     setLoading(true);
     try {
-      // Fetch period details
-      const { data: period, error: periodError } = await supabase
-        .from('business_periods')
-        .select('*')
-        .eq('id', periodId)
-        .single();
-
-      if (periodError) throw periodError;
-
-      const startISO = period.started_at;
-      const endISO = period.ended_at || new Date().toISOString();
-
-      // Fetch outlets map
-      const { data: outlets, error: outletsError } = await supabase
-        .from('outlets')
-        .select('id, name')
-        .eq('user_id', user.id);
-      if (outletsError) throw outletsError;
-      const outletNameById = new Map<string, string>();
-      (outlets || []).forEach((o: any) => outletNameById.set(o.id, o.name));
-
       const allTransactions: DetailedTransaction[] = [];
+      const outletNameById = new Map<string, string>();
 
-      // IMPORTANT: Pour les rapports clients, nous n'incluons que les FACTURES PAYÉES
-      // Les commandes (orders) ne doivent PAS apparaître dans les transactions détaillées
-      // afin d'éviter toute confusion avec des ventes non facturées ou non payées.
+      if (isOffline) {
+        // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
+        const cachedPeriods = await getData<any[]>('business_periods', user.id);
+        const periods = (cachedPeriods?.data as any[]) || [];
+        const period = periods.find((p: any) => p.id === periodId);
 
-      // Nous ne chargeons donc plus les commandes ici. Seules les factures avec statut "paid"
-      // seront ajoutées ci-dessous dans la section des factures.
+        if (!period) {
+          console.warn('[Offline] Période non trouvée dans le cache:', periodId);
+          setTransactions([]);
+          return;
+        }
 
-      // Fetch invoices - UNIQUEMENT les factures payées
-      let invoicesQuery = supabase
-        .from('invoices')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'paid')
-        .gte('created_at', startISO)
-        .lte('created_at', endISO)
-        .order('created_at', { ascending: false });
+        const startISO = period.started_at;
+        const endISO = period.ended_at || new Date().toISOString();
+        const scopedOutletId = period.outlet_id || outletId;
 
-      // IMPORTANT: Filtrer par outlet_id si spécifié
-      if (period.outlet_id) {
-        invoicesQuery = invoicesQuery.eq('outlet_id', period.outlet_id);
+        // Outlets map
+        const cachedOutlets = await getData<any[]>('outlets', user.id);
+        ((cachedOutlets?.data as any[]) || []).forEach((o: any) => outletNameById.set(o.id, o.name));
+
+        // Factures payées dans la période
+        const cachedInvoices = await getData<any[]>('invoices', user.id);
+        const invoices = ((cachedInvoices?.data as any[]) || []).filter((inv: any) => {
+          if (inv.status !== 'paid') return false;
+          if (!inv.created_at) return false;
+          if (inv.created_at < startISO || inv.created_at > endISO) return false;
+          if (scopedOutletId && inv.outlet_id !== scopedOutletId) return false;
+          return true;
+        });
+
+        console.log('[Offline] Transactions détaillées depuis cache — factures:', invoices.length);
+
+        invoices.forEach((invoice: any) => {
+          const invoiceDate = new Date(invoice.created_at);
+          allTransactions.push({
+            id: invoice.id,
+            date: formatDate(invoiceDate, 'yyyy-MM-dd'),
+            time: formatDate(invoiceDate, 'HH:mm:ss'),
+            outlet_id: invoice.outlet_id,
+            outlet_name: outletNameById.get(invoice.outlet_id) || 'Non défini',
+            type: 'invoice',
+            reference: invoice.invoice_number,
+            customer_name: invoice.customer_name || 'Client',
+            amount: Number(invoice.total_amount),
+            status: invoice.status,
+            items: invoice.items,
+          });
+        });
+
+      } else {
+        // --- MODE EN LIGNE ---
+        const { data: period, error: periodError } = await supabase
+          .from('business_periods')
+          .select('*')
+          .eq('id', periodId)
+          .single();
+        if (periodError) throw periodError;
+
+        const startISO = period.started_at;
+        const endISO = period.ended_at || new Date().toISOString();
+
+        const { data: outlets, error: outletsError } = await supabase
+          .from('outlets')
+          .select('id, name')
+          .eq('user_id', user.id);
+        if (outletsError) throw outletsError;
+        (outlets || []).forEach((o: any) => outletNameById.set(o.id, o.name));
+
+        let invoicesQuery = supabase
+          .from('invoices')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'paid')
+          .gte('created_at', startISO)
+          .lte('created_at', endISO)
+          .order('created_at', { ascending: false });
+
+        if (period.outlet_id) {
+          invoicesQuery = invoicesQuery.eq('outlet_id', period.outlet_id);
+        }
+
+        const { data: invoices, error: invoicesError } = await invoicesQuery;
+        if (invoicesError) throw invoicesError;
+
+        (invoices || []).forEach((invoice: any) => {
+          const invoiceDate = new Date(invoice.created_at);
+          allTransactions.push({
+            id: invoice.id,
+            date: formatDate(invoiceDate, 'yyyy-MM-dd'),
+            time: formatDate(invoiceDate, 'HH:mm:ss'),
+            outlet_id: invoice.outlet_id,
+            outlet_name: outletNameById.get(invoice.outlet_id) || 'Non défini',
+            type: 'invoice',
+            reference: invoice.invoice_number,
+            customer_name: invoice.customer_name || 'Client',
+            amount: Number(invoice.total_amount),
+            status: invoice.status,
+            items: invoice.items,
+          });
+        });
       }
 
-      const { data: invoices, error: invoicesError } = await invoicesQuery;
-      if (invoicesError) throw invoicesError;
-
-      (invoices || []).forEach((invoice: any) => {
-        const invoiceDate = new Date(invoice.created_at);
-        allTransactions.push({
-          id: invoice.id,
-          date: formatDate(invoiceDate, 'yyyy-MM-dd'),
-          time: formatDate(invoiceDate, 'HH:mm:ss'),
-          outlet_id: invoice.outlet_id,
-          outlet_name: outletNameById.get(invoice.outlet_id) || 'Non défini',
-          type: 'invoice',
-          reference: invoice.invoice_number,
-          customer_name: invoice.customer_name || 'Client',
-          amount: Number(invoice.total_amount),
-          status: invoice.status,
-          items: invoice.items,
-        });
-      });
-
-      // Sort all transactions by date and time
       allTransactions.sort((a, b) => {
         const dateCompare = b.date.localeCompare(a.date);
         if (dateCompare !== 0) return dateCompare;
@@ -192,38 +212,35 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
 
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
-
         const fileName = `rapport_detaille_${formatDate(new Date(), 'yyyy-MM-dd')}.xlsx`;
         XLSX.writeFile(workbook, fileName);
-
         toast.success('Rapport Excel téléchargé avec succès');
-      } else if (format === 'pdf') {
+      } else {
         const doc = new jsPDF();
 
-        doc.setFontSize(18);
-        doc.text('Rapport Détaillé des Transactions', 14, 20);
-
-        doc.setFontSize(11);
-        doc.text(`Généré le ${formatDate(new Date(), 'dd/MM/yyyy à HH:mm')}`, 14, 28);
-        
-        // Format FCFA avec espace normal comme séparateur de milliers
         const formatFCFA = (value: number) => {
           const rounded = Math.round(Number(value) || 0);
           return `${rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} FCFA`;
         };
-        
-        // Calculate total amount
+
+        doc.setFontSize(18);
+        doc.text('Rapport Détaillé des Transactions', 14, 20);
+        doc.setFontSize(11);
+        doc.text(`Généré le ${formatDate(new Date(), 'dd/MM/yyyy à HH:mm')}`, 14, 28);
+        if (isOffline) {
+          doc.setFontSize(9);
+          doc.text('(Données locales — mode hors ligne)', 14, 34);
+        }
+
         const totalAmount = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
-        
-        // Get period info if available
         const firstTransaction = filteredTransactions[0];
         const lastTransaction = filteredTransactions[filteredTransactions.length - 1];
         const periodText = firstTransaction && lastTransaction && firstTransaction.date !== lastTransaction.date
           ? `Période: ${firstTransaction.date} au ${lastTransaction.date}`
           : `Date: ${firstTransaction?.date || formatDate(new Date(), 'dd/MM/yyyy')}`;
-        
+
         doc.setFontSize(10);
-        doc.text(periodText, 14, 34);
+        doc.text(periodText, 14, isOffline ? 40 : 34);
 
         const tableData = filteredTransactions.map((t) => [
           t.date,
@@ -236,20 +253,18 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
           t.status,
         ]);
 
-        // Ensure base font is set for table content
         doc.setFont('helvetica', 'normal');
 
         autoTable(doc, {
           head: [['Date', 'Heure', 'PDV', 'Type', 'Référence', 'Client', 'Montant', 'Statut']],
           body: tableData,
-          startY: 40,
+          startY: isOffline ? 46 : 40,
           theme: 'grid',
           headStyles: { fillColor: [59, 130, 246] },
           styles: { fontSize: 8 },
           columnStyles: { 6: { halign: 'right' } },
         });
 
-        // Add total row
         const finalY = (doc as any).lastAutoTable.finalY || 40;
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
@@ -257,7 +272,6 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
 
         const fileName = `rapport_detaille_${formatDate(new Date(), 'yyyy-MM-dd')}.pdf`;
         doc.save(fileName);
-
         toast.success('Rapport PDF téléchargé avec succès');
       }
     } catch (error) {
