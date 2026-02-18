@@ -18,9 +18,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
+import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRestaurant } from "@/contexts/RestaurantContext";
+import type { MenuItem } from "@/types/menu";
 
 interface Props {
   isOpen: boolean;
@@ -56,26 +57,89 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
   const [showCustomItem, setShowCustomItem] = useState(false);
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState("");
+  // Fallback items loaded directly from IndexedDB when offline
+  const [offlineMenuItems, setOfflineMenuItems] = useState<MenuItem[]>([]);
+
+  const loadOfflineMenuItems = async (resolvedOutletId: string | null) => {
+    if (!user) return;
+    try {
+      const outletKey = resolvedOutletId || undefined;
+
+      // Load menus
+      let cachedMenus = await getData<Record<string, unknown>[]>('menus', user.id, outletKey);
+      if (!cachedMenus?.data || (cachedMenus.data as any[]).length === 0) {
+        cachedMenus = await getData<Record<string, unknown>[]>('menus', user.id);
+      }
+      const menusData = (cachedMenus?.data || []) as Array<{ id: string; outlet_id?: string }>;
+
+      // Filter menus by outlet
+      const outletMenuIds = resolvedOutletId
+        ? menusData.filter(m => !m.outlet_id || m.outlet_id === resolvedOutletId).map(m => m.id)
+        : menusData.map(m => m.id);
+
+      if (outletMenuIds.length > 0 && !localStorage.getItem('activeMenuId')) {
+        localStorage.setItem('activeMenuId', outletMenuIds[0]);
+        setActiveMenuId(outletMenuIds[0]);
+      }
+
+      // Load categories
+      let cachedCategories = await getData<Record<string, unknown>[]>('menu_categories', user.id, outletKey);
+      if (!cachedCategories?.data || (cachedCategories.data as any[]).length === 0) {
+        cachedCategories = await getData<Record<string, unknown>[]>('menu_categories', user.id);
+      }
+      const categoriesData = (cachedCategories?.data || []) as Array<{ id: string; name: string; menu_id: string }>;
+      const filteredCategories = categoriesData.filter(c => outletMenuIds.includes(c.menu_id));
+      const categoryIds = filteredCategories.map(c => c.id);
+      const categoryMap = new Map(filteredCategories.map(c => [c.id, c.name]));
+
+      // Load items
+      let cachedItems = await getData<Record<string, unknown>[]>('menu_items', user.id, outletKey);
+      if (!cachedItems?.data || (cachedItems.data as any[]).length === 0) {
+        cachedItems = await getData<Record<string, unknown>[]>('menu_items', user.id);
+      }
+      const allItems = (cachedItems?.data || []) as Record<string, unknown>[];
+
+      const filtered = allItems.filter(item =>
+        categoryIds.includes(item.category_id as string) && item.is_available !== false
+      );
+
+      const items: MenuItem[] = filtered.map(item => ({
+        id: item.id as string,
+        name: item.name as string,
+        description: (item.description as string) || '',
+        price: Number(item.price),
+        category_name: categoryMap.get(item.category_id as string) || 'Sans catégorie',
+        image_url: item.image_url as string | undefined,
+        is_available: true,
+      }));
+
+      if (items.length > 0) {
+        setOfflineMenuItems(items);
+        console.log('[Offline] Loaded', items.length, 'menu items from IndexedDB');
+      }
+    } catch (err) {
+      console.warn('[Offline] Failed to load menu items from IndexedDB:', err);
+    }
+  };
 
   // Fetch user's active menu - use localStorage for offline support
   useEffect(() => {
     const fetchActiveMenu = async () => {
       if (!user) return;
 
-      // Get outlet from context or localStorage (works offline)
       const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
-      
-      // If offline, try to get cached menu ID
+
       if (isOffline) {
         const cachedMenuId = localStorage.getItem('activeMenuId');
         if (cachedMenuId) {
           setActiveMenuId(cachedMenuId);
-          return;
         }
+        // Always load from IndexedDB when offline
+        await loadOfflineMenuItems(resolvedOutletId);
+        return;
       }
 
       try {
-        // Try to fetch menu from Supabase
         let { data: menus } = await supabase
           .from("menus")
           .select("id")
@@ -98,7 +162,6 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
 
         if (menus) {
           setActiveMenuId((menus as any).id);
-          // Cache for offline use
           localStorage.setItem('activeMenuId', (menus as any).id);
         } else {
           setActiveMenuId(null);
@@ -109,6 +172,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         if (cachedMenuId) {
           setActiveMenuId(cachedMenuId);
         }
+        await loadOfflineMenuItems(resolvedOutletId);
       }
     };
 
@@ -116,10 +180,18 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       fetchActiveMenu();
       setCart([]);
       setSearchTerm("");
+      setOfflineMenuItems([]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isOpen, outletId, isOffline]);
 
-  const { menuItems } = useMenuData(activeMenuId);
+  const { menuItems: onlineMenuItems } = useMenuData(activeMenuId);
+
+  // Merge: prefer online items, fall back to IndexedDB items when offline or empty
+  const menuItems = useMemo(() => {
+    if (onlineMenuItems && onlineMenuItems.length > 0) return onlineMenuItems;
+    return offlineMenuItems;
+  }, [onlineMenuItems, offlineMenuItems]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return menuItems;
@@ -244,7 +316,6 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       }));
 
       if (isOffline) {
-        // Offline mode
         const orderId = generateLocalId();
 
         const resolvedOutletId = outletId || localStorage.getItem("selectedOutletId");
@@ -285,7 +356,6 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
           conflictResolution: 'client-wins',
         });
 
-        // Update caches immediately
         const currentOrders = (queryClient.getQueryData(ordersKey) as any[] | undefined) || [];
         const nextOrders = [
           {
@@ -333,7 +403,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         return;
       }
 
-      // Online mode - use outletId from context or localStorage
+      // Online mode
       const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
 
       const { error } = await supabase.from("orders").insert([
@@ -427,8 +497,13 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                   </div>
                 </ScrollArea>
               )}
-              {filteredItems.length === 0 && activeMenuId && (
-                <p className="text-sm text-muted-foreground">Aucun plat trouvé</p>
+              {filteredItems.length === 0 && menuItems.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {isOffline ? "Aucun plat en cache. Connectez-vous pour charger le menu." : "Aucun plat trouvé"}
+                </p>
+              )}
+              {filteredItems.length === 0 && menuItems.length > 0 && searchTerm && (
+                <p className="text-sm text-muted-foreground">Aucun plat trouvé pour "{searchTerm}"</p>
               )}
             </div>
           </div>
@@ -498,21 +573,37 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                       <div className="flex-1">
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {item.price.toLocaleString()} FCFA × {item.quantity} = {(
-                            item.price * item.quantity
-                          ).toLocaleString()} FCFA
+                          {item.price.toLocaleString()} FCFA × {item.quantity} = {(item.price * item.quantity).toLocaleString()} FCFA
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button type="button" size="icon" variant="outline" onClick={() => updateQuantity(item.id, -1)} className="h-8 w-8">
-                          <Minus className="h-4 w-4" />
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateQuantity(item.id, -1)}
+                        >
+                          <Minus className="h-3 w-3" />
                         </Button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
-                        <Button type="button" size="icon" variant="outline" onClick={() => updateQuantity(item.id, 1)} className="h-8 w-8">
-                          <Plus className="h-4 w-4" />
+                        <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateQuantity(item.id, 1)}
+                        >
+                          <Plus className="h-3 w-3" />
                         </Button>
-                        <Button type="button" size="icon" variant="ghost" onClick={() => removeFromCart(item.id)} className="h-8 w-8">
-                          <X className="h-4 w-4" />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive"
+                          onClick={() => removeFromCart(item.id)}
+                        >
+                          <X className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
@@ -520,24 +611,22 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                 </div>
               )}
             </ScrollArea>
-
-            {cart.length > 0 && (
-              <div className="mt-4 p-3 bg-primary/10 rounded-md">
-                <div className="flex justify-between items-center font-bold text-lg">
-                  <span>Total</span>
-                  <span>{totalAmount.toLocaleString()} FCFA</span>
-                </div>
-              </div>
-            )}
           </div>
 
-          <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-              Annuler
-            </Button>
-            <Button type="submit" disabled={loading || cart.length === 0}>
-              {loading ? "Création..." : "Ajouter à la session"}
-            </Button>
+          <DialogFooter className="pt-4 border-t mt-4">
+            <div className="flex items-center justify-between w-full">
+              <div className="text-sm font-medium">
+                Total : <span className="text-lg font-bold">{totalAmount.toLocaleString()} FCFA</span>
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Annuler
+                </Button>
+                <Button type="submit" disabled={loading || cart.length === 0}>
+                  {loading ? "Envoi..." : `Confirmer (${cart.length} plat${cart.length > 1 ? "s" : ""})`}
+                </Button>
+              </div>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
