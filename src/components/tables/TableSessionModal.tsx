@@ -25,7 +25,7 @@ import { toast as sonnerToast } from "sonner";
 import { InvoicePreviewModal } from "./InvoicePreviewModal";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { getData } from "@/lib/offlineStorage";
+import { getData, queueMutation, generateLocalId } from "@/lib/offlineStorage";
 
 interface Order {
   id: string;
@@ -94,64 +94,157 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     try {
       // If debtor payment, handle differently
       if (paymentMethod === 'Debiteur' && debtorId) {
-        // Update session with debtor_id and status to closed (not paid)
-        // Note: payment_method is null for debtor payments (will be set when they actually pay)
+        if (isOffline) {
+          // Offline: queue session close + invoice creation
+          
+          await queueMutation({
+            table: 'table_sessions',
+            operation: 'update',
+            data: { id: session.id, status: 'closed', debtor_id: debtorId, payment_method: null, closed_at: new Date().toISOString() },
+            localId: generateLocalId(),
+            userId: user?.id || '',
+            outletId: (session as any).outlet_id || undefined,
+            maxRetries: 3,
+            conflictResolution: 'client-wins',
+          });
+
+          const offlineInvId = generateLocalId();
+          const offlineInvNum = `OFF-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+          await queueMutation({
+            table: 'invoices',
+            operation: 'insert',
+            data: {
+              id: offlineInvId,
+              user_id: user?.id,
+              outlet_id: (session as any).outlet_id,
+              session_id: session.id,
+              invoice_number: offlineInvNum,
+              total_amount: session.total_amount,
+              status: 'unpaid',
+              invoice_type: 'b2b',
+              business_customer_id: debtorId,
+              customer_name: `Table ${session.table_number}`,
+              items: [],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            localId: offlineInvId,
+            userId: user?.id || '',
+            outletId: (session as any).outlet_id || undefined,
+            maxRetries: 3,
+            conflictResolution: 'client-wins',
+          });
+
+          queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['invoices'] });
+          onClose();
+          sonnerToast.success('Crédit enregistré (hors ligne)');
+          return;
+        }
+
+        // Online: close session, generate invoice manually, update debt
         const { error: sessionError } = await supabase
           .from('table_sessions')
           .update({ 
             status: 'closed',
             debtor_id: debtorId,
-            payment_method: null
+            payment_method: null,
+            closed_at: new Date().toISOString(),
           })
           .eq('id', session.id);
 
         if (sessionError) throw sessionError;
 
-        // The trigger create_invoice_for_closed_session will handle invoice creation
-        // Wait a bit then update the invoice to be B2B unpaid
-        setTimeout(async () => {
-          try {
-            // Update the invoice to B2B unpaid
-            await supabase
-              .from('invoices')
-              .update({ 
-                status: 'unpaid',
-                invoice_type: 'b2b',
-                business_customer_id: debtorId,
-                payment_method: null,
-                paid_date: null
-              })
-              .eq('session_id', session.id);
+        // Check if invoice already exists for this session
+        const { data: existingInv } = await supabase
+          .from('invoices')
+          .select('id, total_amount')
+          .eq('session_id', session.id)
+          .maybeSingle();
 
-            // Update debtor's current_debt
-            const { data: invoice } = await supabase
-              .from('invoices')
-              .select('total_amount')
-              .eq('session_id', session.id)
-              .single();
+        let invoiceAmount = session.total_amount;
 
-            if (invoice) {
-              // Get current debt and add the new amount
-              const { data: debtor } = await supabase
-                .from('business_customers')
-                .select('current_debt')
-                .eq('id', debtorId)
-                .single();
+        if (!existingInv) {
+          // Generate invoice manually (no DB trigger)
+          const { data: ordersForSession } = await supabase
+            .from('orders')
+            .select('items, customer_name, customer_email, customer_phone')
+            .eq('session_id', session.id)
+            .order('created_at', { ascending: true });
 
-              const currentDebt = (debtor as any)?.current_debt || 0;
-              const newDebt = currentDebt + invoice.total_amount;
+          const allItems: any[] = [];
+          (ordersForSession || []).forEach((o: any) => {
+            if (Array.isArray(o.items)) allItems.push(...o.items);
+          });
+          const firstOrder = (ordersForSession || [])[0];
 
-              await supabase
-                .from('business_customers')
-                .update({ current_debt: newDebt })
-                .eq('id', debtorId);
-            }
-          } catch (e) {
-            console.error('Error updating invoice/debt:', e);
-          }
-        }, 500);
+          const { data: invoiceNumber } = await supabase.rpc('generate_invoice_number');
+          
+          const { data: debtor } = await supabase
+            .from('business_customers')
+            .select('payment_terms_days, address, siret')
+            .eq('id', debtorId)
+            .maybeSingle();
 
-        // Ne PAS appeler onMarkAsPaid() pour les débiteurs - juste fermer le modal
+          const paymentTermsDays = (debtor as any)?.payment_terms_days ?? 30;
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + paymentTermsDays);
+
+          const { data: newInv } = await supabase
+            .from('invoices')
+            .insert([{
+              user_id: (session as any).user_id,
+              outlet_id: (session as any).outlet_id,
+              session_id: session.id,
+              business_customer_id: debtorId,
+              invoice_number: invoiceNumber || `OFF-${Date.now()}`,
+              invoice_type: 'b2b',
+              total_amount: session.total_amount,
+              status: 'unpaid',
+              due_date: dueDate.toISOString().split('T')[0],
+              payment_terms_days: paymentTermsDays,
+              billing_address: (debtor as any)?.address ?? null,
+              siret: (debtor as any)?.siret ?? null,
+              customer_name: (firstOrder as any)?.customer_name ?? `Table ${session.table_number}`,
+              customer_email: (firstOrder as any)?.customer_email ?? null,
+              customer_phone: (firstOrder as any)?.customer_phone ?? null,
+              items: allItems,
+              notes: `Facture débiteur - Table ${session.table_number}`,
+            }])
+            .select('id, total_amount')
+            .maybeSingle();
+
+          if (newInv) invoiceAmount = (newInv as any).total_amount;
+        } else {
+          // Update existing invoice to B2B unpaid
+          await supabase
+            .from('invoices')
+            .update({ 
+              status: 'unpaid',
+              invoice_type: 'b2b',
+              business_customer_id: debtorId,
+              payment_method: null,
+              paid_date: null,
+            })
+            .eq('session_id', session.id);
+          invoiceAmount = (existingInv as any).total_amount;
+        }
+
+        // Update debtor's current_debt
+        const { data: debtorCurrent } = await supabase
+          .from('business_customers')
+          .select('current_debt')
+          .eq('id', debtorId)
+          .maybeSingle();
+
+        const currentDebt = (debtorCurrent as any)?.current_debt || 0;
+        await supabase
+          .from('business_customers')
+          .update({ current_debt: currentDebt + invoiceAmount })
+          .eq('id', debtorId);
+
+        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
         onClose();
         sonnerToast.success('Crédit enregistré pour le débiteur');
         return;
