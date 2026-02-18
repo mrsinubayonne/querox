@@ -395,7 +395,9 @@ export const useOptimizedTableSessions = () => {
     },
     onSuccess: ({ hasDebtor }) => {
       queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      // Force a fresh refetch of invoices so the new invoice appears immediately
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.refetchQueries({ queryKey: ['invoices'] });
       toast({
         title: hasDebtor ? "Session fermée - Crédit accordé" : (isOffline ? "Session fermée (hors ligne)" : "Session fermée"),
         description: hasDebtor ? "Dette enregistrée" : "Facture générée",
@@ -510,6 +512,7 @@ export const useOptimizedTableSessions = () => {
     onSuccess: ({ isDebtorSession }) => {
       queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.refetchQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
         title: isOffline ? "Paiement enregistré (hors ligne)" : "Paiement enregistré",
