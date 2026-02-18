@@ -25,7 +25,7 @@ import { toast as sonnerToast } from "sonner";
 import { InvoicePreviewModal } from "./InvoicePreviewModal";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { getData, queueMutation, generateLocalId } from "@/lib/offlineStorage";
+import { getData, queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
 
 interface Order {
   id: string;
@@ -265,9 +265,82 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         paymentMethodString = 'Multiple';
       }
 
-      // Offline: delegate entirely to the hook (which handles queue + local cache)
+      // Offline: handle entirely locally without going through hook mutateAsync
       if (isOffline) {
-        await onMarkAsPaid(session.id, paymentMethodString);
+        const userId = user?.id || '';
+        const outletId = (session as any).outlet_id || localStorage.getItem('selectedOutletId') || undefined;
+
+        // Queue session update
+        await queueMutation({
+          table: 'table_sessions',
+          operation: 'update',
+          data: { id: session.id, status: 'paid', payment_method: paymentMethodString },
+          localId: generateLocalId(),
+          userId,
+          outletId,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+
+        // Update session in React Query cache & IndexedDB immediately
+        const cachedSessions = (queryClient.getQueryData(['table-sessions', userId, outletId]) as any[] | undefined) || [];
+        const updatedSessions = cachedSessions.map((s: any) =>
+          s.id === session.id ? { ...s, status: 'paid', payment_method: paymentMethodString } : s
+        );
+        queryClient.setQueryData(['table-sessions', userId, outletId], updatedSessions);
+        await storeData('table_sessions', updatedSessions, userId, outletId);
+
+        // Mark invoice as paid in cache
+        const cachedInvoices = (queryClient.getQueryData(['invoices', userId, outletId]) as any[] | undefined) || [];
+        const invoiceForSession = cachedInvoices.find((inv: any) => inv.session_id === session.id);
+        if (invoiceForSession) {
+          await queueMutation({
+            table: 'invoices',
+            operation: 'update',
+            data: {
+              id: invoiceForSession.id,
+              status: 'paid',
+              paid_date: new Date().toISOString().split('T')[0],
+              payment_method: paymentMethodString,
+            },
+            localId: generateLocalId(),
+            userId,
+            outletId,
+            maxRetries: 3,
+            conflictResolution: 'client-wins',
+          });
+          const updatedInvoices = cachedInvoices.map((inv: any) =>
+            inv.session_id === session.id
+              ? { ...inv, status: 'paid', paid_date: new Date().toISOString().split('T')[0], payment_method: paymentMethodString }
+              : inv
+          );
+          queryClient.setQueryData(['invoices', userId, outletId], updatedInvoices);
+          await storeData('invoices', updatedInvoices, userId, outletId);
+        }
+
+        // Queue accounting transaction
+        await queueMutation({
+          table: 'transactions',
+          operation: 'insert',
+          data: {
+            id: generateLocalId(),
+            user_id: userId,
+            outlet_id: outletId,
+            title: `Paiement Table ${session.table_number}`,
+            amount: session.total_amount,
+            type: 'income',
+            category: 'facture',
+            status: 'completed',
+            date: new Date().toISOString().split('T')[0],
+            payment_method: paymentMethodString,
+          },
+          localId: generateLocalId(),
+          userId,
+          outletId,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+
         celebrate();
         sonnerToast.success('Paiement enregistré (hors ligne)');
         onClose();
