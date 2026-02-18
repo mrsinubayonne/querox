@@ -11,11 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Minus, Search, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Minus, Search, X, WifiOff } from "lucide-react";
 import { useMenuData } from "@/hooks/useMenuData";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRestaurant } from "@/contexts/RestaurantContext";
 
 interface Props {
   isOpen: boolean;
@@ -41,6 +46,9 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { outletId } = useRestaurant();
+  const { isOffline } = useNetworkStatus();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,50 +57,59 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState("");
 
+  // Fetch user's active menu - use localStorage for offline support
   useEffect(() => {
     const fetchActiveMenu = async () => {
       if (!user) return;
 
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId: string | null = null;
-
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = (userProfile as any)?.selected_outlet_id ?? null;
-      } else {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        outletId = (profile as any)?.selected_outlet_id ?? null;
+      // Get outlet from context or localStorage (works offline)
+      const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
+      
+      // If offline, try to get cached menu ID
+      if (isOffline) {
+        const cachedMenuId = localStorage.getItem('activeMenuId');
+        if (cachedMenuId) {
+          setActiveMenuId(cachedMenuId);
+          return;
+        }
       }
 
-      let { data: menus } = await supabase
-        .from("menus")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .eq("outlet_id", outletId)
-        .limit(1)
-        .maybeSingle();
-
-      if (!menus) {
-        const fallback = await supabase
+      try {
+        // Try to fetch menu from Supabase
+        let { data: menus } = await supabase
           .from("menus")
           .select("id")
           .eq("user_id", user.id)
           .eq("is_active", true)
+          .eq("outlet_id", resolvedOutletId)
           .limit(1)
           .maybeSingle();
-        menus = fallback.data as any;
-      }
 
-      if (menus) setActiveMenuId((menus as any).id); else setActiveMenuId(null);
+        if (!menus) {
+          const fallback = await supabase
+            .from("menus")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .limit(1)
+            .maybeSingle();
+          menus = fallback.data as any;
+        }
+
+        if (menus) {
+          setActiveMenuId((menus as any).id);
+          // Cache for offline use
+          localStorage.setItem('activeMenuId', (menus as any).id);
+        } else {
+          setActiveMenuId(null);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch menu, using cached:', error);
+        const cachedMenuId = localStorage.getItem('activeMenuId');
+        if (cachedMenuId) {
+          setActiveMenuId(cachedMenuId);
+        }
+      }
     };
 
     if (isOpen) {
@@ -100,7 +117,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       setCart([]);
       setSearchTerm("");
     }
-  }, [user, isOpen]);
+  }, [user, isOpen, outletId, isOffline]);
 
   const { menuItems } = useMenuData(activeMenuId);
 
@@ -219,28 +236,6 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
     try {
       if (!user) throw new Error("Non authentifié");
 
-      // Get selected outlet from user_profiles first, then fallback to profiles
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId = null;
-      
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = userProfile?.selected_outlet_id;
-      }
-      
-      if (!outletId) {
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("selected_outlet_id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        outletId = profile?.selected_outlet_id;
-      }
-
       const orderItems = cart.map((item) => ({
         id: item.id,
         name: item.name,
@@ -248,10 +243,103 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         quantity: item.quantity,
       }));
 
+      if (isOffline) {
+        // Offline mode
+        const orderId = generateLocalId();
+
+        const resolvedOutletId = outletId || localStorage.getItem("selectedOutletId");
+        if (!resolvedOutletId) {
+          toast({
+            title: "Erreur",
+            description: "Aucun point de vente sélectionné.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const outletKey = resolvedOutletId || undefined;
+        const ordersKey = ["orders", user.id, outletKey] as const;
+        const sessionsKey = ["table-sessions", user.id, outletKey] as const;
+
+        await queueMutation({
+          table: 'orders',
+          operation: 'insert',
+          data: {
+            id: orderId,
+            user_id: user.id,
+            outlet_id: resolvedOutletId,
+            session_id: sessionId,
+            table_number: tableNumber,
+            order_type: 'sur_place',
+            customer_name: `Table ${tableNumber}`,
+            items: orderItems,
+            total_amount: totalAmount,
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          localId: orderId,
+          userId: user.id,
+          outletId: outletKey,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+
+        // Update caches immediately
+        const currentOrders = (queryClient.getQueryData(ordersKey) as any[] | undefined) || [];
+        const nextOrders = [
+          {
+            id: orderId,
+            user_id: user.id,
+            outlet_id: resolvedOutletId,
+            session_id: sessionId,
+            table_number: tableNumber,
+            order_type: 'sur_place',
+            customer_name: `Table ${tableNumber}`,
+            items: orderItems,
+            total_amount: totalAmount,
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          ...currentOrders,
+        ];
+        queryClient.setQueryData(ordersKey, nextOrders);
+        await storeData('orders', nextOrders as any, user.id, outletKey);
+
+        const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
+        const nextSessions = currentSessions.map((s: any) =>
+          s.id === sessionId
+            ? {
+                ...s,
+                total_amount: Number(s.total_amount || 0) + Number(totalAmount || 0),
+                updated_at: new Date().toISOString(),
+              }
+            : s
+        );
+        queryClient.setQueryData(sessionsKey, nextSessions);
+        await storeData('table_sessions', nextSessions as any, user.id, outletKey);
+
+        toast({
+          title: "Commande ajoutée (hors ligne)",
+          description: `${cart.length} plat(s) ajoutés. Sera synchronisée.`,
+        });
+
+        window.dispatchEvent(new CustomEvent("session-updated"));
+        setCart([]);
+        setSearchTerm("");
+        onSuccess?.();
+        onClose();
+        return;
+      }
+
+      // Online mode - use outletId from context or localStorage
+      const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
+
       const { error } = await supabase.from("orders").insert([
         {
           user_id: user.id,
-          outlet_id: outletId,
+          outlet_id: resolvedOutletId,
           session_id: sessionId,
           table_number: tableNumber,
           order_type: "sur_place",
@@ -269,9 +357,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         description: `${cart.length} plat(s) ajoutés à la session.`,
       });
 
-      // Notify parent/real-time
       window.dispatchEvent(new CustomEvent("session-updated"));
-
       setCart([]);
       setSearchTerm("");
       onSuccess?.();
@@ -288,7 +374,15 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Ajouter une commande</DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>Ajouter une commande</DialogTitle>
+            {isOffline && (
+              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                <WifiOff className="h-3 w-3 mr-1" />
+                Hors ligne
+              </Badge>
+            )}
+          </div>
           <DialogDescription>
             Recherchez et ajoutez des plats pour la Table {tableNumber}.
           </DialogDescription>
