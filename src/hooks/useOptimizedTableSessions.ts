@@ -603,23 +603,7 @@ export const useOptimizedTableSessions = () => {
     return sessions.find(s => s.table_number === tableNumber && s.status === 'active') || null;
   }, [sessions]);
 
-  useEffect(() => {
-    if (!user || dataOffline) return;
-
-    const channel = supabase
-      .channel('table-sessions-realtime')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'table_sessions',
-        filter: `user_id=eq.${user.id}`,
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user, queryClient, dataOffline]);
+  // Note: realtime subscription is handled by useOfflineData to avoid duplicate channels.
 
   return {
     sessions: sessions || [],

@@ -122,24 +122,33 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
     networkMode: 'offlineFirst',
   });
 
-  // Memoize queryKey to prevent subscription recreation
+  // Stable channel name (no Date.now() to avoid duplicate subscriptions)
   const queryKeyString = queryKey.join('_');
-  
+
   useEffect(() => {
     if (!userId || isOffline) return;
-    
-    const channelName = `${table}_changes_${userId}_${Date.now()}`;
+
+    const channelName = `offline_${table}_${userId}`;
+
+    // Supabase throws if you subscribe the same channel name twice.
+    // Remove any previous channel with the same name before creating a new one.
+    const existing = supabase.getChannels().find(c => c.topic === `realtime:${channelName}`);
+    if (existing) {
+      supabase.removeChannel(existing);
+    }
+
     const channel = supabase
       .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` }, () => {
         queryClient.invalidateQueries({ queryKey: queryKey.concat([userId, outletId]) });
       })
       .subscribe();
-    
-    return () => { 
+
+    return () => {
       supabase.removeChannel(channel);
     };
-  }, [table, userId, outletId, isOffline, queryKeyString, queryClient]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table, userId, outletId, isOffline, queryKeyString]);
 
   return { data: query.data || [], isLoading: query.isLoading, isError: query.isError, error: query.error, refetch: query.refetch, isOffline };
 }
