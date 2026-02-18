@@ -78,11 +78,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     preloadTriggeredRef.current = true;
 
     const outletId = localStorage.getItem('selectedOutletId') || undefined;
-    // Defer to avoid blocking auth/render path
-    setTimeout(() => {
-      preloadCriticalData(userId, outletId);
-    }, 0);
+    // Preload immédiatement pour garantir les données offline
+    preloadCriticalData(userId, outletId).then(() => {
+      console.log('✅ [Offline] Preload critique terminé');
+    }).catch(err => {
+      console.warn('⚠️ [Offline] Erreur preload:', err);
+    });
   };
+
+  // Re-preload when coming back online
+  useEffect(() => {
+    const handleOnline = () => {
+      const userId = user?.id;
+      if (userId) {
+        // Reset flag to allow a fresh preload on reconnection
+        preloadTriggeredRef.current = false;
+        triggerPreloadOnce(userId);
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Load cached auth data for offline mode
   useEffect(() => {
