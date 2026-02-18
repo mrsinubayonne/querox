@@ -45,41 +45,34 @@ onlineManager.setEventListener((setOnline) => {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute - keep data fresh longer
-      gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep cache for offline
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 7 * 24 * 60 * 60 * 1000, // 7 JOURS - indispensable pour offline
       retry: (failureCount, error) => {
-        // Don't retry on network errors when offline
+        // Jamais de retry en offline → on utilise le cache
         if (!navigator.onLine) return false;
-        // Retry more times for network errors with exponential backoff
         if (isNetworkError(error)) {
           markRequestFailed();
-          return failureCount < 3;
+          return failureCount < 2;
         }
-        return failureCount < 2;
+        return failureCount < 1;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
       refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      refetchOnReconnect: true,
-      // Keep showing stale data while refetching
+      refetchOnMount: false,      // On utilise IndexedDB, pas de refetch automatique
+      refetchOnReconnect: true,   // Refresh quand la connexion revient
       placeholderData: (previousData: unknown) => previousData,
-      // Network mode: always try to fetch, but don't fail if offline
-      networkMode: 'offlineFirst',
+      networkMode: 'offlineFirst', // CRITIQUE : utilise le cache si offline
     },
     mutations: {
       retry: (failureCount, error) => {
-        if (!navigator.onLine) {
-          // Will be paused and retried when online
-          return true;
-        }
+        if (!navigator.onLine) return false; // Les mutations offline sont gérées par SyncEngine
         if (isNetworkError(error)) {
           markRequestFailed();
-          return failureCount < 3;
+          return failureCount < 2;
         }
-        return failureCount < 2;
+        return failureCount < 1;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      // Pause mutations when offline
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
       networkMode: 'offlineFirst',
     },
   },
@@ -175,8 +168,8 @@ createRoot(document.getElementById("root")!).render(
       client={queryClient}
       persistOptions={{
         persister,
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        buster: 'v1',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 JOURS (au lieu de 24h)
+        buster: 'v2', // Incrémenté pour invalider l'ancien cache
       }}
     >
       <AuthProvider>
