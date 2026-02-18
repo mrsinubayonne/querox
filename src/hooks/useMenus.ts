@@ -57,33 +57,40 @@ export const useMenus = () => {
   const navigate = useNavigate();
   const tokenExpiredHandledRef = useRef(false);
 
+  // Resolve outletId — also read from localStorage as offline fallback
+  const resolvedOutletId = selectedOutletId || localStorage.getItem('selectedOutletId') || undefined;
+
   // Use offline data for menus
   const { data: menus, isLoading: menusLoading, refetch: refetchMenus, isOffline } = useOfflineData<Menu>({
     table: 'menus',
     queryKey: ['menus'],
     buildQuery: async (userId, outletId) => {
-      if (!outletId) return { data: [], error: null };
-      
-      const { data, error } = await supabase
+      // Online: filter by outletId if available
+      let query = supabase
         .from('menus')
         .select('*')
         .eq('user_id', userId)
-        .eq('outlet_id', outletId)
         .order('created_at', { ascending: true });
 
+      if (outletId) {
+        query = query.eq('outlet_id', outletId) as typeof query;
+      }
+
+      const { data, error } = await query;
       return { data: data as Menu[] | null, error };
     },
-    enabled: !!user && !!selectedOutletId,
+    // Enable if user is set — outletId optional (cache fallback works without it)
+    enabled: !!user,
   });
 
   // Fetch categories and items when menus change (with offline cache fallback)
   const fetchCategoriesAndItems = useCallback(async () => {
-    if (!user || fetchingRef.current || !menus || menus.length === 0) {
-      if (!menus || menus.length === 0) {
-        setCategories([]);
-        setItems([]);
-        setLoading(false);
-      }
+    // Don't run while menus are still loading — wait for cache to populate
+    if (!user || fetchingRef.current || menusLoading) return;
+    if (!menus || menus.length === 0) {
+      setCategories([]);
+      setItems([]);
+      setLoading(false);
       return;
     }
 
@@ -96,9 +103,15 @@ export const useMenus = () => {
       let categoriesData: MenuCategory[] = [];
 
       if (isOffline) {
-        // Offline: load from IndexedDB cache
+        // Offline: load from IndexedDB cache — try with outletId first, then without
         const { getData } = await import('@/lib/offlineStorage');
-        const cached = await getData<MenuCategory[]>('menu_categories', user.id);
+        const outletIdForCache = resolvedOutletId;
+        let cached = outletIdForCache
+          ? await getData<MenuCategory[]>('menu_categories', user.id, outletIdForCache)
+          : undefined;
+        if (!cached || !cached.data || (cached.data as MenuCategory[]).length === 0) {
+          cached = await getData<MenuCategory[]>('menu_categories', user.id);
+        }
         const all = (cached?.data || []) as MenuCategory[];
         categoriesData = all.filter(c => menuIds.includes(c.menu_id));
         console.log('[Offline] Loaded categories from cache:', categoriesData.length);
@@ -123,8 +136,14 @@ export const useMenus = () => {
 
         if (isOffline) {
           const { getData } = await import('@/lib/offlineStorage');
-          const cached = await getData<Record<string, unknown>[]>('menu_items', user.id);
-          const allItems = (cached?.data || []) as Record<string, unknown>[];
+          const outletIdForCache = resolvedOutletId;
+          let cachedItems = outletIdForCache
+            ? await getData<Record<string, unknown>[]>('menu_items', user.id, outletIdForCache)
+            : undefined;
+          if (!cachedItems || !cachedItems.data || (cachedItems.data as Record<string, unknown>[]).length === 0) {
+            cachedItems = await getData<Record<string, unknown>[]>('menu_items', user.id);
+          }
+          const allItems = (cachedItems?.data || []) as Record<string, unknown>[];
           const filtered = allItems.filter(item => categoryIds.includes(item.category_id as string));
           const categoryMap = new Map(categoriesData.map(c => [c.id, c.name]));
           transformedItems = filtered.map(item => ({
@@ -196,10 +215,10 @@ export const useMenus = () => {
   }, [user, menus, isOffline, toast, signOut, navigate]);
 
   useEffect(() => {
-    if (menus) {
+    if (!menusLoading) {
       fetchCategoriesAndItems();
     }
-  }, [menus, fetchCategoriesAndItems]);
+  }, [menus, menusLoading, fetchCategoriesAndItems]);
 
   useEffect(() => {
     setLoading(menusLoading);
