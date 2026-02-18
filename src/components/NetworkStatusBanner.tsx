@@ -1,6 +1,5 @@
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { WifiOff, Wifi, RefreshCw, CloudOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { WifiOff, Wifi, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -45,41 +44,36 @@ export const NetworkStatusBanner = () => {
 
   return (
     <div
-      className={`fixed top-0 left-0 right-0 z-[9999] px-4 py-3 flex items-center justify-center gap-3 text-sm font-medium ${
+      className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full shadow-lg opacity-80 hover:opacity-100 transition-opacity cursor-default ${
         isOffline
           ? 'bg-destructive text-destructive-foreground'
           : 'bg-orange-500 text-white'
       }`}
     >
       {isOffline ? (
-        <WifiOff className="h-4 w-4 flex-shrink-0" />
+        <WifiOff className="h-3 w-3 flex-shrink-0" />
       ) : (
-        <Wifi className="h-4 w-4 flex-shrink-0" />
+        <Wifi className="h-3 w-3 flex-shrink-0" />
       )}
-      
-      <span className="text-center">
-        {isOffline
-          ? 'Vous êtes hors ligne. Les modifications seront enregistrées localement et synchronisées à la reconnexion.'
-          : 'Connexion instable. Les données seront synchronisées automatiquement.'}
+
+      <span>
+        {isOffline ? 'Hors ligne' : 'Connexion instable'}
       </span>
 
       {pendingCount > 0 && (
-        <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded text-xs">
-          <CloudOff className="h-3 w-3" />
-          {pendingCount} en attente
+        <span className="bg-white/30 px-1.5 py-0.5 rounded-full text-xs">
+          {pendingCount}
         </span>
       )}
 
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
         onClick={handleRetry}
         disabled={isRetrying}
-        className="h-7 px-2 text-current hover:bg-white/20"
+        className="ml-0.5 opacity-70 hover:opacity-100 disabled:opacity-30 transition-opacity"
+        title="Réessayer"
       >
-        <RefreshCw className={`h-3.5 w-3.5 ${isRetrying ? 'animate-spin' : ''}`} />
-        <span className="ml-1.5 hidden sm:inline">Réessayer</span>
-      </Button>
+        <RefreshCw className={`h-3 w-3 ${isRetrying ? 'animate-spin' : ''}`} />
+      </button>
     </div>
   );
 };
