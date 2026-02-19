@@ -23,6 +23,14 @@ export const useOptimizedOutlet = () => {
         return;
       }
 
+      // Always check localStorage first as primary source of truth
+      const localOutletId = localStorage.getItem('selectedOutletId');
+      if (localOutletId) {
+        setOutletId(localOutletId);
+        setLoading(false);
+        return;
+      }
+
       // Vérifier le cache
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
@@ -64,6 +72,9 @@ export const useOptimizedOutlet = () => {
         timestamp: Date.now()
       };
       localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+      if (outlet) {
+        localStorage.setItem('selectedOutletId', outlet);
+      }
 
       setOutletId(outlet);
       setLoading(false);
