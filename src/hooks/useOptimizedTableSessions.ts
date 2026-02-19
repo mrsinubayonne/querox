@@ -391,6 +391,9 @@ export const useOptimizedTableSessions = () => {
         // Don't throw - session is closed, invoice generation is best-effort
       }
 
+      // Immediately update local cache so the table turns yellow instantly
+      await updateLocalCache({ id: sessionId, status: 'closed', closed_at: new Date().toISOString() });
+
       return { hasDebtor: hasDebtorDb };
     },
     onSuccess: ({ hasDebtor }) => {
@@ -506,6 +509,9 @@ export const useOptimizedTableSessions = () => {
           })
           .eq('session_id', sessionId);
       }
+
+      // Immediately update local cache so the table turns green/free instantly
+      await updateLocalCache({ id: sessionId, status: 'paid', payment_method: paymentMethod });
 
       return { isDebtorSession: isDebtorDb };
     },
