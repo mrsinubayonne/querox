@@ -70,7 +70,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
 
       if (isOffline) {
         // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
-        const cachedPeriods = await getData<any[]>('business_periods', user.id);
+        let cachedPeriods = await getData<any[]>('business_periods', user.id);
         const periods = (cachedPeriods?.data as any[]) || [];
         const period = periods.find((p: any) => p.id === periodId);
 
@@ -84,12 +84,14 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         const endISO = period.ended_at || new Date().toISOString();
         const scopedOutletId = period.outlet_id || outletId;
 
-        // Outlets map
+        // Outlets map - try with fallback
         const cachedOutlets = await getData<any[]>('outlets', user.id);
         ((cachedOutlets?.data as any[]) || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
-        // Factures payées dans la période
-        const cachedInvoices = await getData<any[]>('invoices', user.id);
+        // Factures payées dans la période - try outlet-scoped cache first
+        const selectedOutlet = scopedOutletId || localStorage.getItem('selectedOutletId') || undefined;
+        let cachedInvoices = await getData<any[]>('invoices', user.id, selectedOutlet);
+        if (!cachedInvoices?.data) cachedInvoices = await getData<any[]>('invoices', user.id);
         const invoices = ((cachedInvoices?.data as any[]) || []).filter((inv: any) => {
           if (inv.status !== 'paid') return false;
           if (!inv.created_at) return false;

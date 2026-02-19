@@ -67,9 +67,13 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
 
       if (isOffline) {
         // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
-        const cachedOrders = await getData<any[]>('orders', user.id);
-        const cachedInvoices = await getData<any[]>('invoices', user.id);
-        const cachedOutlets = await getData<any[]>('outlets', user.id);
+        // Try with outletId first, then without (fallback)
+        const selectedOutlet = outletId || localStorage.getItem('selectedOutletId') || undefined;
+        let cachedOrders = await getData<any[]>('orders', user.id, selectedOutlet);
+        if (!cachedOrders?.data) cachedOrders = await getData<any[]>('orders', user.id);
+        let cachedInvoices = await getData<any[]>('invoices', user.id, selectedOutlet);
+        if (!cachedInvoices?.data) cachedInvoices = await getData<any[]>('invoices', user.id);
+        let cachedOutlets = await getData<any[]>('outlets', user.id);
 
         // Outlets map
         ((cachedOutlets?.data as any[]) || []).forEach((o: any) => outletNameById.set(o.id, o.name));
