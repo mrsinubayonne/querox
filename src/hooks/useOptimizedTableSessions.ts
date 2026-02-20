@@ -401,9 +401,9 @@ export const useOptimizedTableSessions = () => {
       return { hasDebtor: hasDebtorDb };
     },
     onSuccess: ({ hasDebtor }) => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      }, 3000);
+      // Do NOT invalidate table-sessions here — the optimistic cache is correct
+      // and a refetch would overwrite 'closed' with stale server data.
+      // Realtime subscriptions handle eventual consistency.
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.refetchQueries({ queryKey: ['invoices'] });
       toast({
@@ -525,11 +525,8 @@ export const useOptimizedTableSessions = () => {
       return { isDebtorSession: isDebtorDb };
     },
     onSuccess: ({ isDebtorSession }) => {
-      // Optimistic cache is already correct. Delayed refetch to sync with DB
-      // after replication lag has passed (won't overwrite if already 'paid').
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      }, 3000);
+      // Do NOT invalidate table-sessions — optimistic cache is correct.
+      // Realtime subscriptions handle eventual consistency.
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
@@ -606,9 +603,7 @@ export const useOptimizedTableSessions = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      }, 3000);
+      // Do NOT invalidate table-sessions — optimistic cache is correct.
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
