@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, User, Mail, Lock, MapPin, Phone, Utensils, Users } from 'lucide-react';
+import { Loader2, User, Mail, Lock, Phone, Utensils } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 const signUpSchema = z.object({
@@ -19,12 +19,7 @@ const signUpSchema = z.object({
   fullName: z.string().min(2, 'Le nom complet est requis'),
   restaurantName: z.string().min(2, 'Le nom du restaurant est requis'),
   restaurantType: z.string().min(1, 'Le type de restaurant est requis'),
-  address: z.string().min(5, 'L\'adresse complète est requise'),
-  city: z.string().min(2, 'La ville est requise'),
-  postalCode: z.string().min(2, 'Le code postal est requis'),
   phone: z.string().min(8, 'Le numéro de téléphone est requis'),
-  description: z.string().optional(),
-  numberOfSeats: z.string().min(1, 'Le nombre de places est requis'),
   promoCode: z.string().optional()
 }).refine(data => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
@@ -54,12 +49,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
       fullName: '',
       restaurantName: '',
       restaurantType: '',
-      address: '',
-      city: '',
-      postalCode: '',
       phone: '',
-      description: '',
-      numberOfSeats: '',
       promoCode: ''
     }
   });
@@ -72,11 +62,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
         phone: data.phone,
         restaurant_name: data.restaurantName,
         restaurant_type: data.restaurantType,
-        address: data.address,
-        city: data.city,
-        postal_code: data.postalCode,
-        number_of_seats: data.numberOfSeats,
-        description: data.description,
         promo_code: data.promoCode
       };
       
@@ -226,68 +211,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
                     </FormItem>} />
               </div>
 
-              <FormField control={form.control} name="numberOfSeats" render={({
-              field
-            }) => <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      Nombre de places
-                    </FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="Ex: 50" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>} />
-
-              <FormField control={form.control} name="description" render={({
-              field
-            }) => <FormItem>
-                    <FormLabel>Description (optionnel)</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Décrivez brièvement votre restaurant, sa spécialité..." className="resize-none" rows={3} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>} />
-            </div>
-
-            {/* Adresse */}
-            <div className="space-y-4 pt-6 border-t border-border">
-              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Localisation
-              </h3>
-              
-              <FormField control={form.control} name="address" render={({
-              field
-            }) => <FormItem>
-                    <FormLabel>Adresse complète</FormLabel>
-                    <FormControl>
-                      <Input placeholder="123 Rue de la République" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>} />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="city" render={({
-                field
-              }) => <FormItem>
-                      <FormLabel>Ville</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Libreville" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                
-                <FormField control={form.control} name="postalCode" render={({
-                field
-              }) => <FormItem>
-                      <FormLabel>Code postal</FormLabel>
-                      <FormControl>
-                        <Input placeholder="00000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-              </div>
             </div>
 
             {/* Code promo */}
