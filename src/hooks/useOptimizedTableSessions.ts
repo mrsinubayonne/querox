@@ -401,8 +401,8 @@ export const useOptimizedTableSessions = () => {
       return { hasDebtor: hasDebtorDb };
     },
     onSuccess: ({ hasDebtor }) => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      // Force a fresh refetch of invoices so the new invoice appears immediately
+      // Do NOT invalidate table-sessions — updateLocalCache already set the optimistic state.
+      // A refetch could return stale data and revert the UI change.
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.refetchQueries({ queryKey: ['invoices'] });
       toast({
@@ -520,9 +520,13 @@ export const useOptimizedTableSessions = () => {
       return { isDebtorSession: isDebtorDb };
     },
     onSuccess: ({ isDebtorSession }) => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      // CRITICAL: Do NOT invalidate table-sessions here.
+      // updateLocalCache already set status='paid' optimistically.
+      // Invalidating triggers a refetch that may return stale server data
+      // (status still 'closed') which overwrites the optimistic update,
+      // causing the table to appear occupied again. The realtime subscription
+      // will eventually sync the latest state.
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.refetchQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
         title: isOffline ? "Paiement enregistré (hors ligne)" : "Paiement enregistré",
@@ -598,7 +602,7 @@ export const useOptimizedTableSessions = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      // Do NOT invalidate table-sessions — optimistic cache is already correct.
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
