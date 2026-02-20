@@ -401,8 +401,9 @@ export const useOptimizedTableSessions = () => {
       return { hasDebtor: hasDebtorDb };
     },
     onSuccess: ({ hasDebtor }) => {
-      // Do NOT invalidate table-sessions — updateLocalCache already set the optimistic state.
-      // A refetch could return stale data and revert the UI change.
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      }, 3000);
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.refetchQueries({ queryKey: ['invoices'] });
       toast({
@@ -496,12 +497,16 @@ export const useOptimizedTableSessions = () => {
 
       const isDebtorDb = sessionData?.debtor_id !== null;
 
-      const { error: sessionError } = await supabase
+      const { error: sessionError, data: updatedRows } = await supabase
         .from('table_sessions')
         .update({ status: 'paid', payment_method: paymentMethod })
-        .eq('id', sessionId);
+        .eq('id', sessionId)
+        .select('id');
 
       if (sessionError) throw sessionError;
+      if (!updatedRows || updatedRows.length === 0) {
+        console.warn('[markSessionAsPaid] RLS blocked update for session', sessionId, '- 0 rows affected');
+      }
 
       if (!isDebtorDb) {
         await supabase
@@ -520,12 +525,11 @@ export const useOptimizedTableSessions = () => {
       return { isDebtorSession: isDebtorDb };
     },
     onSuccess: ({ isDebtorSession }) => {
-      // CRITICAL: Do NOT invalidate table-sessions here.
-      // updateLocalCache already set status='paid' optimistically.
-      // Invalidating triggers a refetch that may return stale server data
-      // (status still 'closed') which overwrites the optimistic update,
-      // causing the table to appear occupied again. The realtime subscription
-      // will eventually sync the latest state.
+      // Optimistic cache is already correct. Delayed refetch to sync with DB
+      // after replication lag has passed (won't overwrite if already 'paid').
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      }, 3000);
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
@@ -602,7 +606,9 @@ export const useOptimizedTableSessions = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      // Do NOT invalidate table-sessions — optimistic cache is already correct.
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      }, 3000);
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
