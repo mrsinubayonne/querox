@@ -46,7 +46,9 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const { profileSession, hasPermission, isProfileAuthenticated, logout: profileLogout } = useOutletProfile();
   const { trackClick } = useButtonTracking();
   
-  const [servicesExpanded, setServicesExpanded] = useState(location.pathname.includes('/service'));
+  const [plusExpanded, setPlusExpanded] = useState(
+    ['/clients', '/equipe', '/performance-personnel', '/qr-codes', '/debiteurs'].some(p => location.pathname.startsWith(p))
+  );
   const [marketingExpanded, setMarketingExpanded] = useState(location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook'));
   const [adminExpanded, setAdminExpanded] = useState(location.pathname.includes('/admin'));
 
@@ -88,31 +90,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: 'Inventaire',
     path: '/inventaire',
     permission: 'inventory'
-  }, {
-    icon: UserPlus,
-    label: 'Clients (CRM)',
-    path: '/clients',
-    permission: 'customers'
-  }, {
-    icon: CreditCard,
-    label: 'Débiteurs',
-    path: '/debiteurs',
-    permission: 'invoices'
-  }, {
-    icon: Users,
-    label: 'Équipe',
-    path: '/equipe',
-    permission: 'team'
-  }, {
-    icon: Award,
-    label: 'Performance Personnel',
-    path: '/performance-personnel',
-    permission: 'team'
-  }, {
-    icon: QrCode,
-    label: 'QR Codes',
-    path: '/qr-codes',
-    permission: 'qrcodes'
   }, {
     icon: Globe,
     label: 'Site Web',
@@ -165,15 +142,13 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/publicite-facebook'
   }] : [];
 
-  const servicesItems = [{
-    icon: Headphones,
-    label: 'Aperçu Services',
-    path: '/services'
-  }, {
-    icon: UserCheck,
-    label: 'Consulting',
-    path: '/consulting'
-  }];
+  const plusItems = [
+    ...(hasPermission('customers') ? [{ icon: UserPlus, label: 'Clients (CRM)', path: '/clients' }] : []),
+    ...(hasPermission('team') ? [{ icon: Users, label: 'Équipe', path: '/equipe' }] : []),
+    ...(hasPermission('team') ? [{ icon: Award, label: 'Performance Personnel', path: '/performance-personnel' }] : []),
+    ...(hasPermission('qrcodes') ? [{ icon: QrCode, label: 'QR Codes', path: '/qr-codes' }] : []),
+    ...(hasPermission('invoices') ? [{ icon: CreditCard, label: 'Débiteurs', path: '/debiteurs' }] : []),
+  ];
 
   const adminItems = [
     {
@@ -247,8 +222,8 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       trackClick(`Navigation: ${label}`, 'navigation');
     }
     navigate(path);
-    if (path.includes('/service')) {
-      setServicesExpanded(true);
+    if (['/clients', '/equipe', '/performance-personnel', '/qr-codes', '/debiteurs'].some(p => path.startsWith(p))) {
+      setPlusExpanded(true);
     }
     if (path.includes('/marketing') || path.includes('/conception-graphique') || path.includes('/reseaux-sociaux') || path.includes('/publicite-facebook')) {
       setMarketingExpanded(true);
@@ -258,8 +233,8 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     }
   };
 
-  const toggleServicesExpanded = () => {
-    setServicesExpanded(!servicesExpanded);
+  const togglePlusExpanded = () => {
+    setPlusExpanded(!plusExpanded);
   };
 
   const toggleMarketingExpanded = () => {
@@ -272,7 +247,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
   const isActive = (path: string) => location.pathname === path;
 
-  const isServicesSection = location.pathname.includes('/service');
+  const isPlusSection = ['/clients', '/equipe', '/performance-personnel', '/qr-codes', '/debiteurs'].some(p => location.pathname.startsWith(p));
   const isMarketingSection = location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook');
   const isAdminSection = location.pathname.includes('/admin');
 
@@ -387,24 +362,25 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
                 </div>}
             </div>
 
-            {/* Services Section */}
-            <div className="pt-2">
-              <button onClick={toggleServicesExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isServicesSection ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-                <Headphones size={20} className="flex-shrink-0" />
-                {!collapsed && <>
-                    <span className="ml-3 flex-1">Services</span>
-                    <ChevronRight size={16} className={`transition-transform ${servicesExpanded ? 'rotate-90' : ''}`} />
-                  </>}
-              </button>
+            {/* Plus Section */}
+            {plusItems.length > 0 && (
+              <div className="pt-2">
+                <button onClick={togglePlusExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isPlusSection ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+                  <Plus size={20} className="flex-shrink-0" />
+                  {!collapsed && <>
+                      <span className="ml-3 flex-1">Plus</span>
+                      <ChevronRight size={16} className={`transition-transform ${plusExpanded ? 'rotate-90' : ''}`} />
+                    </>}
+                </button>
 
-              {/* Services Submenu */}
-              {servicesExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
-                  {servicesItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                      <item.icon size={16} className="flex-shrink-0" />
-                      <span className="ml-3">{item.label}</span>
-                    </button>)}
-                </div>}
-            </div>
+                {plusExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
+                    {plusItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path, item.label)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
+                        <item.icon size={16} className="flex-shrink-0" />
+                        <span className="ml-3">{item.label}</span>
+                      </button>)}
+                  </div>}
+              </div>
+            )}
           </>
         )}
 
