@@ -36,7 +36,7 @@ function generateOfflineInvoiceNumber(): string {
 }
 
 export const useOptimizedTableSessions = () => {
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { toast } = useToast();
   const { outletId, loading: outletLoading } = useOptimizedOutlet();
   const queryClient = useQueryClient();
@@ -44,8 +44,12 @@ export const useOptimizedTableSessions = () => {
 
   // IMPORTANT: useOfflineData appends [userId, outletId] to queryKey internally.
   // Any setQueryData/getQueryData must use the *same* final key.
-  const resolvedUserId = user?.id || '';
-  const scopedOutletId = (localStorage.getItem('selectedOutletId') || outletId || undefined) as string | undefined;
+  // CRITICAL: Must match the userId/outletId that useOfflineData uses internally
+  // CRITICAL: Must match the userId/outletId that useOfflineData uses internally
+  // useOfflineData uses: isTeamMember ? teamMemberSession?.ownerId : user?.id
+  // useOfflineData uses: localStorage.getItem('selectedOutletId') || undefined
+  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
+  const scopedOutletId = (localStorage.getItem('selectedOutletId') || undefined) as string | undefined;
   const sessionsQueryKey = ['table-sessions', resolvedUserId, scopedOutletId] as const;
   const invoicesQueryKey = ['invoices', resolvedUserId, scopedOutletId] as const;
   const ordersQueryKey = ['orders', resolvedUserId, scopedOutletId] as const;
