@@ -151,16 +151,21 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 })
 
-const updateSW = registerSW({
-  immediate: true,
-  onNeedRefresh() {
-    toast({
-      title: 'Mise à jour disponible',
-      description: "Rechargement automatique pour appliquer la dernière version.",
-    })
-    updateSW(true)
-  },
-})
+// PWA registration - wrapped in try-catch for cross-browser compatibility
+try {
+  const updateSW = registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      toast({
+        title: 'Mise à jour disponible',
+        description: "Rechargement automatique pour appliquer la dernière version.",
+      })
+      updateSW(true)
+    },
+  })
+} catch (e) {
+  console.warn('[PWA] Service worker registration failed:', e);
+}
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
