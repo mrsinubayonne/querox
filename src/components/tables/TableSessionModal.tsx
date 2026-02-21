@@ -63,6 +63,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [showPreview, setShowPreview] = useState(false);
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const [printReady, setPrintReady] = useState(false);
+  const [pendingPrint, setPendingPrint] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
   const { trackClick } = useButtonTracking();
   const { isOffline } = useNetworkStatus();
@@ -435,13 +436,26 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     setPrintReady(true);
   }, []);
 
+  // Auto-trigger print when data becomes ready and user already clicked print
+  useEffect(() => {
+    if (printReady && pendingPrint) {
+      setPendingPrint(false);
+      setShowPrintDialog(false);
+      // Small delay to ensure portal is rendered
+      setTimeout(() => {
+        printViewRef.current?.print();
+      }, 100);
+    }
+  }, [printReady, pendingPrint]);
+
   const handleConfirmPrint = () => {
     if (!printReady) {
-      sonnerToast.message('Préparation de la facture…', { description: 'Veuillez patienter une seconde.' });
+      setPendingPrint(true);
+      sonnerToast.message('Préparation de la facture…', { description: 'Impression automatique dans un instant.' });
       return;
     }
 
-    // Print via ref (avoid setTimeout: preserves user gesture on tablets)
+    // Print via ref
     printViewRef.current?.print();
     setShowPrintDialog(false);
   };
@@ -451,6 +465,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     setInvoiceToPrint(null);
     setServedBy("");
     setPrintReady(false);
+    setPendingPrint(false);
   };
   if (!session) return null;
   return <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
