@@ -193,7 +193,7 @@ export const useOptimizedTableSessions = () => {
       const { data, error } = await supabase
         .from('table_sessions')
         .insert([{
-          user_id: user?.id,
+          user_id: resolvedUserId || user?.id,
           outlet_id: scopedOutletId,
           table_number: tableNumber,
           number_of_guests: numberOfGuests,
@@ -401,9 +401,10 @@ export const useOptimizedTableSessions = () => {
       return { hasDebtor: hasDebtorDb };
     },
     onSuccess: ({ hasDebtor }) => {
-      // Do NOT invalidate table-sessions here — the optimistic cache is correct
-      // and a refetch would overwrite 'closed' with stale server data.
-      // Realtime subscriptions handle eventual consistency.
+      // Sync table-sessions after a delay to allow DB replication
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      }, 5000);
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.refetchQueries({ queryKey: ['invoices'] });
       toast({
@@ -505,7 +506,14 @@ export const useOptimizedTableSessions = () => {
 
       if (sessionError) throw sessionError;
       if (!updatedRows || updatedRows.length === 0) {
-        console.warn('[markSessionAsPaid] RLS blocked update for session', sessionId, '- 0 rows affected');
+        console.error('[markSessionAsPaid] RLS blocked update for session', sessionId, '- retrying with user_id match');
+        // Fallback: try updating with explicit user_id match
+        const { error: retryError } = await supabase
+          .from('table_sessions')
+          .update({ status: 'paid', payment_method: paymentMethod })
+          .eq('id', sessionId)
+          .eq('user_id', resolvedUserId);
+        if (retryError) console.error('[markSessionAsPaid] Retry also failed:', retryError);
       }
 
       if (!isDebtorDb) {
@@ -525,8 +533,10 @@ export const useOptimizedTableSessions = () => {
       return { isDebtorSession: isDebtorDb };
     },
     onSuccess: ({ isDebtorSession }) => {
-      // Do NOT invalidate table-sessions — optimistic cache is correct.
-      // Realtime subscriptions handle eventual consistency.
+      // Sync table-sessions after a delay to allow DB replication
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      }, 5000);
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
@@ -603,7 +613,9 @@ export const useOptimizedTableSessions = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      // Do NOT invalidate table-sessions — optimistic cache is correct.
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      }, 5000);
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
@@ -622,7 +634,8 @@ export const useOptimizedTableSessions = () => {
 
   return {
     sessions: sessions || [],
-    loading: isLoading || outletLoading,
+    loading: isLoading,
+    outletLoading,
     isOffline: dataOffline,
     createSession: createSessionMutation.mutateAsync,
     closeSession: closeSessionMutation.mutateAsync,

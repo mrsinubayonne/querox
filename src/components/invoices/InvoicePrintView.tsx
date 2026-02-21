@@ -195,7 +195,16 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
             }
             @page {
               size: ${format === 'a4' ? 'A4' : 'A5'} portrait;
-              margin: ${format === 'a4' ? '10mm' : '5mm'};
+              margin: ${format === 'a4' ? '10mm' : '3mm'};
+            }
+            /* Tablet-friendly print: scale content to fit */
+            .invoice-print-container {
+              font-size: ${format === 'a4' ? '11pt' : '9pt'} !important;
+              -webkit-text-size-adjust: 100% !important;
+              text-size-adjust: 100% !important;
+            }
+            .invoice-print-container table {
+              font-size: inherit !important;
             }
             /* Allow page breaks in the table */
             table { page-break-inside: auto !important; }
