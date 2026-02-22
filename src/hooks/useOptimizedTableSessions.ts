@@ -39,11 +39,14 @@ function generateOfflineInvoiceNumber(): string {
 // Survives re-renders and prevents replication-lag from reverting status.
 const localPaidOverrides = new Map<string, { status: 'paid'; payment_method?: string; paidAt: number }>();
 
-// Clean overrides older than 120s (replication should be done by then)
+// Clean overrides older than 5 minutes (very generous window)
 function cleanOldOverrides() {
   const now = Date.now();
   for (const [id, data] of localPaidOverrides.entries()) {
-    if (now - data.paidAt > 120_000) localPaidOverrides.delete(id);
+    if (now - data.paidAt > 300_000) {
+      console.log(`🧹 Removing paid override for session ${id} (expired after 5min)`);
+      localPaidOverrides.delete(id);
+    }
   }
 }
 
@@ -100,39 +103,48 @@ export const useOptimizedTableSessions = () => {
   const sessions = useMemo(() => {
     cleanOldOverrides();
     if (!rawSessions) return rawSessions;
-    return rawSessions.map(s => {
+    let overrideCount = 0;
+    const result = rawSessions.map(s => {
       const override = localPaidOverrides.get(s.id);
       if (override && s.status !== 'paid') {
-        return { ...s, status: 'paid' as const, payment_method: override.payment_method };
+        overrideCount++;
+        console.log(`🔒 Override applied: session ${s.id} (table ${s.table_number}) forced to 'paid' (server had '${s.status}')`);
+        return { ...s, status: 'paid' as const, payment_method: override.payment_method || s.payment_method };
       }
       return s;
     });
+    if (overrideCount > 0) {
+      console.log(`🔒 Applied ${overrideCount} paid override(s) to prevent replication lag revert`);
+    }
+    return result;
   }, [rawSessions]);
 
 
   const updateLocalCache = useCallback(async (updatedSession: Partial<TableSession> & { id: string }) => {
-    const currentSessions = sessions || [];
+    // Use rawSessions from the query cache to avoid circular dependency with memoized sessions
+    const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
     const updatedSessions = currentSessions.map(s => 
       s.id === updatedSession.id ? { ...s, ...updatedSession } : s
     );
+    console.log(`📝 updateLocalCache: setting session ${updatedSession.id} to status=${updatedSession.status}`);
     queryClient.setQueryData(sessionsQueryKey, updatedSessions);
     
     // Also store in IndexedDB
     if (user) {
       await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
     }
-  }, [sessions, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
+  }, [queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
   // Helper to add to local cache
   const addToLocalCache = useCallback(async (newSession: TableSession) => {
-    const currentSessions = sessions || [];
+    const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
     const updatedSessions = [newSession, ...currentSessions];
     queryClient.setQueryData(sessionsQueryKey, updatedSessions);
     
     if (user) {
       await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
     }
-  }, [sessions, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
+  }, [queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
   const upsertInvoiceInCache = useCallback(async (invoice: Invoice) => {
     if (!resolvedUserId) return;
