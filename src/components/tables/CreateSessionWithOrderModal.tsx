@@ -317,27 +317,69 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         return;
       }
 
-      // Online mode
-      // 1. Créer la session
-      const { data: session, error: sessionError } = await supabase
-        .from("table_sessions")
-        .insert([
-          {
+      // Online mode — optimistic: update UI immediately, then fire DB calls
+      const nowIso = new Date().toISOString();
+      const tempSessionId = `temp-${Date.now()}`;
+      
+      // Optimistic local session so the table turns occupied INSTANTLY
+      const optimisticSession = {
+        id: tempSessionId,
+        user_id: user.id,
+        outlet_id: resolvedOutletId,
+        debtor_id: null,
+        table_number: tableNumber,
+        custom_table_name: null,
+        status: 'active',
+        started_at: nowIso,
+        closed_at: null,
+        number_of_guests: parseInt(numberOfGuests) || 1,
+        total_amount: totalAmount,
+        notes: null,
+        payment_method: null,
+        created_at: nowIso,
+        updated_at: nowIso,
+      };
+      
+      const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
+      queryClient.setQueryData(sessionsKey, [optimisticSession, ...currentSessions]);
+
+      // Close modal & notify BEFORE waiting for DB
+      const cartCount = cart.length;
+      setNumberOfGuests("");
+      setCart([]);
+      setSearchTerm("");
+      onSuccess();
+      onClose();
+
+      toast({
+        title: "Session créée",
+        description: `Table ${tableNumber} ouverte avec ${cartCount} plat(s).`,
+      });
+
+      // Fire DB calls in background
+      try {
+        const { data: session, error: sessionError } = await supabase
+          .from("table_sessions")
+          .insert([{
             user_id: user.id,
             outlet_id: resolvedOutletId,
             table_number: tableNumber,
             number_of_guests: parseInt(numberOfGuests) || 1,
             status: "active",
-          },
-        ])
-        .select()
-        .single();
+          }])
+          .select()
+          .single();
 
-      if (sessionError) throw sessionError;
+        if (sessionError) throw sessionError;
 
-      // 2. Créer la commande avec les items
-      const { error: orderError } = await supabase.from("orders").insert([
-        {
+        // Replace temp session with real one in cache
+        const updatedSessions = (queryClient.getQueryData(sessionsKey) as any[] || []).map(
+          (s: any) => s.id === tempSessionId ? { ...optimisticSession, id: session.id } : s
+        );
+        queryClient.setQueryData(sessionsKey, updatedSessions);
+
+        // Insert order (no need to wait for UI)
+        await supabase.from("orders").insert([{
           user_id: user.id,
           outlet_id: resolvedOutletId,
           session_id: session.id,
@@ -347,21 +389,13 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           items: orderItems,
           total_amount: totalAmount,
           status: "pending",
-        },
-      ]);
-
-      if (orderError) throw orderError;
-
-      toast({
-        title: "Session créée",
-        description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s).`,
-      });
-
-      setNumberOfGuests("");
-      setCart([]);
-      setSearchTerm("");
-      onSuccess();
-      onClose();
+        }]);
+      } catch (bgError) {
+        console.error("Background DB error:", bgError);
+        // Rollback optimistic update
+        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      }
+      return; // skip the finally setLoading since modal is already closed
     } catch (error: any) {
       console.error("Error creating session with order:", error);
       toast({
