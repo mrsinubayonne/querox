@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useOfflineData } from './useOfflineData';
 import { queueMutation, generateLocalId, storeData, getData } from '@/lib/offlineStorage';
 import { useNetworkStatus } from './useNetworkStatus';
@@ -35,6 +35,18 @@ function generateOfflineInvoiceNumber(): string {
   return `OFF-${timestamp}-${random}`;
 }
 
+// Module-level map to track sessions confirmed paid locally.
+// Survives re-renders and prevents replication-lag from reverting status.
+const localPaidOverrides = new Map<string, { status: 'paid'; payment_method?: string; paidAt: number }>();
+
+// Clean overrides older than 120s (replication should be done by then)
+function cleanOldOverrides() {
+  const now = Date.now();
+  for (const [id, data] of localPaidOverrides.entries()) {
+    if (now - data.paidAt > 120_000) localPaidOverrides.delete(id);
+  }
+}
+
 export const useOptimizedTableSessions = () => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { toast } = useToast();
@@ -54,7 +66,7 @@ export const useOptimizedTableSessions = () => {
   const invoicesQueryKey = ['invoices', resolvedUserId, scopedOutletId] as const;
   const ordersQueryKey = ['orders', resolvedUserId, scopedOutletId] as const;
 
-  const { data: sessions, isLoading, refetch, isOffline: dataOffline } = useOfflineData<TableSession>({
+  const { data: rawSessions, isLoading, refetch, isOffline: dataOffline } = useOfflineData<TableSession>({
     table: 'table_sessions',
     queryKey: ['table-sessions'],
     buildQuery: async (userId, outletId) => {
@@ -84,7 +96,20 @@ export const useOptimizedTableSessions = () => {
     enabled: !!user, // Don't wait for outletLoading — IndexedDB cache loads immediately
   });
 
-  // Helper to update local cache for immediate UI feedback
+  // Apply local paid overrides to prevent replication lag from reverting status
+  const sessions = useMemo(() => {
+    cleanOldOverrides();
+    if (!rawSessions) return rawSessions;
+    return rawSessions.map(s => {
+      const override = localPaidOverrides.get(s.id);
+      if (override && s.status !== 'paid') {
+        return { ...s, status: 'paid' as const, payment_method: override.payment_method };
+      }
+      return s;
+    });
+  }, [rawSessions]);
+
+
   const updateLocalCache = useCallback(async (updatedSession: Partial<TableSession> & { id: string }) => {
     const currentSessions = sessions || [];
     const updatedSessions = currentSessions.map(s => 
@@ -486,6 +511,7 @@ export const useOptimizedTableSessions = () => {
         }
 
         await updateLocalCache({ id: sessionId, status: 'paid', payment_method: paymentMethod });
+        localPaidOverrides.set(sessionId, { status: 'paid', payment_method: paymentMethod, paidAt: Date.now() });
         return { isDebtorSession };
       }
 
@@ -529,14 +555,16 @@ export const useOptimizedTableSessions = () => {
 
       // Immediately update local cache so the table turns green/free instantly
       await updateLocalCache({ id: sessionId, status: 'paid', payment_method: paymentMethod });
+      // Register override to survive refetch/replication lag
+      localPaidOverrides.set(sessionId, { status: 'paid', payment_method: paymentMethod, paidAt: Date.now() });
 
       return { isDebtorSession: isDebtorDb };
     },
     onSuccess: ({ isDebtorSession }) => {
-      // Sync table-sessions after a delay to allow DB replication
+      // Sync table-sessions after a longer delay to allow DB replication
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      }, 5000);
+      }, 15000);
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
