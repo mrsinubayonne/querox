@@ -35,17 +35,27 @@ function generateOfflineInvoiceNumber(): string {
   return `OFF-${timestamp}-${random}`;
 }
 
-// Module-level map to track sessions confirmed paid locally.
-// Survives re-renders and prevents replication-lag from reverting status.
-const localPaidOverrides = new Map<string, { status: 'paid'; payment_method?: string; paidAt: number }>();
+// Module-level set to track session IDs that have been paid locally.
+// After payment, the session is REMOVED from cache; this set prevents
+// any realtime/refetch from re-adding it for a grace period.
+const localPaidSessionIds = new Set<string>();
+const localPaidTimestamps = new Map<string, number>();
 
-// Clean overrides older than 5 minutes (very generous window)
-function cleanOldOverrides() {
+// Suppress refetch for 20 seconds after payment to avoid replication-lag issues
+let suppressRefetchUntil = 0;
+
+function markSessionPaidLocally(sessionId: string) {
+  localPaidSessionIds.add(sessionId);
+  localPaidTimestamps.set(sessionId, Date.now());
+  suppressRefetchUntil = Date.now() + 20_000;
+}
+
+function cleanOldPaidMarkers() {
   const now = Date.now();
-  for (const [id, data] of localPaidOverrides.entries()) {
-    if (now - data.paidAt > 300_000) {
-      console.log(`🧹 Removing paid override for session ${id} (expired after 5min)`);
-      localPaidOverrides.delete(id);
+  for (const [id, ts] of localPaidTimestamps.entries()) {
+    if (now - ts > 300_000) {
+      localPaidSessionIds.delete(id);
+      localPaidTimestamps.delete(id);
     }
   }
 }
@@ -73,11 +83,20 @@ export const useOptimizedTableSessions = () => {
     table: 'table_sessions',
     queryKey: ['table-sessions'],
     buildQuery: async (userId, outletId) => {
+      // If we just paid, suppress refetch to avoid replication lag
+      if (Date.now() < suppressRefetchUntil) {
+        console.log('⏳ Suppressing table_sessions refetch (paid grace period)');
+        // Return current cached data unchanged
+        const cached = queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined;
+        if (cached) return { data: cached, error: null };
+      }
+
       try {
         let query = supabase
           .from('table_sessions')
           .select('*')
           .eq('user_id', userId)
+          .in('status', ['active', 'closed']) // ONLY fetch non-paid sessions
           .order('started_at', { ascending: false })
           .limit(50);
 
@@ -90,33 +109,24 @@ export const useOptimizedTableSessions = () => {
           console.error('Error fetching table sessions:', error);
           return { data: [], error };
         }
-        return { data: (data as unknown as TableSession[]) || [], error: null };
+        // Filter out any sessions we've locally marked as paid
+        const filtered = ((data as unknown as TableSession[]) || []).filter(
+          s => !localPaidSessionIds.has(s.id)
+        );
+        return { data: filtered, error: null };
       } catch (e) {
         console.error('Exception fetching table sessions:', e);
         return { data: [], error: e };
       }
     },
-    enabled: !!user, // Don't wait for outletLoading — IndexedDB cache loads immediately
+    enabled: !!user,
   });
 
-  // Apply local paid overrides to prevent replication lag from reverting status
+  // Clean old markers and filter out locally-paid sessions
   const sessions = useMemo(() => {
-    cleanOldOverrides();
+    cleanOldPaidMarkers();
     if (!rawSessions) return rawSessions;
-    let overrideCount = 0;
-    const result = rawSessions.map(s => {
-      const override = localPaidOverrides.get(s.id);
-      if (override && s.status !== 'paid') {
-        overrideCount++;
-        console.log(`🔒 Override applied: session ${s.id} (table ${s.table_number}) forced to 'paid' (server had '${s.status}')`);
-        return { ...s, status: 'paid' as const, payment_method: override.payment_method || s.payment_method };
-      }
-      return s;
-    });
-    if (overrideCount > 0) {
-      console.log(`🔒 Applied ${overrideCount} paid override(s) to prevent replication lag revert`);
-    }
-    return result;
+    return rawSessions.filter(s => !localPaidSessionIds.has(s.id));
   }, [rawSessions]);
 
 
@@ -132,6 +142,17 @@ export const useOptimizedTableSessions = () => {
     // Also store in IndexedDB
     if (user) {
       await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
+    }
+  }, [queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
+
+  // Remove a session from the local cache entirely (used after payment)
+  const removeFromLocalCache = useCallback(async (sessionId: string) => {
+    const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
+    const filtered = currentSessions.filter(s => s.id !== sessionId);
+    console.log(`🗑️ removeFromLocalCache: removing session ${sessionId} (${currentSessions.length} → ${filtered.length})`);
+    queryClient.setQueryData(sessionsQueryKey, filtered);
+    if (user) {
+      await storeData('table_sessions', filtered, resolvedUserId, scopedOutletId);
     }
   }, [queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
@@ -522,8 +543,9 @@ export const useOptimizedTableSessions = () => {
           });
         }
 
-        await updateLocalCache({ id: sessionId, status: 'paid', payment_method: paymentMethod });
-        localPaidOverrides.set(sessionId, { status: 'paid', payment_method: paymentMethod, paidAt: Date.now() });
+        // Remove session from cache entirely — table becomes free immediately
+        await removeFromLocalCache(sessionId);
+        markSessionPaidLocally(sessionId);
         return { isDebtorSession };
       }
 
@@ -565,18 +587,20 @@ export const useOptimizedTableSessions = () => {
           .eq('session_id', sessionId);
       }
 
-      // Immediately update local cache so the table turns green/free instantly
-      await updateLocalCache({ id: sessionId, status: 'paid', payment_method: paymentMethod });
-      // Register override to survive refetch/replication lag
-      localPaidOverrides.set(sessionId, { status: 'paid', payment_method: paymentMethod, paidAt: Date.now() });
+      // Remove session from cache entirely — table becomes free immediately
+      await removeFromLocalCache(sessionId);
+      // Mark as locally paid to prevent realtime/refetch from re-adding it
+      markSessionPaidLocally(sessionId);
 
       return { isDebtorSession: isDebtorDb };
     },
     onSuccess: ({ isDebtorSession }) => {
-      // Sync table-sessions after a longer delay to allow DB replication
+      // Don't invalidate table-sessions immediately — the session was removed from cache
+      // and markSessionPaidLocally prevents refetch from re-adding it.
+      // After 30s (well after replication), allow normal refetch again.
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      }, 15000);
+      }, 30000);
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
