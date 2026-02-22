@@ -36,52 +36,49 @@
     <!-- Recovery anti "page blanche" PWA: si un vieux cache charge des fichiers JS inexistants -->
     <script>
       (function () {
-        const KEY = 'querox_pwa_recover_once';
+        var KEY = 'querox_pwa_recover_once';
 
-        async function recover(reason) {
+        function recover(reason) {
           try {
             if (sessionStorage.getItem(KEY) === '1') return;
             sessionStorage.setItem(KEY, '1');
             console.warn('[PWA] recovery', reason);
-          } catch {
-            // ignore
-          }
+          } catch (e) {}
 
           try {
             if ('serviceWorker' in navigator) {
-              const regs = await navigator.serviceWorker.getRegistrations();
-              await Promise.all(regs.map((r) => r.unregister()));
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                regs.forEach(function(r) { r.unregister(); });
+              }).catch(function() {});
             }
-          } catch {
-            // ignore
-          }
+          } catch (e) {}
 
           try {
-            if (window.caches && caches.keys) {
-              const keys = await caches.keys();
-              await Promise.all(keys.map((k) => caches.delete(k)));
+            if (window.caches && typeof caches.keys === 'function') {
+              caches.keys().then(function(keys) {
+                keys.forEach(function(k) { caches.delete(k); });
+              }).catch(function() {});
             }
-          } catch {
-            // ignore
-          }
+          } catch (e) {}
 
-          window.location.reload();
+          setTimeout(function() { window.location.reload(); }, 500);
         }
 
         window.addEventListener(
           'error',
           function (event) {
-            const msg = String((event && event.message) || '');
-            const target = event && event.target;
-            const isModuleScript =
+            var msg = String((event && event.message) || '');
+            var target = event && event.target;
+            var isModuleScript =
               target && target.tagName === 'SCRIPT' && target.type === 'module';
 
-            const isLoadFail =
-              msg.includes('Failed to load module script') ||
-              msg.includes('Loading chunk') ||
-              msg.includes('ChunkLoadError') ||
-              msg.includes('Failed to fetch dynamically imported module') ||
-              msg.includes('Unexpected token');
+            var isLoadFail =
+              msg.indexOf('Failed to load module script') !== -1 ||
+              msg.indexOf('Loading chunk') !== -1 ||
+              msg.indexOf('ChunkLoadError') !== -1 ||
+              msg.indexOf('Failed to fetch dynamically imported module') !== -1 ||
+              msg.indexOf('Unexpected token') !== -1 ||
+              msg.indexOf('SyntaxError') !== -1;
 
             if (isModuleScript || isLoadFail) {
               recover(isModuleScript ? 'module-script-error' : msg.slice(0, 120));
@@ -89,6 +86,24 @@
           },
           true
         );
+
+        window.addEventListener('unhandledrejection', function(event) {
+          var msg = String(event && event.reason || '');
+          if (
+            msg.indexOf('Failed to fetch dynamically imported module') !== -1 ||
+            msg.indexOf('Failed to load module script') !== -1 ||
+            msg.indexOf('error loading dynamically imported module') !== -1
+          ) {
+            recover('unhandled-rejection: ' + msg.slice(0, 100));
+          }
+        });
+
+        setTimeout(function() {
+          var root = document.getElementById('root');
+          if (root && root.innerHTML.trim() === '') {
+            recover('empty-root-after-timeout');
+          }
+        }, 12000);
       })();
     </script>
     <meta property="og:title" content="QUEROX - Outil de gestion">
