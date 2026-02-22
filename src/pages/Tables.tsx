@@ -27,6 +27,7 @@ const Tables: React.FC = () => {
     closeSession,
     markSessionAsPaid,
     reopenSession,
+    deleteSession,
     refetch,
   } = useOptimizedTableSessions();
 
@@ -316,6 +317,11 @@ const Tables: React.FC = () => {
             onMarkAsPaid={handleMarkAsPaid}
             onReopenSession={async (sessionId: string) => {
               await reopenSession(sessionId);
+            }}
+            onDeleteSession={async (sessionId: string) => {
+              await deleteSession(sessionId);
+              setShowSessionModal(false);
+              setSelectedSession(null);
             }}
           />
 

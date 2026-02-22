@@ -625,6 +625,48 @@ export const useOptimizedTableSessions = () => {
     },
   });
 
+  const deleteSessionMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      // Delete related invoices first
+      await supabase
+        .from('invoices')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // Delete related orders
+      await supabase
+        .from('orders')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // Delete the session itself
+      const { error } = await supabase
+        .from('table_sessions')
+        .delete()
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      // Remove from local cache
+      const currentSessions = sessions || [];
+      const updatedSessions = currentSessions.filter(s => s.id !== sessionId);
+      queryClient.setQueryData(sessionsQueryKey, updatedSessions);
+      if (user) {
+        await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast({
+        title: "Table libérée",
+        description: "La session a été supprimée avec succès.",
+      });
+    },
+  });
+
   const getActiveSessionForTable = useCallback((tableNumber: string): TableSession | null => {
     if (!sessions) return null;
     return sessions.find(s => s.table_number === tableNumber && s.status === 'active') || null;
@@ -642,6 +684,7 @@ export const useOptimizedTableSessions = () => {
     markSessionAsPaid: (sessionId: string, paymentMethod?: string) =>
       markSessionAsPaidMutation.mutateAsync({ sessionId, paymentMethod }),
     reopenSession: reopenSessionMutation.mutateAsync,
+    deleteSession: deleteSessionMutation.mutateAsync,
     getActiveSessionForTable,
     refetch,
   };
