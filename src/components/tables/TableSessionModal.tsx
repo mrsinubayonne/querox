@@ -11,7 +11,7 @@ import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw } from "lucide-react";
+import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +44,7 @@ interface TableSessionModalProps {
   onCloseSession: (sessionId: string) => Promise<void> | void;
   onMarkAsPaid: (sessionId: string, paymentMethod?: string) => Promise<void> | void;
   onReopenSession?: (sessionId: string) => Promise<void> | void;
+  onDeleteSession?: (sessionId: string) => Promise<void> | void;
 }
 export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   isOpen,
@@ -51,7 +52,8 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   session,
   onCloseSession,
   onMarkAsPaid,
-  onReopenSession
+  onReopenSession,
+  onDeleteSession
 }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -62,6 +64,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [invoiceToPrint, setInvoiceToPrint] = useState<Invoice | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [printReady, setPrintReady] = useState(false);
   const [pendingPrint, setPendingPrint] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
@@ -644,7 +647,16 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
               </Button>
             </>}
 
-          
+          {onDeleteSession && (
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              Libérer la table
+            </Button>
+          )}
 
           <Button variant="outline" onClick={onClose}>
             Fermer
@@ -704,5 +716,31 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
       />
 
       <CelebrationMessage />
+
+      {/* Delete/Free Confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Libérer cette table ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action supprimera la session, les commandes associées et la facture. Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (onDeleteSession && session) {
+                  await onDeleteSession(session.id);
+                }
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Supprimer et libérer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>;
 };
