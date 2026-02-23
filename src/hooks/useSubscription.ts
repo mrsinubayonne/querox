@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -150,6 +150,10 @@ export const useSubscription = () => {
   }, [user]);
 
 
+  // Use a ref to avoid subscription in useCallback deps (prevents infinite loop)
+  const subscriptionRef = useRef<Subscription | null>(null);
+  subscriptionRef.current = subscription;
+
   const fetchSubscription = useCallback(async (forceRefresh = false) => {
     if (!user) {
       setSubscription(null);
@@ -270,13 +274,13 @@ export const useSubscription = () => {
     } catch (error) {
       console.error('Erreur fetchSubscription:', error);
       // Don't clear subscription on error - keep last known good state
-      if (!subscription) {
+      if (!subscriptionRef.current) {
         setSubscription(null);
       }
     } finally {
       setLoading(false);
     }
-  }, [user, isAdminUser, subscription]);
+  }, [user, isAdminUser]);
 
   // Charger le cache au montage
   useEffect(() => {

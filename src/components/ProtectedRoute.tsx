@@ -82,8 +82,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Don't render content if neither user nor team member is authenticated
+  // Show spinner instead of blank page while redirect happens
   if (!user && !isTeamMember) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-sm text-muted-foreground">Redirection...</p>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;
