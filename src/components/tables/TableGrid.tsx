@@ -16,7 +16,7 @@ export const TableGrid: React.FC<TableGridProps> = ({
   filteredTableNumbers,
 }) => {
   // Generate table numbers (default to 120 tables)
-  const defaultTableNumbers = Array.from({ length: 120 }, (_, i) => String(i + 1).padStart(2, "0"));
+  const defaultTableNumbers = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(2, "0"));
   const tableNumbers = filteredTableNumbers || defaultTableNumbers;
   
   const getSessionForTable = (tableNumber: string) => {

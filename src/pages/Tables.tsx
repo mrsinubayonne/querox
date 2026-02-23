@@ -40,8 +40,9 @@ const Tables: React.FC = () => {
   const [sessionToRename, setSessionToRename] = useState<TableSession | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  // Generate table numbers (default to 120 tables)
-  const tableNumbers = Array.from({ length: 120 }, (_, i) => String(i + 1).padStart(2, "0"));
+  // Generate table numbers (default to 30 tables, expandable)
+  const [tableCount, setTableCount] = useState(30);
+  const tableNumbers = Array.from({ length: tableCount }, (_, i) => String(i + 1).padStart(2, "0"));
 
   // Filter sessions based on status
   const filteredSessions = useMemo(() => {
@@ -278,6 +279,16 @@ const Tables: React.FC = () => {
               {filteredTableNumbers.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   Aucune table ne correspond aux filtres sélectionnés
+                </div>
+              )}
+              {statusFilter === "all" && tableCount < 120 && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setTableCount(prev => Math.min(prev + 30, 120))}
+                  >
+                    Afficher plus de tables ({tableCount}/120)
+                  </Button>
                 </div>
               )}
             </>
