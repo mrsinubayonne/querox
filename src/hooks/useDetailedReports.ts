@@ -138,6 +138,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         if (outletsError) throw outletsError;
         (outlets || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
+        // IMPORTANT: Supabase default limit is 1000 — use explicit high limit
         let invoicesQuery = supabase
           .from('invoices')
           .select('*')
@@ -145,7 +146,8 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
           .eq('status', 'paid')
           .gte('created_at', startISO)
           .lte('created_at', endISO)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(10000);
 
         if (period.outlet_id) {
           invoicesQuery = invoicesQuery.eq('outlet_id', period.outlet_id);
