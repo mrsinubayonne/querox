@@ -98,6 +98,37 @@
           }
         });
 
+        // Force one-time cache purge for all users to fix white page
+        var PURGE_KEY = 'querox_cache_purge_v2';
+        if (!sessionStorage.getItem(PURGE_KEY)) {
+          sessionStorage.setItem(PURGE_KEY, '1');
+          try {
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                regs.forEach(function(r) { r.unregister(); });
+              }).catch(function() {});
+            }
+            if (window.caches && typeof caches.keys === 'function') {
+              caches.keys().then(function(keys) {
+                keys.forEach(function(k) { caches.delete(k); });
+              }).catch(function() {});
+            }
+            // Clear stale localStorage keys
+            try {
+              var i, key, toRemove = [];
+              for (i = 0; i < localStorage.length; i++) {
+                key = localStorage.key(i);
+                if (key && (key.indexOf('subscription_cache_') === 0 || key === 'selectedOutletId' || key === 'selectedProfileId')) {
+                  toRemove.push(key);
+                }
+              }
+              toRemove.forEach(function(k) { localStorage.removeItem(k); });
+            } catch(e) {}
+            // Reload after purge
+            setTimeout(function() { window.location.reload(); }, 600);
+          } catch(e) {}
+        }
+
         setTimeout(function() {
           var root = document.getElementById('root');
           if (root && root.innerHTML.trim() === '') {
