@@ -45,6 +45,7 @@ interface TableSessionModalProps {
   onMarkAsPaid: (sessionId: string, paymentMethod?: string) => Promise<void> | void;
   onReopenSession?: (sessionId: string) => Promise<void> | void;
   onDeleteSession?: (sessionId: string) => Promise<void> | void;
+  isMutating?: boolean;
 }
 export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   isOpen,
@@ -53,10 +54,12 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   onCloseSession,
   onMarkAsPaid,
   onReopenSession,
-  onDeleteSession
+  onDeleteSession,
+  isMutating = false,
 }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  const [actionInProgress, setActionInProgress] = useState(false);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const [showPrintDialog, setShowPrintDialog] = useState(false);
@@ -73,6 +76,8 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const printViewRef = useRef<InvoicePrintViewRef>(null);
+
+  const busy = isMutating || actionInProgress;
 
   // Cleanup print state after browser print dialog closes
   useEffect(() => {
@@ -92,14 +97,13 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     debtorId?: string,
     multipleBreakdown?: MultiplePaymentBreakdown
   ) => {
-    if (!session) return;
+    if (!session || busy) return;
 
     trackClick(`Paiement: ${paymentMethod}`, 'tables');
+    setActionInProgress(true);
 
     try {
-      // Build payment method string for multiple payments
       let paymentMethodString = paymentMethod;
-      let notesForMultiple = '';
 
       if (paymentMethod === 'Multiple' && multipleBreakdown) {
         const parts: string[] = [];
@@ -108,18 +112,16 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         if (multipleBreakdown.carte > 0) parts.push(`Carte: ${multipleBreakdown.carte} FCFA`);
         if (multipleBreakdown.mobileMoney > 0) parts.push(`Mobile Money: ${multipleBreakdown.mobileMoney} FCFA`);
         if (multipleBreakdown.debiteur > 0) parts.push(`Débiteur: ${multipleBreakdown.debiteur} FCFA`);
-        notesForMultiple = parts.join(' | ');
         paymentMethodString = 'Multiple';
       }
 
-      // Delegate entirely to the hook — it handles both online and offline correctly
       await onMarkAsPaid(session.id, paymentMethodString);
-
       celebrate();
-      // NOTE: Do NOT call onClose() here — onMarkAsPaid already closes the modal via the parent
     } catch (error) {
       console.error('Error marking as paid:', error);
-      sonnerToast.error('Erreur lors de la mise à jour');
+      sonnerToast.error('Erreur lors du paiement. Réessayez.');
+    } finally {
+      setActionInProgress(false);
     }
   };
   const navigate = useNavigate();
@@ -586,35 +588,48 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
         <DialogFooter className="flex-wrap gap-2">
           {session.status === "active" && <>
-              <Button onClick={() => setShowPreview(true)} variant="outline">
+              <Button onClick={() => setShowPreview(true)} variant="outline" disabled={busy}>
                 <Eye className="h-4 w-4 mr-2" />
                 Prévisualiser
               </Button>
               <Button onClick={() => {
                 trackClick('Tables: Ajouter commande', 'tables');
                 handleAddOrder();
-              }} variant="secondary">
+              }} variant="secondary" disabled={busy}>
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter une commande
               </Button>
-              <Button onClick={async () => {
+              <Button disabled={busy} onClick={async () => {
                 trackClick('Tables: Fermer session', 'tables');
-                await onCloseSession(session.id);
-                // Refresh invoices list
-                queryClient.invalidateQueries({ queryKey: ['invoices'] });
-                // Close modal so user re-opens the table and sees updated status + can print
-                onClose();
+                setActionInProgress(true);
+                try {
+                  await onCloseSession(session.id);
+                  queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                  onClose();
+                } catch (e) {
+                  console.error('Error closing session:', e);
+                  sonnerToast.error('Erreur lors de la fermeture');
+                } finally {
+                  setActionInProgress(false);
+                }
               }} variant="default">
                 <Receipt className="h-4 w-4 mr-2" />
-                {session.debtor_id ? "Fermer & Créer Crédit" : "Fermer & Générer Facture"}
+                {busy ? "En cours..." : (session.debtor_id ? "Fermer & Créer Crédit" : "Fermer & Générer Facture")}
               </Button>
             </>}
           
           {session.status === "closed" && <>
               {onReopenSession && (
-                <Button onClick={async () => {
+                <Button disabled={busy} onClick={async () => {
                   trackClick('Tables: Réouvrir table', 'tables');
-                  await onReopenSession(session.id);
+                  setActionInProgress(true);
+                  try {
+                    await onReopenSession(session.id);
+                  } catch (e) {
+                    sonnerToast.error('Erreur');
+                  } finally {
+                    setActionInProgress(false);
+                  }
                 }} variant="outline">
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Réouvrir
@@ -623,31 +638,31 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
               <Button onClick={() => {
                 trackClick('Tables: Imprimer facture', 'tables');
                 handlePrintSession();
-              }} variant="outline">
+              }} variant="outline" disabled={busy}>
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimer
               </Button>
               
-              <Button onClick={() => {
+              <Button disabled={busy} onClick={() => {
                 trackClick('Tables: Marquer payée', 'tables');
                 setShowPaymentMethod(true);
               }}>
-                Marquer comme Payée
+                {busy ? "En cours..." : "Marquer comme Payée"}
               </Button>
             </>}
 
           {session.status === "paid" && <>
               {onReopenSession && (
-                <Button onClick={() => onReopenSession(session.id)} variant="outline">
+                <Button disabled={busy} onClick={() => onReopenSession(session.id)} variant="outline">
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Réouvrir
                 </Button>
               )}
-              <Button onClick={handlePrintSession} variant="outline">
+              <Button onClick={handlePrintSession} variant="outline" disabled={busy}>
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimer
               </Button>
-              <Button onClick={handleViewInvoice} variant="secondary">
+              <Button onClick={handleViewInvoice} variant="secondary" disabled={busy}>
                 Voir la Facture
               </Button>
             </>}
@@ -656,6 +671,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
             <Button 
               variant="destructive" 
               size="sm"
+              disabled={busy}
               onClick={() => setShowDeleteConfirm(true)}
             >
               <XCircle className="h-4 w-4 mr-2" />
