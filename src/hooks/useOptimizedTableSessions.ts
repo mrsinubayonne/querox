@@ -474,8 +474,10 @@ export const useOptimizedTableSessions = () => {
 
   const markSessionAsPaidMutation = useMutation({
     mutationFn: async ({ sessionId, paymentMethod }: { sessionId: string; paymentMethod?: string }) => {
-      const session = sessions?.find(s => s.id === sessionId);
-      const isDebtorSession = session?.debtor_id !== null;
+      // CRITICAL: Use raw cache to avoid stale closure over memoized `sessions`
+      const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
+      const session = currentSessions.find(s => s.id === sessionId);
+      const isDebtorSession = session ? session.debtor_id !== null : false;
 
       if (isOffline) {
         await queueMutation({
@@ -776,6 +778,7 @@ export const useOptimizedTableSessions = () => {
     loading: isLoading,
     outletLoading,
     isOffline: dataOffline,
+    isMutating: createSessionMutation.isPending || closeSessionMutation.isPending || markSessionAsPaidMutation.isPending || reopenSessionMutation.isPending || deleteSessionMutation.isPending,
     createSession: createSessionMutation.mutateAsync,
     closeSession: closeSessionMutation.mutateAsync,
     markSessionAsPaid: (sessionId: string, paymentMethod?: string) =>

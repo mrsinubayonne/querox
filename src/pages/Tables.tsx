@@ -23,6 +23,7 @@ const Tables: React.FC = () => {
   const {
     sessions,
     loading,
+    isMutating,
     createSession,
     closeSession,
     markSessionAsPaid,
@@ -127,15 +128,25 @@ const Tables: React.FC = () => {
   };
 
   const handleCloseSession = async (sessionId: string) => {
-    await closeSession(sessionId);
-    setShowSessionModal(false);
-    setSelectedSession(null);
+    try {
+      await closeSession(sessionId);
+    } catch (e) {
+      console.error('Error closing session:', e);
+    } finally {
+      setShowSessionModal(false);
+      setSelectedSession(null);
+    }
   };
 
   const handleMarkAsPaid = async (sessionId: string, paymentMethod?: string) => {
-    await markSessionAsPaid(sessionId, paymentMethod);
-    setShowSessionModal(false);
-    setSelectedSession(null);
+    try {
+      await markSessionAsPaid(sessionId, paymentMethod);
+    } catch (e) {
+      console.error('Error marking as paid:', e);
+    } finally {
+      setShowSessionModal(false);
+      setSelectedSession(null);
+    }
   };
 
   const handleTableRename = useCallback((session: TableSession) => {
@@ -326,6 +337,7 @@ const Tables: React.FC = () => {
             session={selectedSession}
             onCloseSession={handleCloseSession}
             onMarkAsPaid={handleMarkAsPaid}
+            isMutating={isMutating}
             onReopenSession={async (sessionId: string) => {
               await reopenSession(sessionId);
             }}
