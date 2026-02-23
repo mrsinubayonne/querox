@@ -114,12 +114,14 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         if (outletsError) throw outletsError;
         (outletsData || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
+        // IMPORTANT: Supabase default limit is 1000 rows — use explicit high limit
         let ordersQuery = supabase
           .from('orders')
           .select('id, total_amount, created_at, outlet_id, customer_name')
           .eq('user_id', user.id)
           .gte('created_at', startISO)
-          .lte('created_at', endISO);
+          .lte('created_at', endISO)
+          .limit(10000);
         if (scopedOutletId) ordersQuery = ordersQuery.eq('outlet_id', scopedOutletId);
         const { data: ordersData, error: ordersError } = await ordersQuery;
         if (ordersError) throw ordersError;
@@ -130,7 +132,8 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
           .select('id, total_amount, status, created_at, outlet_id')
           .eq('user_id', user.id)
           .gte('created_at', startISO)
-          .lte('created_at', endISO);
+          .lte('created_at', endISO)
+          .limit(10000);
         if (scopedOutletId) invoicesQuery = invoicesQuery.eq('outlet_id', scopedOutletId);
         const { data: invoicesData, error: invoicesError } = await invoicesQuery;
         if (invoicesError) throw invoicesError;

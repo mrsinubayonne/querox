@@ -577,14 +577,47 @@ export const useOptimizedTableSessions = () => {
       }
 
       if (!isDebtorDb) {
-        await supabase
+        // Update invoice to paid
+        const { data: paidInvoice } = await supabase
           .from('invoices')
           .update({ 
             status: 'paid',
             paid_date: new Date().toISOString(),
             payment_method: paymentMethod || 'Espèces'
           })
-          .eq('session_id', sessionId);
+          .eq('session_id', sessionId)
+          .select('invoice_number, total_amount')
+          .maybeSingle();
+
+        // CRITICAL: Create accounting transaction (was missing in online flow!)
+        if (paidInvoice) {
+          const invoiceNum = (paidInvoice as any).invoice_number;
+          const invoiceAmount = (paidInvoice as any).total_amount;
+          // Check if transaction already exists to avoid duplicates
+          const { data: existingTx } = await supabase
+            .from('transactions')
+            .select('id')
+            .eq('title', `Facture ${invoiceNum}`)
+            .eq('user_id', resolvedUserId)
+            .maybeSingle();
+
+          if (!existingTx) {
+            await supabase
+              .from('transactions')
+              .insert([{
+                user_id: resolvedUserId,
+                outlet_id: scopedOutletId,
+                title: `Facture ${invoiceNum}`,
+                amount: invoiceAmount,
+                type: 'income',
+                category: 'facture',
+                status: 'completed',
+                date: new Date().toISOString().split('T')[0],
+                description: `Paiement de la facture ${invoiceNum}`,
+                payment_method: paymentMethod || 'Espèces',
+              }]);
+          }
+        }
       }
 
       // Remove session from cache entirely — table becomes free immediately
