@@ -62,6 +62,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [servedBy, setServedBy] = useState("");
   const [invoiceToPrint, setInvoiceToPrint] = useState<Invoice | null>(null);
+  const [printFormat, setPrintFormat] = useState<'a4' | 'restaurant'>('restaurant');
   const [showPreview, setShowPreview] = useState(false);
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -80,6 +81,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
       setInvoiceToPrint(null);
       setServedBy("");
       setPrintReady(false);
+      setPrintFormat('restaurant');
     };
     window.addEventListener('afterprint', cleanup);
     return () => window.removeEventListener('afterprint', cleanup);
@@ -114,7 +116,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
       await onMarkAsPaid(session.id, paymentMethodString);
 
       celebrate();
-      onClose();
+      // NOTE: Do NOT call onClose() here — onMarkAsPaid already closes the modal via the parent
     } catch (error) {
       console.error('Error marking as paid:', error);
       sonnerToast.error('Erreur lors de la mise à jour');
@@ -471,6 +473,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     setServedBy("");
     setPrintReady(false);
     setPendingPrint(false);
+    setPrintFormat('restaurant');
   };
   if (!session) return null;
   return <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -676,12 +679,37 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Imprimer la facture</AlertDialogTitle>
             <AlertDialogDescription>
-              Souhaitez-vous indiquer qui a servi cette table ?
+              Choisissez le format et indiquez qui a servi cette table.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4">
-            <Label htmlFor="served-by">Servi par (optionnel)</Label>
-            <Input id="served-by" placeholder="Ex: Jean, Marie..." value={servedBy} onChange={e => setServedBy(e.target.value)} />
+          <div className="py-4 space-y-4">
+            <div>
+              <Label>Format d'impression</Label>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  variant={printFormat === 'restaurant' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPrintFormat('restaurant')}
+                  className="flex-1"
+                >
+                  <Receipt className="h-4 w-4 mr-2" />
+                  Ticket (80mm)
+                </Button>
+                <Button
+                  variant={printFormat === 'a4' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPrintFormat('a4')}
+                  className="flex-1"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  A4
+                </Button>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="served-by">Servi par (optionnel)</Label>
+              <Input id="served-by" placeholder="Ex: Jean, Marie..." value={servedBy} onChange={e => setServedBy(e.target.value)} />
+            </div>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleClosePrintDialog}>Annuler</AlertDialogCancel>
@@ -696,7 +724,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           ref={printViewRef}
           invoice={invoiceToPrint}
           servedBy={servedBy || undefined}
-          format="restaurant"
+          format={printFormat}
           autoPrint={false}
           onReady={handlePrintReady}
         />
