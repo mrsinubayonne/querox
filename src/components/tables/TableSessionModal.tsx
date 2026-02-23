@@ -127,49 +127,11 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const {
     toast
   } = useToast();
-  useEffect(() => {
-    if (session && isOpen) {
-      fetchOrders();
-    }
-  }, [session, isOpen]);
-
-  // Real-time listener pour les commandes
-  useEffect(() => {
-    if (!session || !isOpen) return;
-    const channel = supabase.channel(`session-orders-${session.id}`).on("postgres_changes", {
-      event: "*",
-      schema: "public",
-      table: "orders",
-      filter: `session_id=eq.${session.id}`
-    }, () => {
-      fetchOrders();
-    }).subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [session?.id, isOpen]);
-
-  // Real-time listener pour les changements de session (total_amount)
-  useEffect(() => {
-    if (!session || !isOpen) return;
-    const channel = supabase.channel(`session-${session.id}`).on("postgres_changes", {
-      event: "UPDATE",
-      schema: "public",
-      table: "table_sessions",
-      filter: `id=eq.${session.id}`
-    }, () => {
-      // Recharger la page parent pour voir les changements
-      window.dispatchEvent(new CustomEvent("session-updated"));
-    }).subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [session?.id, isOpen]);
-  const fetchOrders = async () => {
+  // Stable fetch function
+  const fetchOrdersStable = useCallback(async () => {
     if (!session) return;
     setLoading(true);
     try {
-      // Offline: load from cache
       if (isOffline) {
         const userId = user?.id || '';
         const outletId = (session as any).outlet_id || localStorage.getItem('selectedOutletId') || undefined;
@@ -194,7 +156,47 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.id, isOffline, user?.id]);
+
+  useEffect(() => {
+    if (session && isOpen) {
+      fetchOrdersStable();
+    }
+  }, [session?.id, isOpen, fetchOrdersStable]);
+
+  // Single real-time listener for both orders and session updates
+  useEffect(() => {
+    if (!session?.id || !isOpen) return;
+    
+    const ordersChannel = supabase
+      .channel(`modal-orders-${session.id}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "orders",
+        filter: `session_id=eq.${session.id}`
+      }, () => {
+        fetchOrdersStable();
+      })
+      .subscribe();
+
+    const sessionChannel = supabase
+      .channel(`modal-session-${session.id}`)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "table_sessions",
+        filter: `id=eq.${session.id}`
+      }, () => {
+        window.dispatchEvent(new CustomEvent("session-updated"));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(sessionChannel);
+    };
+  }, [session?.id, isOpen, fetchOrdersStable]);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
@@ -258,7 +260,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         title: "Commande supprimée",
         description: "La commande a été supprimée avec succès."
       });
-      fetchOrders();
+      fetchOrdersStable();
       window.dispatchEvent(new CustomEvent("session-updated"));
     } catch (error: any) {
       console.error("Error deleting order:", error);
