@@ -129,6 +129,17 @@ export const useOptimizedTableSessions = () => {
     return rawSessions.filter(s => !localPaidSessionIds.has(s.id));
   }, [rawSessions]);
 
+// Timeout wrapper — prevents mutations from hanging forever on flaky networks
+const MUTATION_TIMEOUT_MS = 15_000;
+function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Opération expirée. Veuillez réessayer.')), ms)
+    ),
+  ]);
+}
+
 
   const updateLocalCache = useCallback(async (updatedSession: Partial<TableSession> & { id: string }) => {
     // Use rawSessions from the query cache to avoid circular dependency with memoized sessions
@@ -207,12 +218,12 @@ export const useOptimizedTableSessions = () => {
   }, [queryClient, ordersQueryKey, resolvedUserId, scopedOutletId]);
 
   const createSessionMutation = useMutation({
-    mutationFn: async ({ tableNumber, numberOfGuests, notes, debtorId }: {
+    mutationFn: ({ tableNumber, numberOfGuests, notes, debtorId }: {
       tableNumber: string;
       numberOfGuests?: number;
       notes?: string;
       debtorId?: string;
-    }) => {
+    }) => withTimeout((async () => {
       const localId = generateLocalId();
       const sessionData: Partial<TableSession> = {
         id: localId,
@@ -264,7 +275,7 @@ export const useOptimizedTableSessions = () => {
 
       if (error) throw error;
       return data as unknown as TableSession;
-    },
+    })()),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       toast({
@@ -272,10 +283,13 @@ export const useOptimizedTableSessions = () => {
         description: `Table ${(data as any).table_number} activée`,
       });
     },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message || "Impossible de créer la session.", variant: "destructive" });
+    },
   });
 
   const closeSessionMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
+    mutationFn: (sessionId: string) => withTimeout((async () => {
       const session = sessions?.find(s => s.id === sessionId);
       const hasDebtor = session?.debtor_id !== null;
       // Closing generates the invoice; payment is a separate action.
@@ -427,27 +441,36 @@ export const useOptimizedTableSessions = () => {
           siret = (debtor as any)?.siret ?? null;
         }
 
-        await supabase
+        // Check if DB trigger already created an invoice for this session
+        const { data: existingInvoice } = await supabase
           .from('invoices')
-          .insert([{
-            user_id: sessionData.user_id,
-            outlet_id: sessionData.outlet_id,
-            session_id: sessionId,
-            business_customer_id: businessCustomerId,
-            invoice_number: invoiceNumber,
-            invoice_type: invoiceType,
-            total_amount: sessionData.total_amount ?? 0,
-            status: 'unpaid',
-            due_date: dueDate,
-            payment_terms_days: paymentTermsDays,
-            notes: `Facture - Table ${sessionData.table_number}`,
-            billing_address: billingAddress,
-            siret,
-            customer_name: firstOrder?.customer_name ?? 'Client',
-            customer_email: firstOrder?.customer_email ?? null,
-            customer_phone: firstOrder?.customer_phone ?? null,
-            items: allItems,
-          }]);
+          .select('id')
+          .eq('session_id', sessionId)
+          .maybeSingle();
+
+        if (!existingInvoice) {
+          await supabase
+            .from('invoices')
+            .insert([{
+              user_id: sessionData.user_id,
+              outlet_id: sessionData.outlet_id,
+              session_id: sessionId,
+              business_customer_id: businessCustomerId,
+              invoice_number: invoiceNumber,
+              invoice_type: invoiceType,
+              total_amount: sessionData.total_amount ?? 0,
+              status: 'unpaid',
+              due_date: dueDate,
+              payment_terms_days: paymentTermsDays,
+              notes: `Facture - Table ${sessionData.table_number}`,
+              billing_address: billingAddress,
+              siret,
+              customer_name: firstOrder?.customer_name ?? 'Client',
+              customer_email: firstOrder?.customer_email ?? null,
+              customer_phone: firstOrder?.customer_phone ?? null,
+              items: allItems,
+            }]);
+        }
       } catch (invoiceError) {
         console.error('Error generating invoice on close:', invoiceError);
         // Don't throw - session is closed, invoice generation is best-effort
@@ -457,9 +480,8 @@ export const useOptimizedTableSessions = () => {
       await updateLocalCache({ id: sessionId, status: 'closed', closed_at: new Date().toISOString() });
 
       return { hasDebtor: hasDebtorDb };
-    },
+    })()),
     onSuccess: ({ hasDebtor }) => {
-      // Sync table-sessions after a delay to allow DB replication
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       }, 5000);
@@ -470,10 +492,13 @@ export const useOptimizedTableSessions = () => {
         description: hasDebtor ? "Dette enregistrée" : "Facture générée",
       });
     },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message || "Impossible de fermer la session.", variant: "destructive" });
+    },
   });
 
   const markSessionAsPaidMutation = useMutation({
-    mutationFn: async ({ sessionId, paymentMethod }: { sessionId: string; paymentMethod?: string }) => {
+    mutationFn: ({ sessionId, paymentMethod }: { sessionId: string; paymentMethod?: string }) => withTimeout((async () => {
       // CRITICAL: Use raw cache to avoid stale closure over memoized `sessions`
       const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
       const session = currentSessions.find(s => s.id === sessionId);
@@ -628,11 +653,8 @@ export const useOptimizedTableSessions = () => {
       markSessionPaidLocally(sessionId);
 
       return { isDebtorSession: isDebtorDb };
-    },
+    })()),
     onSuccess: ({ isDebtorSession }) => {
-      // Don't invalidate table-sessions immediately — the session was removed from cache
-      // and markSessionPaidLocally prevents refetch from re-adding it.
-      // After 30s (well after replication), allow normal refetch again.
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       }, 30000);
@@ -645,10 +667,13 @@ export const useOptimizedTableSessions = () => {
           : "Session et facture marquées comme payées.",
       });
     },
+    onError: (error: Error) => {
+      toast({ title: "Erreur paiement", description: error.message || "Impossible de marquer comme payée.", variant: "destructive" });
+    },
   });
 
   const reopenSessionMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
+    mutationFn: (sessionId: string) => withTimeout((async () => {
       if (isOffline) {
         await queueMutation({
           table: 'table_sessions',
@@ -710,7 +735,7 @@ export const useOptimizedTableSessions = () => {
         .eq('id', sessionId);
 
       if (error) throw error;
-    },
+    })()),
     onSuccess: () => {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
@@ -722,10 +747,13 @@ export const useOptimizedTableSessions = () => {
         description: "La facture et transaction ont été annulées.",
       });
     },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message || "Impossible de réouvrir la table.", variant: "destructive" });
+    },
   });
 
   const deleteSessionMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
+    mutationFn: (sessionId: string) => withTimeout((async () => {
       // Delete related invoices first
       await supabase
         .from('invoices')
@@ -753,7 +781,7 @@ export const useOptimizedTableSessions = () => {
       if (user) {
         await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
       }
-    },
+    })()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
@@ -763,6 +791,9 @@ export const useOptimizedTableSessions = () => {
         title: "Table libérée",
         description: "La session a été supprimée avec succès.",
       });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message || "Impossible de libérer la table.", variant: "destructive" });
     },
   });
 

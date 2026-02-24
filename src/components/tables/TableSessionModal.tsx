@@ -79,6 +79,16 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
   const busy = isMutating || actionInProgress;
 
+  // Safety auto-reset: if actionInProgress is stuck for 20s, force-reset it
+  useEffect(() => {
+    if (!actionInProgress) return;
+    const timer = setTimeout(() => {
+      console.warn('⚠️ actionInProgress stuck for 20s — auto-resetting');
+      setActionInProgress(false);
+    }, 20_000);
+    return () => clearTimeout(timer);
+  }, [actionInProgress]);
+
   // Cleanup print state after browser print dialog closes
   useEffect(() => {
     if (!invoiceToPrint) return;
