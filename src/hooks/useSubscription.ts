@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Subscription {
   id: string;
@@ -30,8 +32,7 @@ interface CachedSubscription extends Subscription {
   cached_at: number;
 }
 
-// ── Cache TTL: 10 minutes ──────────────────────────────────────────────
-const CACHE_DURATION = 10 * 60 * 1000;
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes (reduced for faster sync)
 
 const getSubscriptionCacheKey = (userId: string) => `subscription_cache_${userId}`;
 
@@ -43,11 +44,13 @@ const getCachedSubscription = (userId: string): Subscription | null => {
     const data: CachedSubscription = JSON.parse(cached);
     const age = Date.now() - data.cached_at;
     
+    // Vérifier que le cache n'est pas expiré
     if (age > CACHE_DURATION) {
       localStorage.removeItem(getSubscriptionCacheKey(userId));
       return null;
     }
     
+    // Vérifier que l'abonnement n'est pas expiré
     if (data.subscription_end) {
       const endDate = new Date(data.subscription_end);
       if (endDate < new Date()) {
@@ -58,7 +61,8 @@ const getCachedSubscription = (userId: string): Subscription | null => {
     
     const { cached_at, ...subscription } = data;
     return subscription;
-  } catch {
+  } catch (error) {
+    console.error('Error reading subscription cache:', error);
     return null;
   }
 };
@@ -69,213 +73,303 @@ const setCachedSubscription = (userId: string, subscription: Subscription | null
       localStorage.removeItem(getSubscriptionCacheKey(userId));
       return;
     }
-    const cached: CachedSubscription = { ...subscription, cached_at: Date.now() };
+    
+    const cached: CachedSubscription = {
+      ...subscription,
+      cached_at: Date.now()
+    };
+    
     localStorage.setItem(getSubscriptionCacheKey(userId), JSON.stringify(cached));
-  } catch {
-    // ignore
+  } catch (error) {
+    console.error('Error caching subscription:', error);
   }
 };
 
-// ── Singleton fetch lock ───────────────────────────────────────────────
-let _fetchInProgress: Promise<void> | null = null;
-
 export const useSubscription = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingRole, setLoadingRole] = useState(true);
   const [hasCachedData, setHasCachedData] = useState(false);
 
-  // Stable refs to avoid re-render cascades
-  const userIdRef = useRef<string | undefined>();
-  userIdRef.current = user?.id;
-  const subscriptionRef = useRef<Subscription | null>(null);
-  subscriptionRef.current = subscription;
+  // Check if current user is admin using the new role system
+  const isAdminUser = useCallback(async () => {
+    if (!user) return false;
 
-  // ── Admin check (stable, no state) ─────────────────────────────────
-  const isAdminUser = useCallback(async (uid: string): Promise<boolean> => {
     try {
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', uid)
+        .eq('user_id', user.id)
         .eq('role', 'admin')
+        .order('updated_at', { ascending: false })
         .limit(1);
-      if (error) return false;
+
+      if (error) {
+        console.error('Error checking admin role:', error);
+        return false;
+      }
+
       return Array.isArray(data) && data.length > 0;
-    } catch {
+    } catch (error) {
+      console.error('Error in isAdminUser:', error);
       return false;
     }
-  }, []);
+  }, [user]);
 
-  // ── Fetch user role (once) ─────────────────────────────────────────
   const fetchUserRole = useCallback(async () => {
-    const uid = userIdRef.current;
-    if (!uid) { setUserRole(null); setLoadingRole(false); return; }
+    if (!user) {
+      setUserRole(null);
+      setLoadingRole(false);
+      return;
+    }
+
     setLoadingRole(true);
     try {
       const { data, error } = await supabase
         .from('user_roles')
         .select('*')
-        .eq('user_id', uid)
+        .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
         .limit(1);
-      if (error && error.code !== 'PGRST116') { setUserRole(null); }
-      else { setUserRole(Array.isArray(data) && data.length > 0 ? (data[0] as UserRole) : null); }
-    } catch { setUserRole(null); }
-    finally { setLoadingRole(false); }
-  }, []); // no deps – uses ref
 
-  // ── Core fetch (with lock + cache) ─────────────────────────────────
-  const fetchSubscription = useCallback(async (forceRefresh = false) => {
-    const uid = userIdRef.current;
-    if (!uid) { setSubscription(null); setLoading(false); return; }
-
-    // 1) If not forced, return cache immediately (NO state churn)
-    if (!forceRefresh) {
-      const cached = getCachedSubscription(uid);
-      if (cached) {
-        // Only update state if it actually changed
-        if (subscriptionRef.current?.id !== cached.id || 
-            subscriptionRef.current?.subscription_status !== cached.subscription_status) {
-          setSubscription(cached);
-        }
-        setHasCachedData(true);
-        setLoading(false);
-        return;
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user role:', error);
+        setUserRole(null);
+      } else {
+        setUserRole(Array.isArray(data) && data.length > 0 ? (data[0] as UserRole) : null);
       }
+    } catch (error) {
+      console.error('Error in fetchUserRole:', error);
+      setUserRole(null);
+    } finally {
+      setLoadingRole(false);
     }
+  }, [user]);
 
-    // 2) Anti-double-fetch lock
-    if (_fetchInProgress) {
-      await _fetchInProgress;
+
+  // Use a ref to avoid subscription in useCallback deps (prevents infinite loop)
+  const subscriptionRef = useRef<Subscription | null>(null);
+  subscriptionRef.current = subscription;
+
+  const fetchSubscription = useCallback(async (forceRefresh = false) => {
+    if (!user) {
+      setSubscription(null);
+      setLoading(false);
+      setCachedSubscription('', null);
       return;
     }
 
+    // Set loading true at the START of refetch to trigger grace period in guard
     setLoading(true);
+    
+    console.log('🔍 Fetching subscription for user:', user.id, user.email, { forceRefresh });
 
-    const doFetch = async () => {
-      const isAdmin = await isAdminUser(uid);
-
-      if (isAdmin) {
-        const adminSub: Subscription = {
-          id: 'admin-override',
-          user_id: uid,
-          email: user?.email || '',
-          subscribed: true,
-          subscription_tier: 'admin',
-          subscription_end: null,
-          stripe_customer_id: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          subscription_start: new Date().toISOString(),
-          monthly_revenue: 0,
-          last_payment_date: null,
-          subscription_status: 'active',
-        };
-        setSubscription(adminSub);
-        setCachedSubscription(uid, adminSub);
+    // If not force refresh, check cache first
+    if (!forceRefresh) {
+      const cached = getCachedSubscription(user.id);
+      if (cached) {
+        console.log('📦 Using cached subscription:', { 
+          tier: cached.subscription_tier, 
+          status: cached.subscription_status 
+        });
+        setSubscription(cached);
         setHasCachedData(true);
         setLoading(false);
         return;
       }
+    } else {
+      console.log('🔄 Force refresh: ignoring cache');
+    }
 
-      try {
-        // By user_id first
-        const { data: byUser } = await supabase
+    const isAdmin = await isAdminUser();
+    
+    if (isAdmin) {
+      console.log('👑 User is admin, granting full access');
+      const adminSubscription = {
+        id: 'admin-override',
+        user_id: user.id,
+        email: user.email || '',
+        subscribed: true,
+        subscription_tier: 'admin',
+        subscription_end: null,
+        stripe_customer_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        subscription_start: new Date().toISOString(),
+        monthly_revenue: 0,
+        last_payment_date: null,
+        subscription_status: 'active'
+      };
+      setSubscription(adminSubscription);
+      setCachedSubscription(user.id, adminSubscription);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Chercher d'abord par user_id (évite les erreurs 406 en cas de doublons)
+      const { data: byUser, error: userErr } = await supabase
+        .from('subscribers')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
+      let record = (byUser && byUser.length > 0) ? byUser[0] : null;
+
+      // Si rien par user_id, tenter par email (même logique, sans 406)
+      if (!record) {
+        const { data: byEmail, error: emailErr } = await supabase
           .from('subscribers')
           .select('*')
-          .eq('user_id', uid)
+          .eq('email', user.email)
           .order('updated_at', { ascending: false })
           .limit(1);
 
-        let record = byUser && byUser.length > 0 ? byUser[0] : null;
+        if (emailErr && emailErr.code !== 'PGRST116') {
+          console.error('Erreur récupération abonnement (email):', emailErr);
+        }
 
-        // Fallback by email
-        if (!record && user?.email) {
-          const { data: byEmail } = await supabase
-            .from('subscribers')
-            .select('*')
-            .eq('email', user.email)
-            .order('updated_at', { ascending: false })
-            .limit(1);
+        record = (byEmail && byEmail.length > 0) ? byEmail[0] : null;
 
-          record = byEmail && byEmail.length > 0 ? byEmail[0] : null;
-
-          if (record && !record.user_id) {
-            try {
-              await supabase.from('subscribers').update({ user_id: uid }).eq('id', record.id);
-              record.user_id = uid;
-            } catch { /* ignore */ }
+        // Si trouvé par email mais sans user_id, lier le compte
+        if (record && !record.user_id) {
+          try {
+            await supabase
+              .from('subscribers')
+              .update({ user_id: user.id })
+              .eq('id', record.id);
+            record.user_id = user.id;
+            console.log('🔗 Linked user_id to subscriber record');
+          } catch (linkErr) {
+            console.warn('Impossible de lier user_id au subscriber:', linkErr);
           }
         }
+      }
 
-        if (record) {
-          setSubscription(record);
-          setCachedSubscription(uid, record);
-          setHasCachedData(true);
-        } else {
-          setSubscription(null);
-        }
-      } catch {
-        // Keep last known good state
-        if (!subscriptionRef.current) setSubscription(null);
-      } finally {
+      if (userErr && userErr.code !== 'PGRST116') {
+        console.error('Erreur récupération abonnement (user_id):', userErr);
+      }
+
+      if (record) {
+        console.log('✅ Abonnement trouvé:', { 
+          tier: record.subscription_tier, 
+          status: record.subscription_status,
+          subscribed: record.subscribed,
+          end: record.subscription_end,
+          userId: user.id,
+          email: user.email
+        });
+        setSubscription(record);
+        setCachedSubscription(user.id, record);
+        setHasCachedData(true);
+      } else {
+        console.warn('⚠️ Aucun abonnement trouvé pour:', { userId: user.id, email: user.email });
+        setSubscription(null);
+        // Don't cache null - allow retry on next check
+      }
+    } catch (error) {
+      console.error('Erreur fetchSubscription:', error);
+      // Don't clear subscription on error - keep last known good state
+      if (!subscriptionRef.current) {
+        setSubscription(null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [user, isAdminUser]);
+
+  // Charger le cache au montage
+  useEffect(() => {
+    if (user) {
+      const cached = getCachedSubscription(user.id);
+      if (cached) {
+        console.log('📦 Cache abonnement trouvé:', { 
+          tier: cached.subscription_tier, 
+          status: cached.subscription_status 
+        });
+        setSubscription(cached);
+        setHasCachedData(true);
         setLoading(false);
       }
-    };
+    }
+  }, [user?.id]);
 
-    _fetchInProgress = doFetch().finally(() => { _fetchInProgress = null; });
-    await _fetchInProgress;
-  }, []); // no deps – uses refs
-
-  // ── Mount: load cache synchronously, then fetch once ───────────────
   useEffect(() => {
-    if (!user?.id) {
-      setSubscription(null);
-      setLoading(false);
-      setLoadingRole(false);
-      return;
-    }
-
-    // Synchronous cache hydration
-    const cached = getCachedSubscription(user.id);
-    if (cached) {
-      setSubscription(cached);
-      setHasCachedData(true);
-      setLoading(false);
-    }
-
-    // Single async fetch (respects cache TTL)
-    fetchSubscription();
     fetchUserRole();
+  }, [fetchUserRole, user]);
 
-    // NO interval – revalidation only on explicit refetch
-  }, [user?.id]); // ONLY re-run when user changes
+  useEffect(() => {
+    fetchSubscription();
 
-  // ── Derived values (memoized via useCallback) ──────────────────────
-  const isSubscriptionActive = useCallback(() => {
-    if (userRole?.role === 'admin') return true;
-    if (!subscription) return false;
-
-    if (subscription.subscription_end) {
-      if (new Date(subscription.subscription_end) <= new Date()) return false;
+    // Rafraîchir les données toutes les 30 secondes (suffit pour tous les rôles)
+    if (user) {
+      const interval = setInterval(fetchSubscription, 30000);
+      return () => clearInterval(interval);
     }
+  }, [fetchSubscription, user]);
 
-    if (subscription.subscription_status === 'active' || subscription.subscription_status === 'trialing') return true;
-    if (['cancelled', 'expired', 'past_due'].includes(subscription.subscription_status)) return false;
-    if (!subscription.subscribed) return false;
 
+  const isSubscriptionActive = useCallback(() => {
+    // Admin bypass
+    if (userRole?.role === 'admin') {
+      return true;
+    }
+    
+    if (!subscription) {
+      return false;
+    }
+    
+    // CRITICAL: TOUJOURS vérifier la date d'expiration en premier
+    if (subscription.subscription_end) {
+      const endDate = new Date(subscription.subscription_end);
+      const now = new Date();
+      
+      if (endDate <= now) {
+        console.log('❌ Abonnement EXPIRÉ:', {
+          email: subscription.email,
+          endDate: subscription.subscription_end,
+          now: now.toISOString()
+        });
+        return false; // EXPIRÉ - bloquer l'accès
+      }
+    }
+    
+    // Si pas expiré, vérifier le statut
+    if (subscription.subscription_status === 'active' || subscription.subscription_status === 'trialing') {
+      return true;
+    }
+    
+    // Statuts inactifs
+    if (subscription.subscription_status === 'cancelled' || 
+        subscription.subscription_status === 'expired' ||
+        subscription.subscription_status === 'past_due') {
+      console.log('❌ Statut abonnement inactif:', subscription.subscription_status);
+      return false;
+    }
+    
+    // Fallback pour les anciennes lignes sans status
+    if (!subscription.subscribed) {
+      return false;
+    }
+    
+    // Si subscribed=true et pas de date de fin, c'est actif (permanent)
     return true;
   }, [subscription, userRole]);
 
-  const getDaysRemaining = useCallback(() => {
+  const getDaysRemaining = () => {
     if (!subscription?.subscription_end) return null;
-    const diff = new Date(subscription.subscription_end).getTime() - Date.now();
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return days > 0 ? days : 0;
-  }, [subscription]);
+    
+    const endDate = new Date(subscription.subscription_end);
+    const today = new Date();
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : 0;
+  };
 
   return {
     subscription,
