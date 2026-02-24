@@ -59,7 +59,7 @@ const Tables: React.FC = () => {
       case "attente":
         return sessions.filter(s => s.status === "closed");
       case "payee":
-        return sessions.filter(s => s.status === "paid");
+        return [];
       default:
         return sessions;
     }
