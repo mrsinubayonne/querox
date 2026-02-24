@@ -105,6 +105,17 @@ export const useOptimizedTableSessions = () => {
     }
   }, [sessions, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
+  // Helper to remove session from local cache (free the table)
+  const removeFromLocalCache = useCallback(async (sessionId: string) => {
+    const currentSessions = sessions || [];
+    const updatedSessions = currentSessions.filter(s => s.id !== sessionId);
+    queryClient.setQueryData(sessionsQueryKey, updatedSessions);
+    
+    if (user) {
+      await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
+    }
+  }, [sessions, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
+
   const upsertInvoiceInCache = useCallback(async (invoice: Invoice) => {
     if (!resolvedUserId) return;
     const current = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
@@ -474,7 +485,8 @@ export const useOptimizedTableSessions = () => {
           });
         }
 
-        await updateLocalCache({ id: sessionId, status: 'paid', payment_method: paymentMethod });
+        // Remove session from cache (table becomes free)
+        await removeFromLocalCache(sessionId);
         return { isDebtorSession };
       }
 
@@ -487,13 +499,7 @@ export const useOptimizedTableSessions = () => {
 
       const isDebtorDb = sessionData?.debtor_id !== null;
 
-      const { error: sessionError } = await supabase
-        .from('table_sessions')
-        .update({ status: 'paid', payment_method: paymentMethod })
-        .eq('id', sessionId);
-
-      if (sessionError) throw sessionError;
-
+      // Mark invoice as paid if not debtor
       if (!isDebtorDb) {
         await supabase
           .from('invoices')
@@ -504,6 +510,14 @@ export const useOptimizedTableSessions = () => {
           })
           .eq('session_id', sessionId);
       }
+
+      // Delete the session so the table becomes free
+      const { error: deleteError } = await supabase
+        .from('table_sessions')
+        .delete()
+        .eq('id', sessionId);
+
+      if (deleteError) throw deleteError;
 
       return { isDebtorSession: isDebtorDb };
     },
