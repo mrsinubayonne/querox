@@ -12,265 +12,127 @@ interface SubscriptionGuardProps {
   feature?: string;
 }
 
-// Helper function to detect team member from localStorage (synchronous, instant)
 const getTeamMemberFromStorage = (): boolean => {
   try {
-    const teamMemberStr = localStorage.getItem('teamMember') || localStorage.getItem('team_member_session');
-    if (!teamMemberStr) return false;
-    
-    const member = JSON.parse(teamMemberStr);
-    return !!(member?.memberId && member?.ownerId);
-  } catch {
-    return false;
-  }
+    const s = localStorage.getItem('teamMember') || localStorage.getItem('team_member_session');
+    if (!s) return false;
+    const m = JSON.parse(s);
+    return !!(m?.memberId && m?.ownerId);
+  } catch { return false; }
 };
 
-// PERSISTENT subscription proof - mais avec date d'expiration d'abonnement
 const SUBSCRIPTION_PROOF_KEY = 'querox_subscription_proof';
 
 const saveSubscriptionProof = (subscriptionEnd: string | null) => {
   try {
-    // Si l'abonnement a une date de fin, utiliser cette date comme limite
-    // Sinon, preuve valide 24h max pour forcer la revérification régulière
-    const proofExpiry = subscriptionEnd 
+    const proofExpiry = subscriptionEnd
       ? new Date(subscriptionEnd).toISOString()
       : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    
-    const proof = {
+    localStorage.setItem(SUBSCRIPTION_PROOF_KEY, JSON.stringify({
       verified: true,
       lastVerified: new Date().toISOString(),
-      subscriptionEnd: subscriptionEnd,
-      expiresAt: proofExpiry
-    };
-    localStorage.setItem(SUBSCRIPTION_PROOF_KEY, JSON.stringify(proof));
-    console.log('💾 Saved subscription proof, expires:', proofExpiry);
-  } catch {
-    // Ignore
-  }
+      subscriptionEnd,
+      expiresAt: proofExpiry,
+    }));
+  } catch { /* ignore */ }
 };
 
 const clearSubscriptionProof = () => {
   localStorage.removeItem(SUBSCRIPTION_PROOF_KEY);
-  console.log('🗑️ Cleared subscription proof');
 };
 
 const hasValidSubscriptionProof = (): boolean => {
   try {
-    const proofStr = localStorage.getItem(SUBSCRIPTION_PROOF_KEY);
-    if (!proofStr) return false;
-    
-    const proof = JSON.parse(proofStr);
+    const raw = localStorage.getItem(SUBSCRIPTION_PROOF_KEY);
+    if (!raw) return false;
+    const proof = JSON.parse(raw);
     const now = new Date();
-    
-    // Vérifier que la preuve n'est pas expirée
-    if (new Date(proof.expiresAt) <= now) {
-      console.log('❌ Subscription proof expired:', proof.expiresAt);
-      clearSubscriptionProof();
-      return false;
-    }
-    
-    // Vérifier que l'abonnement n'est pas expiré
-    if (proof.subscriptionEnd && new Date(proof.subscriptionEnd) <= now) {
-      console.log('❌ Subscription ended:', proof.subscriptionEnd);
-      clearSubscriptionProof();
-      return false;
-    }
-    
-    console.log('🔒 Valid subscription proof found');
+    if (new Date(proof.expiresAt) <= now) { clearSubscriptionProof(); return false; }
+    if (proof.subscriptionEnd && new Date(proof.subscriptionEnd) <= now) { clearSubscriptionProof(); return false; }
     return true;
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 };
 
-// Check if ANY valid subscription was ever cached (emergency fallback)
 const hasAnyValidCachedSubscription = (): boolean => {
   try {
+    if (hasValidSubscriptionProof()) return true;
     const now = new Date();
-    
-    // First check our persistent proof
-    if (hasValidSubscriptionProof()) {
-      return true;
-    }
-    
-    // Then check subscription caches - STRICT validation
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith('subscription_cache_')) {
-        const data = JSON.parse(localStorage.getItem(key) || '{}');
-        
-        // CRITICAL: Vérifier TOUJOURS la date d'expiration
-        if (data.subscription_end && new Date(data.subscription_end) <= now) {
-          console.log('❌ Cached subscription expired:', data.subscription_end);
-          localStorage.removeItem(key); // Nettoyer le cache expiré
-          continue;
-        }
-        
-        // Vérifier le statut
-        const validStatus = data.subscription_status === 'active' || data.subscription_status === 'trialing';
-        const isExpired = data.subscription_status === 'expired' || data.subscription_status === 'cancelled';
-        
-        if (isExpired) {
-          console.log('❌ Cached subscription status invalid:', data.subscription_status);
-          localStorage.removeItem(key);
-          continue;
-        }
-        
-        if (validStatus || (data.subscribed && !data.subscription_end)) {
-          console.log('🔒 Found valid cached subscription');
-          saveSubscriptionProof(data.subscription_end);
-          return true;
-        }
+      if (!key || !key.startsWith('subscription_cache_')) continue;
+      const data = JSON.parse(localStorage.getItem(key) || '{}');
+      if (data.subscription_end && new Date(data.subscription_end) <= now) { localStorage.removeItem(key); continue; }
+      if (['expired', 'cancelled'].includes(data.subscription_status)) { localStorage.removeItem(key); continue; }
+      if (data.subscription_status === 'active' || data.subscription_status === 'trialing' || (data.subscribed && !data.subscription_end)) {
+        saveSubscriptionProof(data.subscription_end);
+        return true;
       }
     }
     return false;
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 };
 
-// Repair cache function
 const repairApplicationCache = async () => {
-  console.log('🔧 Starting application cache repair...');
-  
   try {
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && (
-        key.startsWith('subscription_cache_') ||
-        key === 'selectedOutletId' ||
-        key === 'selectedProfileId'
-      )) {
+      if (key && (key.startsWith('subscription_cache_') || key === 'selectedOutletId' || key === 'selectedProfileId')) {
         keysToRemove.push(key);
       }
     }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-    console.log('🗑️ Cleared localStorage keys:', keysToRemove);
-
+    keysToRemove.forEach(k => localStorage.removeItem(k));
     if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const registration of registrations) {
-        await registration.unregister();
-        console.log('🔄 Unregistered service worker:', registration.scope);
-      }
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) await r.unregister();
     }
-
     if ('caches' in window) {
-      const cacheNames = await caches.keys();
-      for (const cacheName of cacheNames) {
-        await caches.delete(cacheName);
-        console.log('🗑️ Deleted cache:', cacheName);
-      }
+      const names = await caches.keys();
+      for (const n of names) await caches.delete(n);
     }
-
-    toast.success('Cache réparé ! L\'application va redémarrer...');
-    
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-    
-  } catch (error) {
-    console.error('Error repairing cache:', error);
-    toast.error('Erreur lors de la réparation. Essayez de vider manuellement le cache du navigateur.');
+    toast.success("Cache réparé ! L'application va redémarrer...");
+    setTimeout(() => window.location.reload(), 1000);
+  } catch {
+    toast.error('Erreur lors de la réparation.');
   }
 };
 
-const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ 
-  children, 
-  feature = "cette fonctionnalité" 
-}) => {
+const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children, feature = "cette fonctionnalité" }) => {
   const { isSubscriptionActive, loading, refetch, isAdmin, subscription, hasCachedData } = useSubscription();
   const navigate = useNavigate();
-  
-  // INSTANT team member detection from localStorage (no async delay)
   const isTeamMember = getTeamMemberFromStorage();
-  
-  // Check for any cached valid subscription as emergency fallback
   const hasValidCache = useRef(hasAnyValidCachedSubscription());
-  
-  // Grace period: EXTENDED to 15 seconds for slow connections/weak devices
+
+  // Single grace period – NO retry loop, NO refetch on mount
   const [gracePeriodExpired, setGracePeriodExpired] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 5; // More retries for unreliable connections
-  
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setGracePeriodExpired(true);
-    }, 15000); // 15 seconds for slow connections
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setGracePeriodExpired(true), 10000);
+    return () => clearTimeout(t);
   }, []);
 
-  // Force refetch on mount AND after grace period
+  // Save/clear proof only when subscription object itself changes
+  const prevSubId = useRef<string | null>(null);
   useEffect(() => {
-    console.log('🔄 SubscriptionGuard mounted, triggering refetch...');
-    refetch(true);
-  }, []);
-  
-  // Retry refetch with exponential backoff for slow connections
-  useEffect(() => {
-    if (gracePeriodExpired && !isSubscriptionActive && !loading && retryCount < maxRetries) {
-      const delay = Math.min(2000 * Math.pow(1.5, retryCount), 10000); // 2s, 3s, 4.5s, 6.75s, 10s
-      console.log(`🔄 Retry ${retryCount + 1}/${maxRetries} in ${delay}ms...`);
-      
-      const timer = setTimeout(() => {
-        setRetryCount(prev => prev + 1);
-        refetch(true);
-      }, delay);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [gracePeriodExpired, isSubscriptionActive, loading, retryCount]);
-  
-  // Save proof when subscription is confirmed active, or clear if expired
-  useEffect(() => {
-    if (subscription) {
-      // Vérifier d'abord si expiré
-      if (subscription.subscription_end && new Date(subscription.subscription_end) <= new Date()) {
-        console.log('🚫 Subscription expired, clearing proof');
-        clearSubscriptionProof();
-        hasValidCache.current = false;
-      } else if (isSubscriptionActive || subscription.subscription_status === 'active') {
-        saveSubscriptionProof(subscription.subscription_end);
-      }
-    }
-  }, [isSubscriptionActive, subscription]);
+    if (!subscription || subscription.id === prevSubId.current) return;
+    prevSubId.current = subscription.id;
+    const isExpired = subscription.subscription_end && new Date(subscription.subscription_end) <= new Date();
+    if (isExpired) { clearSubscriptionProof(); hasValidCache.current = false; }
+    else if (isSubscriptionActive) { saveSubscriptionProof(subscription.subscription_end); }
+  }, [subscription?.id, subscription?.subscription_status]);
 
   const handleRefresh = async () => {
-    console.log('🔄 Rafraîchissement manuel de l\'abonnement');
     toast.info('Actualisation en cours...');
     await refetch(true);
     toast.success('Statut actualisé');
   };
 
-  // Log diagnostic info
-  useEffect(() => {
-    console.log('📊 SubscriptionGuard diagnostic:', {
-      isAdmin,
-      isTeamMember,
-      loading,
-      gracePeriodExpired,
-      hasCachedData,
-      hasValidCache: hasValidCache.current,
-      retryCount,
-      subscription: subscription ? {
-        tier: subscription.subscription_tier,
-        status: subscription.subscription_status,
-        subscribed: subscription.subscribed,
-        end: subscription.subscription_end
-      } : null,
-      isSubscriptionActive
-    });
-  }, [isAdmin, isTeamMember, loading, gracePeriodExpired, hasCachedData, subscription, isSubscriptionActive, retryCount]);
-
-  // Priority 1: Admin bypass
+  // ── Render logic (no side-effects, no refetch triggers) ────────────
   if (isAdmin) {
     return (
       <div className="relative">
         <div className="fixed top-4 right-4 z-50">
           <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 shadow-lg">
-            <Shield className="w-3 h-3" />
-            <span>Mode Admin</span>
+            <Shield className="w-3 h-3" /><span>Mode Admin</span>
           </div>
         </div>
         {children}
@@ -278,15 +140,12 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     );
   }
 
-  // Priority 2: Team member bypass (instant, no delay)
   if (isTeamMember) {
-    console.log('👥 Team member detected (instant), bypassing subscription check');
     return (
       <div className="relative">
         <div className="fixed top-4 right-4 z-50">
           <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 shadow-lg">
-            <Users className="w-3 h-3" />
-            <span>Mode Équipe</span>
+            <Users className="w-3 h-3" /><span>Mode Équipe</span>
           </div>
         </div>
         {children}
@@ -294,51 +153,30 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     );
   }
 
-  // Check subscription status - STRICT validation with expiration check
   const isExpired = subscription?.subscription_end && new Date(subscription.subscription_end) <= new Date();
-  
-  const isActive = !isExpired && (
-    isSubscriptionActive ||
-    (subscription?.subscription_status === 'active' && !isExpired) ||
-    (subscription?.subscription_status === 'trialing' && !isExpired)
-  );
-  
-  // Priority 3: Active subscription confirmed (and not expired)
-  if (isActive) {
-    return <>{children}</>;
-  }
+  const isActive = !isExpired && (isSubscriptionActive || subscription?.subscription_status === 'active' || subscription?.subscription_status === 'trialing');
 
-  // Priority 4: If we have valid cache AND subscription is not expired, trust it while loading
-  // CRITICAL: Do NOT trust cache if subscription is expired
-  if ((hasValidCache.current || hasCachedData) && !isExpired) {
-    console.log('⏳ Has valid cache, showing children while confirming...');
-    return <>{children}</>;
-  }
-  
-  // If subscription is DEFINITELY expired, show paywall immediately
-  if (isExpired) {
-    console.log('🚫 Subscription EXPIRED, blocking access immediately');
-    // Don't wait for grace period - block now
-  }
+  if (isActive) return <>{children}</>;
 
-  // Priority 5: Grace period - show spinner ONLY if not expired
-  // If subscription is expired, skip grace period and show paywall
-  if (!isExpired && (!gracePeriodExpired || loading || retryCount < maxRetries)) {
-    console.log(`⏳ Verification in progress (retry ${retryCount}/${maxRetries}, grace: ${gracePeriodExpired}, loading: ${loading})`);
+  // Trust cache while loading (unless expired)
+  if ((hasValidCache.current || hasCachedData) && !isExpired) return <>{children}</>;
+
+  // Expired → paywall immediately
+  if (isExpired) { /* fall through to paywall */ }
+
+  // Grace period spinner (no retry loop)
+  if (!isExpired && (!gracePeriodExpired || loading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Vérification de l'abonnement...
-            {retryCount > 0 && <span className="block text-xs mt-1">Tentative {retryCount}/{maxRetries}</span>}
-          </p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+          <p className="mt-2 text-sm text-muted-foreground">Vérification de l'abonnement...</p>
         </div>
       </div>
     );
   }
 
-  // Final: Show subscription required screen with repair option
+  // Paywall
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="max-w-md w-full">
@@ -346,49 +184,21 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
           <div className="mx-auto mb-4 h-16 w-16 bg-destructive/10 rounded-full flex items-center justify-center">
             <Lock className="h-8 w-8 text-destructive" />
           </div>
-          <CardTitle className="text-2xl font-bold text-destructive">
-            Abonnement requis
-          </CardTitle>
+          <CardTitle className="text-2xl font-bold text-destructive">Abonnement requis</CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-          <p className="text-muted-foreground">
-            Pour accéder à {feature}, vous devez avoir un abonnement QUEROX actif.
-          </p>
-          
+          <p className="text-muted-foreground">Pour accéder à {feature}, vous devez avoir un abonnement QUEROX actif.</p>
           <div className="space-y-2">
-            <Button 
-              onClick={handleRefresh}
-              variant="outline"
-              className="w-full"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Actualiser le statut
+            <Button onClick={handleRefresh} variant="outline" className="w-full">
+              <RefreshCw className="w-4 h-4 mr-2" />Actualiser le statut
             </Button>
-            
-            <Button 
-              onClick={repairApplicationCache}
-              variant="outline"
-              className="w-full"
-            >
-              <Wrench className="w-4 h-4 mr-2" />
-              Réparer l'application (cache)
+            <Button onClick={repairApplicationCache} variant="outline" className="w-full">
+              <Wrench className="w-4 h-4 mr-2" />Réparer l'application (cache)
             </Button>
-            
-            <Button 
-              onClick={() => navigate('/abonnement')}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-            >
-              <Crown className="w-4 h-4 mr-2" />
-              Choisir un abonnement
+            <Button onClick={() => navigate('/abonnement')} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+              <Crown className="w-4 h-4 mr-2" />Choisir un abonnement
             </Button>
-            
-            <Button 
-              onClick={() => navigate('/')}
-              variant="outline"
-              className="w-full"
-            >
-              Retour à l'accueil
-            </Button>
+            <Button onClick={() => navigate('/')} variant="outline" className="w-full">Retour à l'accueil</Button>
           </div>
         </CardContent>
       </Card>
