@@ -11,7 +11,7 @@ import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw } from "lucide-react";
+import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +44,8 @@ interface TableSessionModalProps {
   onCloseSession: (sessionId: string) => Promise<void> | void;
   onMarkAsPaid: (sessionId: string, paymentMethod?: string) => Promise<void> | void;
   onReopenSession?: (sessionId: string) => Promise<void> | void;
+  onDeleteSession?: (sessionId: string) => Promise<void> | void;
+  isMutating?: boolean;
 }
 export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   isOpen,
@@ -51,23 +53,41 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   session,
   onCloseSession,
   onMarkAsPaid,
-  onReopenSession
+  onReopenSession,
+  onDeleteSession,
+  isMutating = false,
 }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  const [actionInProgress, setActionInProgress] = useState(false);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [servedBy, setServedBy] = useState("");
   const [invoiceToPrint, setInvoiceToPrint] = useState<Invoice | null>(null);
+  const [printFormat, setPrintFormat] = useState<'a4' | 'restaurant'>('restaurant');
   const [showPreview, setShowPreview] = useState(false);
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [printReady, setPrintReady] = useState(false);
+  const [pendingPrint, setPendingPrint] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
   const { trackClick } = useButtonTracking();
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const printViewRef = useRef<InvoicePrintViewRef>(null);
+
+  const busy = isMutating || actionInProgress;
+
+  // Safety auto-reset: if actionInProgress is stuck for 20s, force-reset it
+  useEffect(() => {
+    if (!actionInProgress) return;
+    const timer = setTimeout(() => {
+      console.warn('⚠️ actionInProgress stuck for 20s — auto-resetting');
+      setActionInProgress(false);
+    }, 20_000);
+    return () => clearTimeout(timer);
+  }, [actionInProgress]);
 
   // Cleanup print state after browser print dialog closes
   useEffect(() => {
@@ -76,6 +96,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
       setInvoiceToPrint(null);
       setServedBy("");
       setPrintReady(false);
+      setPrintFormat('restaurant');
     };
     window.addEventListener('afterprint', cleanup);
     return () => window.removeEventListener('afterprint', cleanup);
@@ -86,81 +107,14 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     debtorId?: string,
     multipleBreakdown?: MultiplePaymentBreakdown
   ) => {
-    if (!session) return;
-    
-    // Track payment method used
+    if (!session || busy) return;
+
     trackClick(`Paiement: ${paymentMethod}`, 'tables');
-    
+    setActionInProgress(true);
+
     try {
-      // If debtor payment, handle differently
-      if (paymentMethod === 'Debiteur' && debtorId) {
-        // Update session with debtor_id and status to closed (not paid)
-        // Note: payment_method is null for debtor payments (will be set when they actually pay)
-        const { error: sessionError } = await supabase
-          .from('table_sessions')
-          .update({ 
-            status: 'closed',
-            debtor_id: debtorId,
-            payment_method: null
-          })
-          .eq('id', session.id);
-
-        if (sessionError) throw sessionError;
-
-        // The trigger create_invoice_for_closed_session will handle invoice creation
-        // Wait a bit then update the invoice to be B2B unpaid
-        setTimeout(async () => {
-          try {
-            // Update the invoice to B2B unpaid
-            await supabase
-              .from('invoices')
-              .update({ 
-                status: 'unpaid',
-                invoice_type: 'b2b',
-                business_customer_id: debtorId,
-                payment_method: null,
-                paid_date: null
-              })
-              .eq('session_id', session.id);
-
-            // Update debtor's current_debt
-            const { data: invoice } = await supabase
-              .from('invoices')
-              .select('total_amount')
-              .eq('session_id', session.id)
-              .single();
-
-            if (invoice) {
-              // Get current debt and add the new amount
-              const { data: debtor } = await supabase
-                .from('business_customers')
-                .select('current_debt')
-                .eq('id', debtorId)
-                .single();
-
-              const currentDebt = (debtor as any)?.current_debt || 0;
-              const newDebt = currentDebt + invoice.total_amount;
-
-              await supabase
-                .from('business_customers')
-                .update({ current_debt: newDebt })
-                .eq('id', debtorId);
-            }
-          } catch (e) {
-            console.error('Error updating invoice/debt:', e);
-          }
-        }, 500);
-
-        // Ne PAS appeler onMarkAsPaid() pour les débiteurs - juste fermer le modal
-        onClose();
-        sonnerToast.success('Crédit enregistré pour le débiteur');
-        return;
-      }
-
-      // Build payment method string for multiple payments
       let paymentMethodString = paymentMethod;
-      let notesForMultiple = '';
-      
+
       if (paymentMethod === 'Multiple' && multipleBreakdown) {
         const parts: string[] = [];
         if (multipleBreakdown.especes > 0) parts.push(`Espèces: ${multipleBreakdown.especes} FCFA`);
@@ -168,66 +122,16 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         if (multipleBreakdown.carte > 0) parts.push(`Carte: ${multipleBreakdown.carte} FCFA`);
         if (multipleBreakdown.mobileMoney > 0) parts.push(`Mobile Money: ${multipleBreakdown.mobileMoney} FCFA`);
         if (multipleBreakdown.debiteur > 0) parts.push(`Débiteur: ${multipleBreakdown.debiteur} FCFA`);
-        notesForMultiple = parts.join(' | ');
         paymentMethodString = 'Multiple';
       }
 
-      // Regular payment flow
-      const { error: sessionError } = await supabase
-        .from('table_sessions')
-        .update({ 
-          status: 'paid',
-          payment_method: paymentMethodString,
-          notes: paymentMethod === 'Multiple' ? notesForMultiple : session.notes
-        })
-        .eq('id', session.id);
-
-      if (sessionError) throw sessionError;
-
-      // Update invoice with payment method
-      const invoiceUpdate: any = { 
-        status: 'paid',
-        paid_date: new Date().toISOString(),
-        payment_method: paymentMethodString
-      };
-      
-      if (paymentMethod === 'Multiple' && notesForMultiple) {
-        invoiceUpdate.notes = notesForMultiple;
-      }
-      
-      const { error: invoiceError } = await supabase
-        .from('invoices')
-        .update(invoiceUpdate)
-        .eq('session_id', session.id);
-
-      if (invoiceError) throw invoiceError;
-
-      // Handle debtor portion in multiple payment
-      if (paymentMethod === 'Multiple' && multipleBreakdown && multipleBreakdown.debiteur > 0 && multipleBreakdown.debiteurId) {
-        // Create a debtor payment record for the amount that needs to be paid later
-        const { data: debtor } = await supabase
-          .from('business_customers')
-          .select('current_debt')
-          .eq('id', multipleBreakdown.debiteurId)
-          .single();
-        
-        if (debtor) {
-          const currentDebt = (debtor as any)?.current_debt || 0;
-          const newDebt = currentDebt + multipleBreakdown.debiteur;
-          
-          await supabase
-            .from('business_customers')
-            .update({ current_debt: newDebt })
-            .eq('id', multipleBreakdown.debiteurId);
-        }
-      }
-
-      celebrate();
       await onMarkAsPaid(session.id, paymentMethodString);
-      sonnerToast.success('Table marquée comme payée');
+      celebrate();
     } catch (error) {
       console.error('Error marking as paid:', error);
-      sonnerToast.error('Erreur lors de la mise à jour');
+      sonnerToast.error('Erreur lors du paiement. Réessayez.');
+    } finally {
+      setActionInProgress(false);
     }
   };
   const navigate = useNavigate();
@@ -237,49 +141,11 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const {
     toast
   } = useToast();
-  useEffect(() => {
-    if (session && isOpen) {
-      fetchOrders();
-    }
-  }, [session, isOpen]);
-
-  // Real-time listener pour les commandes
-  useEffect(() => {
-    if (!session || !isOpen) return;
-    const channel = supabase.channel(`session-orders-${session.id}`).on("postgres_changes", {
-      event: "*",
-      schema: "public",
-      table: "orders",
-      filter: `session_id=eq.${session.id}`
-    }, () => {
-      fetchOrders();
-    }).subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [session?.id, isOpen]);
-
-  // Real-time listener pour les changements de session (total_amount)
-  useEffect(() => {
-    if (!session || !isOpen) return;
-    const channel = supabase.channel(`session-${session.id}`).on("postgres_changes", {
-      event: "UPDATE",
-      schema: "public",
-      table: "table_sessions",
-      filter: `id=eq.${session.id}`
-    }, () => {
-      // Recharger la page parent pour voir les changements
-      window.dispatchEvent(new CustomEvent("session-updated"));
-    }).subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [session?.id, isOpen]);
-  const fetchOrders = async () => {
+  // Stable fetch function
+  const fetchOrdersStable = useCallback(async () => {
     if (!session) return;
     setLoading(true);
     try {
-      // Offline: load from cache
       if (isOffline) {
         const userId = user?.id || '';
         const outletId = (session as any).outlet_id || localStorage.getItem('selectedOutletId') || undefined;
@@ -304,7 +170,47 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.id, isOffline, user?.id]);
+
+  useEffect(() => {
+    if (session && isOpen) {
+      fetchOrdersStable();
+    }
+  }, [session?.id, isOpen, fetchOrdersStable]);
+
+  // Single real-time listener for both orders and session updates
+  useEffect(() => {
+    if (!session?.id || !isOpen) return;
+    
+    const ordersChannel = supabase
+      .channel(`modal-orders-${session.id}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "orders",
+        filter: `session_id=eq.${session.id}`
+      }, () => {
+        fetchOrdersStable();
+      })
+      .subscribe();
+
+    const sessionChannel = supabase
+      .channel(`modal-session-${session.id}`)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "table_sessions",
+        filter: `id=eq.${session.id}`
+      }, () => {
+        window.dispatchEvent(new CustomEvent("session-updated"));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(sessionChannel);
+    };
+  }, [session?.id, isOpen, fetchOrdersStable]);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
@@ -368,7 +274,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         title: "Commande supprimée",
         description: "La commande a été supprimée avec succès."
       });
-      fetchOrders();
+      fetchOrdersStable();
       window.dispatchEvent(new CustomEvent("session-updated"));
     } catch (error: any) {
       console.error("Error deleting order:", error);
@@ -549,13 +455,26 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     setPrintReady(true);
   }, []);
 
+  // Auto-trigger print when data becomes ready and user already clicked print
+  useEffect(() => {
+    if (printReady && pendingPrint) {
+      setPendingPrint(false);
+      setShowPrintDialog(false);
+      // Small delay to ensure portal is rendered
+      setTimeout(() => {
+        printViewRef.current?.print();
+      }, 100);
+    }
+  }, [printReady, pendingPrint]);
+
   const handleConfirmPrint = () => {
     if (!printReady) {
-      sonnerToast.message('Préparation de la facture…', { description: 'Veuillez patienter une seconde.' });
+      setPendingPrint(true);
+      sonnerToast.message('Préparation de la facture…', { description: 'Impression automatique dans un instant.' });
       return;
     }
 
-    // Print via ref (avoid setTimeout: preserves user gesture on tablets)
+    // Print via ref
     printViewRef.current?.print();
     setShowPrintDialog(false);
   };
@@ -565,6 +484,8 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     setInvoiceToPrint(null);
     setServedBy("");
     setPrintReady(false);
+    setPendingPrint(false);
+    setPrintFormat('restaurant');
   };
   if (!session) return null;
   return <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -677,33 +598,48 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
         <DialogFooter className="flex-wrap gap-2">
           {session.status === "active" && <>
-              <Button onClick={() => setShowPreview(true)} variant="outline">
+              <Button onClick={() => setShowPreview(true)} variant="outline" disabled={busy}>
                 <Eye className="h-4 w-4 mr-2" />
                 Prévisualiser
               </Button>
               <Button onClick={() => {
                 trackClick('Tables: Ajouter commande', 'tables');
                 handleAddOrder();
-              }} variant="secondary">
+              }} variant="secondary" disabled={busy}>
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter une commande
               </Button>
-              <Button onClick={async () => {
+              <Button disabled={busy} onClick={async () => {
                 trackClick('Tables: Fermer session', 'tables');
-                await onCloseSession(session.id);
-                // Refresh invoices list
-                queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                setActionInProgress(true);
+                try {
+                  await onCloseSession(session.id);
+                  queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                  onClose();
+                } catch (e) {
+                  console.error('Error closing session:', e);
+                  sonnerToast.error('Erreur lors de la fermeture');
+                } finally {
+                  setActionInProgress(false);
+                }
               }} variant="default">
                 <Receipt className="h-4 w-4 mr-2" />
-                {session.debtor_id ? "Fermer & Créer Crédit" : "Fermer & Générer Facture"}
+                {busy ? "En cours..." : (session.debtor_id ? "Fermer & Créer Crédit" : "Fermer & Générer Facture")}
               </Button>
             </>}
           
           {session.status === "closed" && <>
               {onReopenSession && (
-                <Button onClick={async () => {
+                <Button disabled={busy} onClick={async () => {
                   trackClick('Tables: Réouvrir table', 'tables');
-                  await onReopenSession(session.id);
+                  setActionInProgress(true);
+                  try {
+                    await onReopenSession(session.id);
+                  } catch (e) {
+                    sonnerToast.error('Erreur');
+                  } finally {
+                    setActionInProgress(false);
+                  }
                 }} variant="outline">
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Réouvrir
@@ -712,36 +648,46 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
               <Button onClick={() => {
                 trackClick('Tables: Imprimer facture', 'tables');
                 handlePrintSession();
-              }} variant="outline">
+              }} variant="outline" disabled={busy}>
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimer
               </Button>
               
-              <Button onClick={() => {
+              <Button disabled={busy} onClick={() => {
                 trackClick('Tables: Marquer payée', 'tables');
                 setShowPaymentMethod(true);
               }}>
-                Marquer comme Payée
+                {busy ? "En cours..." : "Marquer comme Payée"}
               </Button>
             </>}
 
           {session.status === "paid" && <>
               {onReopenSession && (
-                <Button onClick={() => onReopenSession(session.id)} variant="outline">
+                <Button disabled={busy} onClick={() => onReopenSession(session.id)} variant="outline">
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Réouvrir
                 </Button>
               )}
-              <Button onClick={handlePrintSession} variant="outline">
+              <Button onClick={handlePrintSession} variant="outline" disabled={busy}>
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimer
               </Button>
-              <Button onClick={handleViewInvoice} variant="secondary">
+              <Button onClick={handleViewInvoice} variant="secondary" disabled={busy}>
                 Voir la Facture
               </Button>
             </>}
 
-          
+          {onDeleteSession && (
+            <Button 
+              variant="destructive" 
+              size="sm"
+              disabled={busy}
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              Libérer la table
+            </Button>
+          )}
 
           <Button variant="outline" onClick={onClose}>
             Fermer
@@ -759,12 +705,37 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Imprimer la facture</AlertDialogTitle>
             <AlertDialogDescription>
-              Souhaitez-vous indiquer qui a servi cette table ?
+              Choisissez le format et indiquez qui a servi cette table.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4">
-            <Label htmlFor="served-by">Servi par (optionnel)</Label>
-            <Input id="served-by" placeholder="Ex: Jean, Marie..." value={servedBy} onChange={e => setServedBy(e.target.value)} />
+          <div className="py-4 space-y-4">
+            <div>
+              <Label>Format d'impression</Label>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  variant={printFormat === 'restaurant' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPrintFormat('restaurant')}
+                  className="flex-1"
+                >
+                  <Receipt className="h-4 w-4 mr-2" />
+                  Ticket (80mm)
+                </Button>
+                <Button
+                  variant={printFormat === 'a4' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPrintFormat('a4')}
+                  className="flex-1"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  A4
+                </Button>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="served-by">Servi par (optionnel)</Label>
+              <Input id="served-by" placeholder="Ex: Jean, Marie..." value={servedBy} onChange={e => setServedBy(e.target.value)} />
+            </div>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleClosePrintDialog}>Annuler</AlertDialogCancel>
@@ -779,7 +750,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           ref={printViewRef}
           invoice={invoiceToPrint}
           servedBy={servedBy || undefined}
-          format="restaurant"
+          format={printFormat}
           autoPrint={false}
           onReady={handlePrintReady}
         />
@@ -801,5 +772,31 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
       />
 
       <CelebrationMessage />
+
+      {/* Delete/Free Confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Libérer cette table ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action supprimera la session, les commandes associées et la facture. Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (onDeleteSession && session) {
+                  await onDeleteSession(session.id);
+                }
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Supprimer et libérer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>;
 };

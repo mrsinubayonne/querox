@@ -4,8 +4,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
-    <title>QUEROX - Gestion de Restaurant</title>
-    <meta name="description" content="QUEROX - Outil de gestion, d'automatisation et d'optimisation destiné aux restaurants">
+    <title>QUEROX - Outil de gestion</title>
+    <meta name="description" content="QUEROX - Outil de gestion, d&#39;automatisation et d&#39;optimisation">
     <meta name="author" content="QUEROX" />
     
     <!-- PWA Meta Tags -->
@@ -17,71 +17,68 @@
     <meta name="apple-mobile-web-app-title" content="QUEROX" />
     
     <!-- Icons -->
-    <link rel="icon" href="/lovable-uploads/a2262c2b-4c9e-4359-bc71-081861dfbd12.png" type="image/png">
+    <link rel="icon" type="image/png" href="/lovable-uploads/a2262c2b-4c9e-4359-bc71-081861dfbd12.png">
     <link rel="apple-touch-icon" href="/lovable-uploads/a2262c2b-4c9e-4359-bc71-081861dfbd12.png" />
 
     
     
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0f32f222-3e62-4842-b136-074cd3f77335/id-preview-20a5efb8--e207863b-cd8b-42ce-986a-f76f9cc7b9f7.lovable.app-1771540313928.png">
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-    <meta property="og:title" content="QUEROX - Gestion de Restaurant">
-  <meta name="twitter:title" content="QUEROX - Gestion de Restaurant">
-  <meta property="og:description" content="QUEROX - Outil de gestion, d&#39;automatisation et d&#39;optimisation destiné aux restaurants">
-  <meta name="twitter:description" content="QUEROX - Outil de gestion, d&#39;automatisation et d&#39;optimisation destiné aux restaurants">
+    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0f32f222-3e62-4842-b136-074cd3f77335/id-preview-20a5efb8--e207863b-cd8b-42ce-986a-f76f9cc7b9f7.lovable.app-1771540313928.png">
+    
+  
+  
+  
 
     <!-- Recovery anti "page blanche" PWA: si un vieux cache charge des fichiers JS inexistants -->
     <script>
       (function () {
-        const KEY = 'querox_pwa_recover_once';
+        var KEY = 'querox_pwa_recover_once';
 
-        async function recover(reason) {
+        function recover(reason) {
           try {
             if (sessionStorage.getItem(KEY) === '1') return;
             sessionStorage.setItem(KEY, '1');
             console.warn('[PWA] recovery', reason);
-          } catch {
-            // ignore
-          }
+          } catch (e) {}
 
           try {
             if ('serviceWorker' in navigator) {
-              const regs = await navigator.serviceWorker.getRegistrations();
-              await Promise.all(regs.map((r) => r.unregister()));
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                regs.forEach(function(r) { r.unregister(); });
+              }).catch(function() {});
             }
-          } catch {
-            // ignore
-          }
+          } catch (e) {}
 
           try {
-            if (window.caches && caches.keys) {
-              const keys = await caches.keys();
-              await Promise.all(keys.map((k) => caches.delete(k)));
+            if (window.caches && typeof caches.keys === 'function') {
+              caches.keys().then(function(keys) {
+                keys.forEach(function(k) { caches.delete(k); });
+              }).catch(function() {});
             }
-          } catch {
-            // ignore
-          }
+          } catch (e) {}
 
-          window.location.reload();
+          setTimeout(function() { window.location.reload(); }, 500);
         }
 
         window.addEventListener(
           'error',
           function (event) {
-            const msg = String((event && event.message) || '');
-            const target = event && event.target;
-            const isModuleScript =
+            var msg = String((event && event.message) || '');
+            var target = event && event.target;
+            var isModuleScript =
               target && target.tagName === 'SCRIPT' && target.type === 'module';
 
-            const isLoadFail =
-              msg.includes('Failed to load module script') ||
-              msg.includes('Loading chunk') ||
-              msg.includes('ChunkLoadError') ||
-              msg.includes('Failed to fetch dynamically imported module') ||
-              msg.includes('Unexpected token');
+            var isLoadFail =
+              msg.indexOf('Failed to load module script') !== -1 ||
+              msg.indexOf('Loading chunk') !== -1 ||
+              msg.indexOf('ChunkLoadError') !== -1 ||
+              msg.indexOf('Failed to fetch dynamically imported module') !== -1 ||
+              msg.indexOf('Unexpected token') !== -1 ||
+              msg.indexOf('SyntaxError') !== -1;
 
             if (isModuleScript || isLoadFail) {
               recover(isModuleScript ? 'module-script-error' : msg.slice(0, 120));
@@ -89,9 +86,62 @@
           },
           true
         );
+
+        window.addEventListener('unhandledrejection', function(event) {
+          var msg = String(event && event.reason || '');
+          if (
+            msg.indexOf('Failed to fetch dynamically imported module') !== -1 ||
+            msg.indexOf('Failed to load module script') !== -1 ||
+            msg.indexOf('error loading dynamically imported module') !== -1
+          ) {
+            recover('unhandled-rejection: ' + msg.slice(0, 100));
+          }
+        });
+
+        // Force one-time cache purge for all users to fix white page
+        var PURGE_KEY = 'querox_cache_purge_v2';
+        if (!sessionStorage.getItem(PURGE_KEY)) {
+          sessionStorage.setItem(PURGE_KEY, '1');
+          try {
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                regs.forEach(function(r) { r.unregister(); });
+              }).catch(function() {});
+            }
+            if (window.caches && typeof caches.keys === 'function') {
+              caches.keys().then(function(keys) {
+                keys.forEach(function(k) { caches.delete(k); });
+              }).catch(function() {});
+            }
+            // Clear stale localStorage keys
+            try {
+              var i, key, toRemove = [];
+              for (i = 0; i < localStorage.length; i++) {
+                key = localStorage.key(i);
+                if (key && (key.indexOf('subscription_cache_') === 0 || key === 'selectedOutletId' || key === 'selectedProfileId')) {
+                  toRemove.push(key);
+                }
+              }
+              toRemove.forEach(function(k) { localStorage.removeItem(k); });
+            } catch(e) {}
+            // Reload after purge
+            setTimeout(function() { window.location.reload(); }, 600);
+          } catch(e) {}
+        }
+
+        setTimeout(function() {
+          var root = document.getElementById('root');
+          if (root && root.innerHTML.trim() === '') {
+            recover('empty-root-after-timeout');
+          }
+        }, 12000);
       })();
     </script>
-  </head>
+    <meta property="og:title" content="QUEROX - Outil de gestion">
+  <meta name="twitter:title" content="QUEROX - Outil de gestion">
+  <meta property="og:description" content="QUEROX - Outil de gestion, d&#39;automatisation et d&#39;optimisation">
+  <meta name="twitter:description" content="QUEROX - Outil de gestion, d&#39;automatisation et d&#39;optimisation">
+</head>
 
   <body>
     <div id="root"></div>

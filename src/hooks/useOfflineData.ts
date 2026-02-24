@@ -122,24 +122,33 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
     networkMode: 'offlineFirst',
   });
 
-  // Memoize queryKey to prevent subscription recreation
+  // Stable channel name (no Date.now() to avoid duplicate subscriptions)
   const queryKeyString = queryKey.join('_');
-  
+
   useEffect(() => {
     if (!userId || isOffline) return;
-    
-    const channelName = `${table}_changes_${userId}_${Date.now()}`;
+
+    const channelName = `offline_${table}_${userId}`;
+
+    // Supabase throws if you subscribe the same channel name twice.
+    // Remove any previous channel with the same name before creating a new one.
+    const existing = supabase.getChannels().find(c => c.topic === `realtime:${channelName}`);
+    if (existing) {
+      supabase.removeChannel(existing);
+    }
+
     const channel = supabase
       .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` }, () => {
         queryClient.invalidateQueries({ queryKey: queryKey.concat([userId, outletId]) });
       })
       .subscribe();
-    
-    return () => { 
+
+    return () => {
       supabase.removeChannel(channel);
     };
-  }, [table, userId, outletId, isOffline, queryKeyString, queryClient]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table, userId, outletId, isOffline, queryKeyString]);
 
   return { data: query.data || [], isLoading: query.isLoading, isError: query.isError, error: query.error, refetch: query.refetch, isOffline };
 }
@@ -148,17 +157,25 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
   const logPrefix = '[Offline]';
   if (!userId) return;
 
-  console.log(`${logPrefix} Preloading critical data for user:`, userId);
+  console.log(`${logPrefix} Preloading critical data for user:`, userId, '| outlet:', outletId);
 
-  // NOTE: we store preloaded data WITHOUT outlet scoping.
-  // This prevents empty caches when selectedOutletId changes or is not set yet.
-  // useOfflineData will filter by outletId client-side when possible.
-
-  const safeFetchAndStore = async (table: OfflineDataType) => {
+  const safeFetchAndStore = async (table: OfflineDataType, fetchFn?: () => Promise<unknown[]>) => {
     try {
-      const data = await fetchFromSupabase(table, '*', userId);
+      let data: unknown[];
+      if (fetchFn) {
+        data = await fetchFn();
+      } else {
+        data = await fetchFromSupabase(table, '*', userId);
+      }
       await storeData(table, data, userId);
-      console.log(`${logPrefix} Preloaded ${table}:`, data.length, 'items');
+      // Also store scoped by outlet if provided
+      if (outletId && Array.isArray(data)) {
+        const scoped = (data as Array<Record<string, unknown>>).filter(
+          item => !item.outlet_id || item.outlet_id === outletId
+        );
+        await storeData(table, scoped, userId, outletId);
+      }
+      console.log(`${logPrefix} Preloaded ${table}:`, (data as unknown[]).length, 'items');
     } catch (error) {
       console.warn(`${logPrefix} Failed to preload ${table}:`, error);
     }
@@ -217,20 +234,68 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
     console.warn(`${logPrefix} Failed to preload menu_items:`, error);
   }
 
-  // Other user-scoped tables (these all have user_id)
+  // All user-scoped tables in parallel
   await Promise.allSettled([
     safeFetchAndStore('outlets'),
     safeFetchAndStore('inventory_items'),
     safeFetchAndStore('business_customers'),
     safeFetchAndStore('invoice_settings'),
     safeFetchAndStore('suppliers'),
-    safeFetchAndStore('table_sessions'),
-    safeFetchAndStore('orders'),
-    safeFetchAndStore('invoices'),
+    safeFetchAndStore('business_periods', async () => {
+      const { data } = await supabase
+        .from('business_periods')
+        .select('*')
+        .eq('user_id', userId)
+        .order('started_at', { ascending: false })
+        .limit(100);
+      return data || [];
+    }),
+    safeFetchAndStore('table_sessions', async () => {
+      const { data } = await supabase
+        .from('table_sessions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('started_at', { ascending: false })
+        .limit(200);
+      return data || [];
+    }),
+    safeFetchAndStore('orders', async () => {
+      const { data } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(500);
+      return data || [];
+    }),
+    safeFetchAndStore('invoices', async () => {
+      const { data } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(500);
+      return data || [];
+    }),
     safeFetchAndStore('reservations'),
     safeFetchAndStore('customers'),
-    safeFetchAndStore('transactions'),
+    safeFetchAndStore('transactions', async () => {
+      const { data } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .limit(500);
+      return data || [];
+    }),
+    safeFetchAndStore('debtor_payments'),
+    safeFetchAndStore('events'),
   ]);
 
-  console.log(`${logPrefix} Preloading complete`, { outletId });
+  // Store outlet-specific data if outletId is known
+  if (outletId) {
+    console.log(`${logPrefix} Storing outlet-scoped data for outlet:`, outletId);
+  }
+
+  console.log(`${logPrefix} ✅ Preloading complete`);
 }

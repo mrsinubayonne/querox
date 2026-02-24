@@ -23,50 +23,69 @@ export const useOptimizedOutlet = () => {
         return;
       }
 
-      // Vérifier le cache
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        try {
-          const parsedCache: OutletCache = JSON.parse(cached);
-          if (Date.now() - parsedCache.timestamp < CACHE_DURATION) {
-            setOutletId(parsedCache.outletId);
-            setLoading(false);
-            return;
-          }
-        } catch (e) {
-          // Cache invalide, on continue
+      try {
+        // Always check localStorage first as primary source of truth
+        const localOutletId = localStorage.getItem('selectedOutletId');
+        if (localOutletId) {
+          setOutletId(localOutletId);
+          setLoading(false);
+          return;
         }
+
+        // Vérifier le cache
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          try {
+            const parsedCache: OutletCache = JSON.parse(cached);
+            if (Date.now() - parsedCache.timestamp < CACHE_DURATION) {
+              setOutletId(parsedCache.outletId);
+              setLoading(false);
+              return;
+            }
+          } catch (e) {
+            // Cache invalide, on continue
+          }
+        }
+
+        // Obtenir l'outlet depuis la DB
+        const selectedProfileId = localStorage.getItem('selectedProfileId');
+        let outlet: string | null = null;
+
+        if (selectedProfileId) {
+          const { data } = await supabase
+            .from('user_profiles')
+            .select('selected_outlet_id')
+            .eq('id', selectedProfileId)
+            .maybeSingle();
+          outlet = data?.selected_outlet_id ?? null;
+        } else {
+          const { data } = await supabase
+            .from('user_profiles')
+            .select('selected_outlet_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          outlet = data?.selected_outlet_id ?? null;
+        }
+
+        // Mettre en cache
+        const cacheData: OutletCache = {
+          outletId: outlet,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        if (outlet) {
+          localStorage.setItem('selectedOutletId', outlet);
+        }
+
+        setOutletId(outlet);
+      } catch (error) {
+        console.warn('[useOptimizedOutlet] Error fetching outlet:', error);
+        // Fallback to localStorage even if DB fails
+        const fallback = localStorage.getItem('selectedOutletId');
+        setOutletId(fallback);
+      } finally {
+        setLoading(false);
       }
-
-      // Obtenir l'outlet depuis la DB
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outlet: string | null = null;
-
-      if (selectedProfileId) {
-        const { data } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outlet = data?.selected_outlet_id ?? null;
-      } else {
-        const { data } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        outlet = data?.selected_outlet_id ?? null;
-      }
-
-      // Mettre en cache
-      const cacheData: OutletCache = {
-        outletId: outlet,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-
-      setOutletId(outlet);
-      setLoading(false);
     };
 
     getOutlet();

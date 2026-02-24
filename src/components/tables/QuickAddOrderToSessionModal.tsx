@@ -13,14 +13,15 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Minus, Search, X, WifiOff } from "lucide-react";
-import { useMenuData } from "@/hooks/useMenuData";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRestaurant } from "@/contexts/RestaurantContext";
+import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
+import type { MenuItem } from "@/types/menu";
 
 interface Props {
   isOpen: boolean;
@@ -52,74 +53,19 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [showCustomItem, setShowCustomItem] = useState(false);
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState("");
 
-  // Fetch user's active menu - use localStorage for offline support
+  const { menuItems } = useInternalMenuItems(isOpen);
+
+  // Reset cart when modal opens
   useEffect(() => {
-    const fetchActiveMenu = async () => {
-      if (!user) return;
-
-      // Get outlet from context or localStorage (works offline)
-      const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
-      
-      // If offline, try to get cached menu ID
-      if (isOffline) {
-        const cachedMenuId = localStorage.getItem('activeMenuId');
-        if (cachedMenuId) {
-          setActiveMenuId(cachedMenuId);
-          return;
-        }
-      }
-
-      try {
-        // Try to fetch menu from Supabase
-        let { data: menus } = await supabase
-          .from("menus")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("is_active", true)
-          .eq("outlet_id", resolvedOutletId)
-          .limit(1)
-          .maybeSingle();
-
-        if (!menus) {
-          const fallback = await supabase
-            .from("menus")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("is_active", true)
-            .limit(1)
-            .maybeSingle();
-          menus = fallback.data as any;
-        }
-
-        if (menus) {
-          setActiveMenuId((menus as any).id);
-          // Cache for offline use
-          localStorage.setItem('activeMenuId', (menus as any).id);
-        } else {
-          setActiveMenuId(null);
-        }
-      } catch (error) {
-        console.warn('Failed to fetch menu, using cached:', error);
-        const cachedMenuId = localStorage.getItem('activeMenuId');
-        if (cachedMenuId) {
-          setActiveMenuId(cachedMenuId);
-        }
-      }
-    };
-
     if (isOpen) {
-      fetchActiveMenu();
       setCart([]);
       setSearchTerm("");
     }
-  }, [user, isOpen, outletId, isOffline]);
-
-  const { menuItems } = useMenuData(activeMenuId);
+  }, [isOpen]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return menuItems;
@@ -244,7 +190,6 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       }));
 
       if (isOffline) {
-        // Offline mode
         const orderId = generateLocalId();
 
         const resolvedOutletId = outletId || localStorage.getItem("selectedOutletId");
@@ -285,7 +230,6 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
           conflictResolution: 'client-wins',
         });
 
-        // Update caches immediately
         const currentOrders = (queryClient.getQueryData(ordersKey) as any[] | undefined) || [];
         const nextOrders = [
           {
@@ -333,7 +277,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         return;
       }
 
-      // Online mode - use outletId from context or localStorage
+      // Online mode
       const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
 
       const { error } = await supabase.from("orders").insert([
@@ -427,8 +371,13 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                   </div>
                 </ScrollArea>
               )}
-              {filteredItems.length === 0 && activeMenuId && (
-                <p className="text-sm text-muted-foreground">Aucun plat trouvé</p>
+              {filteredItems.length === 0 && menuItems.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {isOffline ? "Aucun plat en cache. Connectez-vous pour charger le menu." : "Aucun plat trouvé"}
+                </p>
+              )}
+              {filteredItems.length === 0 && menuItems.length > 0 && searchTerm && (
+                <p className="text-sm text-muted-foreground">Aucun plat trouvé pour "{searchTerm}"</p>
               )}
             </div>
           </div>
@@ -498,21 +447,37 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                       <div className="flex-1">
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {item.price.toLocaleString()} FCFA × {item.quantity} = {(
-                            item.price * item.quantity
-                          ).toLocaleString()} FCFA
+                          {item.price.toLocaleString()} FCFA × {item.quantity} = {(item.price * item.quantity).toLocaleString()} FCFA
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button type="button" size="icon" variant="outline" onClick={() => updateQuantity(item.id, -1)} className="h-8 w-8">
-                          <Minus className="h-4 w-4" />
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateQuantity(item.id, -1)}
+                        >
+                          <Minus className="h-3 w-3" />
                         </Button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
-                        <Button type="button" size="icon" variant="outline" onClick={() => updateQuantity(item.id, 1)} className="h-8 w-8">
-                          <Plus className="h-4 w-4" />
+                        <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateQuantity(item.id, 1)}
+                        >
+                          <Plus className="h-3 w-3" />
                         </Button>
-                        <Button type="button" size="icon" variant="ghost" onClick={() => removeFromCart(item.id)} className="h-8 w-8">
-                          <X className="h-4 w-4" />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive"
+                          onClick={() => removeFromCart(item.id)}
+                        >
+                          <X className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
@@ -520,24 +485,22 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                 </div>
               )}
             </ScrollArea>
-
-            {cart.length > 0 && (
-              <div className="mt-4 p-3 bg-primary/10 rounded-md">
-                <div className="flex justify-between items-center font-bold text-lg">
-                  <span>Total</span>
-                  <span>{totalAmount.toLocaleString()} FCFA</span>
-                </div>
-              </div>
-            )}
           </div>
 
-          <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-              Annuler
-            </Button>
-            <Button type="submit" disabled={loading || cart.length === 0}>
-              {loading ? "Création..." : "Ajouter à la session"}
-            </Button>
+          <DialogFooter className="pt-4 border-t mt-4">
+            <div className="flex items-center justify-between w-full">
+              <div className="text-sm font-medium">
+                Total : <span className="text-lg font-bold">{totalAmount.toLocaleString()} FCFA</span>
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Annuler
+                </Button>
+                <Button type="submit" disabled={loading || cart.length === 0}>
+                  {loading ? "Envoi..." : `Confirmer (${cart.length} plat${cart.length > 1 ? "s" : ""})`}
+                </Button>
+              </div>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

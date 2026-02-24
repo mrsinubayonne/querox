@@ -57,33 +57,40 @@ export const useMenus = () => {
   const navigate = useNavigate();
   const tokenExpiredHandledRef = useRef(false);
 
+  // Resolve outletId — also read from localStorage as offline fallback
+  const resolvedOutletId = selectedOutletId || localStorage.getItem('selectedOutletId') || undefined;
+
   // Use offline data for menus
   const { data: menus, isLoading: menusLoading, refetch: refetchMenus, isOffline } = useOfflineData<Menu>({
     table: 'menus',
     queryKey: ['menus'],
     buildQuery: async (userId, outletId) => {
-      if (!outletId) return { data: [], error: null };
-      
-      const { data, error } = await supabase
+      // Online: filter by outletId if available
+      let query = supabase
         .from('menus')
         .select('*')
         .eq('user_id', userId)
-        .eq('outlet_id', outletId)
         .order('created_at', { ascending: true });
 
+      if (outletId) {
+        query = query.eq('outlet_id', outletId) as typeof query;
+      }
+
+      const { data, error } = await query;
       return { data: data as Menu[] | null, error };
     },
-    enabled: !!user && !!selectedOutletId,
+    // Enable if user is set — outletId optional (cache fallback works without it)
+    enabled: !!user,
   });
 
-  // Fetch categories and items when menus change
+  // Fetch categories and items when menus change (with offline cache fallback)
   const fetchCategoriesAndItems = useCallback(async () => {
-    if (!user || fetchingRef.current || !menus || menus.length === 0) {
-      if (!menus || menus.length === 0) {
-        setCategories([]);
-        setItems([]);
-        setLoading(false);
-      }
+    // Don't run while menus are still loading — wait for cache to populate
+    if (!user || fetchingRef.current || menusLoading) return;
+    if (!menus || menus.length === 0) {
+      setCategories([]);
+      setItems([]);
+      setLoading(false);
       return;
     }
 
@@ -92,38 +99,88 @@ export const useMenus = () => {
       setError(null);
 
       const menuIds = menus.map(menu => menu.id);
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('menu_categories')
-        .select('*')
-        .in('menu_id', menuIds)
-        .order('menu_id')
-        .order('order_index', { ascending: true });
 
-      if (categoriesError) throw categoriesError;
+      let categoriesData: MenuCategory[] = [];
 
-      setCategories(categoriesData || []);
+      if (isOffline) {
+        // Offline: load from IndexedDB cache — try with outletId first, then without
+        const { getData } = await import('@/lib/offlineStorage');
+        const outletIdForCache = resolvedOutletId;
+        let cached = outletIdForCache
+          ? await getData<MenuCategory[]>('menu_categories', user.id, outletIdForCache)
+          : undefined;
+        if (!cached || !cached.data || (cached.data as MenuCategory[]).length === 0) {
+          cached = await getData<MenuCategory[]>('menu_categories', user.id);
+        }
+        const all = (cached?.data || []) as MenuCategory[];
+        categoriesData = all.filter(c => menuIds.includes(c.menu_id));
+        console.log('[Offline] Loaded categories from cache:', categoriesData.length);
+      } else {
+        const { data, error: categoriesError } = await supabase
+          .from('menu_categories')
+          .select('*')
+          .in('menu_id', menuIds)
+          .order('menu_id')
+          .order('order_index', { ascending: true });
 
-      if (categoriesData && categoriesData.length > 0) {
+        if (categoriesError) throw categoriesError;
+        categoriesData = data || [];
+      }
+
+      setCategories(categoriesData);
+
+      if (categoriesData.length > 0) {
         const categoryIds = categoriesData.map(cat => cat.id);
-        
-        const { data: itemsData, error: itemsError } = await supabase
-          .from('menu_items')
-          .select(`
-            *,
-            menu_categories!inner(name)
-          `)
-          .in('category_id', categoryIds)
-          .order('category_id')
-          .order('order_index', { ascending: true })
-          .order('name');
 
-        if (itemsError) throw itemsError;
+        let transformedItems: MenuItem[] = [];
 
-        const transformedItems: MenuItem[] = (itemsData || []).map(item => ({
-          ...item,
-          price: Number(item.price),
-          category_name: item.menu_categories?.name || 'Sans catégorie'
-        }));
+        if (isOffline) {
+          const { getData } = await import('@/lib/offlineStorage');
+          const outletIdForCache = resolvedOutletId;
+          let cachedItems = outletIdForCache
+            ? await getData<Record<string, unknown>[]>('menu_items', user.id, outletIdForCache)
+            : undefined;
+          if (!cachedItems || !cachedItems.data || (cachedItems.data as Record<string, unknown>[]).length === 0) {
+            cachedItems = await getData<Record<string, unknown>[]>('menu_items', user.id);
+          }
+          const allItems = (cachedItems?.data || []) as Record<string, unknown>[];
+          const filtered = allItems.filter(item => categoryIds.includes(item.category_id as string));
+          const categoryMap = new Map(categoriesData.map(c => [c.id, c.name]));
+          transformedItems = filtered.map(item => ({
+            id: item.id as string,
+            name: item.name as string,
+            description: item.description as string | undefined,
+            price: Number(item.price),
+            category_id: item.category_id as string,
+            category_name: categoryMap.get(item.category_id as string) || 'Sans catégorie',
+            image_url: item.image_url as string | undefined,
+            is_available: item.is_available !== false,
+            order_index: Number(item.order_index) || 0,
+            allergens: item.allergens as string[] | undefined,
+            created_at: item.created_at as string,
+            updated_at: item.updated_at as string,
+          }));
+          console.log('[Offline] Loaded menu items from cache:', transformedItems.length);
+        } else {
+          const { data: itemsData, error: itemsError } = await supabase
+            .from('menu_items')
+            .select(`
+              *,
+              menu_categories!inner(name)
+            `)
+            .in('category_id', categoryIds)
+            .order('category_id')
+            .order('order_index', { ascending: true })
+            .order('name');
+
+          if (itemsError) throw itemsError;
+
+          transformedItems = (itemsData || []).map(item => ({
+            ...item,
+            price: Number(item.price),
+            category_name: item.menu_categories?.name || 'Sans catégorie'
+          }));
+        }
 
         setItems(transformedItems);
       } else {
@@ -155,13 +212,13 @@ export const useMenus = () => {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [user, menus, toast, signOut, navigate]);
+  }, [user, menus, isOffline, toast, signOut, navigate]);
 
   useEffect(() => {
-    if (menus) {
+    if (!menusLoading) {
       fetchCategoriesAndItems();
     }
-  }, [menus, fetchCategoriesAndItems]);
+  }, [menus, menusLoading, fetchCategoriesAndItems]);
 
   useEffect(() => {
     setLoading(menusLoading);

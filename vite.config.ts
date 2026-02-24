@@ -42,27 +42,39 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
-        // Empêche les "pages blanches" après une mise à jour (cache SW obsolète)
         clientsClaim: true,
         skipWaiting: true,
         cleanupOutdatedCaches: true,
-        // Fallback SPA (deep links /commandes, /tables, etc.)
         navigateFallback: '/index.html',
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10 MB pour supporter le bundle principal
+        // Mettre en cache TOUS les assets de l'app
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,json}'],
+        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MB
         runtimeCaching: [
           {
+            // Assets statiques Supabase (images, fichiers) → CacheFirst
+            urlPattern: /^https:\/\/aufmphldtjrcddyayqoy\.supabase\.co\/storage\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'supabase-storage',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 jours
+              },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          {
+            // API Supabase → NetworkFirst avec fallback cache (7 jours)
             urlPattern: /^https:\/\/aufmphldtjrcddyayqoy\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'supabase-cache',
+              cacheName: 'supabase-api',
+              networkTimeoutSeconds: 5,
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 24h
+                maxEntries: 300,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 jours
               },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              cacheableResponse: { statuses: [0, 200] }
             }
           }
         ]
