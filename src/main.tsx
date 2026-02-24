@@ -45,34 +45,41 @@ onlineManager.setEventListener((setOnline) => {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 7 * 24 * 60 * 60 * 1000, // 7 JOURS - indispensable pour offline
+      staleTime: 60 * 1000, // 1 minute - keep data fresh longer
+      gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep cache for offline
       retry: (failureCount, error) => {
-        // Jamais de retry en offline → on utilise le cache
+        // Don't retry on network errors when offline
         if (!navigator.onLine) return false;
+        // Retry more times for network errors with exponential backoff
         if (isNetworkError(error)) {
           markRequestFailed();
-          return failureCount < 2;
+          return failureCount < 3;
         }
-        return failureCount < 1;
+        return failureCount < 2;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       refetchOnWindowFocus: false,
-      refetchOnMount: false,      // On utilise IndexedDB, pas de refetch automatique
-      refetchOnReconnect: true,   // Refresh quand la connexion revient
+      refetchOnMount: false,
+      refetchOnReconnect: true,
+      // Keep showing stale data while refetching
       placeholderData: (previousData: unknown) => previousData,
-      networkMode: 'offlineFirst', // CRITIQUE : utilise le cache si offline
+      // Network mode: always try to fetch, but don't fail if offline
+      networkMode: 'offlineFirst',
     },
     mutations: {
       retry: (failureCount, error) => {
-        if (!navigator.onLine) return false; // Les mutations offline sont gérées par SyncEngine
+        if (!navigator.onLine) {
+          // Will be paused and retried when online
+          return true;
+        }
         if (isNetworkError(error)) {
           markRequestFailed();
-          return failureCount < 2;
+          return failureCount < 3;
         }
-        return failureCount < 1;
+        return failureCount < 2;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      // Pause mutations when offline
       networkMode: 'offlineFirst',
     },
   },
@@ -151,21 +158,16 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 })
 
-// PWA registration - wrapped in try-catch for cross-browser compatibility
-try {
-  const updateSW = registerSW({
-    immediate: true,
-    onNeedRefresh() {
-      toast({
-        title: 'Mise à jour disponible',
-        description: "Rechargement automatique pour appliquer la dernière version.",
-      })
-      updateSW(true)
-    },
-  })
-} catch (e) {
-  console.warn('[PWA] Service worker registration failed:', e);
-}
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    toast({
+      title: 'Mise à jour disponible',
+      description: "Rechargement automatique pour appliquer la dernière version.",
+    })
+    updateSW(true)
+  },
+})
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
@@ -173,8 +175,8 @@ createRoot(document.getElementById("root")!).render(
       client={queryClient}
       persistOptions={{
         persister,
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 JOURS
-        buster: 'v1', // Garder v1 pour ne pas invalider le cache existant
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        buster: 'v1',
       }}
     >
       <AuthProvider>

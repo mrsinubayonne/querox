@@ -169,15 +169,6 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
           /* Hide everything except the invoice during print */
           @media print {
             /* Hide absolutely everything */
-            html, body {
-              margin: 0 !important;
-              padding: 0 !important;
-              width: ${format === 'a4' ? '210mm' : '80mm'} !important;
-              min-width: ${format === 'a4' ? '210mm' : '80mm'} !important;
-              max-width: ${format === 'a4' ? '210mm' : '80mm'} !important;
-              -webkit-text-size-adjust: 100% !important;
-              text-size-adjust: 100% !important;
-            }
             body * {
               visibility: hidden !important;
             }
@@ -191,50 +182,20 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
               left: 0 !important;
               top: 0 !important;
               display: block !important;
-              width: ${format === 'a4' ? '210mm' : '80mm'} !important;
-              max-width: ${format === 'a4' ? '210mm' : '80mm'} !important;
+              width: 100% !important;
               background: white !important;
               z-index: 99999 !important;
-              margin: 0 !important;
-              padding: 0 !important;
             }
             .invoice-print-container {
-              padding: ${format === 'a4' ? '15mm' : '2mm'} !important;
-              width: ${format === 'a4' ? '210mm' : '76mm'} !important;
-              max-width: ${format === 'a4' ? '210mm' : '76mm'} !important;
+              padding: ${format === 'a4' ? '15mm' : '8mm'} !important;
+              width: ${format === 'a4' ? '210mm' : '148mm'} !important;
+              max-width: 100% !important;
               height: auto !important;
               overflow: visible !important;
-              margin: 0 !important;
             }
             @page {
-              size: ${format === 'a4' ? 'A4 portrait' : '80mm auto'};
-              margin: ${format === 'a4' ? '10mm' : '0mm'};
-            }
-            /* Font sizes for thermal receipt */
-            .invoice-print-container {
-              font-size: ${format === 'a4' ? '11pt' : '12pt'} !important;
-              -webkit-text-size-adjust: 100% !important;
-              text-size-adjust: 100% !important;
-              line-height: 1.3 !important;
-            }
-            .invoice-print-container table {
-              font-size: inherit !important;
-              width: 100% !important;
-            }
-            .invoice-print-container td,
-            .invoice-print-container th {
-              font-size: ${format === 'a4' ? '10pt' : '11pt'} !important;
-              padding: ${format === 'a4' ? '4px' : '2px 1px'} !important;
-            }
-            .invoice-print-container h1 {
-              font-size: ${format === 'a4' ? '18pt' : '14pt'} !important;
-            }
-            .invoice-print-container h2 {
-              font-size: ${format === 'a4' ? '16pt' : '13pt'} !important;
-            }
-            .invoice-print-container p,
-            .invoice-print-container span {
-              font-size: ${format === 'a4' ? '10pt' : '11pt'} !important;
+              size: ${format === 'a4' ? 'A4' : 'A5'} portrait;
+              margin: ${format === 'a4' ? '10mm' : '5mm'};
             }
             /* Allow page breaks in the table */
             table { page-break-inside: auto !important; }

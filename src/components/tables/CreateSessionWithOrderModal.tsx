@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Minus, Search, X, WifiOff } from "lucide-react";
-import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
+import { useMenuData } from "@/hooks/useMenuData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,20 +53,73 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [showCustomItem, setShowCustomItem] = useState(false);
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState("");
 
-  const { menuItems } = useInternalMenuItems(isOpen);
-
-  // Reset cart when modal opens
+  // Fetch user's active menu
+  // Fetch user's active menu - use localStorage for offline support
   React.useEffect(() => {
+    const fetchActiveMenu = async () => {
+      if (!user) return;
+
+      // Get outlet from context or localStorage (works offline)
+      const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
+      
+      // If offline, try to get cached menu ID
+      if (isOffline) {
+        const cachedMenuId = localStorage.getItem('activeMenuId');
+        if (cachedMenuId) {
+          setActiveMenuId(cachedMenuId);
+          return;
+        }
+      }
+
+      try {
+        // Try to fetch menu from Supabase
+        let { data: menus } = await supabase
+          .from("menus")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .eq("outlet_id", resolvedOutletId)
+          .limit(1)
+          .maybeSingle();
+
+        if (!menus) {
+          const fallback = await supabase
+            .from("menus")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .limit(1)
+            .maybeSingle();
+          menus = fallback.data as any;
+        }
+
+        if (menus) {
+          setActiveMenuId((menus as any).id);
+          // Cache for offline use
+          localStorage.setItem('activeMenuId', (menus as any).id);
+        } else {
+          setActiveMenuId(null);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch menu, using cached:', error);
+        const cachedMenuId = localStorage.getItem('activeMenuId');
+        if (cachedMenuId) {
+          setActiveMenuId(cachedMenuId);
+        }
+      }
+    };
+
     if (isOpen) {
-      setCart([]);
-      setSearchTerm("");
-      setNumberOfGuests("");
+      fetchActiveMenu();
     }
-  }, [isOpen]);
+  }, [user, isOpen, outletId, isOffline]);
+
+  const { menuItems } = useMenuData(activeMenuId);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return menuItems;
@@ -317,69 +370,27 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         return;
       }
 
-      // Online mode — optimistic: update UI immediately, then fire DB calls
-      const nowIso = new Date().toISOString();
-      const tempSessionId = `temp-${Date.now()}`;
-      
-      // Optimistic local session so the table turns occupied INSTANTLY
-      const optimisticSession = {
-        id: tempSessionId,
-        user_id: user.id,
-        outlet_id: resolvedOutletId,
-        debtor_id: null,
-        table_number: tableNumber,
-        custom_table_name: null,
-        status: 'active',
-        started_at: nowIso,
-        closed_at: null,
-        number_of_guests: parseInt(numberOfGuests) || 1,
-        total_amount: totalAmount,
-        notes: null,
-        payment_method: null,
-        created_at: nowIso,
-        updated_at: nowIso,
-      };
-      
-      const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
-      queryClient.setQueryData(sessionsKey, [optimisticSession, ...currentSessions]);
-
-      // Close modal & notify BEFORE waiting for DB
-      const cartCount = cart.length;
-      setNumberOfGuests("");
-      setCart([]);
-      setSearchTerm("");
-      onSuccess();
-      onClose();
-
-      toast({
-        title: "Session créée",
-        description: `Table ${tableNumber} ouverte avec ${cartCount} plat(s).`,
-      });
-
-      // Fire DB calls in background
-      try {
-        const { data: session, error: sessionError } = await supabase
-          .from("table_sessions")
-          .insert([{
+      // Online mode
+      // 1. Créer la session
+      const { data: session, error: sessionError } = await supabase
+        .from("table_sessions")
+        .insert([
+          {
             user_id: user.id,
             outlet_id: resolvedOutletId,
             table_number: tableNumber,
             number_of_guests: parseInt(numberOfGuests) || 1,
             status: "active",
-          }])
-          .select()
-          .single();
+          },
+        ])
+        .select()
+        .single();
 
-        if (sessionError) throw sessionError;
+      if (sessionError) throw sessionError;
 
-        // Replace temp session with real one in cache
-        const updatedSessions = (queryClient.getQueryData(sessionsKey) as any[] || []).map(
-          (s: any) => s.id === tempSessionId ? { ...optimisticSession, id: session.id } : s
-        );
-        queryClient.setQueryData(sessionsKey, updatedSessions);
-
-        // Insert order (no need to wait for UI)
-        await supabase.from("orders").insert([{
+      // 2. Créer la commande avec les items
+      const { error: orderError } = await supabase.from("orders").insert([
+        {
           user_id: user.id,
           outlet_id: resolvedOutletId,
           session_id: session.id,
@@ -389,13 +400,21 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           items: orderItems,
           total_amount: totalAmount,
           status: "pending",
-        }]);
-      } catch (bgError) {
-        console.error("Background DB error:", bgError);
-        // Rollback optimistic update
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      }
-      return; // skip the finally setLoading since modal is already closed
+        },
+      ]);
+
+      if (orderError) throw orderError;
+
+      toast({
+        title: "Session créée",
+        description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s).`,
+      });
+
+      setNumberOfGuests("");
+      setCart([]);
+      setSearchTerm("");
+      onSuccess();
+      onClose();
     } catch (error: any) {
       console.error("Error creating session with order:", error);
       toast({
@@ -496,7 +515,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                   </div>
                 </ScrollArea>
               )}
-              {filteredItems.length === 0 && menuItems.length > 0 && searchTerm.trim() && (
+              {filteredItems.length === 0 && activeMenuId && (
                 <p className="text-sm text-muted-foreground">Aucun plat trouvé</p>
               )}
             </div>

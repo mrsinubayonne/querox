@@ -24,33 +24,6 @@ class ErrorBoundary extends Component<Props, State> {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
-  private handleRepairCache = async () => {
-    try {
-      // Clear service workers
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map(r => r.unregister()));
-      }
-      // Clear caches
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
-      }
-      // Clear localStorage subscription/outlet caches
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.startsWith('subscription_cache_') || key === 'selectedOutletId' || key === 'selectedProfileId')) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(k => localStorage.removeItem(k));
-    } catch (e) {
-      console.warn('Cache repair failed:', e);
-    }
-    window.location.reload();
-  };
-
   public render() {
     if (this.state.hasError) {
       return (
@@ -67,7 +40,7 @@ class ErrorBoundary extends Component<Props, State> {
                 Désolé, quelque chose s'est mal passé. Veuillez rafraîchir la page ou contacter le support si le problème persiste.
               </p>
             </div>
-            <div className="flex flex-col gap-3 items-center">
+            <div className="flex gap-4 justify-center">
               <Button
                 onClick={() => window.location.href = '/'}
                 variant="default"
@@ -79,13 +52,6 @@ class ErrorBoundary extends Component<Props, State> {
                 variant="outline"
               >
                 Rafraîchir
-              </Button>
-              <Button
-                onClick={this.handleRepairCache}
-                variant="outline"
-                className="text-xs"
-              >
-                Réparer le cache (page blanche)
               </Button>
             </div>
           </div>

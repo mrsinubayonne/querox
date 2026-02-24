@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { getData, storeData } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
 
 export interface BusinessPeriod {
@@ -26,7 +24,6 @@ interface UseBusinessPeriodsProps {
 
 export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) => {
   const { user } = useAuth();
-  const { isOffline } = useNetworkStatus();
   const [periods, setPeriods] = useState<BusinessPeriod[]>([]);
   const [currentPeriod, setCurrentPeriod] = useState<BusinessPeriod | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,11 +33,11 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       initializePeriod();
       fetchPeriods();
     }
-  }, [user, outletId, isOffline]);
+  }, [user, outletId]);
 
   // Écouter les changements en temps réel sur les périodes
   useEffect(() => {
-    if (!user || !outletId || isOffline) return;
+    if (!user || !outletId) return;
 
     const channel = supabase
       .channel(`business-periods-${outletId}`)
@@ -55,6 +52,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         (payload) => {
           console.log('🔄 Changement détecté sur business_periods:', payload);
           
+          // Rafraîchir les données
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             fetchCurrentPeriod();
             fetchPeriods();
@@ -68,27 +66,12 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, outletId, isOffline]);
+  }, [user, outletId]);
 
   const fetchPeriods = async () => {
     if (!user) return;
 
     try {
-      if (isOffline) {
-        // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
-        const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-        const allPeriods = (cached?.data as BusinessPeriod[]) || [];
-        
-        // Filter: closed periods for this outlet, sorted desc
-        const closed = allPeriods
-          .filter(p => p.ended_at !== null && (!outletId || p.outlet_id === outletId))
-          .sort((a, b) => (b.ended_at || '').localeCompare(a.ended_at || ''));
-        
-        console.log('[Offline] Périodes bouclées depuis cache:', closed.length);
-        setPeriods(closed);
-        return;
-      }
-
       let query = supabase
         .from('business_periods')
         .select('*')
@@ -96,6 +79,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         .not('ended_at', 'is', null)
         .order('ended_at', { ascending: false });
 
+      // IMPORTANT: Toujours filtrer par outlet_id si spécifié
       if (outletId) {
         query = query.eq('outlet_id', outletId);
       }
@@ -104,56 +88,19 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       if (error) throw error;
 
       setPeriods(data || []);
-      
-      // Cache for offline use
-      const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-      const existingAll = (cached?.data as BusinessPeriod[]) || [];
-      // Merge: replace closed periods for this outlet, keep others
-      const otherPeriods = existingAll.filter(p => 
-        p.ended_at === null || (outletId && p.outlet_id !== outletId)
-      );
-      const merged = [...otherPeriods, ...(data || [])];
-      await storeData('business_periods', merged, user.id);
     } catch (error) {
       console.error('Error fetching periods:', error);
-      // Fallback to cache on network error
-      const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-      const allPeriods = (cached?.data as BusinessPeriod[]) || [];
-      const closed = allPeriods
-        .filter(p => p.ended_at !== null && (!outletId || p.outlet_id === outletId))
-        .sort((a, b) => (b.ended_at || '').localeCompare(a.ended_at || ''));
-      if (closed.length > 0) {
-        console.warn('[Fallback] Using cached periods:', closed.length);
-        setPeriods(closed);
-      } else {
-        toast.error('Erreur lors du chargement des périodes');
-      }
+      toast.error('Erreur lors du chargement des périodes');
     }
   };
 
+  // Initialize period: fetch active period only (no auto-creation)
   const initializePeriod = async () => {
     if (!user || !outletId) return;
 
     setLoading(true);
     try {
-      if (isOffline) {
-        // --- MODE HORS-LIGNE : chercher la période active dans le cache ---
-        const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-        const allPeriods = (cached?.data as BusinessPeriod[]) || [];
-        const active = allPeriods.find(p => 
-          p.ended_at === null && p.outlet_id === outletId
-        );
-        
-        if (active) {
-          setCurrentPeriod(active);
-          console.log('[Offline] Période active trouvée dans le cache:', active.id);
-        } else {
-          setCurrentPeriod(null);
-          console.log('[Offline] Aucune période active dans le cache');
-        }
-        return;
-      }
-
+      // Try to fetch existing active period
       const { data: activePeriod, error } = await supabase
         .from('business_periods')
         .select('*')
@@ -168,28 +115,14 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
 
       if (activePeriod) {
         setCurrentPeriod(activePeriod);
+        // Store period ID in localStorage for persistence with user_id
         localStorage.setItem(`active_period_${user.id}_${outletId}`, activePeriod.id);
-        
-        // Cache active period
-        const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-        const existing = (cached?.data as BusinessPeriod[]) || [];
-        const withoutThis = existing.filter(p => p.id !== activePeriod.id);
-        await storeData('business_periods', [...withoutThis, activePeriod], user.id);
       } else {
         setCurrentPeriod(null);
       }
     } catch (error) {
       console.error('Error initializing period:', error);
-      // Fallback to cache
-      const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-      const allPeriods = (cached?.data as BusinessPeriod[]) || [];
-      const active = allPeriods.find(p => p.ended_at === null && p.outlet_id === outletId);
-      if (active) {
-        setCurrentPeriod(active);
-        console.warn('[Fallback] Using cached active period');
-      } else {
-        toast.error("Erreur lors de l'initialisation de la période");
-      }
+      toast.error('Erreur lors de l\'initialisation de la période');
     } finally {
       setLoading(false);
     }
@@ -207,6 +140,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         .order('started_at', { ascending: false })
         .limit(1);
 
+      // IMPORTANT: Filtrer strictement par outlet_id
       if (outletId) {
         query = query.eq('outlet_id', outletId);
       }
@@ -224,6 +158,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     if (!user || !outletId) return;
 
     try {
+      // Check if there's already an open period for this outlet
       let checkQuery = supabase
         .from('business_periods')
         .select('id')
@@ -242,6 +177,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         return;
       }
 
+      // Create new period
       const { data, error } = await supabase
         .from('business_periods')
         .insert({
@@ -255,15 +191,10 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       if (error) throw error;
 
       setCurrentPeriod(data);
+      // Store period ID in localStorage for persistence across disconnections with user_id
       if (outletId) {
         localStorage.setItem(`active_period_${user.id}_${outletId}`, data.id);
       }
-      
-      // Cache the new period
-      const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-      const existing = (cached?.data as BusinessPeriod[]) || [];
-      await storeData('business_periods', [...existing, data], user.id);
-      
       toast.success('Nouvelle période démarrée');
       fetchPeriods();
     } catch (error) {
@@ -286,9 +217,11 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         return;
       }
 
+      // Calculate stats for the period
       const startISO = targetPeriod.started_at;
       const endISO = new Date().toISOString();
 
+      // Fetch orders for this period - STRICTEMENT pour ce PDV uniquement et UNIQUEMENT les commandes payées
       let ordersQuery = supabase
         .from('orders')
         .select('id, total_amount, status')
@@ -297,6 +230,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         .gte('created_at', startISO)
         .lte('created_at', endISO);
 
+      // CRITIQUE: Toujours filtrer par outlet si présent
       if (targetPeriod.outlet_id) {
         ordersQuery = ordersQuery.eq('outlet_id', targetPeriod.outlet_id);
       }
@@ -304,6 +238,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       const { data: orders, error: ordersError } = await ordersQuery;
       if (ordersError) throw ordersError;
 
+      // Fetch invoices for this period - STRICTEMENT pour ce PDV uniquement
       let invoicesQuery = supabase
         .from('invoices')
         .select('id, total_amount, status, order_id')
@@ -311,6 +246,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         .gte('created_at', startISO)
         .lte('created_at', endISO);
 
+      // CRITIQUE: Toujours filtrer par outlet si présent
       if (targetPeriod.outlet_id) {
         invoicesQuery = invoicesQuery.eq('outlet_id', targetPeriod.outlet_id);
       }
@@ -318,6 +254,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       const { data: invoices, error: invoicesError } = await invoicesQuery;
       if (invoicesError) throw invoicesError;
 
+      // Calculate totals
       const totalOrders = orders?.length || 0;
       const revenueFromOrders =
         orders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
@@ -337,6 +274,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
 
       const totalRevenue = revenueFromOrders + revenueFromPaidInvoices;
 
+      // Update period with stats and close it
       const { error: updateError } = await supabase
         .from('business_periods')
         .update({
@@ -352,24 +290,10 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       if (updateError) throw updateError;
 
       setCurrentPeriod(null);
+      // Clear localStorage when period is closed with user_id
       if (targetPeriod.outlet_id) {
         localStorage.removeItem(`active_period_${user.id}_${targetPeriod.outlet_id}`);
       }
-
-      // Update cache with closed period
-      const closedPeriod = {
-        ...targetPeriod,
-        ended_at: endISO,
-        total_orders: totalOrders,
-        total_revenue: totalRevenue,
-        total_invoices: totalInvoices,
-        paid_invoices: paidInvoices,
-        unpaid_invoices: unpaidInvoices,
-      };
-      const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-      const existing = (cached?.data as BusinessPeriod[]) || [];
-      const updated = existing.map(p => p.id === closedPeriod.id ? closedPeriod : p);
-      await storeData('business_periods', updated, user.id);
 
       await fetchPeriods();
       toast.success('Journée bouclée avec succès');

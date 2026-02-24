@@ -78,31 +78,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     preloadTriggeredRef.current = true;
 
     const outletId = localStorage.getItem('selectedOutletId') || undefined;
-    preloadCriticalData(userId, outletId).then(() => {
-      console.log('✅ [Offline] Preload critique terminé');
-    }).catch(err => {
-      console.warn('⚠️ [Offline] Erreur preload:', err);
-    });
+    // Defer to avoid blocking auth/render path
+    setTimeout(() => {
+      preloadCriticalData(userId, outletId);
+    }, 0);
   };
-
-  // Re-preload when coming back online (using a ref to avoid stale closure)
-  const userIdRef = useRef<string | undefined>(undefined);
-  useEffect(() => {
-    userIdRef.current = user?.id;
-  }, [user?.id]);
-
-  useEffect(() => {
-    const handleOnline = () => {
-      const userId = userIdRef.current;
-      if (userId) {
-        preloadTriggeredRef.current = false;
-        triggerPreloadOnce(userId);
-      }
-    };
-    window.addEventListener('online', handleOnline);
-    return () => window.removeEventListener('online', handleOnline);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Load cached auth data for offline mode
   useEffect(() => {

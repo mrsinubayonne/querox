@@ -259,7 +259,7 @@ export async function clearOldIdMappings(maxAgeDays: number = 7): Promise<void> 
 // ============= UTILITY FUNCTIONS =============
 
 export function generateLocalId(): string {
-  return crypto.randomUUID();
+  return `local_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 }
 
 export function isLocalId(id: string): boolean {

@@ -158,44 +158,36 @@ export const useOutlets = () => {
   const loadSelectedOutlet = async (): Promise<void> => {
     if (!user?.id) return;
 
-    const fallbackLocal = typeof window !== 'undefined' ? localStorage.getItem('selectedOutletId') : null;
-
     // Offline: rely on localStorage only
     if (isOffline) {
-      setSelectedOutletId(fallbackLocal ?? null);
+      const fallbackLocal = typeof window !== 'undefined' ? localStorage.getItem('selectedOutletId') : null;
+      setSelectedOutletId((fallbackLocal as string | null) ?? null);
       return;
     }
 
     try {
       // Get the selected profile ID from localStorage
-      const profileId = localStorage.getItem('selectedProfileId');
-      if (!profileId) {
-        // No profile selected - use localStorage as source of truth
-        setSelectedOutletId(fallbackLocal ?? null);
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+      if (!selectedProfileId) {
+        setSelectedOutletId(null);
         return;
       }
 
       const { data, error } = await supabase
         .from('user_profiles')
         .select('selected_outlet_id')
-        .eq('id', profileId)
+        .eq('id', selectedProfileId)
         .maybeSingle();
 
       if (error) {
         console.error('Error fetching selected outlet:', error);
-        setSelectedOutletId(fallbackLocal ?? null);
         return;
       }
       
-      const resolved = (data?.selected_outlet_id as string | null) ?? fallbackLocal ?? null;
-      setSelectedOutletId(resolved);
-      // Keep localStorage in sync
-      if (resolved) {
-        localStorage.setItem('selectedOutletId', resolved);
-      }
+      const fallbackLocal = typeof window !== 'undefined' ? localStorage.getItem('selectedOutletId') : null;
+      setSelectedOutletId((data?.selected_outlet_id as string | null) ?? (fallbackLocal as string | null) ?? null);
     } catch (error) {
       console.error('Error:', error);
-      setSelectedOutletId(fallbackLocal ?? null);
     }
   };
 
@@ -326,7 +318,6 @@ export const useOutlets = () => {
     if (isOffline) {
       setSelectedOutletId(outletId);
       localStorage.setItem('selectedOutletId', outletId);
-      localStorage.removeItem('outlet_cache');
       if (!silent) {
         toast.success('Point de vente sélectionné (hors ligne)');
       }
@@ -340,7 +331,6 @@ export const useOutlets = () => {
         // Si pas de profil sélectionné, juste stocker l'outlet ID localement
         setSelectedOutletId(outletId);
         localStorage.setItem('selectedOutletId', outletId);
-        localStorage.removeItem('outlet_cache');
         if (!silent) {
           toast.success('Point de vente sélectionné');
         }
@@ -360,8 +350,6 @@ export const useOutlets = () => {
       
       setSelectedOutletId(outletId);
       localStorage.setItem('selectedOutletId', outletId);
-      // Invalidate optimized outlet cache
-      localStorage.removeItem('outlet_cache');
       if (!silent) {
         toast.success('Point de vente sélectionné');
       }

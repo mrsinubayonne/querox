@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import PageWithSidebar from "@/components/PageWithSidebar";
 import SubscriptionGuard from "@/components/SubscriptionGuard";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Plus, UserPlus, Filter } from "lucide-react";
+import { RefreshCw, Plus, UserPlus, Filter, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TableGrid } from "@/components/tables/TableGrid";
 import { CreateSessionWithOrderModal } from "@/components/tables/CreateSessionWithOrderModal";
@@ -11,7 +11,7 @@ import { TableSessionModal } from "@/components/tables/TableSessionModal";
 import { RenameTableModal } from "@/components/tables/RenameTableModal";
 import { useOptimizedTableSessions, TableSession } from "@/hooks/useOptimizedTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,12 +23,11 @@ const Tables: React.FC = () => {
   const {
     sessions,
     loading,
-    isMutating,
+    isOffline,
     createSession,
     closeSession,
     markSessionAsPaid,
     reopenSession,
-    deleteSession,
     refetch,
   } = useOptimizedTableSessions();
 
@@ -41,9 +40,8 @@ const Tables: React.FC = () => {
   const [sessionToRename, setSessionToRename] = useState<TableSession | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  // Generate table numbers (default to 30 tables, expandable)
-  const [tableCount, setTableCount] = useState(30);
-  const tableNumbers = Array.from({ length: tableCount }, (_, i) => String(i + 1).padStart(2, "0"));
+  // Generate table numbers (default to 120 tables)
+  const tableNumbers = Array.from({ length: 120 }, (_, i) => String(i + 1).padStart(2, "0"));
 
   // Filter sessions based on status
   const filteredSessions = useMemo(() => {
@@ -95,21 +93,42 @@ const Tables: React.FC = () => {
     }
   }, [tableNumbers, sessions, statusFilter]);
 
-  // Sync selected session when sessions update
+  // Écouter les mises à jour de session depuis le modal et en temps réel
   useEffect(() => {
-    if (selectedSession) {
-      const updatedSession = sessions.find(s => s.id === selectedSession.id);
-      if (updatedSession) {
-        setSelectedSession(updatedSession);
+    const handleSessionUpdate = () => {
+      refetch();
+      // Si le modal est ouvert, mettre à jour la session affichée
+      if (selectedSession) {
+        const updatedSession = sessions.find(s => s.id === selectedSession.id);
+        if (updatedSession) {
+          setSelectedSession(updatedSession);
+        }
       }
-    }
-  }, [sessions]); // eslint-disable-line react-hooks/exhaustive-deps
+    };
 
-  useEffect(() => {
-    const handleSessionUpdate = () => refetch();
     window.addEventListener("session-updated", handleSessionUpdate);
-    return () => window.removeEventListener("session-updated", handleSessionUpdate);
-  }, [refetch]);
+    
+    // Écouter les changements en temps réel sur les sessions (nouvelles commandes créant des sessions)
+    const channel = supabase
+      .channel('table-sessions-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'table_sessions'
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener("session-updated", handleSessionUpdate);
+      supabase.removeChannel(channel);
+    };
+  }, [refetch, selectedSession, sessions]);
 
   const handleTableClick = (tableNumber: string, session: TableSession | null) => {
     setSelectedTable(tableNumber);
@@ -128,25 +147,15 @@ const Tables: React.FC = () => {
   };
 
   const handleCloseSession = async (sessionId: string) => {
-    try {
-      await closeSession(sessionId);
-    } catch (e) {
-      console.error('Error closing session:', e);
-    } finally {
-      setShowSessionModal(false);
-      setSelectedSession(null);
-    }
+    await closeSession(sessionId);
+    setShowSessionModal(false);
+    setSelectedSession(null);
   };
 
   const handleMarkAsPaid = async (sessionId: string, paymentMethod?: string) => {
-    try {
-      await markSessionAsPaid(sessionId, paymentMethod);
-    } catch (e) {
-      console.error('Error marking as paid:', e);
-    } finally {
-      setShowSessionModal(false);
-      setSelectedSession(null);
-    }
+    await markSessionAsPaid(sessionId, paymentMethod);
+    setShowSessionModal(false);
+    setSelectedSession(null);
   };
 
   const handleTableRename = useCallback((session: TableSession) => {
@@ -165,9 +174,17 @@ const Tables: React.FC = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold">🪑 Gestion des Tables</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold">🪑 Gestion des Tables</h1>
+                {isOffline && (
+                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                    <WifiOff className="h-3 w-3 mr-1" />
+                    Hors ligne
+                  </Badge>
+                )}
+              </div>
               <p className="text-muted-foreground mt-1">
-                Gérez vos tables et sessions en temps réel
+                {isOffline ? "Mode hors ligne - Les données seront synchronisées" : "Gérez vos tables et sessions en temps réel"}
               </p>
             </div>
 
@@ -292,16 +309,6 @@ const Tables: React.FC = () => {
                   Aucune table ne correspond aux filtres sélectionnés
                 </div>
               )}
-              {statusFilter === "all" && tableCount < 120 && (
-                <div className="flex justify-center pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setTableCount(prev => Math.min(prev + 30, 120))}
-                  >
-                    Afficher plus de tables ({tableCount}/120)
-                  </Button>
-                </div>
-              )}
             </>
           )}
 
@@ -337,14 +344,8 @@ const Tables: React.FC = () => {
             session={selectedSession}
             onCloseSession={handleCloseSession}
             onMarkAsPaid={handleMarkAsPaid}
-            isMutating={isMutating}
             onReopenSession={async (sessionId: string) => {
               await reopenSession(sessionId);
-            }}
-            onDeleteSession={async (sessionId: string) => {
-              await deleteSession(sessionId);
-              setShowSessionModal(false);
-              setSelectedSession(null);
             }}
           />
 

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-// useOptimizedOutlet removed - no longer blocking invoice loading
+import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { useOfflineInsert, useOfflineUpdate } from '@/hooks/useOfflineMutation';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -38,20 +38,20 @@ function generateOfflineInvoiceNumber(): string {
 export const useInvoices = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const outletId = localStorage.getItem('selectedOutletId') || undefined;
+  const { outletId, loading: outletLoading } = useOptimizedOutlet();
   const { isOffline } = useNetworkStatus();
 
   const { data: invoices, isLoading: loading, refetch } = useOfflineData<Invoice>({
     table: 'invoices',
     queryKey: ['invoices'],
-    enabled: !!user,
+    enabled: !!user && !outletLoading,
     buildQuery: async (userId, outlet) => {
       let query = supabase
         .from('invoices')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(100);
       
       // Filtrer par outlet seulement s'il est défini
       if (outlet) {

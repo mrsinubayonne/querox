@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useOutlets } from '@/hooks/useOutlets';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { getData } from '@/lib/offlineStorage';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import EmptyState from '@/components/EmptyState';
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
@@ -41,12 +39,11 @@ const Menus: React.FC = () => {
   const [menuToDelete, setMenuToDelete] = useState<MenuType | null>(null);
   const { user } = useAuth();
   const { selectedOutletId } = useOutlets();
-  const { isOffline } = useNetworkStatus();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const fetchMenus = async () => {
-    if (!user) {
+    if (!user || !selectedOutletId) {
       setMenus([]);
       setActiveMenu(null);
       setLoading(false);
@@ -54,78 +51,29 @@ const Menus: React.FC = () => {
     }
 
     setLoading(true);
-
-    // En mode hors-ligne, lire directement depuis IndexedDB
-    if (isOffline) {
-      try {
-        const resolvedOutletId = selectedOutletId || localStorage.getItem('selectedOutletId') || undefined;
-        let cached = await getData<MenuType[]>('menus', user.id, resolvedOutletId);
-        if (!cached?.data || (cached.data as any[]).length === 0) {
-          cached = await getData<MenuType[]>('menus', user.id);
-        }
-        const data = (cached?.data || []) as MenuType[];
-        setMenus(data);
-        if (data.length > 0) {
-          const stillValid = activeMenu && data.some(m => m.id === activeMenu.id);
-          if (!stillValid) setActiveMenu(data[0]);
-        } else {
-          setActiveMenu(null);
-        }
-      } catch (err) {
-        console.warn('[Menus] IndexedDB read failed:', err);
-        setMenus([]);
-        setActiveMenu(null);
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
-    // En ligne : appel Supabase avec fallback IndexedDB
-    const resolvedOutletId = selectedOutletId || localStorage.getItem('selectedOutletId') || undefined;
-
     try {
-      const query = supabase
+      const { data, error } = await supabase
         .from('menus')
         .select('*')
         .eq('user_id', user.id)
+        .eq('outlet_id', selectedOutletId)
         .order('created_at', { ascending: false });
 
-      if (resolvedOutletId) query.eq('outlet_id', resolvedOutletId);
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      setMenus(data || []);
-      if (data && data.length > 0) {
-        const stillValid = activeMenu && data.some(m => m.id === activeMenu.id);
-        if (!stillValid) setActiveMenu(data[0]);
-      } else {
-        setActiveMenu(null);
-      }
-    } catch (err) {
-      console.warn('[Menus] Supabase failed, falling back to IndexedDB:', err);
-      // Fallback IndexedDB
-      try {
-        let cached = await getData<MenuType[]>('menus', user.id, resolvedOutletId);
-        if (!cached?.data || (cached.data as any[]).length === 0) {
-          cached = await getData<MenuType[]>('menus', user.id);
-        }
-        const data = (cached?.data || []) as MenuType[];
-        setMenus(data);
-        if (data.length > 0) {
-          const stillValid = activeMenu && data.some(m => m.id === activeMenu.id);
-          if (!stillValid) setActiveMenu(data[0]);
-        } else {
-          setActiveMenu(null);
-        }
-      } catch {
+      if (error) {
         toast({
           title: "Erreur",
           description: "Impossible de charger les menus",
           variant: "destructive",
         });
+      } else {
+        setMenus(data || []);
+        // Réinitialiser le menu actif si il ne correspond pas au nouvel outlet
+        if (data && data.length > 0) {
+          const stillValid = activeMenu && data.some(m => m.id === activeMenu.id);
+          if (!stillValid) setActiveMenu(data[0]);
+        } else {
+          setActiveMenu(null);
+        }
       }
     } finally {
       setLoading(false);
@@ -133,10 +81,10 @@ const Menus: React.FC = () => {
   };
 
   useEffect(() => {
+    // Quand l'outlet change, on réinitialise le menu actif et on recharge
     setActiveMenu(null);
     fetchMenus();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, selectedOutletId, isOffline]);
+  }, [user?.id, selectedOutletId]);
 
   const handleMenuChange = (menuId: string) => {
     const selectedMenu = menus.find(menu => menu.id === menuId);

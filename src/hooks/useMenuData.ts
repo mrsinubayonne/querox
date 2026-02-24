@@ -2,10 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MenuItem } from '@/types/menu';
+import { getData, storeData } from '@/lib/offlineStorage';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-
-// ---- Lightweight cache via localStorage (synchronous → instant display) ----
-const CACHE_PREFIX = 'publicMenu_v2_';
 
 interface MenuData {
   id: string;
@@ -23,20 +21,6 @@ interface CachedMenuData {
   outletId: string | null;
 }
 
-function readMenuCache(menuId: string): CachedMenuData | null {
-  try {
-    const raw = localStorage.getItem(CACHE_PREFIX + menuId);
-    if (!raw) return null;
-    return JSON.parse(raw) as CachedMenuData;
-  } catch { return null; }
-}
-
-function writeMenuCache(menuId: string, data: CachedMenuData) {
-  try {
-    localStorage.setItem(CACHE_PREFIX + menuId, JSON.stringify(data));
-  } catch { /* quota exceeded – ignore */ }
-}
-
 export const useMenuData = (menuId: string | null) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuData, setMenuData] = useState<MenuData | null>(null);
@@ -47,48 +31,75 @@ export const useMenuData = (menuId: string | null) => {
   const { toast } = useToast();
   const { isOffline } = useNetworkStatus();
 
+  // Load from cache first
+  const loadFromCache = useCallback(async (id: string): Promise<CachedMenuData | null> => {
+    try {
+      const cached = await getData<CachedMenuData>('menu_items', id);
+      if (cached?.data) {
+        return cached.data;
+      }
+    } catch (e) {
+      console.warn('Failed to load menu from cache:', e);
+    }
+    return null;
+  }, []);
+
+  // Save to cache
+  const saveToCache = useCallback(async (id: string, data: CachedMenuData) => {
+    try {
+      await storeData('menu_items', data, id);
+    } catch (e) {
+      console.warn('Failed to save menu to cache:', e);
+    }
+  }, []);
+
   const fetchMenu = useCallback(async (id: string) => {
     setError(null);
 
-    // 1. CACHE SYNCHRONE : affichage immédiat sans attendre le réseau
-    const cached = readMenuCache(id);
+    // CACHE-FIRST: Always try to show cached data immediately (prevents "Aucun plat trouvé" during slow loads)
+    const cached = await loadFromCache(id);
     if (cached && cached.menuItems.length > 0) {
       setMenuItems(cached.menuItems);
       setMenuData(cached.menuData);
       setRestaurantUserId(cached.userId);
       setOutletId(cached.outletId);
-      setLoading(false); // Montrer immédiatement depuis le cache
+      // Keep loading true only if we're online and will refresh
+      if (isOffline) {
+        setLoading(false);
+        return;
+      }
+    } else {
+      setLoading(true);
+    }
 
-      if (isOffline) return; // Hors ligne → on s'arrête ici
-      // En ligne → continuer en arrière-plan pour rafraîchir
-    } else if (isOffline) {
-      // Pas de cache et hors ligne
-      setError("Mode hors ligne - Aucune donnée en cache pour ce menu");
+    // If offline and nothing in cache, stop here
+    if (isOffline && (!cached || cached.menuItems.length === 0)) {
+      setError("Mode hors ligne - Aucune donnée en cache");
       setLoading(false);
       return;
     }
-
-    // 2. En ligne : charger menu + catégories en parallèle
+    
     try {
-      const [menuResult, categoriesResult] = await Promise.all([
-        supabase
-          .from('menus')
-          .select('user_id, outlet_id, name, description, logo_url, header_image_url')
-          .eq('id', id)
-          .eq('is_active', true)
-          .maybeSingle(),
-        supabase
-          .from('menu_categories')
-          .select('id, name')
-          .eq('menu_id', id)
-          .order('order_index', { ascending: true }),
-      ]);
+      // 1. Récupérer le menu et vérifier qu'il existe
+      const { data: menuDataResult, error: menuError } = await supabase
+        .from('menus')
+        .select('user_id, outlet_id, name, description, logo_url, header_image_url, is_active')
+        .eq('id', id)
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      if (menuError) {
+        console.error("Menu fetch error:", menuError);
+        throw new Error("Erreur lors de la récupération du menu");
+      }
+      
+      if (!menuDataResult) {
+        throw new Error("Menu non trouvé ou inactif");
+      }
 
-      if (menuResult.error) throw new Error("Erreur lors de la récupération du menu");
-      if (!menuResult.data) throw new Error("Menu non trouvé ou inactif");
-
-      const menuDataResult = menuResult.data;
-      const newMenuData: MenuData = {
+      setRestaurantUserId(menuDataResult.user_id);
+      setOutletId(menuDataResult.outlet_id || null);
+      const newMenuData = {
         id,
         name: menuDataResult.name,
         description: menuDataResult.description || undefined,
@@ -96,34 +107,58 @@ export const useMenuData = (menuId: string | null) => {
         header_image_url: menuDataResult.header_image_url || undefined,
         outlet_id: menuDataResult.outlet_id || undefined,
       };
-
-      setRestaurantUserId(menuDataResult.user_id);
-      setOutletId(menuDataResult.outlet_id || null);
       setMenuData(newMenuData);
 
-      if (categoriesResult.error) throw new Error("Erreur lors de la récupération des catégories");
+      // 2. Récupérer les catégories
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('menu_categories')
+        .select('id, name')
+        .eq('menu_id', id)
+        .order('order_index', { ascending: true });
 
-      const categoriesData = categoriesResult.data || [];
-
-      if (categoriesData.length === 0) {
-        setMenuItems([]);
-        writeMenuCache(id, { menuItems: [], menuData: newMenuData, userId: menuDataResult.user_id, outletId: menuDataResult.outlet_id });
-        setLoading(false);
-        return;
+      if (categoriesError) {
+        throw new Error("Erreur lors de la récupération des catégories");
       }
 
+      if (!categoriesData || categoriesData.length === 0) {
+        setMenuItems([]);
+        // Cache empty result
+        await saveToCache(id, { 
+          menuItems: [], 
+          menuData: newMenuData, 
+          userId: menuDataResult.user_id, 
+          outletId: menuDataResult.outlet_id 
+        });
+        return;
+      }
       const categoryMap = new Map(categoriesData.map((c: any) => [c.id, c.name]));
       const categoryIds = categoriesData.map((c: any) => c.id);
-
-      // 3. Charger les plats
+      
+      // 3. Récupérer les plats
+      // Fetch all items (don't filter by is_available in DB - null should count as available)
       const { data: menuItemsData, error: itemsError } = await supabase
         .from('menu_items')
-        .select('id, name, description, price, image_url, is_available, category_id, order_index')
+        .select('*')
         .in('category_id', categoryIds)
         .order('order_index', { ascending: true });
 
-      if (itemsError) throw new Error("Erreur lors de la récupération des plats");
+      if (itemsError) {
+        throw new Error("Erreur lors de la récupération des plats");
+      }
 
+      if (!menuItemsData || menuItemsData.length === 0) {
+        setMenuItems([]);
+        await saveToCache(id, { 
+          menuItems: [], 
+          menuData: newMenuData, 
+          userId: menuDataResult.user_id, 
+          outletId: menuDataResult.outlet_id 
+        });
+        return;
+      }
+
+      // 4. Transformer les données
+      // Transform and filter: null is_available means available (legacy rows)
       const transformedItems: MenuItem[] = (menuItemsData || [])
         .filter((item: any) => item.is_available !== false)
         .map((item: any) => ({
@@ -133,46 +168,52 @@ export const useMenuData = (menuId: string | null) => {
           price: Number(item.price),
           image_url: item.image_url || undefined,
           category_name: categoryMap.get(item.category_id) || 'Autres',
-          is_available: true,
+          is_available: item.is_available !== false,
         }));
 
       setMenuItems(transformedItems);
 
-      // Sauvegarder dans le cache pour la prochaine fois (hors ligne ou réseau lent)
-      writeMenuCache(id, {
-        menuItems: transformedItems,
-        menuData: newMenuData,
-        userId: menuDataResult.user_id,
-        outletId: menuDataResult.outlet_id,
+      // Cache the result
+      await saveToCache(id, { 
+        menuItems: transformedItems, 
+        menuData: newMenuData, 
+        userId: menuDataResult.user_id, 
+        outletId: menuDataResult.outlet_id 
       });
-
+      
     } catch (err: any) {
       console.error("Error in fetchMenu:", err);
-
-      // Fallback sur le cache en cas d'erreur réseau
-      const fallback = readMenuCache(id);
-      if (fallback && fallback.menuItems.length > 0) {
-        setMenuItems(fallback.menuItems);
-        setMenuData(fallback.menuData);
-        setRestaurantUserId(fallback.userId);
-        setOutletId(fallback.outletId);
-        // Pas de toast intrusif – les données sont là
-      } else {
-        const errorMessage = err.message || "Erreur lors du chargement du menu";
-        setError(errorMessage);
-        setMenuItems([]);
-        setMenuData(null);
-        setRestaurantUserId(null);
+      
+      // Try to load from cache on error
+      const cached = await loadFromCache(id);
+      if (cached) {
+        setMenuItems(cached.menuItems);
+        setMenuData(cached.menuData);
+        setRestaurantUserId(cached.userId);
+        setOutletId(cached.outletId);
         toast({
-          title: "Erreur de chargement",
-          description: errorMessage,
-          variant: "destructive",
+          title: "Données en cache utilisées",
+          description: "Connexion instable, affichage des données locales.",
         });
+        setLoading(false);
+        return;
       }
+
+      const errorMessage = err.message || "Erreur lors du chargement du menu";
+      setError(errorMessage);
+      setMenuItems([]);
+      setMenuData(null);
+      setRestaurantUserId(null);
+      
+      toast({
+        title: "Erreur de chargement",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  }, [toast, isOffline]);
+  }, [toast, isOffline, loadFromCache, saveToCache]);
 
   useEffect(() => {
     if (menuId) {
@@ -187,3 +228,4 @@ export const useMenuData = (menuId: string | null) => {
 
   return { menuItems, loading, error, restaurantUserId, menuData, outletId, isOffline };
 };
+

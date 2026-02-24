@@ -46,6 +46,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const { profileSession, hasPermission, isProfileAuthenticated, logout: profileLogout } = useOutletProfile();
   const { trackClick } = useButtonTracking();
   
+  const [servicesExpanded, setServicesExpanded] = useState(location.pathname.includes('/service'));
   const [marketingExpanded, setMarketingExpanded] = useState(location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook'));
   const [adminExpanded, setAdminExpanded] = useState(location.pathname.includes('/admin'));
 
@@ -87,6 +88,36 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     label: 'Inventaire',
     path: '/inventaire',
     permission: 'inventory'
+  }, {
+    icon: UserPlus,
+    label: 'Clients (CRM)',
+    path: '/clients',
+    permission: 'customers'
+  }, {
+    icon: CreditCard,
+    label: 'Débiteurs',
+    path: '/debiteurs',
+    permission: 'invoices'
+  }, {
+    icon: Users,
+    label: 'Équipe',
+    path: '/equipe',
+    permission: 'team'
+  }, {
+    icon: Award,
+    label: 'Performance Personnel',
+    path: '/performance-personnel',
+    permission: 'team'
+  }, {
+    icon: QrCode,
+    label: 'QR Codes',
+    path: '/qr-codes',
+    permission: 'qrcodes'
+  }, {
+    icon: Globe,
+    label: 'Site Web',
+    path: '/site-web',
+    permission: 'website'
   }, {
     icon: Calendar,
     label: 'Réservations',
@@ -134,6 +165,15 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/publicite-facebook'
   }] : [];
 
+  const servicesItems = [{
+    icon: Headphones,
+    label: 'Aperçu Services',
+    path: '/services'
+  }, {
+    icon: UserCheck,
+    label: 'Consulting',
+    path: '/consulting'
+  }];
 
   const adminItems = [
     {
@@ -207,12 +247,19 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       trackClick(`Navigation: ${label}`, 'navigation');
     }
     navigate(path);
+    if (path.includes('/service')) {
+      setServicesExpanded(true);
+    }
     if (path.includes('/marketing') || path.includes('/conception-graphique') || path.includes('/reseaux-sociaux') || path.includes('/publicite-facebook')) {
       setMarketingExpanded(true);
     }
     if (path.includes('/admin')) {
       setAdminExpanded(true);
     }
+  };
+
+  const toggleServicesExpanded = () => {
+    setServicesExpanded(!servicesExpanded);
   };
 
   const toggleMarketingExpanded = () => {
@@ -225,15 +272,15 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
   const isActive = (path: string) => location.pathname === path;
 
-  const isPlusSection = ['/clients', '/equipe', '/performance-personnel', '/qr-codes', '/debiteurs', '/site-web', '/plus'].some(p => location.pathname.startsWith(p));
+  const isServicesSection = location.pathname.includes('/service');
   const isMarketingSection = location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook');
   const isAdminSection = location.pathname.includes('/admin');
 
-  return <div className={`bg-card border-r border-border transition-all duration-300 flex flex-col ${collapsed ? 'w-16' : 'w-64'}`}>
+  return <div className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col ${collapsed ? 'w-16' : 'w-64'}`}>
       {/* Header */}
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        {!collapsed && <h2 className="text-xl font-bold text-foreground">Querox</h2>}
-        <button onClick={() => setCollapsed(!collapsed)} className="p-2 rounded-lg hover:bg-accent transition-colors">
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        {!collapsed && <h2 className="text-xl font-bold text-gray-800">Querox</h2>}
+        <button onClick={() => setCollapsed(!collapsed)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
           {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
       </div>
@@ -241,7 +288,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
       {/* Outlet Selector - Hidden for admins */}
       {!isAdmin && outlets.length > 0 && (
-        <div className={`p-3 border-b border-border ${collapsed ? 'flex justify-center' : ''}`}>
+        <div className={`p-3 border-b border-gray-200 ${collapsed ? 'flex justify-center' : ''}`}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className={`w-full justify-start ${collapsed ? 'w-10 h-10 p-0' : ''}`}>
@@ -313,7 +360,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
                   key={item.path}
                   onClick={() => handleNavigation(item.path, item.label)}
                   data-tour={dataTourAttr}
-                  className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-accent'}`}
+                  className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}
                 >
                   <item.icon size={20} className="flex-shrink-0" />
                   {!collapsed && <span className="ml-3">{item.label}</span>}
@@ -323,7 +370,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
             {/* Marketing Section */}
             <div className="pt-2">
-              <button onClick={toggleMarketingExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isMarketingSection ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-accent'}`}>
+              <button onClick={toggleMarketingExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isMarketingSection ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
                 <TrendingUp size={20} className="flex-shrink-0" />
                 {!collapsed && <>
                     <span className="ml-3 flex-1">Marketing</span>
@@ -333,22 +380,30 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
               {/* Marketing Submenu */}
               {marketingExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
-                  {marketingItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path, item.label)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-accent'}`}>
+                  {marketingItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path, item.label)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
                       <item.icon size={16} className="flex-shrink-0" />
                       <span className="ml-3">{item.label}</span>
                     </button>)}
                 </div>}
             </div>
 
-            {/* Plus - Simple navigation button */}
+            {/* Services Section */}
             <div className="pt-2">
-              <button
-                onClick={() => handleNavigation('/plus', 'Plus')}
-                className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isPlusSection ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-accent'}`}
-              >
-                <Plus size={20} className="flex-shrink-0" />
-                {!collapsed && <span className="ml-3">Plus</span>}
+              <button onClick={toggleServicesExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isServicesSection ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+                <Headphones size={20} className="flex-shrink-0" />
+                {!collapsed && <>
+                    <span className="ml-3 flex-1">Services</span>
+                    <ChevronRight size={16} className={`transition-transform ${servicesExpanded ? 'rotate-90' : ''}`} />
+                  </>}
               </button>
+
+              {/* Services Submenu */}
+              {servicesExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
+                  {servicesItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-green-100 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
+                      <item.icon size={16} className="flex-shrink-0" />
+                      <span className="ml-3">{item.label}</span>
+                    </button>)}
+                </div>}
             </div>
           </>
         )}
@@ -356,7 +411,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
         {/* Admin Section - Only visible to admins */}
         {isAdmin && (
           <div className="pt-2">
-            <button onClick={toggleAdminExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isAdminSection ? 'bg-destructive/10 text-destructive font-medium' : 'text-foreground hover:bg-accent'}`}>
+            <button onClick={toggleAdminExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isAdminSection ? 'bg-red-100 text-red-700 font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
               <Shield size={20} className="flex-shrink-0" />
               {!collapsed && <>
                   <span className="ml-3 flex-1">Administrateur</span>
@@ -366,7 +421,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
             {/* Admin Submenu */}
             {adminExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
-                {adminItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-destructive/10 text-destructive font-medium' : 'text-muted-foreground hover:bg-accent'}`}>
+                {adminItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-red-100 text-red-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
                     <item.icon size={16} className="flex-shrink-0" />
                     <span className="ml-3">{item.label}</span>
                   </button>)}
@@ -377,16 +432,16 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
       {/* Bottom Navigation */}
       {!isAdmin && (
-        <div className="border-t border-border px-2 py-4 space-y-2">
+        <div className="border-t border-gray-200 px-2 py-4 space-y-2">
           {/* Profile Info */}
           {profileSession && (
-            <div className={`px-3 py-2 mb-2 rounded-lg bg-accent border border-border ${collapsed ? 'hidden' : ''}`}>
+            <div className={`px-3 py-2 mb-2 rounded-lg bg-purple-50 border border-purple-200 ${collapsed ? 'hidden' : ''}`}>
               <div className="flex items-center gap-2 mb-1">
-                <User size={16} className="text-primary" />
-                <span className="text-xs font-semibold text-foreground">{profileSession.profileName}</span>
+                <User size={16} className="text-purple-600" />
+                <span className="text-xs font-semibold text-purple-900">{profileSession.profileName}</span>
               </div>
-              <p className="text-xs text-muted-foreground capitalize">{profileSession.role}</p>
-              <p className="text-xs text-muted-foreground">{profileSession.outletName}</p>
+              <p className="text-xs text-purple-600 capitalize">{profileSession.role}</p>
+              <p className="text-xs text-purple-500">{profileSession.outletName}</p>
             </div>
           )}
 
@@ -397,8 +452,8 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
               data-tour={item.label === 'Paramètres' ? 'settings' : ''}
               className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
                 isActive(item.path) 
-                  ? 'bg-primary/10 text-primary font-medium' 
-                  : 'text-foreground hover:bg-accent'
+                  ? 'bg-blue-100 text-blue-700 font-medium' 
+                  : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
               <item.icon size={20} className="flex-shrink-0" />
@@ -417,7 +472,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
                 navigate('/auth');
               }
             }}
-            className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-destructive hover:bg-destructive/10"
+            className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50"
           >
             <LogOut size={20} className="flex-shrink-0" />
             {!collapsed && (
@@ -429,13 +484,13 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       
       {/* Admin Logout Button */}
       {isAdmin && (
-        <div className="border-t border-border px-2 py-4">
+        <div className="border-t border-gray-200 px-2 py-4">
           <button
             onClick={() => {
               signOut();
               navigate('/auth');
             }}
-            className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-destructive hover:bg-destructive/10"
+            className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50"
           >
             <LogOut size={20} className="flex-shrink-0" />
             {!collapsed && <span className="ml-3">Déconnexion</span>}

@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOutlets } from '@/hooks/useOutlets';
 
@@ -82,9 +82,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Don't render content if neither user nor team member is authenticated
-  // Use declarative Navigate to ensure redirect actually happens
   if (!user && !isTeamMember) {
-    return <Navigate to="/auth" replace />;
+    return null;
   }
 
   return <>{children}</>;

@@ -37,7 +37,6 @@ import PubliciteFacebook from '@/pages/PubliciteFacebook';
 // Services pages
 import Services from '@/pages/Services';
 import Consulting from '@/pages/Consulting';
-import Plus from '@/pages/Plus';
 
 // Admin pages
 import AdminSubscriptions from '@/pages/AdminSubscriptions';
@@ -126,7 +125,6 @@ function App() {
               {/* Routes Services */}
               <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
               <Route path="/consulting" element={<ProtectedRoute><Consulting /></ProtectedRoute>} />
-              <Route path="/plus" element={<ProtectedRoute><Plus /></ProtectedRoute>} />
 
               {/* Routes Admin */}
               <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
