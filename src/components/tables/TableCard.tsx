@@ -176,7 +176,7 @@ export const TableCard: React.FC<TableCardProps> = ({
                   }}
                 >
                   <Receipt className="h-4 w-4" />
-                  Marquer payée
+                  Marquer payée (en maintenance)
                 </Button>
               </div>
             )}
