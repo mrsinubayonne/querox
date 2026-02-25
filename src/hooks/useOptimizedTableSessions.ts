@@ -281,7 +281,8 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       return data as unknown as TableSession;
     })()),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      // Force an immediate refetch so the grid updates without manual refresh
+      refetch();
       toast({
         title: isOffline ? "Session créée (hors ligne)" : "Session ouverte",
         description: `Table ${(data as any).table_number} activée`,
