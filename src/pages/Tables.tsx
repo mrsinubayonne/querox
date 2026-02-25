@@ -158,6 +158,10 @@ const Tables: React.FC = () => {
     await reopenSession(session.id);
   }, [reopenSession]);
 
+  const handleQuickPayFromTable = useCallback(async (session: TableSession) => {
+    await handleMarkAsPaid(session.id, "Espèces");
+  }, [handleMarkAsPaid]);
+
   return (
     <SubscriptionGuard feature="la gestion des tables">
       <PageWithSidebar>
@@ -286,6 +290,7 @@ const Tables: React.FC = () => {
                 filteredTableNumbers={filteredTableNumbers}
                 onTableClick={handleTableClick}
                 onTableRename={handleTableRename}
+                onMarkAsPaid={handleQuickPayFromTable}
               />
               {filteredTableNumbers.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">

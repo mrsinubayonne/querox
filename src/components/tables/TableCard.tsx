@@ -2,7 +2,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Clock, Sparkles, Pencil } from "lucide-react";
+import { Users, Clock, Sparkles, Pencil, Receipt } from "lucide-react";
 import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -13,6 +13,7 @@ interface TableCardProps {
   customName?: string | null;
   onClick: () => void;
   onRename?: () => void;
+  onQuickPay?: () => void;
 }
 
 export const TableCard: React.FC<TableCardProps> = ({
@@ -21,6 +22,7 @@ export const TableCard: React.FC<TableCardProps> = ({
   customName,
   onClick,
   onRename,
+  onQuickPay,
 }) => {
   const getStatusStyles = () => {
     if (!session) {
@@ -163,6 +165,21 @@ export const TableCard: React.FC<TableCardProps> = ({
                 })}
               </span>
             </div>
+
+            {session.status === "closed" && onQuickPay && (
+              <div className="pt-2">
+                <Button
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuickPay();
+                  }}
+                >
+                  <Receipt className="h-4 w-4" />
+                  Marquer payée
+                </Button>
+              </div>
+            )}
 
             {session.status === "active" && (
               <div className="pt-2">
