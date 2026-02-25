@@ -498,10 +498,11 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       await removeFromLocalCache(sessionId);
 
       // Online flow — align with Factures flow: pay invoice first so DB trigger frees table
-      const paidAtIso = new Date().toISOString();
+      const paidAtDate = new Date().toISOString().split('T')[0];
+      const normalizedPaymentMethod = paymentMethod || 'Espèces';
       let paidInvoiceMeta: { id: string; invoice_number: string; total_amount: number } | null = null;
 
-      // Check if debtor session
+      // Resolve debtor flag safely: fallback to cached session when DB row is not returned
       const { data: sessionData, error: sessionLookupError } = await supabase
         .from('table_sessions')
         .select('debtor_id')
@@ -512,53 +513,60 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         throw sessionLookupError;
       }
 
-      const isDebtorDb = sessionData?.debtor_id !== null;
+      const isDebtorDb = typeof sessionData?.debtor_id !== 'undefined'
+        ? sessionData.debtor_id !== null
+        : isDebtorSession;
 
-      if (!isDebtorDb) {
-        // 1) Same path as Factures: update linked invoice by id (fires close_session_on_invoice_paid trigger)
-        const { data: invoiceForSession, error: invoiceLookupError } = await supabase
-          .from('invoices')
-          .select('id, invoice_number, total_amount')
-          .eq('session_id', sessionId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+      // 1) Source of truth: mark the linked invoice as paid (same intent as Factures section)
+      const { data: invoiceForSession, error: invoiceLookupError } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, total_amount, status')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-        if (invoiceLookupError && (invoiceLookupError as any).code !== 'PGRST116') {
-          throw invoiceLookupError;
-        }
-
-        if (invoiceForSession?.id) {
-          const { error: invoicePaymentError } = await supabase
-            .from('invoices')
-            .update({
-              status: 'paid',
-              paid_date: paidAtIso,
-              payment_method: paymentMethod || 'Espèces',
-            })
-            .eq('id', invoiceForSession.id);
-
-          if (invoicePaymentError) throw invoicePaymentError;
-          paidInvoiceMeta = invoiceForSession as { id: string; invoice_number: string; total_amount: number };
-        }
+      if (invoiceLookupError && (invoiceLookupError as any).code !== 'PGRST116') {
+        throw invoiceLookupError;
       }
 
-      // 2) Direct session update as fallback (and required for debtor sessions)
-      const { error: sessionError } = await supabase
-        .from('table_sessions')
-        .update({ status: 'paid', payment_method: paymentMethod })
-        .eq('id', sessionId);
+      if (!invoiceForSession?.id) {
+        throw new Error("Aucune facture liée à cette table. Fermez d'abord la session pour générer la facture.");
+      }
 
-      if (sessionError) {
-        console.error('[markSessionAsPaid] Update failed, retrying with user_id:', sessionError);
-        const { error: retryError } = await supabase
+      if (invoiceForSession.status !== 'paid') {
+        const { error: invoicePaymentError } = await supabase
+          .from('invoices')
+          .update({
+            status: 'paid',
+            paid_date: paidAtDate,
+            payment_method: normalizedPaymentMethod,
+          })
+          .eq('id', invoiceForSession.id);
+
+        if (invoicePaymentError) throw invoicePaymentError;
+      }
+
+      paidInvoiceMeta = invoiceForSession as { id: string; invoice_number: string; total_amount: number };
+
+      // 2) Safety fallback: if invoice was already paid before this click,
+      // trigger won't re-fire, so ensure the session is paid as well.
+      if (invoiceForSession.status === 'paid') {
+        const { error: sessionError } = await supabase
           .from('table_sessions')
-          .update({ status: 'paid', payment_method: paymentMethod })
-          .eq('id', sessionId)
-          .eq('user_id', resolvedUserId);
+          .update({ status: 'paid', payment_method: normalizedPaymentMethod })
+          .eq('id', sessionId);
 
-        // If invoice update already succeeded, don't fail hard: DB trigger may have already closed the table.
-        if (retryError && !paidInvoiceMeta) throw retryError;
+        if (sessionError) {
+          console.error('[markSessionAsPaid] Session fallback update failed:', sessionError);
+          const { error: retryError } = await supabase
+            .from('table_sessions')
+            .update({ status: 'paid', payment_method: normalizedPaymentMethod })
+            .eq('id', sessionId)
+            .eq('user_id', resolvedUserId);
+
+          if (retryError) throw retryError;
+        }
       }
 
       // 3) Create accounting transaction when we have paid invoice metadata
@@ -587,7 +595,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
               status: 'completed',
               date: new Date().toISOString().split('T')[0],
               description: `Paiement de la facture ${invoiceNum}`,
-              payment_method: paymentMethod || 'Espèces',
+              payment_method: normalizedPaymentMethod,
             }]);
         }
       }
@@ -596,16 +604,14 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
       return { isDebtorSession: isDebtorDb };
     })()),
-    onSuccess: ({ isDebtorSession }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       queryClient.refetchQueries({ queryKey: ['table-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
         title: isOffline ? "Paiement enregistré (hors ligne)" : "Paiement enregistré",
-        description: isDebtorSession 
-          ? "Session fermée. Facture impayée jusqu'au paiement du débiteur."
-          : "Session et facture marquées comme payées.",
+        description: "La facture est marquée payée et la table est libérée.",
       });
     },
     onError: (error: Error) => {
