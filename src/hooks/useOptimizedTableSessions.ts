@@ -489,9 +489,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       return { hasDebtor: hasDebtorDb };
     })()),
     onSuccess: ({ hasDebtor }) => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      }, 5000);
+      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.refetchQueries({ queryKey: ['invoices'] });
       toast({
@@ -665,9 +663,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       return { isDebtorSession: isDebtorDb };
     })()),
     onSuccess: ({ isDebtorSession }) => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      }, 30000);
+      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
@@ -747,9 +743,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       if (error) throw error;
     })()),
     onSuccess: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      }, 5000);
+      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
@@ -762,50 +756,6 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     },
   });
 
-  const deleteSessionMutation = useMutation({
-    mutationFn: (sessionId: string) => withTimeout((async () => {
-      // Delete related invoices first
-      await supabase
-        .from('invoices')
-        .delete()
-        .eq('session_id', sessionId);
-
-      // Delete related orders
-      await supabase
-        .from('orders')
-        .delete()
-        .eq('session_id', sessionId);
-
-      // Delete the session itself
-      const { error } = await supabase
-        .from('table_sessions')
-        .delete()
-        .eq('id', sessionId);
-
-      if (error) throw error;
-
-      // Remove from local cache
-      const currentSessions = sessions || [];
-      const updatedSessions = currentSessions.filter(s => s.id !== sessionId);
-      queryClient.setQueryData(sessionsQueryKey, updatedSessions);
-      if (user) {
-        await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
-      }
-    })()),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      toast({
-        title: "Table libérée",
-        description: "La session a été supprimée avec succès.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Erreur", description: error.message || "Impossible de libérer la table.", variant: "destructive" });
-    },
-  });
 
   const getActiveSessionForTable = useCallback((tableNumber: string): TableSession | null => {
     if (!sessions) return null;
@@ -819,7 +769,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     loading: isLoading,
     outletLoading,
     isOffline: dataOffline,
-    isMutating: createSessionMutation.isPending || closeSessionMutation.isPending || markSessionAsPaidMutation.isPending || reopenSessionMutation.isPending || deleteSessionMutation.isPending,
+    isMutating: createSessionMutation.isPending || closeSessionMutation.isPending || markSessionAsPaidMutation.isPending || reopenSessionMutation.isPending,
     createSession: createSessionMutation.mutateAsync,
     closeSession: closeSessionMutation.mutateAsync,
     markSessionAsPaid: (sessionId: string, paymentMethod?: string) =>
