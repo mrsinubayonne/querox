@@ -497,7 +497,53 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       markSessionPaidLocally(sessionId);
       await removeFromLocalCache(sessionId);
 
-      // Online flow — simple update, no fragile row-count check
+      // Online flow — align with Factures flow: pay invoice first so DB trigger frees table
+      const paidAtIso = new Date().toISOString();
+      let paidInvoiceMeta: { id: string; invoice_number: string; total_amount: number } | null = null;
+
+      // Check if debtor session
+      const { data: sessionData, error: sessionLookupError } = await supabase
+        .from('table_sessions')
+        .select('debtor_id')
+        .eq('id', sessionId)
+        .maybeSingle();
+
+      if (sessionLookupError && (sessionLookupError as any).code !== 'PGRST116') {
+        throw sessionLookupError;
+      }
+
+      const isDebtorDb = sessionData?.debtor_id !== null;
+
+      if (!isDebtorDb) {
+        // 1) Same path as Factures: update linked invoice by id (fires close_session_on_invoice_paid trigger)
+        const { data: invoiceForSession, error: invoiceLookupError } = await supabase
+          .from('invoices')
+          .select('id, invoice_number, total_amount')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (invoiceLookupError && (invoiceLookupError as any).code !== 'PGRST116') {
+          throw invoiceLookupError;
+        }
+
+        if (invoiceForSession?.id) {
+          const { error: invoicePaymentError } = await supabase
+            .from('invoices')
+            .update({
+              status: 'paid',
+              paid_date: paidAtIso,
+              payment_method: paymentMethod || 'Espèces',
+            })
+            .eq('id', invoiceForSession.id);
+
+          if (invoicePaymentError) throw invoicePaymentError;
+          paidInvoiceMeta = invoiceForSession as { id: string; invoice_number: string; total_amount: number };
+        }
+      }
+
+      // 2) Direct session update as fallback (and required for debtor sessions)
       const { error: sessionError } = await supabase
         .from('table_sessions')
         .update({ status: 'paid', payment_method: paymentMethod })
@@ -511,59 +557,38 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
           .eq('id', sessionId)
           .eq('user_id', resolvedUserId);
 
-        if (retryError) throw retryError;
+        // If invoice update already succeeded, don't fail hard: DB trigger may have already closed the table.
+        if (retryError && !paidInvoiceMeta) throw retryError;
       }
 
-      // Check if debtor session
-      const { data: sessionData } = await supabase
-        .from('table_sessions')
-        .select('debtor_id')
-        .eq('id', sessionId)
-        .maybeSingle();
+      // 3) Create accounting transaction when we have paid invoice metadata
+      if (!isDebtorDb && paidInvoiceMeta) {
+        const invoiceNum = paidInvoiceMeta.invoice_number;
+        const invoiceAmount = paidInvoiceMeta.total_amount;
 
-      const isDebtorDb = sessionData?.debtor_id !== null;
-
-      if (!isDebtorDb) {
-        // Update invoice to paid
-        const { data: paidInvoice } = await supabase
-          .from('invoices')
-          .update({ 
-            status: 'paid',
-            paid_date: new Date().toISOString(),
-            payment_method: paymentMethod || 'Espèces'
-          })
-          .eq('session_id', sessionId)
-          .select('invoice_number, total_amount')
+        // Check if transaction already exists to avoid duplicates
+        const { data: existingTx } = await supabase
+          .from('transactions')
+          .select('id')
+          .eq('title', `Facture ${invoiceNum}`)
+          .eq('user_id', resolvedUserId)
           .maybeSingle();
 
-        // CRITICAL: Create accounting transaction (was missing in online flow!)
-        if (paidInvoice) {
-          const invoiceNum = (paidInvoice as any).invoice_number;
-          const invoiceAmount = (paidInvoice as any).total_amount;
-          // Check if transaction already exists to avoid duplicates
-          const { data: existingTx } = await supabase
+        if (!existingTx) {
+          await supabase
             .from('transactions')
-            .select('id')
-            .eq('title', `Facture ${invoiceNum}`)
-            .eq('user_id', resolvedUserId)
-            .maybeSingle();
-
-          if (!existingTx) {
-            await supabase
-              .from('transactions')
-              .insert([{
-                user_id: resolvedUserId,
-                outlet_id: scopedOutletId,
-                title: `Facture ${invoiceNum}`,
-                amount: invoiceAmount,
-                type: 'income',
-                category: 'facture',
-                status: 'completed',
-                date: new Date().toISOString().split('T')[0],
-                description: `Paiement de la facture ${invoiceNum}`,
-                payment_method: paymentMethod || 'Espèces',
-              }]);
-          }
+            .insert([{
+              user_id: resolvedUserId,
+              outlet_id: scopedOutletId,
+              title: `Facture ${invoiceNum}`,
+              amount: invoiceAmount,
+              type: 'income',
+              category: 'facture',
+              status: 'completed',
+              date: new Date().toISOString().split('T')[0],
+              description: `Paiement de la facture ${invoiceNum}`,
+              payment_method: paymentMethod || 'Espèces',
+            }]);
         }
       }
 
