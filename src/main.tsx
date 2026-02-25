@@ -58,7 +58,7 @@ const queryClient = new QueryClient({
       },
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
       refetchOnWindowFocus: false,
-      refetchOnMount: false,      // On utilise IndexedDB, pas de refetch automatique
+      refetchOnMount: true,       // Toujours vérifier le serveur quand on navigue (offline protégé par networkMode)
       refetchOnReconnect: true,   // Refresh quand la connexion revient
       placeholderData: (previousData: unknown) => previousData,
       networkMode: 'offlineFirst', // CRITIQUE : utilise le cache si offline
@@ -174,7 +174,7 @@ createRoot(document.getElementById("root")!).render(
       persistOptions={{
         persister,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 JOURS
-        buster: 'v2-table-sync-2026-02-25', // Force un refresh du cache persistant après correctifs sync tables
+        buster: 'v3-audit-fix', // Force reset complet du cache après audit
       }}
     >
       <AuthProvider>
