@@ -3,14 +3,11 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Minus, Search, X, WifiOff } from "lucide-react";
@@ -46,7 +43,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 }) => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { toast } = useToast();
-  const { outletId } = useRestaurant();
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const [numberOfGuests, setNumberOfGuests] = useState("");
@@ -58,6 +54,13 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const [customItemPrice, setCustomItemPrice] = useState("");
 
   const { menuItems } = useInternalMenuItems(isOpen);
+
+  // CRITICAL: Use the EXACT same userId/outletId logic as useOptimizedTableSessions
+  // to ensure cache keys match perfectly
+  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
+  const scopedOutletId = (localStorage.getItem('selectedOutletId') || undefined) as string | undefined;
+  const sessionsQueryKey = ['table-sessions', resolvedUserId, scopedOutletId] as const;
+  const ordersQueryKey = ['orders', resolvedUserId, scopedOutletId] as const;
 
   // Reset cart when modal opens
   React.useEffect(() => {
@@ -81,7 +84,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const addToCart = (item: typeof menuItems[0]) => {
     const itemData = menuItems.find(m => m.id === item.id);
     
-    // Si c'est un plat personnalisable, demander le prix et le nom
     if (itemData && (itemData as any).is_custom_price) {
       const customPrice = prompt("Entrez le prix pour ce plat:");
       const customName = (itemData as any).is_custom_name 
@@ -93,7 +95,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       setCart((prev) => [
         ...prev, 
         { 
-          id: item.id + Date.now(), // Unique ID pour chaque plat custom
+          id: item.id + Date.now(),
           name: customName || item.name, 
           price: Number(customPrice), 
           quantity: 1 
@@ -188,23 +190,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
     try {
       if (!user) throw new Error("Non authentifié");
 
-      const effectiveUserId = isTeamMember
-        ? (teamMemberSession?.ownerId || user.id)
-        : user.id;
-
-      const resolvedOutletId = outletId || localStorage.getItem("selectedOutletId");
-      if (!resolvedOutletId) {
-        toast({
-          title: "Erreur",
-          description: "Aucun point de vente sélectionné.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const outletKey = resolvedOutletId || undefined;
-      const sessionsKey = ["table-sessions", effectiveUserId, outletKey] as const;
-      const ordersKey = ["orders", effectiveUserId, outletKey] as const;
+      const guestCount = parseInt(numberOfGuests) || 1;
 
       const orderItems = cart.map((item) => ({
         id: item.id,
@@ -214,7 +200,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       }));
 
       if (isOffline) {
-        // Offline mode: create session and order locally
         const sessionId = generateLocalId();
         const orderId = generateLocalId();
         const nowIso = new Date().toISOString();
@@ -225,10 +210,10 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           operation: 'insert',
           data: {
             id: sessionId,
-            user_id: effectiveUserId,
-            outlet_id: resolvedOutletId,
+            user_id: resolvedUserId,
+            outlet_id: scopedOutletId || null,
             table_number: tableNumber,
-            number_of_guests: parseInt(numberOfGuests) || 1,
+            number_of_guests: guestCount,
             status: 'active',
             total_amount: totalAmount,
             started_at: nowIso,
@@ -236,8 +221,8 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             updated_at: nowIso,
           },
           localId: sessionId,
-          userId: effectiveUserId,
-          outletId: outletKey,
+          userId: user.id,
+          outletId: scopedOutletId,
           maxRetries: 3,
           conflictResolution: 'client-wins',
         });
@@ -248,8 +233,8 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           operation: 'insert',
           data: {
             id: orderId,
-            user_id: effectiveUserId,
-            outlet_id: resolvedOutletId,
+            user_id: resolvedUserId,
+            outlet_id: scopedOutletId || null,
             session_id: sessionId,
             table_number: tableNumber,
             order_type: 'sur_place',
@@ -261,39 +246,38 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             updated_at: nowIso,
           },
           localId: orderId,
-          userId: effectiveUserId,
-          outletId: outletKey,
+          userId: user.id,
+          outletId: scopedOutletId,
           maxRetries: 3,
           conflictResolution: 'client-wins',
         });
 
-        // Update caches immediately (offline: invalidation alone doesn't refresh UI)
-        const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
+        // Update caches using the SAME keys as the hook
         const newSession = {
           id: sessionId,
-          user_id: effectiveUserId,
-          outlet_id: resolvedOutletId,
+          user_id: resolvedUserId,
+          outlet_id: scopedOutletId || null,
           debtor_id: null,
           table_number: tableNumber,
           custom_table_name: null,
-          status: 'active',
+          status: 'active' as const,
           started_at: nowIso,
           closed_at: null,
-          number_of_guests: parseInt(numberOfGuests) || 1,
+          number_of_guests: guestCount,
           total_amount: totalAmount,
           notes: null,
           created_at: nowIso,
           updated_at: nowIso,
         };
+        const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) || [];
         const nextSessions = [newSession, ...currentSessions];
-        queryClient.setQueryData(sessionsKey, nextSessions);
-        await storeData('table_sessions', nextSessions as any, effectiveUserId, outletKey);
+        queryClient.setQueryData(sessionsQueryKey, nextSessions);
+        await storeData('table_sessions', nextSessions as any, resolvedUserId, scopedOutletId);
 
-        const currentOrders = (queryClient.getQueryData(ordersKey) as any[] | undefined) || [];
         const newOrder = {
           id: orderId,
-          user_id: effectiveUserId,
-          outlet_id: resolvedOutletId,
+          user_id: resolvedUserId,
+          outlet_id: scopedOutletId || null,
           session_id: sessionId,
           table_number: tableNumber,
           order_type: 'sur_place',
@@ -304,9 +288,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           created_at: nowIso,
           updated_at: nowIso,
         };
-        const nextOrders = [newOrder, ...currentOrders];
-        queryClient.setQueryData(ordersKey, nextOrders);
-        await storeData('orders', nextOrders as any, effectiveUserId, outletKey);
+        const currentOrders = (queryClient.getQueryData(ordersQueryKey) as any[] | undefined) || [];
+        queryClient.setQueryData(ordersQueryKey, [newOrder, ...currentOrders]);
+        await storeData('orders', [newOrder, ...currentOrders] as any, resolvedUserId, scopedOutletId);
 
         toast({
           title: "Session créée (hors ligne)",
@@ -321,19 +305,19 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         return;
       }
 
-      // Online mode — optimistic but consistent: keep modal open until DB is confirmed
+      // ===== ONLINE MODE =====
+      // Step 1: Optimistic update using the EXACT same cache key as the hook
       const nowIso = new Date().toISOString();
-      const guestCount = parseInt(numberOfGuests) || 1;
       const tempSessionId = `temp-${Date.now()}`;
 
       const optimisticSession = {
         id: tempSessionId,
-        user_id: effectiveUserId,
-        outlet_id: resolvedOutletId,
+        user_id: resolvedUserId,
+        outlet_id: scopedOutletId || null,
         debtor_id: null,
         table_number: tableNumber,
         custom_table_name: null,
-        status: 'active',
+        status: 'active' as const,
         started_at: nowIso,
         closed_at: null,
         number_of_guests: guestCount,
@@ -344,15 +328,16 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         updated_at: nowIso,
       };
 
-      const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
-      queryClient.setQueryData(sessionsKey, [optimisticSession, ...currentSessions]);
+      const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) || [];
+      queryClient.setQueryData(sessionsQueryKey, [optimisticSession, ...currentSessions]);
 
       try {
+        // Step 2: Insert session in DB
         const { data: session, error: sessionError } = await supabase
           .from("table_sessions")
           .insert([{
-            user_id: effectiveUserId,
-            outlet_id: resolvedOutletId,
+            user_id: resolvedUserId,
+            outlet_id: scopedOutletId,
             table_number: tableNumber,
             number_of_guests: guestCount,
             status: "active",
@@ -362,14 +347,16 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
         if (sessionError) throw sessionError;
 
-        const sessionsAfterInsert = ((queryClient.getQueryData(sessionsKey) as any[] | undefined) || [])
+        // Step 3: Replace temp ID with real ID in cache
+        const sessionsAfterInsert = ((queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) || [])
           .map((s: any) => (s.id === tempSessionId ? { ...optimisticSession, id: session.id } : s));
-        queryClient.setQueryData(sessionsKey, sessionsAfterInsert);
-        await storeData('table_sessions', sessionsAfterInsert as any, effectiveUserId, outletKey);
+        queryClient.setQueryData(sessionsQueryKey, sessionsAfterInsert);
+        await storeData('table_sessions', sessionsAfterInsert as any, resolvedUserId, scopedOutletId);
 
+        // Step 4: Insert order
         const { error: orderError } = await supabase.from("orders").insert([{
-          user_id: effectiveUserId,
-          outlet_id: resolvedOutletId,
+          user_id: resolvedUserId,
+          outlet_id: scopedOutletId,
           session_id: session.id,
           table_number: tableNumber,
           order_type: "sur_place",
@@ -381,12 +368,11 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
         if (orderError) throw orderError;
 
-        const orderId = `optimistic-order-${Date.now()}`;
-        const currentOrders = (queryClient.getQueryData(ordersKey) as any[] | undefined) || [];
-        const nextOrders = [{
-          id: orderId,
-          user_id: effectiveUserId,
-          outlet_id: resolvedOutletId,
+        // Step 5: Update orders cache
+        const orderObj = {
+          id: `order-${Date.now()}`,
+          user_id: resolvedUserId,
+          outlet_id: scopedOutletId,
           session_id: session.id,
           table_number: tableNumber,
           order_type: 'sur_place',
@@ -396,9 +382,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           status: 'pending',
           created_at: nowIso,
           updated_at: nowIso,
-        }, ...currentOrders];
-        queryClient.setQueryData(ordersKey, nextOrders);
-        await storeData('orders', nextOrders as any, effectiveUserId, outletKey);
+        };
+        const currentOrders = (queryClient.getQueryData(ordersQueryKey) as any[] | undefined) || [];
+        queryClient.setQueryData(ordersQueryKey, [orderObj, ...currentOrders]);
 
         toast({
           title: "Session créée",
@@ -412,11 +398,10 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         onClose();
       } catch (onlineError) {
         console.error("Error creating session with order (online):", onlineError);
-        queryClient.setQueryData(sessionsKey, (prev: any[] = []) => prev.filter((s) => s.id !== tempSessionId));
+        // Rollback optimistic update
+        queryClient.setQueryData(sessionsQueryKey, (prev: any[] = []) => prev.filter((s) => s.id !== tempSessionId));
         throw onlineError;
       }
-
-      return;
     } catch (error: any) {
       console.error("Error creating session with order:", error);
       toast({
@@ -432,7 +417,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col overflow-hidden p-0">
-        {/* Header avec bouton d'action principal */}
+        {/* Header */}
         <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b bg-background">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -467,9 +452,8 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 md:gap-6 flex-1 overflow-hidden px-6">
-          {/* FORMULAIRE - GAUCHE */}
+          {/* LEFT - Search */}
           <div className="flex-1 space-y-4 overflow-y-auto pr-2 md:pr-4 min-h-0">
-            {/* Nombre de personnes */}
             <div className="space-y-2">
               <Label htmlFor="guests">Nombre de personnes (optionnel)</Label>
               <Input
@@ -482,10 +466,8 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
               />
             </div>
 
-
             <Separator />
 
-            {/* Recherche de plats */}
             <div className="space-y-2">
               <Label htmlFor="search">Rechercher un plat</Label>
               <div className="relative">
@@ -523,7 +505,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             </div>
           </div>
 
-          {/* PANIER - DROITE */}
+          {/* RIGHT - Cart */}
           <div className="w-full md:w-[400px] flex flex-col border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-6 min-h-0">
             <div className="flex items-center justify-between mb-3">
               <Label className="text-base font-semibold">Panier ({cart.length})</Label>
@@ -538,7 +520,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
               </Button>
             </div>
 
-            {/* Custom item form */}
             {showCustomItem && (
               <div className="space-y-3 p-3 mb-3 border rounded-md bg-accent/10">
                 <div className="space-y-2">
