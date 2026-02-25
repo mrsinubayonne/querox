@@ -120,6 +120,8 @@ export const useOptimizedTableSessions = () => {
       }
     },
     enabled: !!user,
+    // Important for published app: always refresh server truth on mount when online.
+    refetchOnMount: isOffline ? false : 'always',
   });
 
   // Clean old markers and filter out locally-paid sessions
@@ -823,7 +825,6 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     markSessionAsPaid: (sessionId: string, paymentMethod?: string) =>
       markSessionAsPaidMutation.mutateAsync({ sessionId, paymentMethod }),
     reopenSession: reopenSessionMutation.mutateAsync,
-    deleteSession: deleteSessionMutation.mutateAsync,
     getActiveSessionForTable,
     refetch,
   };

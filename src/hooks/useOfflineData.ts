@@ -16,6 +16,7 @@ interface UseOfflineDataOptions<TData> {
   buildQuery?: (userId: string, outletId?: string) => Promise<{ data: TData[] | null; error: unknown }>;
   enabled?: boolean;
   staleTime?: number;
+  refetchOnMount?: boolean | 'always';
 }
 
 async function fetchFromSupabase(table: string, select: string, userId: string): Promise<unknown[]> {
@@ -66,6 +67,7 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
     buildQuery,
     enabled = true,
     staleTime = 30 * 1000,
+    refetchOnMount,
   } = options;
   
   const { user, isTeamMember, teamMemberSession } = useAuth();
@@ -120,6 +122,7 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
     staleTime,
     gcTime: 24 * 60 * 60 * 1000,
     networkMode: 'offlineFirst',
+    refetchOnMount,
   });
 
   // Stable channel name (no Date.now() to avoid duplicate subscriptions)

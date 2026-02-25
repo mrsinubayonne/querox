@@ -174,7 +174,7 @@ createRoot(document.getElementById("root")!).render(
       persistOptions={{
         persister,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 JOURS
-        buster: 'v1', // Garder v1 pour ne pas invalider le cache existant
+        buster: 'v2-table-sync-2026-02-25', // Force un refresh du cache persistant après correctifs sync tables
       }}
     >
       <AuthProvider>
