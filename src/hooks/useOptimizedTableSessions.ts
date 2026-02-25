@@ -170,7 +170,8 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
   // Helper to add to local cache
   const addToLocalCache = useCallback(async (newSession: TableSession) => {
     const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
-    const updatedSessions = [newSession, ...currentSessions];
+    const withoutDuplicate = currentSessions.filter(s => s.id !== newSession.id);
+    const updatedSessions = [newSession, ...withoutDuplicate];
     queryClient.setQueryData(sessionsQueryKey, updatedSessions);
     
     if (user) {
@@ -274,6 +275,9 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         .single();
 
       if (error) throw error;
+
+      // Keep UI consistent even when refetch is temporarily suppressed.
+      await addToLocalCache(data as unknown as TableSession);
       return data as unknown as TableSession;
     })()),
     onSuccess: (data) => {
