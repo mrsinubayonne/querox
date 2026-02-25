@@ -140,6 +140,7 @@ const Tables: React.FC = () => {
   const handleMarkAsPaid = async (sessionId: string, paymentMethod?: string) => {
     try {
       await markSessionAsPaid(sessionId, paymentMethod);
+      await refetch();
     } catch (e) {
       console.error('Error marking as paid:', e);
     } finally {

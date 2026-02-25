@@ -598,6 +598,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     })()),
     onSuccess: ({ isDebtorSession }) => {
       queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+      queryClient.refetchQueries({ queryKey: ['table-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
