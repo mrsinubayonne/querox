@@ -497,7 +497,24 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       markSessionPaidLocally(sessionId);
       await removeFromLocalCache(sessionId);
 
-      // Online flow
+      // Online flow — simple update, no fragile row-count check
+      const { error: sessionError } = await supabase
+        .from('table_sessions')
+        .update({ status: 'paid', payment_method: paymentMethod })
+        .eq('id', sessionId);
+
+      if (sessionError) {
+        console.error('[markSessionAsPaid] Update failed, retrying with user_id:', sessionError);
+        const { error: retryError } = await supabase
+          .from('table_sessions')
+          .update({ status: 'paid', payment_method: paymentMethod })
+          .eq('id', sessionId)
+          .eq('user_id', resolvedUserId);
+
+        if (retryError) throw retryError;
+      }
+
+      // Check if debtor session
       const { data: sessionData } = await supabase
         .from('table_sessions')
         .select('debtor_id')
@@ -505,36 +522,6 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         .maybeSingle();
 
       const isDebtorDb = sessionData?.debtor_id !== null;
-
-      const { error: sessionError, data: updatedRows } = await supabase
-        .from('table_sessions')
-        .update({ status: 'paid', payment_method: paymentMethod })
-        .eq('id', sessionId)
-        .select('id');
-
-      if (sessionError) throw sessionError;
-
-      let sessionUpdated = !!updatedRows && updatedRows.length > 0;
-
-      if (!sessionUpdated) {
-        console.error('[markSessionAsPaid] RLS blocked update for session', sessionId, '- retrying with user_id match');
-        const { error: retryError, data: retryRows } = await supabase
-          .from('table_sessions')
-          .update({ status: 'paid', payment_method: paymentMethod })
-          .eq('id', sessionId)
-          .eq('user_id', resolvedUserId)
-          .select('id');
-
-        if (retryError) {
-          console.error('[markSessionAsPaid] Retry failed:', retryError);
-        }
-
-        sessionUpdated = !!retryRows && retryRows.length > 0;
-      }
-
-      if (!sessionUpdated) {
-        throw new Error("Le paiement n'a pas pu mettre à jour le statut de la table.");
-      }
 
       if (!isDebtorDb) {
         // Update invoice to paid
