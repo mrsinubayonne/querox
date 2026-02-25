@@ -174,7 +174,7 @@ createRoot(document.getElementById("root")!).render(
       persistOptions={{
         persister,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 JOURS
-        buster: 'v3-audit-fix', // Force reset complet du cache après audit
+        buster: 'v4-cache-key-fix', // Force reset après fix des clés de cache modal/hook
       }}
     >
       <AuthProvider>
