@@ -41,13 +41,9 @@ function generateOfflineInvoiceNumber(): string {
 const localPaidSessionIds = new Set<string>();
 const localPaidTimestamps = new Map<string, number>();
 
-// Suppress refetch for 20 seconds after payment to avoid replication-lag issues
-let suppressRefetchUntil = 0;
-
 function markSessionPaidLocally(sessionId: string) {
   localPaidSessionIds.add(sessionId);
   localPaidTimestamps.set(sessionId, Date.now());
-  suppressRefetchUntil = Date.now() + 20_000;
 }
 
 function cleanOldPaidMarkers() {
@@ -83,14 +79,6 @@ export const useOptimizedTableSessions = () => {
     table: 'table_sessions',
     queryKey: ['table-sessions'],
     buildQuery: async (userId, outletId) => {
-      // If we just paid, suppress refetch to avoid replication lag
-      if (Date.now() < suppressRefetchUntil) {
-        console.log('⏳ Suppressing table_sessions refetch (paid grace period)');
-        // Return current cached data unchanged
-        const cached = queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined;
-        if (cached) return { data: cached, error: null };
-      }
-
       try {
         let query = supabase
           .from('table_sessions')
@@ -402,86 +390,8 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
       if (error) throw error;
 
-      // Generate invoice inline (no DB trigger exists)
-      try {
-        // Fetch orders for this session
-        const { data: ordersForSession } = await supabase
-          .from('orders')
-          .select('items, customer_name, customer_email, customer_phone')
-          .eq('session_id', sessionId)
-          .order('created_at', { ascending: true });
-
-        const ordersList = (ordersForSession ?? []) as any[];
-        const allItems: any[] = [];
-        ordersList.forEach((order: any) => {
-          const orderItems = Array.isArray(order.items) ? order.items : [];
-          allItems.push(...orderItems);
-        });
-        const firstOrder = ordersList[0] || null;
-
-        // Generate invoice number
-        const { data: invoiceNumber, error: invoiceNumError } = await supabase.rpc('generate_invoice_number');
-        if (invoiceNumError || !invoiceNumber) throw invoiceNumError || new Error('No invoice number');
-
-        // Handle debtor-specific fields
-        let dueDate: string | null = null;
-        let paymentTermsDays: number | null = null;
-        let businessCustomerId: string | null = null;
-        let invoiceType = 'b2c';
-        let billingAddress: string | null = null;
-        let siret: string | null = null;
-
-        if (hasDebtorDb && sessionData.debtor_id) {
-          invoiceType = 'b2b';
-          businessCustomerId = sessionData.debtor_id;
-          const { data: debtor } = await supabase
-            .from('business_customers')
-            .select('payment_terms_days, address, siret')
-            .eq('id', businessCustomerId)
-            .maybeSingle();
-
-          paymentTermsDays = (debtor as any)?.payment_terms_days ?? 30;
-          const now = new Date();
-          now.setDate(now.getDate() + paymentTermsDays);
-          dueDate = now.toISOString().split('T')[0];
-          billingAddress = (debtor as any)?.address ?? null;
-          siret = (debtor as any)?.siret ?? null;
-        }
-
-        // Check if DB trigger already created an invoice for this session
-        const { data: existingInvoice } = await supabase
-          .from('invoices')
-          .select('id')
-          .eq('session_id', sessionId)
-          .maybeSingle();
-
-        if (!existingInvoice) {
-          await supabase
-            .from('invoices')
-            .insert([{
-              user_id: sessionData.user_id,
-              outlet_id: sessionData.outlet_id,
-              session_id: sessionId,
-              business_customer_id: businessCustomerId,
-              invoice_number: invoiceNumber,
-              invoice_type: invoiceType,
-              total_amount: sessionData.total_amount ?? 0,
-              status: 'unpaid',
-              due_date: dueDate,
-              payment_terms_days: paymentTermsDays,
-              notes: `Facture - Table ${sessionData.table_number}`,
-              billing_address: billingAddress,
-              siret,
-              customer_name: firstOrder?.customer_name ?? 'Client',
-              customer_email: firstOrder?.customer_email ?? null,
-              customer_phone: firstOrder?.customer_phone ?? null,
-              items: allItems,
-            }]);
-        }
-      } catch (invoiceError) {
-        console.error('Error generating invoice on close:', invoiceError);
-        // Don't throw - session is closed, invoice generation is best-effort
-      }
+      // Invoice generation is handled by DB trigger: create_invoice_for_closed_session.
+      // We keep frontend close flow focused on session lifecycle to avoid duplicate invoice logic.
 
       // Immediately update local cache so the table turns yellow instantly
       await updateLocalCache({ id: sessionId, status: 'closed', closed_at: new Date().toISOString() });
@@ -603,15 +513,27 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         .select('id');
 
       if (sessionError) throw sessionError;
-      if (!updatedRows || updatedRows.length === 0) {
+
+      let sessionUpdated = !!updatedRows && updatedRows.length > 0;
+
+      if (!sessionUpdated) {
         console.error('[markSessionAsPaid] RLS blocked update for session', sessionId, '- retrying with user_id match');
-        // Fallback: try updating with explicit user_id match
-        const { error: retryError } = await supabase
+        const { error: retryError, data: retryRows } = await supabase
           .from('table_sessions')
           .update({ status: 'paid', payment_method: paymentMethod })
           .eq('id', sessionId)
-          .eq('user_id', resolvedUserId);
-        if (retryError) console.error('[markSessionAsPaid] Retry also failed:', retryError);
+          .eq('user_id', resolvedUserId)
+          .select('id');
+
+        if (retryError) {
+          console.error('[markSessionAsPaid] Retry failed:', retryError);
+        }
+
+        sessionUpdated = !!retryRows && retryRows.length > 0;
+      }
+
+      if (!sessionUpdated) {
+        throw new Error("Le paiement n'a pas pu mettre à jour le statut de la table.");
       }
 
       if (!isDebtorDb) {
@@ -674,6 +596,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       });
     },
     onError: (error: Error) => {
+      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       toast({ title: "Erreur paiement", description: error.message || "Impossible de marquer comme payée.", variant: "destructive" });
     },
   });
