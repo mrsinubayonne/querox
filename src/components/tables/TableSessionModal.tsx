@@ -11,7 +11,7 @@ import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw, XCircle } from "lucide-react";
+import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -44,7 +44,6 @@ interface TableSessionModalProps {
   onCloseSession: (sessionId: string) => Promise<void> | void;
   onMarkAsPaid: (sessionId: string, paymentMethod?: string) => Promise<void> | void;
   onReopenSession?: (sessionId: string) => Promise<void> | void;
-  onDeleteSession?: (sessionId: string) => Promise<void> | void;
   isMutating?: boolean;
 }
 export const TableSessionModal: React.FC<TableSessionModalProps> = ({
@@ -54,7 +53,6 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   onCloseSession,
   onMarkAsPaid,
   onReopenSession,
-  onDeleteSession,
   isMutating = false,
 }) => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -68,7 +66,6 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const [printFormat, setPrintFormat] = useState<'a4' | 'restaurant'>('restaurant');
   const [showPreview, setShowPreview] = useState(false);
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
-  const [showDeleteConfirm] = useState(false);
   const [printReady, setPrintReady] = useState(false);
   const [pendingPrint, setPendingPrint] = useState(false);
   const { celebrate, CelebrationMessage } = usePaidCelebration();
