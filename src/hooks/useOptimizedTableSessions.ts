@@ -576,6 +576,12 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         return { isDebtorSession };
       }
 
+      // CRITICAL: Optimistic update BEFORE DB calls to prevent realtime race condition.
+      // If realtime fires during the DB update, the session is already removed from cache
+      // and the suppress window prevents any refetch from re-adding it.
+      markSessionPaidLocally(sessionId);
+      await removeFromLocalCache(sessionId);
+
       // Online flow
       const { data: sessionData } = await supabase
         .from('table_sessions')
@@ -647,10 +653,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         }
       }
 
-      // Remove session from cache entirely — table becomes free immediately
-      await removeFromLocalCache(sessionId);
-      // Mark as locally paid to prevent realtime/refetch from re-adding it
-      markSessionPaidLocally(sessionId);
+      // Local cache already cleared optimistically at the top of this mutation.
 
       return { isDebtorSession: isDebtorDb };
     })()),
