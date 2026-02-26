@@ -122,8 +122,8 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         paymentMethodString = 'Multiple';
       }
 
-      celebrate();
       await onMarkAsPaid(session.id, paymentMethodString);
+      celebrate();
     } catch (error) {
       console.error('Error marking as paid:', error);
       sonnerToast.error('Erreur lors du paiement. Réessayez.');
@@ -650,27 +650,11 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                 Imprimer
               </Button>
               
-              <Button
-                disabled={busy}
-                variant="default"
-                className="bg-success text-success-foreground hover:bg-success/90"
-                onClick={() => {
-                  trackClick('Tables: Marquer payée (factures)', 'tables');
-                  celebrate();
-                  setShowPaymentMethod(true);
-                }}
-              >
-                🎉 {busy ? "En cours..." : "Marquer comme Payée"}
-              </Button>
-
-              <Button
-                disabled={busy}
-                variant="default"
-                onClick={() => {
-                  trackClick('Tables: Marquer payée (maintenance)', 'tables');
-                }}
-              >
-                {busy ? "En cours..." : "Marquer comme Payée (en maintenance)"}
+              <Button disabled={busy} onClick={() => {
+                trackClick('Tables: Marquer payée', 'tables');
+                setShowPaymentMethod(true);
+              }}>
+                {busy ? "En cours..." : "Marquer comme Payée"}
               </Button>
             </>}
 

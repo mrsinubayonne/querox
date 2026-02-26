@@ -166,6 +166,20 @@ export const TableCard: React.FC<TableCardProps> = ({
               </span>
             </div>
 
+            {session.status === "closed" && onQuickPay && (
+              <div className="pt-2">
+                <Button
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuickPay();
+                  }}
+                >
+                  <Receipt className="h-4 w-4" />
+                  Marquer payée
+                </Button>
+              </div>
+            )}
 
             {session.status === "active" && (
               <div className="pt-2">
