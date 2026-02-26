@@ -17,16 +17,34 @@ type OfflineBusinessPeriod = {
   [key: string]: unknown;
 };
 
-const getOfflinePeriodsForOutlet = async (userId: string, outletId: string): Promise<OfflineBusinessPeriod[]> => {
-  const scoped = await getData<OfflineBusinessPeriod[]>('business_periods', userId, outletId);
-  if (Array.isArray(scoped?.data) && scoped.data.length > 0) {
-    return scoped.data;
+const normalizeOfflinePeriods = (value: unknown): OfflineBusinessPeriod[] => {
+  if (Array.isArray(value)) {
+    return value as OfflineBusinessPeriod[];
   }
 
-  const unscoped = await getData<OfflineBusinessPeriod[]>('business_periods', userId);
-  return ((unscoped?.data || []) as OfflineBusinessPeriod[]).filter(
-    (period) => !period.outlet_id || period.outlet_id === outletId
-  );
+  if (value && typeof value === 'object' && 'id' in (value as Record<string, unknown>)) {
+    return [value as OfflineBusinessPeriod];
+  }
+
+  return [];
+};
+
+const getOfflinePeriodsForOutlet = async (userId: string, outletId: string): Promise<OfflineBusinessPeriod[]> => {
+  try {
+    const scoped = await getData<OfflineBusinessPeriod[] | OfflineBusinessPeriod>('business_periods', userId, outletId);
+    const scopedPeriods = normalizeOfflinePeriods(scoped?.data);
+    if (scopedPeriods.length > 0) {
+      return scopedPeriods;
+    }
+
+    const unscoped = await getData<OfflineBusinessPeriod[] | OfflineBusinessPeriod>('business_periods', userId);
+    return normalizeOfflinePeriods(unscoped?.data).filter(
+      (period) => !period.outlet_id || period.outlet_id === outletId
+    );
+  } catch (error) {
+    console.warn('[Offline] Impossible de lire le cache business_periods (auto-start):', error);
+    return [];
+  }
 };
 
 const upsertOfflinePeriodInCaches = async (
@@ -38,8 +56,8 @@ const upsertOfflinePeriodInCaches = async (
   const scopedNext = [newPeriod, ...existingOutletPeriods.filter((period) => period.id !== newPeriod.id)];
   await storeData('business_periods', scopedNext, userId, outletId);
 
-  const unscoped = await getData<OfflineBusinessPeriod[]>('business_periods', userId);
-  const unscopedList = (unscoped?.data || []) as OfflineBusinessPeriod[];
+  const unscoped = await getData<OfflineBusinessPeriod[] | OfflineBusinessPeriod>('business_periods', userId);
+  const unscopedList = normalizeOfflinePeriods(unscoped?.data);
   const unscopedNext = [newPeriod, ...unscopedList.filter((period) => period.id !== newPeriod.id)];
   await storeData('business_periods', unscopedNext, userId);
 };

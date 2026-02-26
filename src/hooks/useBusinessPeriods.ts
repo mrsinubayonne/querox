@@ -31,6 +31,30 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
   const [currentPeriod, setCurrentPeriod] = useState<BusinessPeriod | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const asPeriodsArray = (value: unknown): BusinessPeriod[] => {
+    if (Array.isArray(value)) {
+      return value as BusinessPeriod[];
+    }
+
+    if (value && typeof value === 'object' && 'id' in (value as Record<string, unknown>)) {
+      return [value as BusinessPeriod];
+    }
+
+    return [];
+  };
+
+  const getCachedPeriods = async (targetOutletId?: string): Promise<BusinessPeriod[]> => {
+    if (!user) return [];
+
+    try {
+      const cached = await getData<BusinessPeriod[] | BusinessPeriod>('business_periods', user.id, targetOutletId);
+      return asPeriodsArray(cached?.data);
+    } catch (error) {
+      console.warn('[Offline] Impossible de lire le cache business_periods:', error);
+      return [];
+    }
+  };
+
   useEffect(() => {
     if (user && outletId) {
       initializePeriod();
@@ -76,8 +100,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     try {
       if (isOffline) {
         // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
-        const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-        const allPeriods = (cached?.data as BusinessPeriod[]) || [];
+        const allPeriods = await getCachedPeriods();
         
         // Filter: closed periods for this outlet, sorted desc
         const closed = allPeriods
@@ -106,8 +129,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       setPeriods(data || []);
       
       // Cache for offline use
-      const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-      const existingAll = (cached?.data as BusinessPeriod[]) || [];
+      const existingAll = await getCachedPeriods();
       // Merge: replace closed periods for this outlet, keep others
       const otherPeriods = existingAll.filter(p => 
         p.ended_at === null || (outletId && p.outlet_id !== outletId)
@@ -117,8 +139,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     } catch (error) {
       console.error('Error fetching periods:', error);
       // Fallback to cache on network error
-      const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-      const allPeriods = (cached?.data as BusinessPeriod[]) || [];
+      const allPeriods = await getCachedPeriods();
       const closed = allPeriods
         .filter(p => p.ended_at !== null && (!outletId || p.outlet_id === outletId))
         .sort((a, b) => (b.ended_at || '').localeCompare(a.ended_at || ''));
@@ -138,8 +159,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     try {
       if (isOffline) {
         // --- MODE HORS-LIGNE : chercher la période active dans le cache ---
-        const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-        const allPeriods = (cached?.data as BusinessPeriod[]) || [];
+        const allPeriods = await getCachedPeriods();
         const active = allPeriods.find(p => 
           p.ended_at === null && p.outlet_id === outletId
         );
@@ -171,8 +191,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         localStorage.setItem(`active_period_${user.id}_${outletId}`, activePeriod.id);
         
         // Cache active period
-        const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-        const existing = (cached?.data as BusinessPeriod[]) || [];
+        const existing = await getCachedPeriods();
         const withoutThis = existing.filter(p => p.id !== activePeriod.id);
         await storeData('business_periods', [...withoutThis, activePeriod], user.id);
       } else {
@@ -181,8 +200,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     } catch (error) {
       console.error('Error initializing period:', error);
       // Fallback to cache
-      const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-      const allPeriods = (cached?.data as BusinessPeriod[]) || [];
+      const allPeriods = await getCachedPeriods();
       const active = allPeriods.find(p => p.ended_at === null && p.outlet_id === outletId);
       if (active) {
         setCurrentPeriod(active);
@@ -225,11 +243,8 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
 
     try {
       if (isOffline) {
-        const scopedCached = await getData<BusinessPeriod[]>('business_periods', user.id, outletId);
-        const scopedPeriods = (scopedCached?.data as BusinessPeriod[]) || [];
-
-        const unscopedCached = await getData<BusinessPeriod[]>('business_periods', user.id);
-        const unscopedPeriods = (unscopedCached?.data as BusinessPeriod[]) || [];
+        const scopedPeriods = await getCachedPeriods(outletId);
+        const unscopedPeriods = await getCachedPeriods();
 
         const activePeriod =
           scopedPeriods.find((period) => period.ended_at === null && period.outlet_id === outletId) ||
@@ -258,33 +273,37 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
           updated_at: now,
         };
 
-        await queueMutation({
-          table: 'business_periods',
-          operation: 'insert',
-          data: localPeriod as unknown as Record<string, unknown>,
-          localId: localPeriod.id,
-          userId: user.id,
-          outletId,
-          maxRetries: 3,
-          conflictResolution: 'client-wins',
-        });
-
-        await storeData(
-          'business_periods',
-          [localPeriod, ...scopedPeriods.filter((period) => period.id !== localPeriod.id)],
-          user.id,
-          outletId
-        );
-
-        await storeData(
-          'business_periods',
-          [localPeriod, ...unscopedPeriods.filter((period) => period.id !== localPeriod.id)],
-          user.id
-        );
-
+        // Mettre à jour l'UI immédiatement pour éviter l'impression d'échec
         setCurrentPeriod(localPeriod);
         localStorage.setItem(`active_period_${user.id}_${outletId}`, localPeriod.id);
-        toast.success('Nouvelle période démarrée (hors ligne)');
+
+        const scopedNext = [localPeriod, ...scopedPeriods.filter((period) => period.id !== localPeriod.id)];
+        const unscopedNext = [localPeriod, ...unscopedPeriods.filter((period) => period.id !== localPeriod.id)];
+
+        const persistenceResults = await Promise.allSettled([
+          queueMutation({
+            table: 'business_periods',
+            operation: 'insert',
+            data: localPeriod as unknown as Record<string, unknown>,
+            localId: localPeriod.id,
+            userId: user.id,
+            outletId,
+            maxRetries: 3,
+            conflictResolution: 'client-wins',
+          }),
+          storeData('business_periods', scopedNext, user.id, outletId),
+          storeData('business_periods', unscopedNext, user.id),
+        ]);
+
+        const hasPersistenceError = persistenceResults.some((result) => result.status === 'rejected');
+
+        if (hasPersistenceError) {
+          console.error('[Offline] Démarrage partiel: persistance incomplète', persistenceResults);
+          toast.success('Période démarrée localement (synchronisation en attente)');
+        } else {
+          toast.success('Nouvelle période démarrée (hors ligne)');
+        }
+
         return;
       }
 
@@ -324,8 +343,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       }
       
       // Cache the new period
-      const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-      const existing = (cached?.data as BusinessPeriod[]) || [];
+      const existing = await getCachedPeriods();
       await storeData('business_periods', [...existing, data], user.id);
       
       toast.success('Nouvelle période démarrée');
@@ -430,8 +448,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         paid_invoices: paidInvoices,
         unpaid_invoices: unpaidInvoices,
       };
-      const cached = await getData<BusinessPeriod[]>('business_periods', user.id);
-      const existing = (cached?.data as BusinessPeriod[]) || [];
+      const existing = await getCachedPeriods();
       const updated = existing.map(p => p.id === closedPeriod.id ? closedPeriod : p);
       await storeData('business_periods', updated, user.id);
 
