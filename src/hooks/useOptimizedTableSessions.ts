@@ -364,7 +364,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         await upsertInvoiceInCache(invoiceToCache);
 
         // Ensure a business period exists for offline reports
-        await ensurePeriodExistsOffline(user?.id || '', scopedOutletId || '');
+        await ensurePeriodExistsOffline(resolvedUserId, scopedOutletId);
 
         // Update local cache
         await updateLocalCache({ id: sessionId, status: newStatus as any, closed_at: new Date().toISOString() });
@@ -490,7 +490,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         }
 
         // Ensure a business period exists for offline reports
-        await ensurePeriodExistsOffline(user?.id || '', scopedOutletId || '');
+        await ensurePeriodExistsOffline(resolvedUserId, scopedOutletId);
 
         // Remove session from cache entirely — table becomes free immediately
         await removeFromLocalCache(sessionId);

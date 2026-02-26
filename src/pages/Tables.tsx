@@ -143,7 +143,7 @@ const Tables: React.FC = () => {
     try {
       await markSessionAsPaid(sessionId, paymentMethod);
       celebrate();
-      await refetch();
+      void refetch();
     } catch (e) {
       console.error('Error marking as paid:', e);
     } finally {
@@ -162,8 +162,14 @@ const Tables: React.FC = () => {
   }, [reopenSession]);
 
   const handleQuickPayFromTable = useCallback(async (session: TableSession) => {
-    await handleMarkAsPaid(session.id, "Espèces");
-  }, [handleMarkAsPaid]);
+    try {
+      // Animation dédiée au bouton uniquement (pas de confetti global ici)
+      await markSessionAsPaid(session.id, "Espèces");
+      void refetch();
+    } catch (e) {
+      console.error('Error quick paying session:', e);
+    }
+  }, [markSessionAsPaid, refetch]);
 
   return (
     <SubscriptionGuard feature="la gestion des tables">

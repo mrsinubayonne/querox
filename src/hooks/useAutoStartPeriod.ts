@@ -10,6 +10,40 @@ import { getData, storeData, queueMutation, generateLocalId } from '@/lib/offlin
  * ou facture est payée alors qu'aucune période n'est active.
  * Fonctionne aussi en mode hors ligne via IndexedDB.
  */
+type OfflineBusinessPeriod = {
+  id: string;
+  ended_at: string | null;
+  outlet_id?: string | null;
+  [key: string]: unknown;
+};
+
+const getOfflinePeriodsForOutlet = async (userId: string, outletId: string): Promise<OfflineBusinessPeriod[]> => {
+  const scoped = await getData<OfflineBusinessPeriod[]>('business_periods', userId, outletId);
+  if (Array.isArray(scoped?.data) && scoped.data.length > 0) {
+    return scoped.data;
+  }
+
+  const unscoped = await getData<OfflineBusinessPeriod[]>('business_periods', userId);
+  return ((unscoped?.data || []) as OfflineBusinessPeriod[]).filter(
+    (period) => !period.outlet_id || period.outlet_id === outletId
+  );
+};
+
+const upsertOfflinePeriodInCaches = async (
+  userId: string,
+  outletId: string,
+  newPeriod: OfflineBusinessPeriod,
+  existingOutletPeriods: OfflineBusinessPeriod[]
+) => {
+  const scopedNext = [newPeriod, ...existingOutletPeriods.filter((period) => period.id !== newPeriod.id)];
+  await storeData('business_periods', scopedNext, userId, outletId);
+
+  const unscoped = await getData<OfflineBusinessPeriod[]>('business_periods', userId);
+  const unscopedList = (unscoped?.data || []) as OfflineBusinessPeriod[];
+  const unscopedNext = [newPeriod, ...unscopedList.filter((period) => period.id !== newPeriod.id)];
+  await storeData('business_periods', unscopedNext, userId);
+};
+
 export const useAutoStartPeriod = (outletId?: string) => {
   const { user } = useAuth();
   const { isOffline } = useNetworkStatus();
@@ -21,26 +55,25 @@ export const useAutoStartPeriod = (outletId?: string) => {
     const checkAndStartPeriod = async () => {
       try {
         if (isOffline) {
-          // Offline: check IndexedDB for active period
-          const cached = await getData<Array<{ id: string; ended_at: string | null }>>('business_periods', user.id, outletId);
-          const periods = cached?.data || [];
-          const activePeriod = periods.find(p => !p.ended_at);
+          const periods = await getOfflinePeriodsForOutlet(user.id, outletId);
+          const activePeriod = periods.find((period) => !period.ended_at);
 
           if (!activePeriod) {
             const newId = generateLocalId();
-            const newPeriod = {
+            const now = new Date().toISOString();
+            const newPeriod: OfflineBusinessPeriod = {
               id: newId,
               user_id: user.id,
               outlet_id: outletId,
-              started_at: new Date().toISOString(),
+              started_at: now,
               ended_at: null,
               total_orders: 0,
               total_invoices: 0,
               paid_invoices: 0,
               unpaid_invoices: 0,
               total_revenue: 0,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
+              created_at: now,
+              updated_at: now,
             };
 
             // Queue for sync
@@ -55,10 +88,7 @@ export const useAutoStartPeriod = (outletId?: string) => {
               conflictResolution: 'client-wins',
             });
 
-            // Update local cache
-            const updatedPeriods = [newPeriod, ...periods];
-            await storeData('business_periods', updatedPeriods, user.id, outletId);
-
+            await upsertOfflinePeriodInCaches(user.id, outletId, newPeriod, periods);
             localStorage.setItem(`active_period_${user.id}_${outletId}`, newId);
 
             toast.success('Période d\'activité démarrée (hors ligne)', {
@@ -178,27 +208,29 @@ export const useAutoStartPeriod = (outletId?: string) => {
  * Exported for direct calls from offline mutation hooks (e.g. markSessionAsPaid).
  * Checks if a period exists in IndexedDB and creates one if not.
  */
-export const ensurePeriodExistsOffline = async (userId: string, outletId: string) => {
+export const ensurePeriodExistsOffline = async (userId: string, outletId?: string) => {
+  if (!userId || !outletId) return;
+
   try {
-    const cached = await getData<Array<{ id: string; ended_at: string | null }>>('business_periods', userId, outletId);
-    const periods = cached?.data || [];
-    const activePeriod = periods.find(p => !p.ended_at);
+    const periods = await getOfflinePeriodsForOutlet(userId, outletId);
+    const activePeriod = periods.find((period) => !period.ended_at);
 
     if (!activePeriod) {
       const newId = generateLocalId();
-      const newPeriod = {
+      const now = new Date().toISOString();
+      const newPeriod: OfflineBusinessPeriod = {
         id: newId,
         user_id: userId,
         outlet_id: outletId,
-        started_at: new Date().toISOString(),
+        started_at: now,
         ended_at: null,
         total_orders: 0,
         total_invoices: 0,
         paid_invoices: 0,
         unpaid_invoices: 0,
         total_revenue: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: now,
+        updated_at: now,
       };
 
       await queueMutation({
@@ -212,8 +244,7 @@ export const ensurePeriodExistsOffline = async (userId: string, outletId: string
         conflictResolution: 'client-wins',
       });
 
-      const updatedPeriods = [newPeriod, ...periods];
-      await storeData('business_periods', updatedPeriods, userId, outletId);
+      await upsertOfflinePeriodInCaches(userId, outletId, newPeriod, periods);
       localStorage.setItem(`active_period_${userId}_${outletId}`, newId);
     }
   } catch (error) {
