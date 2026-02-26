@@ -11,6 +11,7 @@ import { TableSessionModal } from "@/components/tables/TableSessionModal";
 import { RenameTableModal } from "@/components/tables/RenameTableModal";
 import { useOptimizedTableSessions, TableSession } from "@/hooks/useOptimizedTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePaidCelebration } from "@/hooks/usePaidCelebration";
 
 import {
   DropdownMenu,
@@ -31,6 +32,7 @@ const Tables: React.FC = () => {
     refetch,
   } = useOptimizedTableSessions();
 
+  const { celebrate, CelebrationMessage } = usePaidCelebration();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddOrderModal, setShowAddOrderModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
@@ -140,6 +142,7 @@ const Tables: React.FC = () => {
   const handleMarkAsPaid = async (sessionId: string, paymentMethod?: string) => {
     try {
       await markSessionAsPaid(sessionId, paymentMethod);
+      celebrate();
       await refetch();
     } catch (e) {
       console.error('Error marking as paid:', e);
@@ -364,6 +367,7 @@ const Tables: React.FC = () => {
               }}
             />
           )}
+          <CelebrationMessage />
         </div>
       </PageWithSidebar>
     </SubscriptionGuard>
