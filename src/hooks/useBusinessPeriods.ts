@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { getData, storeData } from '@/lib/offlineStorage';
+import { getData, storeData, queueMutation, generateLocalId } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
 
 export interface BusinessPeriod {
@@ -224,6 +224,70 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     if (!user || !outletId) return;
 
     try {
+      if (isOffline) {
+        const scopedCached = await getData<BusinessPeriod[]>('business_periods', user.id, outletId);
+        const scopedPeriods = (scopedCached?.data as BusinessPeriod[]) || [];
+
+        const unscopedCached = await getData<BusinessPeriod[]>('business_periods', user.id);
+        const unscopedPeriods = (unscopedCached?.data as BusinessPeriod[]) || [];
+
+        const activePeriod =
+          scopedPeriods.find((period) => period.ended_at === null && period.outlet_id === outletId) ||
+          unscopedPeriods.find((period) => period.ended_at === null && period.outlet_id === outletId);
+
+        if (activePeriod) {
+          setCurrentPeriod(activePeriod);
+          localStorage.setItem(`active_period_${user.id}_${outletId}`, activePeriod.id);
+          toast.info('Une période est déjà en cours (hors ligne).');
+          return;
+        }
+
+        const now = new Date().toISOString();
+        const localPeriod: BusinessPeriod = {
+          id: generateLocalId(),
+          user_id: user.id,
+          outlet_id: outletId,
+          started_at: now,
+          ended_at: null,
+          total_orders: 0,
+          total_revenue: 0,
+          total_invoices: 0,
+          paid_invoices: 0,
+          unpaid_invoices: 0,
+          created_at: now,
+          updated_at: now,
+        };
+
+        await queueMutation({
+          table: 'business_periods',
+          operation: 'insert',
+          data: localPeriod as unknown as Record<string, unknown>,
+          localId: localPeriod.id,
+          userId: user.id,
+          outletId,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+
+        await storeData(
+          'business_periods',
+          [localPeriod, ...scopedPeriods.filter((period) => period.id !== localPeriod.id)],
+          user.id,
+          outletId
+        );
+
+        await storeData(
+          'business_periods',
+          [localPeriod, ...unscopedPeriods.filter((period) => period.id !== localPeriod.id)],
+          user.id
+        );
+
+        setCurrentPeriod(localPeriod);
+        localStorage.setItem(`active_period_${user.id}_${outletId}`, localPeriod.id);
+        toast.success('Nouvelle période démarrée (hors ligne)');
+        return;
+      }
+
       let checkQuery = supabase
         .from('business_periods')
         .select('id')
