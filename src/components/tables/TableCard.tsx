@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Clock, Sparkles, Pencil, Receipt } from "lucide-react";
+import { Users, Clock, Sparkles, Pencil, Receipt, CheckCircle2, Loader2 } from "lucide-react";
 import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -116,6 +116,50 @@ export const TableCard: React.FC<TableCardProps> = ({
 
   const styles = getStatusStyles();
 
+  // Quick pay sub-component with animation
+  const QuickPayButton: React.FC<{ onQuickPay: () => void }> = ({ onQuickPay: pay }) => {
+    const [paying, setPaying] = useState(false);
+    const [done, setDone] = useState(false);
+
+    const handleClick = async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (paying || done) return;
+      setPaying(true);
+      try {
+        await pay();
+        setDone(true);
+      } catch {
+        setPaying(false);
+      }
+    };
+
+    return (
+      <Button
+        size="sm"
+        disabled={paying || done}
+        className={`transition-all duration-300 ${done ? 'bg-emerald-500 hover:bg-emerald-500 scale-105' : ''}`}
+        onClick={handleClick}
+      >
+        {done ? (
+          <>
+            <CheckCircle2 className="h-4 w-4 animate-in zoom-in-50 duration-300" />
+            Payée ✓
+          </>
+        ) : paying ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Paiement...
+          </>
+        ) : (
+          <>
+            <Receipt className="h-4 w-4" />
+            Marquer payée
+          </>
+        )}
+      </Button>
+    );
+  };
+
   const displayName = session?.custom_table_name || customName || `Table ${tableNumber}`;
 
   return (
@@ -168,16 +212,7 @@ export const TableCard: React.FC<TableCardProps> = ({
 
             {session.status === "closed" && onQuickPay && (
               <div className="pt-2">
-                <Button
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onQuickPay();
-                  }}
-                >
-                  <Receipt className="h-4 w-4" />
-                  Marquer payée
-                </Button>
+                <QuickPayButton onQuickPay={onQuickPay} />
               </div>
             )}
 

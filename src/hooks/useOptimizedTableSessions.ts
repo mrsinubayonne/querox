@@ -6,6 +6,7 @@ import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
 import { useEffect, useCallback, useMemo } from 'react';
 import { useOfflineData } from './useOfflineData';
 import { queueMutation, generateLocalId, storeData, getData } from '@/lib/offlineStorage';
+import { ensurePeriodExistsOffline } from './useAutoStartPeriod';
 import { useNetworkStatus } from './useNetworkStatus';
 import type { Invoice } from '@/hooks/useInvoices';
 import type { Order } from '@/hooks/useOptimizedOrders';
@@ -362,6 +363,9 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
         await upsertInvoiceInCache(invoiceToCache);
 
+        // Ensure a business period exists for offline reports
+        await ensurePeriodExistsOffline(user?.id || '', scopedOutletId || '');
+
         // Update local cache
         await updateLocalCache({ id: sessionId, status: newStatus as any, closed_at: new Date().toISOString() });
 
@@ -484,6 +488,9 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
             conflictResolution: 'client-wins',
           });
         }
+
+        // Ensure a business period exists for offline reports
+        await ensurePeriodExistsOffline(user?.id || '', scopedOutletId || '');
 
         // Remove session from cache entirely — table becomes free immediately
         await removeFromLocalCache(sessionId);
