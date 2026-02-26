@@ -655,11 +655,22 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                 variant="default"
                 className="bg-success text-success-foreground hover:bg-success/90"
                 onClick={() => {
-                  trackClick('Tables: Marquer payée', 'tables');
+                  trackClick('Tables: Marquer payée (factures)', 'tables');
+                  celebrate();
                   setShowPaymentMethod(true);
                 }}
               >
-                {busy ? "En cours..." : "Marquer comme Payée"}
+                🎉 {busy ? "En cours..." : "Marquer comme Payée"}
+              </Button>
+
+              <Button
+                disabled={busy}
+                variant="default"
+                onClick={() => {
+                  trackClick('Tables: Marquer payée (maintenance)', 'tables');
+                }}
+              >
+                {busy ? "En cours..." : "Marquer comme Payée (en maintenance)"}
               </Button>
             </>}
 
