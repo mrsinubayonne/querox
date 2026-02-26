@@ -239,10 +239,13 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
   };
 
   const startNewPeriod = async () => {
-    if (!user || !outletId) return;
+    if (!user || !outletId) {
+      toast.error('Veuillez sélectionner un point de vente avant de démarrer une période');
+      return;
+    }
 
-    try {
-      if (isOffline) {
+    const startOfflinePeriod = async (): Promise<'started' | 'already-active' | 'failed'> => {
+      try {
         const scopedPeriods = await getCachedPeriods(outletId);
         const unscopedPeriods = await getCachedPeriods();
 
@@ -254,7 +257,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
           setCurrentPeriod(activePeriod);
           localStorage.setItem(`active_period_${user.id}_${outletId}`, activePeriod.id);
           toast.info('Une période est déjà en cours (hors ligne).');
-          return;
+          return 'already-active';
         }
 
         const now = new Date().toISOString();
@@ -273,7 +276,6 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
           updated_at: now,
         };
 
-        // Mettre à jour l'UI immédiatement pour éviter l'impression d'échec
         setCurrentPeriod(localPeriod);
         localStorage.setItem(`active_period_${user.id}_${outletId}`, localPeriod.id);
 
@@ -295,15 +297,34 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
           storeData('business_periods', unscopedNext, user.id),
         ]);
 
-        const hasPersistenceError = persistenceResults.some((result) => result.status === 'rejected');
+        const allRejected = persistenceResults.every((result) => result.status === 'rejected');
+        if (allRejected) {
+          console.error('[Offline] Échec complet de persistance:', persistenceResults);
+          setCurrentPeriod(null);
+          localStorage.removeItem(`active_period_${user.id}_${outletId}`);
+          toast.error('Impossible de démarrer la période en local');
+          return 'failed';
+        }
 
-        if (hasPersistenceError) {
+        const hasPartialFailure = persistenceResults.some((result) => result.status === 'rejected');
+        if (hasPartialFailure) {
           console.error('[Offline] Démarrage partiel: persistance incomplète', persistenceResults);
           toast.success('Période démarrée localement (synchronisation en attente)');
         } else {
           toast.success('Nouvelle période démarrée (hors ligne)');
         }
 
+        return 'started';
+      } catch (offlineError) {
+        console.error('[Offline] Erreur au démarrage de période:', offlineError);
+        toast.error('Impossible de démarrer la période hors ligne');
+        return 'failed';
+      }
+    };
+
+    try {
+      if (isOffline || !navigator.onLine) {
+        await startOfflinePeriod();
         return;
       }
 
@@ -341,15 +362,31 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       if (outletId) {
         localStorage.setItem(`active_period_${user.id}_${outletId}`, data.id);
       }
-      
-      // Cache the new period
+
       const existing = await getCachedPeriods();
       await storeData('business_periods', [...existing, data], user.id);
-      
+
       toast.success('Nouvelle période démarrée');
       fetchPeriods();
     } catch (error) {
       console.error('Error starting new period:', error);
+
+      const errorMessage = (error as Error)?.message?.toLowerCase?.() || '';
+      const shouldFallbackOffline =
+        isOffline ||
+        !navigator.onLine ||
+        error instanceof TypeError ||
+        errorMessage.includes('failed to fetch') ||
+        errorMessage.includes('network') ||
+        errorMessage.includes('fetch');
+
+      if (shouldFallbackOffline) {
+        const fallbackResult = await startOfflinePeriod();
+        if (fallbackResult !== 'failed') {
+          return;
+        }
+      }
+
       toast.error('Erreur lors du démarrage de la période');
     }
   };
