@@ -112,10 +112,16 @@ const Factures: React.FC = () => {
 
   const confirmPrint = () => {
     if (!printReady) {
-      toast({
-        title: 'Préparation de la facture…',
-        description: 'Veuillez patienter une seconde.',
-      });
+      // Auto-trigger print as soon as ready instead of blocking
+      const checkInterval = setInterval(() => {
+        if (printViewRef.current) {
+          clearInterval(checkInterval);
+          setShowServerDialog(false);
+          printViewRef.current.print();
+        }
+      }, 200);
+      // Safety: clear after 5s
+      setTimeout(() => clearInterval(checkInterval), 5000);
       return;
     }
 

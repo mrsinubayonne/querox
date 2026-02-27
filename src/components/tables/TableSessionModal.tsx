@@ -11,7 +11,7 @@ import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw } from "lucide-react";
+import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -25,7 +25,7 @@ import { toast as sonnerToast } from "sonner";
 import { InvoicePreviewModal } from "./InvoicePreviewModal";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { getData } from "@/lib/offlineStorage";
+import { getData, queueMutation, generateLocalId } from "@/lib/offlineStorage";
 
 interface Order {
   id: string;
@@ -284,6 +284,57 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
       setDeletingOrderId(null);
     }
   };
+
+  const handleDeleteItem = async (orderId: string, itemIndex: number) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    const updatedItems = order.items.filter((_: any, i: number) => i !== itemIndex);
+    
+    if (updatedItems.length === 0) {
+      // If no items left, delete the entire order
+      handleDeleteOrder(orderId);
+      return;
+    }
+    
+    const newTotal = updatedItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+    
+    try {
+      if (isOffline) {
+        const userId = user?.id || '';
+        const outletKey = localStorage.getItem('selectedOutletId') || undefined;
+        await queueMutation({
+          table: 'orders',
+          operation: 'update',
+          data: { id: orderId, items: updatedItems, total_amount: newTotal, updated_at: new Date().toISOString() },
+          localId: generateLocalId(),
+          userId,
+          outletId: outletKey,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+        // Update local state
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, items: updatedItems, total_amount: newTotal } : o));
+        window.dispatchEvent(new CustomEvent("session-updated"));
+        toast({ title: "Plat supprimé", description: "L'article a été retiré de la commande." });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("orders")
+        .update({ items: updatedItems, total_amount: newTotal })
+        .eq("id", orderId);
+      
+      if (error) throw error;
+      
+      toast({ title: "Plat supprimé", description: "L'article a été retiré de la commande." });
+      fetchOrdersStable();
+      window.dispatchEvent(new CustomEvent("session-updated"));
+    } catch (error: any) {
+      console.error("Error deleting item:", error);
+      toast({ title: "Erreur", description: "Impossible de supprimer l'article.", variant: "destructive" });
+    }
+  };
   const handleEditOrder = (orderId: string) => {
     // Redirect to orders page with the order ID
     navigate(`/commandes?edit=${orderId}`);
@@ -313,7 +364,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         return;
       }
 
-      // 1) Chercher d'abord une facture existante pour cette session
+      // 1) Look for an existing invoice for this session
       const {
         data: existingInvoice,
         error: invoiceError,
@@ -321,6 +372,8 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         .from("invoices" as any)
         .select("*")
         .eq("session_id", session.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (invoiceError) {
@@ -329,10 +382,9 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
       let invoice = existingInvoice as any | null;
 
-      // 2) Si aucune facture trouvée, la générer automatiquement
+      // 2) If no invoice found, generate one automatically
       if (!invoice) {
         try {
-          // Récupérer toutes les commandes de la session
           const { data: ordersForSession, error: ordersError } = await supabase
             .from("orders" as any)
             .select("items, customer_name, customer_email, customer_phone, created_at")
@@ -355,42 +407,12 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
           const firstOrder: any | null = ordersList.length > 0 ? (ordersList[0] as any) : null;
 
-          // Générer un numéro de facture séquentiel via la fonction SQL
           const { data: invoiceNumber, error: invoiceNumberError } = await supabase.rpc(
             "generate_invoice_number"
           );
 
           if (invoiceNumberError || !invoiceNumber) {
             throw invoiceNumberError || new Error("Impossible de générer un numéro de facture");
-          }
-
-          // Paramètres spécifiques si la session est liée à un débiteur
-          const hasDebtor = (session as any).debtor_id !== null;
-          let dueDate: string | null = null;
-          let paymentTermsDays: number | null = null;
-          let businessCustomerId: string | null = null;
-          let invoiceType = "b2c";
-          let billingAddress: string | null = null;
-          let siret: string | null = null;
-
-          if (hasDebtor && (session as any).debtor_id) {
-            invoiceType = "b2b";
-            businessCustomerId = (session as any).debtor_id as string;
-
-            const { data: debtor, error: debtorError } = await supabase
-              .from("business_customers" as any)
-              .select("payment_terms_days, address, siret")
-              .eq("id", businessCustomerId)
-              .maybeSingle();
-
-            if (debtorError && (debtorError as any).code !== "PGRST116") throw debtorError;
-
-            paymentTermsDays = (debtor as any)?.payment_terms_days ?? 30;
-            const now = new Date();
-            now.setDate(now.getDate() + paymentTermsDays);
-            dueDate = now.toISOString().split("T")[0];
-            billingAddress = (debtor as any)?.address ?? null;
-            siret = (debtor as any)?.siret ?? null;
           }
 
           const { data: insertedInvoice, error: insertError } = await supabase
@@ -400,16 +422,11 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                 user_id: (session as any).user_id,
                 outlet_id: (session as any).outlet_id,
                 session_id: session.id,
-                business_customer_id: businessCustomerId,
                 invoice_number: invoiceNumber,
-                invoice_type: invoiceType,
+                invoice_type: "b2c",
                 total_amount: (session as any).total_amount ?? 0,
                 status: "unpaid",
-                due_date: dueDate,
-                payment_terms_days: paymentTermsDays,
                 notes: `Facture générée automatiquement pour la table ${(session as any).table_number}`,
-                billing_address: billingAddress,
-                siret,
                 customer_name: firstOrder?.customer_name ?? "Client",
                 customer_email: firstOrder?.customer_email ?? null,
                 customer_phone: firstOrder?.customer_phone ?? null,
@@ -435,7 +452,6 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         }
       }
 
-      // À ce stade, on a forcément une facture pour la session
       setInvoiceToPrint(invoice as any as Invoice);
       setShowPrintDialog(true);
     } catch (error) {
@@ -562,11 +578,23 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                       </div>
                       
                       <div className="text-sm space-y-1">
-                        {order.items.map((item: any, i: number) => <div key={i} className="flex justify-between">
+                        {order.items.map((item: any, i: number) => <div key={i} className="flex justify-between items-center group">
                             <span className="text-muted-foreground">
                               {item.quantity}x {item.name}
                             </span>
-                            <span>{formatCurrency(item.price * item.quantity)}</span>
+                            <div className="flex items-center gap-2">
+                              <span>{formatCurrency(item.price * item.quantity)}</span>
+                              {session.status === "active" && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive transition-opacity"
+                                  onClick={() => handleDeleteItem(order.id, i)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
                           </div>)}
                       </div>
 
