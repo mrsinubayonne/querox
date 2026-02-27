@@ -538,7 +538,14 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       }
 
       if (!invoiceForSession?.id) {
-        throw new Error("Aucune facture liée à cette table. Fermez d'abord la session pour générer la facture.");
+        // Session has no invoice yet — could be an "active" session paid directly
+        // or a race condition. Try to close session directly.
+        const { error: directCloseError } = await supabase
+          .from('table_sessions')
+          .update({ status: 'paid', payment_method: normalizedPaymentMethod })
+          .eq('id', sessionId);
+        if (directCloseError) throw directCloseError;
+        return { isDebtorSession: isDebtorDb };
       }
 
       if (invoiceForSession.status !== 'paid') {

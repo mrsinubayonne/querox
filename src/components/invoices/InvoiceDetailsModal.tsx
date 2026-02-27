@@ -117,7 +117,14 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
 
   const confirmPrint = () => {
     if (!printReady) {
-      toast.message('Préparation de la facture…', { description: 'Veuillez patienter une seconde.' });
+      const checkInterval = setInterval(() => {
+        if (printViewRef.current) {
+          clearInterval(checkInterval);
+          setShowServerDialog(false);
+          printViewRef.current.print();
+        }
+      }, 200);
+      setTimeout(() => clearInterval(checkInterval), 5000);
       return;
     }
     setShowServerDialog(false);

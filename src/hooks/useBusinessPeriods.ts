@@ -391,6 +391,106 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     }
   };
 
+  const closePeriodOffline = async (targetPeriod: BusinessPeriod) => {
+    const endISO = new Date().toISOString();
+    const startISO = targetPeriod.started_at;
+    const scopedOutlet = targetPeriod.outlet_id || outletId;
+
+    // Read orders and invoices from IndexedDB
+    const selectedOutlet = scopedOutlet || localStorage.getItem('selectedOutletId') || undefined;
+    let cachedOrders = await getData<any[]>('orders', user!.id, selectedOutlet);
+    if (!cachedOrders?.data) cachedOrders = await getData<any[]>('orders', user!.id);
+    let cachedInvoices = await getData<any[]>('invoices', user!.id, selectedOutlet);
+    if (!cachedInvoices?.data) cachedInvoices = await getData<any[]>('invoices', user!.id);
+
+    const orders = ((cachedOrders?.data as any[]) || []).filter((o: any) => {
+      if (!o.created_at) return false;
+      if (o.created_at < startISO || o.created_at > endISO) return false;
+      if (scopedOutlet && o.outlet_id !== scopedOutlet) return false;
+      return true;
+    });
+
+    const invoices = ((cachedInvoices?.data as any[]) || []).filter((inv: any) => {
+      if (!inv.created_at) return false;
+      if (inv.created_at < startISO || inv.created_at > endISO) return false;
+      if (scopedOutlet && inv.outlet_id !== scopedOutlet) return false;
+      return true;
+    });
+
+    const totalOrders = orders.length;
+    const revenueFromOrders = orders.reduce((sum: number, o: any) => sum + Number(o.total_amount || 0), 0);
+    const totalInvoices = invoices.length;
+    const orderIds = new Set(orders.map((o: any) => o.id));
+    const paidInvoiceList = invoices.filter(
+      (i: any) => i.status === 'paid' && (!i.order_id || !orderIds.has(i.order_id))
+    );
+    const paidInvoices = paidInvoiceList.length;
+    const unpaidInvoices = totalInvoices - paidInvoices;
+    const revenueFromPaidInvoices = paidInvoiceList.reduce((sum: number, i: any) => sum + Number(i.total_amount || 0), 0);
+    const totalRevenue = revenueFromOrders + revenueFromPaidInvoices;
+
+    const closedPeriod: BusinessPeriod = {
+      ...targetPeriod,
+      ended_at: endISO,
+      total_orders: totalOrders,
+      total_revenue: totalRevenue,
+      total_invoices: totalInvoices,
+      paid_invoices: paidInvoices,
+      unpaid_invoices: unpaidInvoices,
+      updated_at: endISO,
+    };
+
+    // Update state immediately
+    setCurrentPeriod(null);
+    if (targetPeriod.outlet_id) {
+      localStorage.removeItem(`active_period_${user!.id}_${targetPeriod.outlet_id}`);
+    }
+
+    // Persist: queue mutation + update caches
+    await Promise.allSettled([
+      queueMutation({
+        table: 'business_periods',
+        operation: 'update',
+        data: {
+          id: targetPeriod.id,
+          ended_at: endISO,
+          total_orders: totalOrders,
+          total_revenue: totalRevenue,
+          total_invoices: totalInvoices,
+          paid_invoices: paidInvoices,
+          unpaid_invoices: unpaidInvoices,
+          updated_at: endISO,
+        } as unknown as Record<string, unknown>,
+        localId: generateLocalId(),
+        userId: user!.id,
+        outletId: scopedOutlet || undefined,
+        maxRetries: 3,
+        conflictResolution: 'client-wins',
+      }),
+      (async () => {
+        const scopedPeriods = await getCachedPeriods(scopedOutlet || undefined);
+        const updatedScoped = scopedPeriods.map(p => p.id === closedPeriod.id ? closedPeriod : p);
+        if (!updatedScoped.find(p => p.id === closedPeriod.id)) updatedScoped.push(closedPeriod);
+        await storeData('business_periods', updatedScoped, user!.id, scopedOutlet || undefined);
+      })(),
+      (async () => {
+        const unscopedPeriods = await getCachedPeriods();
+        const updatedUnscoped = unscopedPeriods.map(p => p.id === closedPeriod.id ? closedPeriod : p);
+        if (!updatedUnscoped.find(p => p.id === closedPeriod.id)) updatedUnscoped.push(closedPeriod);
+        await storeData('business_periods', updatedUnscoped, user!.id);
+      })(),
+    ]);
+
+    // Refresh the periods list from cache
+    const allPeriods = await getCachedPeriods();
+    const closed = allPeriods
+      .filter(p => p.ended_at !== null && (!outletId || p.outlet_id === outletId))
+      .sort((a, b) => (b.ended_at || '').localeCompare(a.ended_at || ''));
+    setPeriods(closed);
+
+    toast.success('Journée bouclée avec succès (hors ligne)');
+  };
+
   const closePeriod = async (periodId?: string) => {
     if (!user) return;
 
@@ -405,6 +505,12 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         return;
       }
 
+      // OFFLINE BRANCH
+      if (isOffline || !navigator.onLine) {
+        await closePeriodOffline(targetPeriod);
+        return;
+      }
+
       const startISO = targetPeriod.started_at;
       const endISO = new Date().toISOString();
 
@@ -412,7 +518,6 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
         .from('orders')
         .select('id, total_amount, status')
         .eq('user_id', user.id)
-        .eq('status', 'completed')
         .gte('created_at', startISO)
         .lte('created_at', endISO);
 
@@ -493,6 +598,22 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       toast.success('Journée bouclée avec succès');
     } catch (error) {
       console.error('Error closing period:', error);
+
+      // Fallback to offline close if network error
+      const errorMessage = (error as Error)?.message?.toLowerCase?.() || '';
+      const shouldFallback = !navigator.onLine || error instanceof TypeError ||
+        errorMessage.includes('failed to fetch') || errorMessage.includes('network');
+
+      if (shouldFallback) {
+        const targetPeriod = periodId
+          ? periods.find((p) => p.id === periodId) || currentPeriod
+          : currentPeriod;
+        if (targetPeriod) {
+          await closePeriodOffline(targetPeriod);
+          return;
+        }
+      }
+
       toast.error('Erreur lors du bouclage de la journée');
     } finally {
       setLoading(false);
