@@ -47,8 +47,21 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     if (!user) return [];
 
     try {
-      const cached = await getData<BusinessPeriod[] | BusinessPeriod>('business_periods', user.id, targetOutletId);
-      return asPeriodsArray(cached?.data);
+      const scoped = targetOutletId
+        ? await getData<BusinessPeriod[] | BusinessPeriod>('business_periods', user.id, targetOutletId)
+        : undefined;
+      const unscoped = await getData<BusinessPeriod[] | BusinessPeriod>('business_periods', user.id);
+
+      const scopedList = asPeriodsArray(scoped?.data);
+      const unscopedList = asPeriodsArray(unscoped?.data);
+      const merged = [...scopedList, ...unscopedList];
+
+      // De-duplicate by id to avoid double entries after partial cache writes
+      const deduped = Array.from(new Map(merged.map((period) => [period.id, period])).values());
+
+      return targetOutletId
+        ? deduped.filter((period) => !period.outlet_id || period.outlet_id === targetOutletId)
+        : deduped;
     } catch (error) {
       console.warn('[Offline] Impossible de lire le cache business_periods:', error);
       return [];
@@ -100,7 +113,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     try {
       if (isOffline) {
         // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
-        const allPeriods = await getCachedPeriods();
+        const allPeriods = await getCachedPeriods(outletId);
         
         // Filter: closed periods for this outlet, sorted desc
         const closed = allPeriods
@@ -159,7 +172,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     try {
       if (isOffline) {
         // --- MODE HORS-LIGNE : chercher la période active dans le cache ---
-        const allPeriods = await getCachedPeriods();
+        const allPeriods = await getCachedPeriods(outletId);
         const active = allPeriods.find(p => 
           p.ended_at === null && p.outlet_id === outletId
         );
@@ -200,7 +213,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     } catch (error) {
       console.error('Error initializing period:', error);
       // Fallback to cache
-      const allPeriods = await getCachedPeriods();
+      const allPeriods = await getCachedPeriods(outletId);
       const active = allPeriods.find(p => p.ended_at === null && p.outlet_id === outletId);
       if (active) {
         setCurrentPeriod(active);
@@ -482,7 +495,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     ]);
 
     // Refresh the periods list from cache
-    const allPeriods = await getCachedPeriods();
+    const allPeriods = await getCachedPeriods(outletId);
     const closed = allPeriods
       .filter(p => p.ended_at !== null && (!outletId || p.outlet_id === outletId))
       .sort((a, b) => (b.ended_at || '').localeCompare(a.ended_at || ''));
