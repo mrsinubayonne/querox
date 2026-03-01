@@ -25,7 +25,7 @@ import { toast as sonnerToast } from "sonner";
 import { InvoicePreviewModal } from "./InvoicePreviewModal";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { getData, queueMutation, generateLocalId } from "@/lib/offlineStorage";
+import { getData, queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
 
 interface Order {
   id: string;
@@ -132,22 +132,22 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     }
   };
   const navigate = useNavigate();
-  const {
-    user
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
+  const { toast } = useToast();
+  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || user?.id || '') : (user?.id || '');
   // Stable fetch function
   const fetchOrdersStable = useCallback(async () => {
     if (!session) return;
     setLoading(true);
     try {
       if (isOffline) {
-        const userId = user?.id || '';
         const outletId = (session as any).outlet_id || localStorage.getItem('selectedOutletId') || undefined;
-        const cached = await getData<Order[]>('orders', userId, outletId);
-        const list = (cached?.data || []) as Order[];
+        const cachedScoped = await getData<Order[]>('orders', resolvedUserId, outletId);
+        const cachedFallback = !cachedScoped?.data && outletId
+          ? await getData<Order[]>('orders', resolvedUserId)
+          : cachedScoped;
+
+        const list = (cachedFallback?.data || cachedScoped?.data || []) as Order[];
         const sessionOrders = list.filter((o) => (o as any).session_id === session.id);
         setOrders(sessionOrders);
         setLoading(false);
@@ -167,7 +167,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [session?.id, isOffline, user?.id]);
+  }, [session?.id, isOffline, resolvedUserId]);
 
   useEffect(() => {
     if (session && isOpen) {
@@ -262,11 +262,60 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const handleDeleteOrder = async (orderId: string) => {
     if (!confirm("Supprimer cette commande ?")) return;
     setDeletingOrderId(orderId);
+
     try {
-      const {
-        error
-      } = await supabase.from("orders").delete().eq("id", orderId);
+      if (isOffline && session) {
+        const outletKey = (session as any).outlet_id || localStorage.getItem('selectedOutletId') || undefined;
+        const ordersKey = ['orders', resolvedUserId, outletKey] as const;
+        const sessionsKey = ['table-sessions', resolvedUserId, outletKey] as const;
+
+        await queueMutation({
+          table: 'orders',
+          operation: 'delete',
+          data: { id: orderId },
+          localId: generateLocalId(),
+          userId: resolvedUserId,
+          outletId: outletKey,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+
+        const currentOrders = (queryClient.getQueryData(ordersKey) as Order[] | undefined) || orders;
+        const nextOrders = currentOrders.filter((o) => o.id !== orderId);
+        setOrders(nextOrders.filter((o) => (o as any).session_id === session.id));
+        queryClient.setQueryData(ordersKey, nextOrders);
+        await storeData('orders', nextOrders as any, resolvedUserId, outletKey);
+
+        const newSessionTotal = nextOrders
+          .filter((o) => (o as any).session_id === session.id)
+          .reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+
+        await queueMutation({
+          table: 'table_sessions',
+          operation: 'update',
+          data: { id: session.id, total_amount: newSessionTotal, updated_at: new Date().toISOString() },
+          localId: generateLocalId(),
+          userId: resolvedUserId,
+          outletId: outletKey,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+
+        const currentSessions = (queryClient.getQueryData(sessionsKey) as TableSession[] | undefined) || [];
+        const nextSessions = currentSessions.map((s) =>
+          s.id === session.id ? { ...s, total_amount: newSessionTotal, updated_at: new Date().toISOString() } : s
+        );
+        queryClient.setQueryData(sessionsKey, nextSessions);
+        await storeData('table_sessions', nextSessions as any, resolvedUserId, outletKey);
+
+        toast({ title: "Commande supprimée", description: "Suppression enregistrée hors ligne." });
+        window.dispatchEvent(new CustomEvent("session-updated"));
+        return;
+      }
+
+      const { error } = await supabase.from("orders").delete().eq("id", orderId);
       if (error) throw error;
+
       toast({
         title: "Commande supprimée",
         description: "La commande a été supprimée avec succès."
@@ -287,36 +336,69 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
   const handleDeleteItem = async (orderId: string, itemIndex: number) => {
     const order = orders.find(o => o.id === orderId);
-    if (!order) return;
-    
+    if (!order || !session) return;
+
     const updatedItems = order.items.filter((_: any, i: number) => i !== itemIndex);
-    
+
     if (updatedItems.length === 0) {
       // If no items left, delete the entire order
-      handleDeleteOrder(orderId);
+      await handleDeleteOrder(orderId);
       return;
     }
-    
+
     const newTotal = updatedItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-    
+
     try {
       if (isOffline) {
-        const userId = user?.id || '';
-        const outletKey = localStorage.getItem('selectedOutletId') || undefined;
+        const outletKey = (session as any).outlet_id || localStorage.getItem('selectedOutletId') || undefined;
+        const ordersKey = ['orders', resolvedUserId, outletKey] as const;
+        const sessionsKey = ['table-sessions', resolvedUserId, outletKey] as const;
+        const nowIso = new Date().toISOString();
+
         await queueMutation({
           table: 'orders',
           operation: 'update',
-          data: { id: orderId, items: updatedItems, total_amount: newTotal, updated_at: new Date().toISOString() },
+          data: { id: orderId, items: updatedItems, total_amount: newTotal, updated_at: nowIso },
           localId: generateLocalId(),
-          userId,
+          userId: resolvedUserId,
           outletId: outletKey,
           maxRetries: 3,
           conflictResolution: 'client-wins',
         });
-        // Update local state
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, items: updatedItems, total_amount: newTotal } : o));
+
+        const currentOrders = (queryClient.getQueryData(ordersKey) as Order[] | undefined) || orders;
+        const nextOrders = currentOrders.map((o) =>
+          o.id === orderId ? ({ ...o, items: updatedItems, total_amount: newTotal, updated_at: nowIso } as any) : o
+        );
+
+        queryClient.setQueryData(ordersKey, nextOrders);
+        await storeData('orders', nextOrders as any, resolvedUserId, outletKey);
+        setOrders(nextOrders.filter((o) => (o as any).session_id === session.id));
+
+        const newSessionTotal = nextOrders
+          .filter((o) => (o as any).session_id === session.id)
+          .reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+
+        await queueMutation({
+          table: 'table_sessions',
+          operation: 'update',
+          data: { id: session.id, total_amount: newSessionTotal, updated_at: nowIso },
+          localId: generateLocalId(),
+          userId: resolvedUserId,
+          outletId: outletKey,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
+
+        const currentSessions = (queryClient.getQueryData(sessionsKey) as TableSession[] | undefined) || [];
+        const nextSessions = currentSessions.map((s) =>
+          s.id === session.id ? { ...s, total_amount: newSessionTotal, updated_at: nowIso } : s
+        );
+        queryClient.setQueryData(sessionsKey, nextSessions);
+        await storeData('table_sessions', nextSessions as any, resolvedUserId, outletKey);
+
         window.dispatchEvent(new CustomEvent("session-updated"));
-        toast({ title: "Plat supprimé", description: "L'article a été retiré de la commande." });
+        toast({ title: "Plat supprimé", description: "Suppression enregistrée hors ligne." });
         return;
       }
 
@@ -324,9 +406,9 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         .from("orders")
         .update({ items: updatedItems, total_amount: newTotal })
         .eq("id", orderId);
-      
+
       if (error) throw error;
-      
+
       toast({ title: "Plat supprimé", description: "L'article a été retiré de la commande." });
       fetchOrdersStable();
       window.dispatchEvent(new CustomEvent("session-updated"));

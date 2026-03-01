@@ -55,7 +55,15 @@ function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string): T[] {
 
   return data.filter((item) => {
     if (typeof item !== 'object' || item === null) return true;
-    return (item as Record<string, unknown>).outlet_id === outletId;
+    const itemOutletId = (item as Record<string, unknown>).outlet_id;
+
+    // Important offline safety: keep records without outlet_id to avoid
+    // "ghost free tables" when legacy/local rows were saved unscoped.
+    if (itemOutletId === null || typeof itemOutletId === 'undefined') {
+      return true;
+    }
+
+    return itemOutletId === outletId;
   });
 }
 

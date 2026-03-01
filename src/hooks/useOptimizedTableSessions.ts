@@ -202,12 +202,30 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       return cachedFromQuery.filter((o) => (o as any).session_id === sessionId);
     }
 
-    // Fallback to IndexedDB
-    if (!resolvedUserId) return [];
-    const cached = await getData<Order[]>('orders', resolvedUserId, scopedOutletId);
-    const list = (cached?.data || []) as Order[];
-    return list.filter((o) => (o as any).session_id === sessionId);
-  }, [queryClient, ordersQueryKey, resolvedUserId, scopedOutletId]);
+    if (!resolvedUserId && !user?.id) return [];
+
+    // Fallback to IndexedDB (owner-scoped first, then current-user scoped for backward compatibility)
+    const ownerCached = await getData<Order[]>('orders', resolvedUserId, scopedOutletId);
+    const ownerFallback = !ownerCached?.data && scopedOutletId
+      ? await getData<Order[]>('orders', resolvedUserId)
+      : ownerCached;
+
+    const effectiveOwnerList = (ownerFallback?.data || ownerCached?.data || []) as Order[];
+    if (effectiveOwnerList.length > 0) {
+      return effectiveOwnerList.filter((o) => (o as any).session_id === sessionId);
+    }
+
+    if (user?.id && user.id !== resolvedUserId) {
+      const legacyCached = await getData<Order[]>('orders', user.id, scopedOutletId);
+      const legacyFallback = !legacyCached?.data && scopedOutletId
+        ? await getData<Order[]>('orders', user.id)
+        : legacyCached;
+      const legacyList = (legacyFallback?.data || legacyCached?.data || []) as Order[];
+      return legacyList.filter((o) => (o as any).session_id === sessionId);
+    }
+
+    return [];
+  }, [queryClient, ordersQueryKey, resolvedUserId, scopedOutletId, user?.id]);
 
   const createSessionMutation = useMutation({
     mutationFn: ({ tableNumber, numberOfGuests, notes, debtorId }: {
@@ -437,32 +455,96 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
         // Also mark invoice as paid if not debtor
         if (!isDebtorSession) {
-          const invoicesCached = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
-          const invoiceForSession = invoicesCached.find((inv) => inv.session_id === sessionId);
-          if (invoiceForSession) {
+          const nowIso = new Date().toISOString();
+          const paidDate = nowIso.split('T')[0];
+
+          const queryInvoices = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
+          const cachedInvoicesScoped = await getData<Invoice[]>('invoices', resolvedUserId, scopedOutletId);
+          const cachedInvoicesFallback = !cachedInvoicesScoped?.data && scopedOutletId
+            ? await getData<Invoice[]>('invoices', resolvedUserId)
+            : cachedInvoicesScoped;
+
+          const mergedInvoices = [...queryInvoices, ...((cachedInvoicesFallback?.data || []) as Invoice[])];
+          const uniqueInvoices = Array.from(new Map(mergedInvoices.map((inv) => [inv.id, inv])).values());
+
+          let invoiceForSession = uniqueInvoices
+            .filter((inv) => inv.session_id === sessionId)
+            .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))[0];
+
+          if (!invoiceForSession) {
+            const ordersForSession = await getOrdersForSession(sessionId);
+            const generatedInvoiceId = generateLocalId();
+            const generatedInvoiceNumber = generateOfflineInvoiceNumber();
+            const generatedItems = ordersForSession.flatMap((order) =>
+              Array.isArray((order as any).items) ? (order as any).items : []
+            );
+
+            invoiceForSession = {
+              id: generatedInvoiceId,
+              user_id: resolvedUserId,
+              outlet_id: scopedOutletId || null,
+              order_id: null,
+              session_id: sessionId,
+              invoice_number: generatedInvoiceNumber,
+              total_amount: Number(session?.total_amount || 0),
+              status: 'paid',
+              due_date: null,
+              paid_date: paidDate as any,
+              notes: `Facture générée au paiement (hors ligne) - Table ${session?.table_number || ''}`.trim(),
+              created_at: nowIso,
+              updated_at: nowIso,
+              customer_name: `Table ${session?.table_number || ''}`.trim(),
+              customer_email: null,
+              customer_phone: null,
+              items: generatedItems,
+              payment_method: paymentMethod || 'Espèces',
+            } as Invoice;
+
+            await queueMutation({
+              table: 'invoices',
+              operation: 'insert',
+              data: invoiceForSession as unknown as Record<string, unknown>,
+              localId: generatedInvoiceId,
+              userId: resolvedUserId || user?.id || '',
+              outletId: scopedOutletId,
+              maxRetries: 3,
+              conflictResolution: 'client-wins',
+            });
+          } else {
             await queueMutation({
               table: 'invoices',
               operation: 'update',
               data: {
                 id: invoiceForSession.id,
                 status: 'paid',
-                paid_date: new Date().toISOString(),
+                paid_date: nowIso,
                 payment_method: paymentMethod || 'Espèces',
-                updated_at: new Date().toISOString(),
+                updated_at: nowIso,
               },
               localId: generateLocalId(),
-              userId: user?.id || '',
+              userId: resolvedUserId || user?.id || '',
               outletId: scopedOutletId,
               maxRetries: 3,
               conflictResolution: 'client-wins',
             });
 
-            await updateInvoiceInCache(invoiceForSession.id, {
+            invoiceForSession = {
+              ...invoiceForSession,
               status: 'paid',
-              paid_date: new Date().toISOString().split('T')[0] as any,
+              paid_date: paidDate as any,
               payment_method: paymentMethod || 'Espèces',
-              updated_at: new Date().toISOString(),
-            } as any);
+              updated_at: nowIso,
+            } as Invoice;
+          }
+
+          if (invoiceForSession) {
+            await upsertInvoiceInCache(invoiceForSession);
+
+            const finalInvoices = [
+              invoiceForSession,
+              ...uniqueInvoices.filter((inv) => inv.id !== invoiceForSession!.id),
+            ];
+            await storeData('invoices', finalInvoices as any, resolvedUserId, scopedOutletId);
           }
 
           // Create transaction
@@ -471,7 +553,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
             operation: 'insert',
             data: {
               id: generateLocalId(),
-              user_id: user?.id,
+              user_id: resolvedUserId || user?.id,
               outlet_id: scopedOutletId,
               title: `Paiement Table ${session?.table_number}`,
               amount: session?.total_amount || 0,
@@ -482,7 +564,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
               payment_method: paymentMethod || 'Espèces',
             },
             localId: generateLocalId(),
-            userId: user?.id || '',
+            userId: resolvedUserId || user?.id || '',
             outletId: scopedOutletId,
             maxRetries: 3,
             conflictResolution: 'client-wins',

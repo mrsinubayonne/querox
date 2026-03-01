@@ -45,11 +45,13 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
   sessionId,
   tableNumber,
 }) => {
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { toast } = useToast();
   const { outletId } = useRestaurant();
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
+  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || user?.id || '') : (user?.id || '');
+  const scopedOutletId = (localStorage.getItem('selectedOutletId') || outletId || undefined) as string | undefined;
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -192,7 +194,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       if (isOffline) {
         const orderId = generateLocalId();
 
-        const resolvedOutletId = outletId || localStorage.getItem("selectedOutletId");
+        const resolvedOutletId = scopedOutletId || localStorage.getItem("selectedOutletId");
         if (!resolvedOutletId) {
           toast({
             title: "Erreur",
@@ -203,15 +205,15 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         }
 
         const outletKey = resolvedOutletId || undefined;
-        const ordersKey = ["orders", user.id, outletKey] as const;
-        const sessionsKey = ["table-sessions", user.id, outletKey] as const;
+        const ordersKey = ["orders", resolvedUserId, outletKey] as const;
+        const sessionsKey = ["table-sessions", resolvedUserId, outletKey] as const;
 
         await queueMutation({
           table: 'orders',
           operation: 'insert',
           data: {
             id: orderId,
-            user_id: user.id,
+            user_id: resolvedUserId,
             outlet_id: resolvedOutletId,
             session_id: sessionId,
             table_number: tableNumber,
@@ -224,7 +226,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
             updated_at: new Date().toISOString(),
           },
           localId: orderId,
-          userId: user.id,
+          userId: resolvedUserId,
           outletId: outletKey,
           maxRetries: 3,
           conflictResolution: 'client-wins',
@@ -234,7 +236,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         const nextOrders = [
           {
             id: orderId,
-            user_id: user.id,
+            user_id: resolvedUserId,
             outlet_id: resolvedOutletId,
             session_id: sessionId,
             table_number: tableNumber,
@@ -249,7 +251,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
           ...currentOrders,
         ];
         queryClient.setQueryData(ordersKey, nextOrders);
-        await storeData('orders', nextOrders as any, user.id, outletKey);
+        await storeData('orders', nextOrders as any, resolvedUserId, outletKey);
 
         const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
         const nextSessions = currentSessions.map((s: any) =>
@@ -262,7 +264,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
             : s
         );
         queryClient.setQueryData(sessionsKey, nextSessions);
-        await storeData('table_sessions', nextSessions as any, user.id, outletKey);
+        await storeData('table_sessions', nextSessions as any, resolvedUserId, outletKey);
 
         toast({
           title: "Commande ajoutée (hors ligne)",
@@ -278,11 +280,11 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       }
 
       // Online mode
-      const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
+      const resolvedOutletId = scopedOutletId || localStorage.getItem('selectedOutletId');
 
       const { error } = await supabase.from("orders").insert([
         {
-          user_id: user.id,
+          user_id: resolvedUserId,
           outlet_id: resolvedOutletId,
           session_id: sessionId,
           table_number: tableNumber,
