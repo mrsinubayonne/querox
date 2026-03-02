@@ -18,7 +18,7 @@ import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
+import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
 import type { MenuItem } from "@/types/menu";
@@ -253,18 +253,31 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         queryClient.setQueryData(ordersKey, nextOrders);
         await storeData('orders', nextOrders as any, resolvedUserId, outletKey);
 
-        const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
-        const nextSessions = currentSessions.map((s: any) =>
-          s.id === sessionId
-            ? {
-                ...s,
-                total_amount: Number(s.total_amount || 0) + Number(totalAmount || 0),
-                updated_at: new Date().toISOString(),
-              }
-            : s
-        );
-        queryClient.setQueryData(sessionsKey, nextSessions);
-        await storeData('table_sessions', nextSessions as any, resolvedUserId, outletKey);
+        const cachedSessionsScoped = await getData<any[]>('table_sessions', resolvedUserId, outletKey);
+        const cachedSessionsFallback = !cachedSessionsScoped?.data && outletKey
+          ? await getData<any[]>('table_sessions', resolvedUserId)
+          : cachedSessionsScoped;
+        const currentSessions =
+          (queryClient.getQueryData(sessionsKey) as any[] | undefined) ||
+          (cachedSessionsFallback?.data as any[] | undefined) ||
+          (cachedSessionsScoped?.data as any[] | undefined) ||
+          [];
+        const nextSessions = currentSessions.some((s: any) => s.id === sessionId)
+          ? currentSessions.map((s: any) =>
+              s.id === sessionId
+                ? {
+                    ...s,
+                    total_amount: Number(s.total_amount || 0) + Number(totalAmount || 0),
+                    updated_at: new Date().toISOString(),
+                  }
+                : s
+            )
+          : currentSessions;
+
+        if (nextSessions.length > 0) {
+          queryClient.setQueryData(sessionsKey, nextSessions);
+          await storeData('table_sessions', nextSessions as any, resolvedUserId, outletKey);
+        }
 
         toast({
           title: "Commande ajoutée (hors ligne)",

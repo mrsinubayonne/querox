@@ -17,7 +17,7 @@ import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
+import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -269,8 +269,16 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           created_at: nowIso,
           updated_at: nowIso,
         };
-        const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) || [];
-        const nextSessions = [newSession, ...currentSessions];
+        const cachedSessionsScoped = await getData<any[]>('table_sessions', resolvedUserId, scopedOutletId);
+        const cachedSessionsFallback = !cachedSessionsScoped?.data && scopedOutletId
+          ? await getData<any[]>('table_sessions', resolvedUserId)
+          : cachedSessionsScoped;
+        const currentSessions =
+          (queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) ||
+          (cachedSessionsFallback?.data as any[] | undefined) ||
+          (cachedSessionsScoped?.data as any[] | undefined) ||
+          [];
+        const nextSessions = [newSession, ...currentSessions.filter((s: any) => s.id !== newSession.id)];
         queryClient.setQueryData(sessionsQueryKey, nextSessions);
         await storeData('table_sessions', nextSessions as any, resolvedUserId, scopedOutletId);
 
