@@ -301,12 +301,23 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           conflictResolution: 'client-wins',
         });
 
-        const currentSessions = (queryClient.getQueryData(sessionsKey) as TableSession[] | undefined) || [];
+        const cachedSessionsScoped = await getData<TableSession[]>('table_sessions', resolvedUserId, outletKey);
+        const cachedSessionsFallback = !cachedSessionsScoped?.data && outletKey
+          ? await getData<TableSession[]>('table_sessions', resolvedUserId)
+          : cachedSessionsScoped;
+        const currentSessions =
+          (queryClient.getQueryData(sessionsKey) as TableSession[] | undefined) ||
+          (cachedSessionsFallback?.data as TableSession[] | undefined) ||
+          (cachedSessionsScoped?.data as TableSession[] | undefined) ||
+          [];
         const nextSessions = currentSessions.map((s) =>
           s.id === session.id ? { ...s, total_amount: newSessionTotal, updated_at: new Date().toISOString() } : s
         );
-        queryClient.setQueryData(sessionsKey, nextSessions);
-        await storeData('table_sessions', nextSessions as any, resolvedUserId, outletKey);
+
+        if (nextSessions.length > 0) {
+          queryClient.setQueryData(sessionsKey, nextSessions);
+          await storeData('table_sessions', nextSessions as any, resolvedUserId, outletKey);
+        }
 
         toast({ title: "Commande supprimée", description: "Suppression enregistrée hors ligne." });
         window.dispatchEvent(new CustomEvent("session-updated"));
@@ -390,12 +401,23 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           conflictResolution: 'client-wins',
         });
 
-        const currentSessions = (queryClient.getQueryData(sessionsKey) as TableSession[] | undefined) || [];
+        const cachedSessionsScoped = await getData<TableSession[]>('table_sessions', resolvedUserId, outletKey);
+        const cachedSessionsFallback = !cachedSessionsScoped?.data && outletKey
+          ? await getData<TableSession[]>('table_sessions', resolvedUserId)
+          : cachedSessionsScoped;
+        const currentSessions =
+          (queryClient.getQueryData(sessionsKey) as TableSession[] | undefined) ||
+          (cachedSessionsFallback?.data as TableSession[] | undefined) ||
+          (cachedSessionsScoped?.data as TableSession[] | undefined) ||
+          [];
         const nextSessions = currentSessions.map((s) =>
           s.id === session.id ? { ...s, total_amount: newSessionTotal, updated_at: nowIso } : s
         );
-        queryClient.setQueryData(sessionsKey, nextSessions);
-        await storeData('table_sessions', nextSessions as any, resolvedUserId, outletKey);
+
+        if (nextSessions.length > 0) {
+          queryClient.setQueryData(sessionsKey, nextSessions);
+          await storeData('table_sessions', nextSessions as any, resolvedUserId, outletKey);
+        }
 
         window.dispatchEvent(new CustomEvent("session-updated"));
         toast({ title: "Plat supprimé", description: "Suppression enregistrée hors ligne." });
