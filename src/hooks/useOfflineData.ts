@@ -199,11 +199,22 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
         const data = await fetchFromSupabase(table, select, userId || '');
         freshData = data as TData[];
       }
+
+      const pendingMutations = await getScopedPendingMutations(table, userId || '', outletId);
+      const shouldProtectLocalState = pendingMutations.length > 0 && Array.isArray(freshData);
+
+      const finalData = shouldProtectLocalState
+        ? mergeFreshWithPending(
+            freshData as Array<Record<string, unknown>>,
+            cachedList as Array<Record<string, unknown>>,
+            pendingMutations
+          ) as unknown as TData[]
+        : freshData;
       
-      // Store for offline use
-      await storeData(table, freshData, userId || '', outletId);
-      console.log(`[Online] Cached ${table}:`, freshData.length, 'items');
-      return freshData;
+      // Store for offline use (never overwrite pending local state with stale reconnect payload)
+      await storeData(table, finalData, userId || '', outletId);
+      console.log(`[Online] Cached ${table}:`, finalData.length, 'items', shouldProtectLocalState ? '(merge pending)' : '');
+      return finalData;
     } catch (error) {
       // Network error while online - fallback to cache
       console.warn(`[Fallback] Network error for ${table}, using cache:`, error);
