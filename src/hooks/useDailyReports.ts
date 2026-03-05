@@ -141,7 +141,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         if (scopedOutletId) ordersQuery = ordersQuery.eq('outlet_id', scopedOutletId);
         const { data: ordersData, error: ordersError } = await ordersQuery;
         if (ordersError) throw ordersError;
-        orders = ordersData || [];
+        orders = dedupeById(ordersData || []);
 
         let invoicesQuery = supabase
           .from('invoices')
@@ -153,7 +153,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         if (scopedOutletId) invoicesQuery = invoicesQuery.eq('outlet_id', scopedOutletId);
         const { data: invoicesData, error: invoicesError } = await invoicesQuery;
         if (invoicesError) throw invoicesError;
-        invoices = invoicesData || [];
+        invoices = dedupeById(invoicesData || []);
       }
 
       // Build reports map
