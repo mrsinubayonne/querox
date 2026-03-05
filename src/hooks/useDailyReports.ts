@@ -37,6 +37,12 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const dedupeById = <T extends { id?: string }>(list: T[]): T[] => {
+    return Array.from(
+      new Map(list.map((item, index) => [item.id || `idx-${index}`, item])).values()
+    );
+  };
+
   useEffect(() => {
     if (user && dateRange?.from && dateRange?.to) {
       fetchReports();
