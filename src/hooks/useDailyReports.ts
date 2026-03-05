@@ -75,17 +75,27 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
         // Try with outletId first, then without (fallback)
         const selectedOutlet = outletId || localStorage.getItem('selectedOutletId') || undefined;
-        let cachedOrders = await getData<any[]>('orders', user.id, selectedOutlet);
-        if (!cachedOrders?.data) cachedOrders = await getData<any[]>('orders', user.id);
-        let cachedInvoices = await getData<any[]>('invoices', user.id, selectedOutlet);
-        if (!cachedInvoices?.data) cachedInvoices = await getData<any[]>('invoices', user.id);
-        let cachedOutlets = await getData<any[]>('outlets', user.id);
+        const scopedOrders = await getData<any[]>('orders', user.id, selectedOutlet);
+        const unscopedOrders = await getData<any[]>('orders', user.id);
+        const scopedInvoices = await getData<any[]>('invoices', user.id, selectedOutlet);
+        const unscopedInvoices = await getData<any[]>('invoices', user.id);
+        const cachedOutlets = await getData<any[]>('outlets', user.id);
 
         // Outlets map
         ((cachedOutlets?.data as any[]) || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
+        const mergedOrders = dedupeById([
+          ...(((scopedOrders?.data as any[]) || [])),
+          ...(((unscopedOrders?.data as any[]) || [])),
+        ]);
+
+        const mergedInvoices = dedupeById([
+          ...(((scopedInvoices?.data as any[]) || [])),
+          ...(((unscopedInvoices?.data as any[]) || [])),
+        ]);
+
         // Filtrer par date et outlet
-        orders = ((cachedOrders?.data as any[]) || []).filter((o: any) => {
+        orders = mergedOrders.filter((o: any) => {
           const d = o.created_at;
           if (!d) return false;
           if (d < startISO || d > endISO) return false;
@@ -93,7 +103,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
           return true;
         });
 
-        invoices = ((cachedInvoices?.data as any[]) || []).filter((inv: any) => {
+        invoices = mergedInvoices.filter((inv: any) => {
           const d = inv.created_at;
           if (!d) return false;
           if (d < startISO || d > endISO) return false;
