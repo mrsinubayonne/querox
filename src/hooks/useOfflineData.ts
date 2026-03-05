@@ -39,10 +39,41 @@ async function getCachedWithFallback<T>(
   outletId?: string
 ) {
   if (!userId) return undefined;
+
   const scoped = await getData<T>(table, userId, outletId);
-  if (scoped?.data !== undefined) return scoped;
-  if (outletId) return getData<T>(table, userId);
-  return scoped;
+  const unscoped = outletId ? await getData<T>(table, userId) : undefined;
+
+  const scopedData = scoped?.data as unknown;
+  const unscopedData = unscoped?.data as unknown;
+
+  if (Array.isArray(scopedData) || Array.isArray(unscopedData)) {
+    const merged = [
+      ...(Array.isArray(scopedData) ? scopedData : []),
+      ...(Array.isArray(unscopedData) ? unscopedData : []),
+    ];
+
+    const deduped = Array.from(
+      new Map(
+        merged.map((item, index) => {
+          if (item && typeof item === 'object' && 'id' in (item as Record<string, unknown>)) {
+            return [String((item as Record<string, unknown>).id), item] as const;
+          }
+          return [`__idx_${index}`, item] as const;
+        })
+      ).values()
+    );
+
+    if (deduped.length > 0) {
+      return {
+        ...(scoped || unscoped || {}),
+        data: deduped as T,
+      };
+    }
+  }
+
+  if (scopedData !== undefined && scopedData !== null) return scoped;
+  if (unscopedData !== undefined && unscopedData !== null) return unscoped;
+  return scoped ?? unscoped;
 }
 
 function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string): T[] {
