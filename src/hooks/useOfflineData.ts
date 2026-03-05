@@ -5,8 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNetworkStatus } from './useNetworkStatus';
 import {
   OfflineDataType,
+  QueuedMutation,
   storeData,
   getData,
+  getPendingMutations,
 } from '@/lib/offlineStorage';
 
 interface UseOfflineDataOptions<TData> {
@@ -98,6 +100,64 @@ function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string): T[] {
   });
 }
 
+function getMutationRecordId(mutation: QueuedMutation): string | undefined {
+  const value = mutation.data?.id;
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+async function getScopedPendingMutations(
+  table: OfflineDataType,
+  userId: string,
+  outletId?: string
+): Promise<QueuedMutation[]> {
+  if (!userId) return [];
+
+  const allPending = await getPendingMutations();
+  return allPending.filter((mutation) => {
+    if (mutation.table !== table) return false;
+    if (mutation.userId !== userId) return false;
+    if (!outletId) return true;
+    return mutation.outletId === outletId || typeof mutation.outletId === 'undefined' || mutation.outletId === null;
+  });
+}
+
+function mergeFreshWithPending<T extends Record<string, unknown>>(
+  freshData: T[],
+  cachedData: T[],
+  pendingMutations: QueuedMutation[]
+): T[] {
+  const byId = new Map<string, T>();
+
+  for (const item of freshData) {
+    const id = typeof item?.id === 'string' ? item.id : undefined;
+    if (id) byId.set(id, item);
+  }
+
+  for (const item of cachedData) {
+    const id = typeof item?.id === 'string' ? item.id : undefined;
+    if (id && !byId.has(id)) byId.set(id, item);
+  }
+
+  for (const mutation of pendingMutations) {
+    const id = getMutationRecordId(mutation);
+    if (!id) continue;
+
+    if (mutation.operation === 'delete') {
+      byId.delete(id);
+      continue;
+    }
+
+    const cached = byId.get(id);
+    byId.set(id, {
+      ...(cached || ({} as T)),
+      ...(mutation.data as T),
+      id,
+    });
+  }
+
+  return Array.from(byId.values());
+}
+
 export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
   const {
     table,
@@ -139,11 +199,22 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
         const data = await fetchFromSupabase(table, select, userId || '');
         freshData = data as TData[];
       }
+
+      const pendingMutations = await getScopedPendingMutations(table, userId || '', outletId);
+      const shouldProtectLocalState = pendingMutations.length > 0 && Array.isArray(freshData);
+
+      const finalData = shouldProtectLocalState
+        ? mergeFreshWithPending(
+            freshData as Array<Record<string, unknown>>,
+            cachedList as Array<Record<string, unknown>>,
+            pendingMutations
+          ) as unknown as TData[]
+        : freshData;
       
-      // Store for offline use
-      await storeData(table, freshData, userId || '', outletId);
-      console.log(`[Online] Cached ${table}:`, freshData.length, 'items');
-      return freshData;
+      // Store for offline use (never overwrite pending local state with stale reconnect payload)
+      await storeData(table, finalData, userId || '', outletId);
+      console.log(`[Online] Cached ${table}:`, finalData.length, 'items', shouldProtectLocalState ? '(merge pending)' : '');
+      return finalData;
     } catch (error) {
       // Network error while online - fallback to cache
       console.warn(`[Fallback] Network error for ${table}, using cache:`, error);
