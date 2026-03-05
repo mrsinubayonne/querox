@@ -5,8 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNetworkStatus } from './useNetworkStatus';
 import {
   OfflineDataType,
+  QueuedMutation,
   storeData,
   getData,
+  getPendingMutations,
 } from '@/lib/offlineStorage';
 
 interface UseOfflineDataOptions<TData> {
