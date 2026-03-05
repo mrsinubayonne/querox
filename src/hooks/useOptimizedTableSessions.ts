@@ -132,43 +132,65 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 }
 
 
+  const getSessionsSnapshot = useCallback(async (): Promise<TableSession[]> => {
+    const fromQuery = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
+    const cachedScoped = await getData<TableSession[]>('table_sessions', resolvedUserId, scopedOutletId);
+    const cachedUnscoped = scopedOutletId
+      ? await getData<TableSession[]>('table_sessions', resolvedUserId)
+      : undefined;
+
+    const merged = [
+      ...fromQuery,
+      ...((cachedScoped?.data || []) as TableSession[]),
+      ...((cachedUnscoped?.data || []) as TableSession[]),
+    ];
+
+    return Array.from(new Map(merged.map((session) => [session.id, session])).values());
+  }, [queryClient, sessionsQueryKey, resolvedUserId, scopedOutletId]);
+
   const updateLocalCache = useCallback(async (updatedSession: Partial<TableSession> & { id: string }) => {
-    // Use rawSessions from the query cache to avoid circular dependency with memoized sessions
-    const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
-    const updatedSessions = currentSessions.map(s => 
+    const baseSessions = await getSessionsSnapshot();
+    if (baseSessions.length === 0) {
+      console.warn('[Offline] updateLocalCache ignoré: snapshot vide pour table_sessions');
+      return;
+    }
+
+    const updatedSessions = baseSessions.map((s) =>
       s.id === updatedSession.id ? { ...s, ...updatedSession } : s
     );
-    console.log(`📝 updateLocalCache: setting session ${updatedSession.id} to status=${updatedSession.status}`);
     queryClient.setQueryData(sessionsQueryKey, updatedSessions);
-    
-    // Also store in IndexedDB
+
     if (user) {
       await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
     }
-  }, [queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
+  }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
   // Remove a session from the local cache entirely (used after payment)
   const removeFromLocalCache = useCallback(async (sessionId: string) => {
-    const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
-    const filtered = currentSessions.filter(s => s.id !== sessionId);
-    console.log(`🗑️ removeFromLocalCache: removing session ${sessionId} (${currentSessions.length} → ${filtered.length})`);
+    const baseSessions = await getSessionsSnapshot();
+    if (baseSessions.length === 0) {
+      console.warn('[Offline] removeFromLocalCache ignoré: snapshot vide pour table_sessions');
+      return;
+    }
+
+    const filtered = baseSessions.filter((s) => s.id !== sessionId);
     queryClient.setQueryData(sessionsQueryKey, filtered);
     if (user) {
       await storeData('table_sessions', filtered, resolvedUserId, scopedOutletId);
     }
-  }, [queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
+  }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
   // Helper to add to local cache
   const addToLocalCache = useCallback(async (newSession: TableSession) => {
-    const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
-    const withoutDuplicate = currentSessions.filter(s => s.id !== newSession.id);
+    const baseSessions = await getSessionsSnapshot();
+    const withoutDuplicate = baseSessions.filter((s) => s.id !== newSession.id);
     const updatedSessions = [newSession, ...withoutDuplicate];
     queryClient.setQueryData(sessionsQueryKey, updatedSessions);
-    
+
     if (user) {
       await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
     }
-  }, [queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
+  }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
   const upsertInvoiceInCache = useCallback(async (invoice: Invoice) => {
     if (!resolvedUserId) return;
