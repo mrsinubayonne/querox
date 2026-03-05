@@ -100,6 +100,64 @@ function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string): T[] {
   });
 }
 
+function getMutationRecordId(mutation: QueuedMutation): string | undefined {
+  const value = mutation.data?.id;
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+async function getScopedPendingMutations(
+  table: OfflineDataType,
+  userId: string,
+  outletId?: string
+): Promise<QueuedMutation[]> {
+  if (!userId) return [];
+
+  const allPending = await getPendingMutations();
+  return allPending.filter((mutation) => {
+    if (mutation.table !== table) return false;
+    if (mutation.userId !== userId) return false;
+    if (!outletId) return true;
+    return mutation.outletId === outletId || typeof mutation.outletId === 'undefined' || mutation.outletId === null;
+  });
+}
+
+function mergeFreshWithPending<T extends Record<string, unknown>>(
+  freshData: T[],
+  cachedData: T[],
+  pendingMutations: QueuedMutation[]
+): T[] {
+  const byId = new Map<string, T>();
+
+  for (const item of freshData) {
+    const id = typeof item?.id === 'string' ? item.id : undefined;
+    if (id) byId.set(id, item);
+  }
+
+  for (const item of cachedData) {
+    const id = typeof item?.id === 'string' ? item.id : undefined;
+    if (id && !byId.has(id)) byId.set(id, item);
+  }
+
+  for (const mutation of pendingMutations) {
+    const id = getMutationRecordId(mutation);
+    if (!id) continue;
+
+    if (mutation.operation === 'delete') {
+      byId.delete(id);
+      continue;
+    }
+
+    const cached = byId.get(id);
+    byId.set(id, {
+      ...(cached || ({} as T)),
+      ...(mutation.data as T),
+      id,
+    });
+  }
+
+  return Array.from(byId.values());
+}
+
 export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
   const {
     table,
