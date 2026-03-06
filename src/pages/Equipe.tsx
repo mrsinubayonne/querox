@@ -34,7 +34,6 @@ const Equipe: React.FC = () => {
   }) => {
     await inviteMember(data.email, 'membre', data.fullName, '', data.selectedOutlets, data.selectedPermissions);
     
-    // Small delay then fetch the newly created member
     await new Promise(resolve => setTimeout(resolve, 500));
     
     const { data: updatedMembers } = await supabase
@@ -50,16 +49,8 @@ const Equipe: React.FC = () => {
     setOpen(false);
   };
 
-  const copyAccessCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast({
-      title: "Code copié",
-      description: "Le code d'accès a été copié dans le presse-papier"
-    });
-  };
-
   const getStatusBadge = (status: string) => {
-    return <Badge className="bg-emerald-500">Actif</Badge>;
+    return <Badge className="bg-emerald-500 text-emerald-50">Actif</Badge>;
   };
 
   const formatDate = (dateString: string | null) => {
@@ -79,28 +70,14 @@ const Equipe: React.FC = () => {
       <PageWithSidebar>
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Gestion d'équipe</h1>
-              <p className="text-gray-600">
-                Invitez et gérez vos membres d'équipe
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-          {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Gestion d'équipe</h1>
-                <p className="text-gray-600">
+                <h1 className="text-2xl font-bold text-foreground">Gestion d'équipe</h1>
+                <p className="text-muted-foreground">
                   {teamMembers.length} / {teamLimit} membres · Plan {subscription?.subscription_tier || 'starter'}
                 </p>
               </div>
@@ -136,15 +113,15 @@ const Equipe: React.FC = () => {
 
           {/* Limite info */}
           {!canAdd && (
-            <Card className="border-orange-200 bg-orange-50">
+            <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <Shield className="w-5 h-5 text-orange-600" />
                   <div>
-                    <p className="font-medium text-orange-900">
+                    <p className="font-medium text-orange-900 dark:text-orange-200">
                       Limite de membres atteinte
                     </p>
-                    <p className="text-sm text-orange-700">
+                    <p className="text-sm text-orange-700 dark:text-orange-400">
                       Passez à un plan supérieur pour ajouter plus de membres (Pro: 5 membres, Entreprise: 10 membres)
                     </p>
                   </div>
@@ -171,24 +148,24 @@ const Equipe: React.FC = () => {
               {teamMembers.map((member) => (
                 <Card key={member.id}>
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center shrink-0">
                           <Users className="w-6 h-6 text-white" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-semibold">{member.full_name || member.member_email}</h3>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="text-lg font-semibold text-foreground">{member.full_name || member.member_email}</h3>
                             {getStatusBadge(member.status)}
                             {!member.is_active && <Badge variant="secondary">Désactivé</Badge>}
                           </div>
-                          <p className="text-sm text-gray-500 mb-2">{member.member_email} {member.phone && `• ${member.phone}`}</p>
-                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                          <p className="text-sm text-muted-foreground mb-2 truncate">{member.member_email} {member.phone && `• ${member.phone}`}</p>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2 flex-wrap">
                             <span>Ajouté le {formatDate(member.invited_at)}</span>
                             {member.last_login_at && <span>• Dernière connexion: {formatDate(member.last_login_at)}</span>}
                             <span>• {member.actions_count} actions</span>
                           </div>
-                          {/* Afficher les PDV assignés */}
+                          {/* PDV assignés */}
                           {member.outlets && member.outlets.length > 0 && (
                             <div className="flex items-center gap-2 flex-wrap mt-2">
                               <span className="text-xs text-muted-foreground">PDV:</span>
@@ -205,16 +182,16 @@ const Equipe: React.FC = () => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => setShowShareOptions({ show: true, member })}
-                                className="w-full"
+                                className="w-full md:w-auto"
                               >
                                 <Share2 className="w-4 h-4 mr-2" />
-                                Afficher les options de partage
+                                Options de partage
                               </Button>
                             </div>
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 shrink-0">
                         <Button
                           size="sm"
                           variant={member.is_active ? "outline" : "default"}
@@ -256,7 +233,6 @@ const Equipe: React.FC = () => {
               )}
             </DialogContent>
           </Dialog>
-              </div>
         </div>
       </PageWithSidebar>
     </SubscriptionGuard>
