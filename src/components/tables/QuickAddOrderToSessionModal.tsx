@@ -379,7 +379,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                           )}
                         </div>
                         <span className="text-muted-foreground font-medium ml-4">
-                          {item.price.toLocaleString()} FCFA
+                          {item.price.toLocaleString()} XAF
                         </span>
                       </button>
                     ))}
@@ -424,7 +424,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="custom-price">Prix (FCFA) *</Label>
+                  <Label htmlFor="custom-price">Prix (XAF) *</Label>
                   <Input
                     id="custom-price"
                     type="number"
@@ -462,7 +462,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                       <div className="flex-1">
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {item.price.toLocaleString()} FCFA × {item.quantity} = {(item.price * item.quantity).toLocaleString()} FCFA
+                          {item.price.toLocaleString()} XAF × {item.quantity} = {(item.price * item.quantity).toLocaleString()} XAF
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
@@ -505,7 +505,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
           <DialogFooter className="pt-4 border-t mt-4">
             <div className="flex items-center justify-between w-full">
               <div className="text-sm font-medium">
-                Total : <span className="text-lg font-bold">{totalAmount.toLocaleString()} FCFA</span>
+                Total : <span className="text-lg font-bold">{totalAmount.toLocaleString()} XAF</span>
               </div>
               <div className="flex gap-2">
                 <Button type="button" variant="outline" onClick={onClose}>

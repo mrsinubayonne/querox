@@ -67,7 +67,7 @@ const DebtorInvoiceItemsManager: React.FC<DebtorInvoiceItemsManagerProps> = ({
                   <div className="flex-1">
                     <div className="font-medium">{item.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      {item.price.toLocaleString()} FCFA × {item.quantity}
+                      {item.price.toLocaleString()} XAF × {item.quantity}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ const DebtorInvoiceItemsManager: React.FC<DebtorInvoiceItemsManagerProps> = ({
                       className="w-16"
                     />
                     <div className="font-semibold min-w-[100px] text-right">
-                      {(item.quantity * item.price).toLocaleString()} FCFA
+                      {(item.quantity * item.price).toLocaleString()} XAF
                     </div>
                     <Button
                       type="button"
@@ -96,7 +96,7 @@ const DebtorInvoiceItemsManager: React.FC<DebtorInvoiceItemsManagerProps> = ({
             
             <div className="flex justify-end p-3 bg-muted rounded-lg">
               <div className="text-lg font-bold">
-                Total: {totalAmount.toLocaleString()} FCFA
+                Total: {totalAmount.toLocaleString()} XAF
               </div>
             </div>
           </div>

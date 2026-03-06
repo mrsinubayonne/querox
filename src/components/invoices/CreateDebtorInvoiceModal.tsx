@@ -171,7 +171,7 @@ const CreateDebtorInvoiceModal: React.FC<CreateDebtorInvoiceModalProps> = ({
             </div>
             {totalAmount > 0 && (
               <div className="text-lg font-bold text-foreground">
-                Montant total : {totalAmount.toLocaleString()} FCFA
+                Montant total : {totalAmount.toLocaleString()} XAF
               </div>
             )}
           </div>

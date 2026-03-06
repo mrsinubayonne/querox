@@ -81,7 +81,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("fr-FR").format(amount) + " FCFA";
+    return new Intl.NumberFormat("fr-FR").format(amount) + " XAF";
   };
 
   const totalAmount = orders.reduce((sum, order) => sum + order.total_amount, 0);

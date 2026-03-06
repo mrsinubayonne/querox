@@ -269,7 +269,7 @@ const Factures: React.FC = () => {
                           <div>
                             <p className="font-medium text-gray-900">Montant</p>
                             <p className="text-lg font-bold text-primary">
-                              {invoice.total_amount.toLocaleString('fr-FR')} FCFA
+                              {invoice.total_amount.toLocaleString('fr-FR')} XAF
                             </p>
                           </div>
                           <div>

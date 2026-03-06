@@ -106,7 +106,7 @@ const EditInvoiceModal: React.FC<EditInvoiceModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="amount">Montant (FCFA) *</Label>
+            <Label htmlFor="amount">Montant (XAF) *</Label>
             <Input
               id="amount"
               type="number"
