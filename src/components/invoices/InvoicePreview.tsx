@@ -96,7 +96,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
                 <p className="text-xs text-black">Exemple de description</p>
               </td>
               <td className="border border-gray-300 px-3 py-2 text-right text-sm font-semibold text-black">
-                15,000 FCFA
+                15,000 XAF
               </td>
             </tr>
           </tbody>
@@ -112,7 +112,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
               className="font-bold text-base text-black"
               style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}
             >
-              15,000 FCFA
+              15,000 XAF
             </span>
           </div>
         </div>

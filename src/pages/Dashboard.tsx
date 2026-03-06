@@ -197,7 +197,7 @@ const Dashboard: React.FC = () => {
                   <div className="animate-fade-in" style={{ animationDelay: '0ms' }}>
                     <ModernStatCard
                       title="Chiffre d'affaires"
-                      value={`${stats.revenue.toFixed(0)} FCFA`}
+                      value={`${stats.revenue.toFixed(0)} XAF`}
                       icon={<DollarSign className="h-5 w-5" />}
                       color="green"
                       trend={stats.revenueChange >= 0 ? 'up' : 'down'}
@@ -239,7 +239,7 @@ const Dashboard: React.FC = () => {
                   <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
                     <ModernStatCard
                       title="Panier moyen"
-                      value={`${stats.averageCart.toFixed(0)} FCFA`}
+                      value={`${stats.averageCart.toFixed(0)} XAF`}
                       icon={<Receipt className="h-5 w-5" />}
                       color="orange"
                       trend="neutral"
@@ -298,7 +298,7 @@ const Dashboard: React.FC = () => {
                             <p className="font-bold text-lg bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                               {product.revenue.toFixed(0)}
                             </p>
-                            <p className="text-xs text-muted-foreground">FCFA</p>
+                            <p className="text-xs text-muted-foreground">XAF</p>
                           </div>
                         </div>
                       ))}

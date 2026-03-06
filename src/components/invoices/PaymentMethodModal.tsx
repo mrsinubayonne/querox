@@ -144,7 +144,7 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
+    return new Intl.NumberFormat('fr-FR').format(amount) + ' XAF';
   };
 
   const activeDebtors = debtors.filter(d => d.is_active);

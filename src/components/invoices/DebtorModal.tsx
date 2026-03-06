@@ -161,7 +161,7 @@ const DebtorModal: React.FC<DebtorModalProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="credit_limit">Limite de crédit (FCFA)</Label>
+              <Label htmlFor="credit_limit">Limite de crédit (XAF)</Label>
               <Input
                 id="credit_limit"
                 type="number"

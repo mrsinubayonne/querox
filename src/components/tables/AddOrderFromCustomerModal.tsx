@@ -336,7 +336,7 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
                         >
                           <span>{item.name}</span>
                           <span className="text-muted-foreground">
-                            {item.price.toLocaleString()} FCFA
+                            {item.price.toLocaleString()} XAF
                           </span>
                         </button>
                       ))}
@@ -369,8 +369,8 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
                         <div className="flex-1">
                           <p className="font-medium">{item.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            {item.price.toLocaleString()} FCFA × {item.quantity} ={" "}
-                            {(item.price * item.quantity).toLocaleString()} FCFA
+                            {item.price.toLocaleString()} XAF × {item.quantity} ={" "}
+                            {(item.price * item.quantity).toLocaleString()} XAF
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -413,7 +413,7 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
                 <div className="mt-4 p-3 bg-primary/10 rounded-md">
                   <div className="flex justify-between items-center font-bold text-lg">
                     <span>Total</span>
-                    <span>{totalAmount.toLocaleString()} FCFA</span>
+                    <span>{totalAmount.toLocaleString()} XAF</span>
                   </div>
                 </div>
               )}

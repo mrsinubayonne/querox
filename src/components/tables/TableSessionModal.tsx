@@ -114,11 +114,11 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
       if (paymentMethod === 'Multiple' && multipleBreakdown) {
         const parts: string[] = [];
-        if (multipleBreakdown.especes > 0) parts.push(`Espèces: ${multipleBreakdown.especes} FCFA`);
-        if (multipleBreakdown.virement > 0) parts.push(`Virement: ${multipleBreakdown.virement} FCFA`);
-        if (multipleBreakdown.carte > 0) parts.push(`Carte: ${multipleBreakdown.carte} FCFA`);
-        if (multipleBreakdown.mobileMoney > 0) parts.push(`Mobile Money: ${multipleBreakdown.mobileMoney} FCFA`);
-        if (multipleBreakdown.debiteur > 0) parts.push(`Débiteur: ${multipleBreakdown.debiteur} FCFA`);
+        if (multipleBreakdown.especes > 0) parts.push(`Espèces: ${multipleBreakdown.especes} XAF`);
+        if (multipleBreakdown.virement > 0) parts.push(`Virement: ${multipleBreakdown.virement} XAF`);
+        if (multipleBreakdown.carte > 0) parts.push(`Carte: ${multipleBreakdown.carte} XAF`);
+        if (multipleBreakdown.mobileMoney > 0) parts.push(`Mobile Money: ${multipleBreakdown.mobileMoney} XAF`);
+        if (multipleBreakdown.debiteur > 0) parts.push(`Débiteur: ${multipleBreakdown.debiteur} XAF`);
         paymentMethodString = 'Multiple';
       }
 

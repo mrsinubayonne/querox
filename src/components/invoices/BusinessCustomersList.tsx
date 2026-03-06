@@ -94,7 +94,7 @@ const BusinessCustomersList: React.FC<BusinessCustomersListProps> = ({
                     </Badge>
                     {customer.current_debt > 0 && (
                       <Badge variant="destructive">
-                        Dette: {customer.current_debt.toLocaleString()} FCFA
+                        Dette: {customer.current_debt.toLocaleString()} XAF
                       </Badge>
                     )}
                   </div>
@@ -125,7 +125,7 @@ const BusinessCustomersList: React.FC<BusinessCustomersListProps> = ({
                     </div>
                     <div>
                       <span className="text-muted-foreground">Limite:</span>{" "}
-                      {customer.credit_limit.toLocaleString()} FCFA
+                      {customer.credit_limit.toLocaleString()} XAF
                     </div>
                   </div>
 

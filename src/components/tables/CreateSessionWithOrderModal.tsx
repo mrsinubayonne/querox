@@ -500,7 +500,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                       >
                         <span>{item.name}</span>
                         <span className="text-muted-foreground">
-                          {item.price.toLocaleString()} FCFA
+                          {item.price.toLocaleString()} XAF
                         </span>
                       </button>
                     ))}
@@ -540,7 +540,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="custom-price">Prix (FCFA) *</Label>
+                  <Label htmlFor="custom-price">Prix (XAF) *</Label>
                   <Input
                     id="custom-price"
                     type="number"
@@ -628,7 +628,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
               <div className="mb-4 p-3 md:p-4 bg-primary/10 border border-primary/20 rounded-md flex-shrink-0">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-base md:text-lg">Total</span>
-                  <span className="font-bold text-lg md:text-xl text-primary">{totalAmount.toLocaleString()} FCFA</span>
+                  <span className="font-bold text-lg md:text-xl text-primary">{totalAmount.toLocaleString()} XAF</span>
                 </div>
               </div>
             )}

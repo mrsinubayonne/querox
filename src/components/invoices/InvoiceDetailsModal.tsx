@@ -169,7 +169,7 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
                 <p className="text-sm text-muted-foreground mb-1">Montant total</p>
                 <p className="text-4xl font-bold text-black" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}>
-                  {invoice.total_amount.toLocaleString('fr-FR')} FCFA
+                  {invoice.total_amount.toLocaleString('fr-FR')} XAF
                 </p>
               </div>
 

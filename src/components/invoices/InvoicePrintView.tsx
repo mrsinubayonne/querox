@@ -330,10 +330,10 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
                     </td>
                     <td className="border border-gray-300 px-1 py-1 text-center text-xs">{item.quantity}</td>
                     <td className="border border-gray-300 px-1 py-1 text-right text-xs">
-                      {item.price?.toLocaleString('fr-FR')} FCFA
+                      {item.price?.toLocaleString('fr-FR')} XAF
                     </td>
                     <td className="border border-gray-300 px-1 py-1 text-right text-xs font-semibold">
-                      {((item.price || 0) * (item.quantity || 0)).toLocaleString('fr-FR')} FCFA
+                      {((item.price || 0) * (item.quantity || 0)).toLocaleString('fr-FR')} XAF
                     </td>
                   </tr>
                 ))
@@ -355,7 +355,7 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
             <div className="flex justify-between py-1 border-t-2 border-gray-300">
               <span className="text-base text-black font-bold">TOTAL:</span>
               <span className="text-base text-black font-bold">
-                {invoice.total_amount.toLocaleString('fr-FR')} FCFA
+                {invoice.total_amount.toLocaleString('fr-FR')} XAF
               </span>
             </div>
           </div>
@@ -366,7 +366,7 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
           {settings?.footer_note && (
             <p className="text-xs text-black mb-1 whitespace-pre-line">{settings.footer_note}</p>
           )}
-          <p className="text-xs text-black text-center" style={{ fontStyle: 'italic' }}>
+          <p className="text-xs text-black text-center" style={{ fontFamily: 'Arial, sans-serif', fontStyle: 'italic' }}>
             Généré par QUEROX.me - Logiciel de gestion, automatisation et optimisation
           </p>
         </div>
