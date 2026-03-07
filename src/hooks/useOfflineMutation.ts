@@ -48,7 +48,7 @@ export function useOfflineInsert<T extends Record<string, unknown>>(options: Use
 export function useOfflineUpdate<T extends Record<string, unknown>>(options: UseOfflineMutationOptions) {
   const { table, queryKey, onSuccess, onError } = options;
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
 
   return useMutation({
