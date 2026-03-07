@@ -17,18 +17,19 @@ interface UseOfflineMutationOptions {
 export function useOfflineInsert<T extends Record<string, unknown>>(options: UseOfflineMutationOptions) {
   const { table, queryKey, onSuccess, onError } = options;
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
+  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
 
   return useMutation({
     mutationFn: async (variables: T): Promise<T> => {
       const localId = generateLocalId();
       const outletId = localStorage.getItem('selectedOutletId') || undefined;
-      const dataWithId = { ...variables, id: localId, user_id: user?.id, outlet_id: outletId, created_at: new Date().toISOString() };
+      const dataWithId = { ...variables, id: localId, user_id: resolvedUserId, outlet_id: outletId, created_at: new Date().toISOString() };
 
       if (isOffline) {
-        await queueMutation({ table, operation: 'insert', data: dataWithId, localId, userId: user?.id || '', outletId, maxRetries: 3, conflictResolution: 'client-wins' });
-        const userId = user?.id || '';
+        await queueMutation({ table, operation: 'insert', data: dataWithId, localId, userId: resolvedUserId, outletId, maxRetries: 3, conflictResolution: 'client-wins' });
+        const userId = resolvedUserId;
         const cached = (await getData<T[]>(table, userId, outletId)) ?? (outletId ? await getData<T[]>(table, userId) : undefined);
         await storeData(table, [...(cached?.data || []), dataWithId as T], userId, outletId);
         toast({ title: 'Enregistré localement', description: 'Sera synchronisé à la reconnexion' });
@@ -47,15 +48,16 @@ export function useOfflineInsert<T extends Record<string, unknown>>(options: Use
 export function useOfflineUpdate<T extends Record<string, unknown>>(options: UseOfflineMutationOptions) {
   const { table, queryKey, onSuccess, onError } = options;
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
+  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
 
   return useMutation({
     mutationFn: async (variables: T & { id: string }): Promise<T> => {
       const outletId = localStorage.getItem('selectedOutletId') || undefined;
       if (isOffline) {
-        await queueMutation({ table, operation: 'update', data: variables, localId: variables.id, userId: user?.id || '', outletId, maxRetries: 3, conflictResolution: 'client-wins' });
-        const userId = user?.id || '';
+        await queueMutation({ table, operation: 'update', data: variables, localId: variables.id, userId: resolvedUserId, outletId, maxRetries: 3, conflictResolution: 'client-wins' });
+        const userId = resolvedUserId;
         const cached = (await getData<T[]>(table, userId, outletId)) ?? (outletId ? await getData<T[]>(table, userId) : undefined);
         if (cached?.data) {
           await storeData(
@@ -80,15 +82,16 @@ export function useOfflineUpdate<T extends Record<string, unknown>>(options: Use
 export function useOfflineDelete(options: UseOfflineMutationOptions) {
   const { table, queryKey, onSuccess, onError } = options;
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
+  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
 
   return useMutation({
     mutationFn: async (id: string) => {
       const outletId = localStorage.getItem('selectedOutletId') || undefined;
       if (isOffline) {
-        await queueMutation({ table, operation: 'delete', data: { id }, localId: id, userId: user?.id || '', outletId, maxRetries: 3, conflictResolution: 'client-wins' });
-        const userId = user?.id || '';
+        await queueMutation({ table, operation: 'delete', data: { id }, localId: id, userId: resolvedUserId, outletId, maxRetries: 3, conflictResolution: 'client-wins' });
+        const userId = resolvedUserId;
         const cached = (await getData<{ id: string }[]>(table, userId, outletId)) ?? (outletId ? await getData<{ id: string }[]>(table, userId) : undefined);
         if (cached?.data) await storeData(table, cached.data.filter(item => item.id !== id), userId, outletId);
         toast({ title: 'Supprimé localement' });
