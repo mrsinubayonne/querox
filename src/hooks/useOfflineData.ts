@@ -280,15 +280,36 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
       } else {
         data = await fetchFromSupabase(table, '*', userId);
       }
-      await storeData(table, data, userId);
+
+      const normalizedFresh = Array.isArray(data) ? data : [];
+      const cached = await getCachedWithFallback<unknown[]>(table, userId, outletId);
+      const cachedList = Array.isArray(cached?.data) ? cached.data : [];
+      const pendingMutations = await getScopedPendingMutations(table, userId, outletId);
+
+      const finalData = pendingMutations.length > 0
+        ? mergeFreshWithPending(
+            normalizedFresh as Array<Record<string, unknown>>,
+            cachedList as Array<Record<string, unknown>>,
+            pendingMutations
+          )
+        : normalizedFresh;
+
+      await storeData(table, finalData, userId);
+
       // Also store scoped by outlet if provided
-      if (outletId && Array.isArray(data)) {
-        const scoped = (data as Array<Record<string, unknown>>).filter(
+      if (outletId && Array.isArray(finalData)) {
+        const scoped = (finalData as Array<Record<string, unknown>>).filter(
           item => !item.outlet_id || item.outlet_id === outletId
         );
         await storeData(table, scoped, userId, outletId);
       }
-      console.log(`${logPrefix} Preloaded ${table}:`, (data as unknown[]).length, 'items');
+
+      console.log(
+        `${logPrefix} Preloaded ${table}:`,
+        finalData.length,
+        'items',
+        pendingMutations.length > 0 ? '(merge pending)' : ''
+      );
     } catch (error) {
       console.warn(`${logPrefix} Failed to preload ${table}:`, error);
     }
