@@ -182,8 +182,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
 
-        setSession(session);
-        setUser(session?.user ?? null);
+        // Do not eagerly clear user on unexpected SIGNED_OUT; keep UX stable.
+        if (!(event === 'SIGNED_OUT' && !explicitSignOutRef.current)) {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+
         if (navigator.onLine) {
           setIsOfflineMode(false);
         }
