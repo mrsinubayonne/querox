@@ -90,8 +90,8 @@ export function useOfflineDelete(options: UseOfflineMutationOptions) {
     mutationFn: async (id: string) => {
       const outletId = localStorage.getItem('selectedOutletId') || undefined;
       if (isOffline) {
-        await queueMutation({ table, operation: 'delete', data: { id }, localId: id, userId: user?.id || '', outletId, maxRetries: 3, conflictResolution: 'client-wins' });
-        const userId = user?.id || '';
+        await queueMutation({ table, operation: 'delete', data: { id }, localId: id, userId: resolvedUserId, outletId, maxRetries: 3, conflictResolution: 'client-wins' });
+        const userId = resolvedUserId;
         const cached = (await getData<{ id: string }[]>(table, userId, outletId)) ?? (outletId ? await getData<{ id: string }[]>(table, userId) : undefined);
         if (cached?.data) await storeData(table, cached.data.filter(item => item.id !== id), userId, outletId);
         toast({ title: 'Supprimé localement' });
