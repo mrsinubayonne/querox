@@ -84,6 +84,7 @@ export function useOfflineDelete(options: UseOfflineMutationOptions) {
   const queryClient = useQueryClient();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
+  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
 
   return useMutation({
     mutationFn: async (id: string) => {
