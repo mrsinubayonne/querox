@@ -25,11 +25,11 @@ export function useOfflineInsert<T extends Record<string, unknown>>(options: Use
     mutationFn: async (variables: T): Promise<T> => {
       const localId = generateLocalId();
       const outletId = localStorage.getItem('selectedOutletId') || undefined;
-      const dataWithId = { ...variables, id: localId, user_id: user?.id, outlet_id: outletId, created_at: new Date().toISOString() };
+      const dataWithId = { ...variables, id: localId, user_id: resolvedUserId, outlet_id: outletId, created_at: new Date().toISOString() };
 
       if (isOffline) {
-        await queueMutation({ table, operation: 'insert', data: dataWithId, localId, userId: user?.id || '', outletId, maxRetries: 3, conflictResolution: 'client-wins' });
-        const userId = user?.id || '';
+        await queueMutation({ table, operation: 'insert', data: dataWithId, localId, userId: resolvedUserId, outletId, maxRetries: 3, conflictResolution: 'client-wins' });
+        const userId = resolvedUserId;
         const cached = (await getData<T[]>(table, userId, outletId)) ?? (outletId ? await getData<T[]>(table, userId) : undefined);
         await storeData(table, [...(cached?.data || []), dataWithId as T], userId, outletId);
         toast({ title: 'Enregistré localement', description: 'Sera synchronisé à la reconnexion' });
