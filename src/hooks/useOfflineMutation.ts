@@ -19,6 +19,7 @@ export function useOfflineInsert<T extends Record<string, unknown>>(options: Use
   const queryClient = useQueryClient();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
+  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
 
   return useMutation({
     mutationFn: async (variables: T): Promise<T> => {
