@@ -224,16 +224,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Handle signed out event
         if (event === 'SIGNED_OUT') {
-          localStorage.clear();
-          clearAuthData();
-          setIsTeamMember(false);
-          setTeamMemberSession(null);
-          setIsOfflineMode(false);
+          // IMPORTANT: only wipe local app state on explicit/manual sign out.
+          // Supabase can emit SIGNED_OUT during token edge-cases; we keep offline continuity.
+          if (explicitSignOutRef.current) {
+            localStorage.clear();
+            clearAuthData();
+            setIsTeamMember(false);
+            setTeamMemberSession(null);
+            setIsOfflineMode(false);
 
-          // Reset refs
-          offlineAuthLoadedRef.current = false;
-          explicitSignOutRef.current = false;
-          preloadTriggeredRef.current = false;
+            // Reset refs
+            offlineAuthLoadedRef.current = false;
+            explicitSignOutRef.current = false;
+            preloadTriggeredRef.current = false;
+            return;
+          }
+
+          // Unexpected SIGNED_OUT: try to keep user in offline mode using cached auth
+          void getAuthData().then((cachedAuth) => {
+            if (cachedAuth?.user) {
+              console.warn('⚠️ SIGNED_OUT non manuel détecté: restauration session locale offline');
+              setUser(cachedAuth.user as unknown as User);
+              setSession(null);
+              setIsOfflineMode(true);
+              setLoading(false);
+              offlineAuthLoadedRef.current = true;
+              return;
+            }
+
+            // No cache available → fallback to logged-out state
+            setUser(null);
+            setSession(null);
+            setIsOfflineMode(false);
+            setIsTeamMember(false);
+            setTeamMemberSession(null);
+          });
         }
       }
     );
