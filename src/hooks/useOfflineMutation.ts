@@ -56,8 +56,8 @@ export function useOfflineUpdate<T extends Record<string, unknown>>(options: Use
     mutationFn: async (variables: T & { id: string }): Promise<T> => {
       const outletId = localStorage.getItem('selectedOutletId') || undefined;
       if (isOffline) {
-        await queueMutation({ table, operation: 'update', data: variables, localId: variables.id, userId: user?.id || '', outletId, maxRetries: 3, conflictResolution: 'client-wins' });
-        const userId = user?.id || '';
+        await queueMutation({ table, operation: 'update', data: variables, localId: variables.id, userId: resolvedUserId, outletId, maxRetries: 3, conflictResolution: 'client-wins' });
+        const userId = resolvedUserId;
         const cached = (await getData<T[]>(table, userId, outletId)) ?? (outletId ? await getData<T[]>(table, userId) : undefined);
         if (cached?.data) {
           await storeData(
