@@ -103,7 +103,8 @@ export function useOfflineDelete(options: UseOfflineMutationOptions) {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const outletId = localStorage.getItem('selectedOutletId') || undefined;
+      const outletId = getSelectedOutletIdFromStorage();
+      if (!resolvedUserId) throw new Error('Session utilisateur introuvable. Rechargez la page.');
       if (isOffline) {
         await queueMutation({ table, operation: 'delete', data: { id }, localId: id, userId: resolvedUserId, outletId, maxRetries: 3, conflictResolution: 'client-wins' });
         const userId = resolvedUserId;
