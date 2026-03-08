@@ -10,6 +10,7 @@ import {
   getData,
   getPendingMutations,
 } from '@/lib/offlineStorage';
+import { getSelectedOutletIdFromStorage, resolveOfflineUserId, sanitizeStorageId } from '@/lib/offlineIdentity';
 
 interface UseOfflineDataOptions<TData> {
   table: OfflineDataType;
