@@ -215,12 +215,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Store auth data for offline use when user signs in
         if (event === 'SIGNED_IN' && session?.user) {
-          // Store auth in IndexedDB
-          storeAuthData({
-            user: session.user as unknown as Record<string, unknown>,
-            accessToken: session.access_token,
-            refreshToken: session.refresh_token,
-          });
+          persistAuthCache(session);
 
           // Preload critical data for offline use
           triggerPreloadOnce(session.user.id);
