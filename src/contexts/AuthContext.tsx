@@ -72,13 +72,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const explicitSignOutRef = useRef(false);
   const preloadTriggeredRef = useRef(false);
 
+  const persistAuthCache = (nextSession: Session) => {
+    void storeAuthData({
+      user: nextSession.user as unknown as Record<string, unknown>,
+      userId: nextSession.user.id,
+      email: nextSession.user.email,
+      accessToken: nextSession.access_token,
+      refreshToken: nextSession.refresh_token,
+      expiresAt: nextSession.expires_at,
+      userMetadata: (nextSession.user.user_metadata || {}) as Record<string, unknown>,
+      cachedAt: Date.now(),
+    });
+  };
+
   const triggerPreloadOnce = (userId: string) => {
     if (!userId) return;
     if (!navigator.onLine) return;
     if (preloadTriggeredRef.current) return;
     preloadTriggeredRef.current = true;
 
-    const outletId = localStorage.getItem('selectedOutletId') || undefined;
+    const outletId = getSelectedOutletIdFromStorage();
     preloadCriticalData(userId, outletId).then(() => {
       console.log('✅ [Offline] Preload critique terminé');
     }).catch(err => {
