@@ -56,7 +56,11 @@ export function useOfflineUpdate<T extends Record<string, unknown>>(options: Use
   const queryClient = useQueryClient();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
-  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
+  const resolvedUserId = resolveOfflineUserId({
+    userId: user?.id,
+    isTeamMember,
+    ownerId: teamMemberSession?.ownerId,
+  });
 
   return useMutation({
     mutationFn: async (variables: T & { id: string }): Promise<T> => {
