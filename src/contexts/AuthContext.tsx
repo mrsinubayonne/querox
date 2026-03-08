@@ -226,11 +226,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log('Token refreshed successfully');
           // Update stored auth data
           if (session) {
-            storeAuthData({
-              user: session.user as unknown as Record<string, unknown>,
-              accessToken: session.access_token,
-              refreshToken: session.refresh_token,
-            });
+            persistAuthCache(session);
 
             // Ensure we preload at least once even if user never hits SIGNED_IN in this tab
             triggerPreloadOnce(session.user.id);
