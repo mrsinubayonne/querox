@@ -71,8 +71,12 @@ export const useOptimizedTableSessions = () => {
   // CRITICAL: Must match the userId/outletId that useOfflineData uses internally
   // useOfflineData uses: isTeamMember ? teamMemberSession?.ownerId : user?.id
   // useOfflineData uses: localStorage.getItem('selectedOutletId') || undefined
-  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
-  const scopedOutletId = (localStorage.getItem('selectedOutletId') || undefined) as string | undefined;
+  const resolvedUserId = resolveOfflineUserId({
+    userId: user?.id,
+    isTeamMember,
+    ownerId: teamMemberSession?.ownerId,
+  }) || '';
+  const scopedOutletId = getSelectedOutletIdFromStorage();
   const sessionsQueryKey = ['table-sessions', resolvedUserId, scopedOutletId] as const;
   const invoicesQueryKey = ['invoices', resolvedUserId, scopedOutletId] as const;
   const ordersQueryKey = ['orders', resolvedUserId, scopedOutletId] as const;
