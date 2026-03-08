@@ -10,6 +10,7 @@ import {
   getData,
   getPendingMutations,
 } from '@/lib/offlineStorage';
+import { getSelectedOutletIdFromStorage, resolveOfflineUserId, sanitizeStorageId } from '@/lib/offlineIdentity';
 
 interface UseOfflineDataOptions<TData> {
   table: OfflineDataType;
@@ -173,12 +174,18 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
 
-  const userId = isTeamMember ? teamMemberSession?.ownerId : user?.id;
-  const outletId = localStorage.getItem('selectedOutletId') || undefined;
+  const userId = resolveOfflineUserId({
+    userId: user?.id,
+    isTeamMember,
+    ownerId: teamMemberSession?.ownerId,
+  });
+  const outletId = getSelectedOutletIdFromStorage();
 
   const fetchData = useCallback(async (): Promise<TData[]> => {
+    if (!userId) return [];
+
     // Always try to get cached data first (with fallback to non outlet-scoped cache)
-    const cached = await getCachedWithFallback<TData[]>(table, userId || '', outletId);
+    const cached = await getCachedWithFallback<TData[]>(table, userId, outletId);
     const cachedList = filterArrayByOutletIfPossible((cached?.data || []) as TData[], outletId);
     
     if (isOffline) {
@@ -192,15 +199,15 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
       let freshData: TData[];
       
       if (buildQuery) {
-        const result = await buildQuery(userId || '', outletId);
+        const result = await buildQuery(userId, outletId);
         if (result.error) throw result.error;
         freshData = result.data || [];
       } else {
-        const data = await fetchFromSupabase(table, select, userId || '');
+        const data = await fetchFromSupabase(table, select, userId);
         freshData = data as TData[];
       }
 
-      const pendingMutations = await getScopedPendingMutations(table, userId || '', outletId);
+      const pendingMutations = await getScopedPendingMutations(table, userId, outletId);
       const shouldProtectLocalState = pendingMutations.length > 0 && Array.isArray(freshData);
 
       const finalData = shouldProtectLocalState
@@ -212,7 +219,7 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
         : freshData;
       
       // Store for offline use (never overwrite pending local state with stale reconnect payload)
-      await storeData(table, finalData, userId || '', outletId);
+      await storeData(table, finalData, userId, outletId);
       console.log(`[Online] Cached ${table}:`, finalData.length, 'items', shouldProtectLocalState ? '(merge pending)' : '');
       return finalData;
     } catch (error) {
@@ -268,9 +275,11 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
 
 export async function preloadCriticalData(userId: string, outletId?: string): Promise<void> {
   const logPrefix = '[Offline]';
-  if (!userId) return;
+  const normalizedUserId = sanitizeStorageId(userId);
+  const normalizedOutletId = sanitizeStorageId(outletId);
+  if (!normalizedUserId) return;
 
-  console.log(`${logPrefix} Preloading critical data for user:`, userId, '| outlet:', outletId);
+  console.log(`${logPrefix} Preloading critical data for user:`, normalizedUserId, '| outlet:', normalizedOutletId);
 
   const safeFetchAndStore = async (table: OfflineDataType, fetchFn?: () => Promise<unknown[]>) => {
     try {
@@ -278,13 +287,13 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
       if (fetchFn) {
         data = await fetchFn();
       } else {
-        data = await fetchFromSupabase(table, '*', userId);
+        data = await fetchFromSupabase(table, '*', normalizedUserId);
       }
 
       const normalizedFresh = Array.isArray(data) ? data : [];
-      const cached = await getCachedWithFallback<unknown[]>(table, userId, outletId);
+      const cached = await getCachedWithFallback<unknown[]>(table, normalizedUserId, normalizedOutletId);
       const cachedList = Array.isArray(cached?.data) ? cached.data : [];
-      const pendingMutations = await getScopedPendingMutations(table, userId, outletId);
+      const pendingMutations = await getScopedPendingMutations(table, normalizedUserId, normalizedOutletId);
 
       const finalData = pendingMutations.length > 0
         ? mergeFreshWithPending(
@@ -294,14 +303,14 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
           )
         : normalizedFresh;
 
-      await storeData(table, finalData, userId);
+      await storeData(table, finalData, normalizedUserId);
 
       // Also store scoped by outlet if provided
-      if (outletId && Array.isArray(finalData)) {
+      if (normalizedOutletId && Array.isArray(finalData)) {
         const scoped = (finalData as Array<Record<string, unknown>>).filter(
-          item => !item.outlet_id || item.outlet_id === outletId
+          item => !item.outlet_id || item.outlet_id === normalizedOutletId
         );
-        await storeData(table, scoped, userId, outletId);
+        await storeData(table, scoped, normalizedUserId, normalizedOutletId);
       }
 
       console.log(
@@ -321,10 +330,10 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
     const { data, error } = await supabase
       .from('menus')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', normalizedUserId);
     if (error) throw error;
     menus = (data || []) as Array<{ id: string }>;
-    await storeData('menus', data || [], userId);
+    await storeData('menus', data || [], normalizedUserId);
     console.log(`${logPrefix} Preloaded menus:`, (data || []).length, 'items');
   } catch (error) {
     console.warn(`${logPrefix} Failed to preload menus:`, error);
@@ -341,10 +350,10 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
         .in('menu_id', menuIds);
       if (error) throw error;
       categories = (data || []) as Array<{ id: string }>;
-      await storeData('menu_categories', data || [], userId);
+      await storeData('menu_categories', data || [], normalizedUserId);
       console.log(`${logPrefix} Preloaded menu_categories:`, (data || []).length, 'items');
     } else {
-      await storeData('menu_categories', [], userId);
+      await storeData('menu_categories', [], normalizedUserId);
     }
   } catch (error) {
     console.warn(`${logPrefix} Failed to preload menu_categories:`, error);
@@ -359,10 +368,10 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
         .select('*')
         .in('category_id', categoryIds);
       if (error) throw error;
-      await storeData('menu_items', data || [], userId);
+      await storeData('menu_items', data || [], normalizedUserId);
       console.log(`${logPrefix} Preloaded menu_items:`, (data || []).length, 'items');
     } else {
-      await storeData('menu_items', [], userId);
+      await storeData('menu_items', [], normalizedUserId);
     }
   } catch (error) {
     console.warn(`${logPrefix} Failed to preload menu_items:`, error);
@@ -379,7 +388,7 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
       const { data } = await supabase
         .from('business_periods')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', normalizedUserId)
         .order('started_at', { ascending: false })
         .limit(100);
       return data || [];
@@ -388,7 +397,7 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
       const { data } = await supabase
         .from('table_sessions')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', normalizedUserId)
         .order('started_at', { ascending: false })
         .limit(200);
       return data || [];
@@ -397,7 +406,7 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
       const { data } = await supabase
         .from('orders')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', normalizedUserId)
         .order('created_at', { ascending: false })
         .limit(500);
       return data || [];
@@ -406,7 +415,7 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
       const { data } = await supabase
         .from('invoices')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', normalizedUserId)
         .order('created_at', { ascending: false })
         .limit(500);
       return data || [];
@@ -417,7 +426,7 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
       const { data } = await supabase
         .from('transactions')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', normalizedUserId)
         .order('date', { ascending: false })
         .limit(500);
       return data || [];
@@ -427,8 +436,8 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
   ]);
 
   // Store outlet-specific data if outletId is known
-  if (outletId) {
-    console.log(`${logPrefix} Storing outlet-scoped data for outlet:`, outletId);
+  if (normalizedOutletId) {
+    console.log(`${logPrefix} Storing outlet-scoped data for outlet:`, normalizedOutletId);
   }
 
   console.log(`${logPrefix} ✅ Preloading complete`);

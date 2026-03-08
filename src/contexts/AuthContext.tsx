@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { storeAuthData, getAuthData, clearAuthData } from '@/lib/offlineStorage';
+import { getSelectedOutletIdFromStorage } from '@/lib/offlineIdentity';
 import { preloadCriticalData } from '@/hooks/useOfflineData';
 
 interface TeamMemberSession {
@@ -71,13 +72,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const explicitSignOutRef = useRef(false);
   const preloadTriggeredRef = useRef(false);
 
+  const persistAuthCache = (nextSession: Session) => {
+    void storeAuthData({
+      user: nextSession.user as unknown as Record<string, unknown>,
+      userId: nextSession.user.id,
+      email: nextSession.user.email,
+      accessToken: nextSession.access_token,
+      refreshToken: nextSession.refresh_token,
+      expiresAt: nextSession.expires_at,
+      userMetadata: (nextSession.user.user_metadata || {}) as Record<string, unknown>,
+      cachedAt: Date.now(),
+    });
+  };
+
   const triggerPreloadOnce = (userId: string) => {
     if (!userId) return;
     if (!navigator.onLine) return;
     if (preloadTriggeredRef.current) return;
     preloadTriggeredRef.current = true;
 
-    const outletId = localStorage.getItem('selectedOutletId') || undefined;
+    const outletId = getSelectedOutletIdFromStorage();
     preloadCriticalData(userId, outletId).then(() => {
       console.log('✅ [Offline] Preload critique terminé');
     }).catch(err => {
@@ -182,10 +196,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
 
-        // Do not eagerly clear user on unexpected SIGNED_OUT; keep UX stable.
-        if (!(event === 'SIGNED_OUT' && !explicitSignOutRef.current)) {
+        if (session?.user) {
           setSession(session);
-          setUser(session?.user ?? null);
+          setUser(session.user);
+        } else if (event === 'SIGNED_OUT' && explicitSignOutRef.current) {
+          setSession(null);
+          setUser(null);
         }
 
         if (navigator.onLine) {
@@ -199,12 +215,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Store auth data for offline use when user signs in
         if (event === 'SIGNED_IN' && session?.user) {
-          // Store auth in IndexedDB
-          storeAuthData({
-            user: session.user as unknown as Record<string, unknown>,
-            accessToken: session.access_token,
-            refreshToken: session.refresh_token,
-          });
+          persistAuthCache(session);
 
           // Preload critical data for offline use
           triggerPreloadOnce(session.user.id);
@@ -215,11 +226,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log('Token refreshed successfully');
           // Update stored auth data
           if (session) {
-            storeAuthData({
-              user: session.user as unknown as Record<string, unknown>,
-              accessToken: session.access_token,
-              refreshToken: session.refresh_token,
-            });
+            persistAuthCache(session);
 
             // Ensure we preload at least once even if user never hits SIGNED_IN in this tab
             triggerPreloadOnce(session.user.id);
@@ -283,11 +290,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Store for offline if we have a session
         if (session?.user) {
-          storeAuthData({
-            user: session.user as unknown as Record<string, unknown>,
-            accessToken: session.access_token,
-            refreshToken: session.refresh_token,
-          });
+          persistAuthCache(session);
 
           // IMPORTANT: when the user is already signed in, SIGNED_IN might not fire.
           // We still need to preload critical tables at least once while online.

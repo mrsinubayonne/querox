@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNetworkStatus } from './useNetworkStatus';
 import { toast } from './use-toast';
 import { OfflineDataType, queueMutation, generateLocalId, storeData, getData } from '@/lib/offlineStorage';
+import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from '@/lib/offlineIdentity';
 import { syncEngine } from '@/lib/syncEngine';
 
 interface UseOfflineMutationOptions {
@@ -19,12 +20,17 @@ export function useOfflineInsert<T extends Record<string, unknown>>(options: Use
   const queryClient = useQueryClient();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
-  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
+  const resolvedUserId = resolveOfflineUserId({
+    userId: user?.id,
+    isTeamMember,
+    ownerId: teamMemberSession?.ownerId,
+  });
 
   return useMutation({
     mutationFn: async (variables: T): Promise<T> => {
       const localId = generateLocalId();
-      const outletId = localStorage.getItem('selectedOutletId') || undefined;
+      const outletId = getSelectedOutletIdFromStorage();
+      if (!resolvedUserId) throw new Error('Session utilisateur introuvable. Rechargez la page.');
       const dataWithId = { ...variables, id: localId, user_id: resolvedUserId, outlet_id: outletId, created_at: new Date().toISOString() };
 
       if (isOffline) {
@@ -50,11 +56,16 @@ export function useOfflineUpdate<T extends Record<string, unknown>>(options: Use
   const queryClient = useQueryClient();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
-  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
+  const resolvedUserId = resolveOfflineUserId({
+    userId: user?.id,
+    isTeamMember,
+    ownerId: teamMemberSession?.ownerId,
+  });
 
   return useMutation({
     mutationFn: async (variables: T & { id: string }): Promise<T> => {
-      const outletId = localStorage.getItem('selectedOutletId') || undefined;
+      const outletId = getSelectedOutletIdFromStorage();
+      if (!resolvedUserId) throw new Error('Session utilisateur introuvable. Rechargez la page.');
       if (isOffline) {
         await queueMutation({ table, operation: 'update', data: variables, localId: variables.id, userId: resolvedUserId, outletId, maxRetries: 3, conflictResolution: 'client-wins' });
         const userId = resolvedUserId;
@@ -84,11 +95,16 @@ export function useOfflineDelete(options: UseOfflineMutationOptions) {
   const queryClient = useQueryClient();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
-  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
+  const resolvedUserId = resolveOfflineUserId({
+    userId: user?.id,
+    isTeamMember,
+    ownerId: teamMemberSession?.ownerId,
+  });
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const outletId = localStorage.getItem('selectedOutletId') || undefined;
+      const outletId = getSelectedOutletIdFromStorage();
+      if (!resolvedUserId) throw new Error('Session utilisateur introuvable. Rechargez la page.');
       if (isOffline) {
         await queueMutation({ table, operation: 'delete', data: { id }, localId: id, userId: resolvedUserId, outletId, maxRetries: 3, conflictResolution: 'client-wins' });
         const userId = resolvedUserId;
