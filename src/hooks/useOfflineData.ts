@@ -348,10 +348,10 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
         .in('menu_id', menuIds);
       if (error) throw error;
       categories = (data || []) as Array<{ id: string }>;
-      await storeData('menu_categories', data || [], userId);
+      await storeData('menu_categories', data || [], normalizedUserId);
       console.log(`${logPrefix} Preloaded menu_categories:`, (data || []).length, 'items');
     } else {
-      await storeData('menu_categories', [], userId);
+      await storeData('menu_categories', [], normalizedUserId);
     }
   } catch (error) {
     console.warn(`${logPrefix} Failed to preload menu_categories:`, error);
