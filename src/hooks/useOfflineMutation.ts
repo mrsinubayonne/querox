@@ -29,7 +29,8 @@ export function useOfflineInsert<T extends Record<string, unknown>>(options: Use
   return useMutation({
     mutationFn: async (variables: T): Promise<T> => {
       const localId = generateLocalId();
-      const outletId = localStorage.getItem('selectedOutletId') || undefined;
+      const outletId = getSelectedOutletIdFromStorage();
+      if (!resolvedUserId) throw new Error('Session utilisateur introuvable. Rechargez la page.');
       const dataWithId = { ...variables, id: localId, user_id: resolvedUserId, outlet_id: outletId, created_at: new Date().toISOString() };
 
       if (isOffline) {
