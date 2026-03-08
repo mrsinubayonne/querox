@@ -273,9 +273,11 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
 
 export async function preloadCriticalData(userId: string, outletId?: string): Promise<void> {
   const logPrefix = '[Offline]';
-  if (!userId) return;
+  const normalizedUserId = sanitizeStorageId(userId);
+  const normalizedOutletId = sanitizeStorageId(outletId);
+  if (!normalizedUserId) return;
 
-  console.log(`${logPrefix} Preloading critical data for user:`, userId, '| outlet:', outletId);
+  console.log(`${logPrefix} Preloading critical data for user:`, normalizedUserId, '| outlet:', normalizedOutletId);
 
   const safeFetchAndStore = async (table: OfflineDataType, fetchFn?: () => Promise<unknown[]>) => {
     try {
