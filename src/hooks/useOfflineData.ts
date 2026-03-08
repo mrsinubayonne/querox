@@ -199,15 +199,15 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
       let freshData: TData[];
       
       if (buildQuery) {
-        const result = await buildQuery(userId || '', outletId);
+        const result = await buildQuery(userId, outletId);
         if (result.error) throw result.error;
         freshData = result.data || [];
       } else {
-        const data = await fetchFromSupabase(table, select, userId || '');
+        const data = await fetchFromSupabase(table, select, userId);
         freshData = data as TData[];
       }
 
-      const pendingMutations = await getScopedPendingMutations(table, userId || '', outletId);
+      const pendingMutations = await getScopedPendingMutations(table, userId, outletId);
       const shouldProtectLocalState = pendingMutations.length > 0 && Array.isArray(freshData);
 
       const finalData = shouldProtectLocalState
