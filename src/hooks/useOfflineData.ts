@@ -366,10 +366,10 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
         .select('*')
         .in('category_id', categoryIds);
       if (error) throw error;
-      await storeData('menu_items', data || [], userId);
+      await storeData('menu_items', data || [], normalizedUserId);
       console.log(`${logPrefix} Preloaded menu_items:`, (data || []).length, 'items');
     } else {
-      await storeData('menu_items', [], userId);
+      await storeData('menu_items', [], normalizedUserId);
     }
   } catch (error) {
     console.warn(`${logPrefix} Failed to preload menu_items:`, error);
