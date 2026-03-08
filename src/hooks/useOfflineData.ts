@@ -328,10 +328,10 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
     const { data, error } = await supabase
       .from('menus')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', normalizedUserId);
     if (error) throw error;
     menus = (data || []) as Array<{ id: string }>;
-    await storeData('menus', data || [], userId);
+    await storeData('menus', data || [], normalizedUserId);
     console.log(`${logPrefix} Preloaded menus:`, (data || []).length, 'items');
   } catch (error) {
     console.warn(`${logPrefix} Failed to preload menus:`, error);
