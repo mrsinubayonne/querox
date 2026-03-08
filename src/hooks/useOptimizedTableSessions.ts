@@ -113,7 +113,7 @@ export const useOptimizedTableSessions = () => {
         return { data: [], error: e };
       }
     },
-    enabled: !!user,
+    enabled: !!resolvedUserId,
     // Important for published app: always refresh server truth on mount when online.
     refetchOnMount: isOffline ? false : 'always',
   });
