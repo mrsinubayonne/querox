@@ -6,6 +6,7 @@ import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
 import { useEffect, useCallback, useMemo } from 'react';
 import { useOfflineData } from './useOfflineData';
 import { queueMutation, generateLocalId, storeData, getData } from '@/lib/offlineStorage';
+import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from '@/lib/offlineIdentity';
 import { ensurePeriodExistsOffline } from './useAutoStartPeriod';
 import { useNetworkStatus } from './useNetworkStatus';
 import type { Invoice } from '@/hooks/useInvoices';
