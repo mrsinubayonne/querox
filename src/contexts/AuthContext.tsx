@@ -290,11 +290,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Store for offline if we have a session
         if (session?.user) {
-          storeAuthData({
-            user: session.user as unknown as Record<string, unknown>,
-            accessToken: session.access_token,
-            refreshToken: session.refresh_token,
-          });
+          persistAuthCache(session);
 
           // IMPORTANT: when the user is already signed in, SIGNED_IN might not fire.
           // We still need to preload critical tables at least once while online.
