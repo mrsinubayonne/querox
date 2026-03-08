@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNetworkStatus } from './useNetworkStatus';
 import { toast } from './use-toast';
 import { OfflineDataType, queueMutation, generateLocalId, storeData, getData } from '@/lib/offlineStorage';
+import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from '@/lib/offlineIdentity';
 import { syncEngine } from '@/lib/syncEngine';
 
 interface UseOfflineMutationOptions {
