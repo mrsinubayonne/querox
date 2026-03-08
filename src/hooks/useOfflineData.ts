@@ -174,8 +174,12 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
 
-  const userId = isTeamMember ? teamMemberSession?.ownerId : user?.id;
-  const outletId = localStorage.getItem('selectedOutletId') || undefined;
+  const userId = resolveOfflineUserId({
+    userId: user?.id,
+    isTeamMember,
+    ownerId: teamMemberSession?.ownerId,
+  });
+  const outletId = getSelectedOutletIdFromStorage();
 
   const fetchData = useCallback(async (): Promise<TData[]> => {
     // Always try to get cached data first (with fallback to non outlet-scoped cache)
