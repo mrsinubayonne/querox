@@ -182,8 +182,10 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
   const outletId = getSelectedOutletIdFromStorage();
 
   const fetchData = useCallback(async (): Promise<TData[]> => {
+    if (!userId) return [];
+
     // Always try to get cached data first (with fallback to non outlet-scoped cache)
-    const cached = await getCachedWithFallback<TData[]>(table, userId || '', outletId);
+    const cached = await getCachedWithFallback<TData[]>(table, userId, outletId);
     const cachedList = filterArrayByOutletIfPossible((cached?.data || []) as TData[], outletId);
     
     if (isOffline) {
