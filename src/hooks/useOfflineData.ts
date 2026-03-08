@@ -219,7 +219,7 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
         : freshData;
       
       // Store for offline use (never overwrite pending local state with stale reconnect payload)
-      await storeData(table, finalData, userId || '', outletId);
+      await storeData(table, finalData, userId, outletId);
       console.log(`[Online] Cached ${table}:`, finalData.length, 'items', shouldProtectLocalState ? '(merge pending)' : '');
       return finalData;
     } catch (error) {
