@@ -395,7 +395,7 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
       const { data } = await supabase
         .from('table_sessions')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', normalizedUserId)
         .order('started_at', { ascending: false })
         .limit(200);
       return data || [];
