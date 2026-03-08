@@ -436,8 +436,8 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
   ]);
 
   // Store outlet-specific data if outletId is known
-  if (outletId) {
-    console.log(`${logPrefix} Storing outlet-scoped data for outlet:`, outletId);
+  if (normalizedOutletId) {
+    console.log(`${logPrefix} Storing outlet-scoped data for outlet:`, normalizedOutletId);
   }
 
   console.log(`${logPrefix} ✅ Preloading complete`);
