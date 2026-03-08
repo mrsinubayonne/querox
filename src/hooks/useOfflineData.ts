@@ -301,14 +301,14 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
           )
         : normalizedFresh;
 
-      await storeData(table, finalData, userId);
+      await storeData(table, finalData, normalizedUserId);
 
       // Also store scoped by outlet if provided
-      if (outletId && Array.isArray(finalData)) {
+      if (normalizedOutletId && Array.isArray(finalData)) {
         const scoped = (finalData as Array<Record<string, unknown>>).filter(
-          item => !item.outlet_id || item.outlet_id === outletId
+          item => !item.outlet_id || item.outlet_id === normalizedOutletId
         );
-        await storeData(table, scoped, userId, outletId);
+        await storeData(table, scoped, normalizedUserId, normalizedOutletId);
       }
 
       console.log(
