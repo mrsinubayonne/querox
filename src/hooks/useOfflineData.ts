@@ -285,13 +285,13 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
       if (fetchFn) {
         data = await fetchFn();
       } else {
-        data = await fetchFromSupabase(table, '*', userId);
+        data = await fetchFromSupabase(table, '*', normalizedUserId);
       }
 
       const normalizedFresh = Array.isArray(data) ? data : [];
-      const cached = await getCachedWithFallback<unknown[]>(table, userId, outletId);
+      const cached = await getCachedWithFallback<unknown[]>(table, normalizedUserId, normalizedOutletId);
       const cachedList = Array.isArray(cached?.data) ? cached.data : [];
-      const pendingMutations = await getScopedPendingMutations(table, userId, outletId);
+      const pendingMutations = await getScopedPendingMutations(table, normalizedUserId, normalizedOutletId);
 
       const finalData = pendingMutations.length > 0
         ? mergeFreshWithPending(
