@@ -39,17 +39,21 @@ export const NetworkStatusBanner = () => {
     setTimeout(() => setIsRetrying(false), 1500);
   };
 
-  if (status === 'online') return null;
+  if (status === 'online' && !isCritical) return null;
+
+  const bgClass = isCritical 
+    ? 'bg-destructive/90 text-destructive-foreground'
+    : isOffline
+      ? 'bg-warning/90 text-warning-foreground'
+      : 'bg-primary/90 text-primary-foreground';
 
   return (
     <div
-      className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2.5 text-xs font-semibold px-4 py-2 rounded-full shadow-xl backdrop-blur-sm transition-all duration-300 ${
-        isOffline
-          ? 'bg-destructive/90 text-destructive-foreground'
-          : 'bg-warning/90 text-warning-foreground'
-      }`}
+      className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2.5 text-xs font-semibold px-4 py-2 rounded-full shadow-xl backdrop-blur-sm transition-all duration-300 ${bgClass}`}
     >
-      {isOffline ? (
+      {isCritical ? (
+        <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 animate-pulse" />
+      ) : isOffline ? (
         <CloudOff className="h-3.5 w-3.5 flex-shrink-0" />
       ) : (
         <Wifi className="h-3.5 w-3.5 flex-shrink-0 animate-pulse" />
