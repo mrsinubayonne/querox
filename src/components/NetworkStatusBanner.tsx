@@ -14,6 +14,7 @@ export const NetworkStatusBanner = () => {
   const queryClient = useQueryClient();
   const pendingCount = getPendingCount();
   const { pendingCount: syncPending } = useSyncStatus();
+  const { isCritical, queueHealth, oldestPendingAge } = useOfflineHealth();
   const totalPending = pendingCount + syncPending;
 
   useEffect(() => {
