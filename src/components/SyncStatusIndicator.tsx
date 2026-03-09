@@ -1,13 +1,7 @@
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { Cloud, CloudOff, RefreshCw, AlertCircle, Check } from 'lucide-react';
+import { Cloud, CloudOff, RefreshCw, AlertCircle, Check, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import {
   Popover,
   PopoverContent,
@@ -30,22 +24,14 @@ export const SyncStatusIndicator = () => {
   const { isOffline } = useNetworkStatus();
 
   const getStatusIcon = () => {
-    if (isOffline) {
-      return <CloudOff className="h-4 w-4 text-destructive" />;
-    }
-    if (isSyncing) {
-      return <RefreshCw className="h-4 w-4 text-primary animate-spin" />;
-    }
-    if (failedCount > 0) {
-      return <AlertCircle className="h-4 w-4 text-destructive" />;
-    }
-    if (pendingCount > 0) {
-      return <Cloud className="h-4 w-4 text-orange-500" />;
-    }
-    return <Check className="h-4 w-4 text-green-500" />;
+    if (isOffline) return <CloudOff className="h-4 w-4 text-destructive" />;
+    if (isSyncing) return <RefreshCw className="h-4 w-4 text-primary animate-spin" />;
+    if (failedCount > 0) return <AlertCircle className="h-4 w-4 text-destructive" />;
+    if (pendingCount > 0) return <Cloud className="h-4 w-4 text-warning" />;
+    return <Check className="h-4 w-4 text-success" />;
   };
 
-  const getStatusText = () => {
+  const getStatusLabel = () => {
     if (isOffline) return 'Hors ligne';
     if (isSyncing) return 'Synchronisation...';
     if (failedCount > 0) return `${failedCount} erreur(s)`;
@@ -53,113 +39,90 @@ export const SyncStatusIndicator = () => {
     return 'Synchronisé';
   };
 
-  const hasIssues = failedCount > 0 || pendingCount > 0 || isOffline;
+  const showBadge = failedCount > 0 || pendingCount > 0;
 
   return (
-    <TooltipProvider>
+    <div className="fixed top-4 right-4 z-[9998]">
       <Popover>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="relative h-8 gap-1.5 px-2"
-              >
-                {getStatusIcon()}
-                {hasIssues && (
-                  <span className="text-xs font-medium">
-                    {pendingCount + failedCount > 0 ? pendingCount + failedCount : ''}
-                  </span>
-                )}
-              </Button>
-            </PopoverTrigger>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{getStatusText()}</p>
-          </TooltipContent>
-        </Tooltip>
+        <PopoverTrigger asChild>
+          <button className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-full glass text-xs font-medium text-foreground shadow-md hover:shadow-lg transition-all">
+            {getStatusIcon()}
+            <span className="hidden sm:inline">{getStatusLabel()}</span>
+            {showBadge && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center animate-pulse-glow">
+                {pendingCount + failedCount}
+              </span>
+            )}
+          </button>
+        </PopoverTrigger>
 
         <PopoverContent className="w-72" align="end">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium text-sm">Synchronisation</h4>
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <Database className="h-4 w-4 text-primary" />
+                Synchronisation
+              </h4>
               {getStatusIcon()}
             </div>
 
             {isSyncing && (
-              <div className="space-y-1">
-                <Progress value={progress} className="h-2" />
-                <p className="text-xs text-muted-foreground text-center">
-                  {progress}%
-                </p>
+              <div className="space-y-1.5">
+                <Progress value={progress} className="h-1.5" />
+                <p className="text-xs text-muted-foreground text-center">{progress}%</p>
               </div>
             )}
 
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Statut</span>
-                <span className={isOffline ? 'text-destructive' : 'text-foreground'}>
-                  {isOffline ? 'Hors ligne' : 'En ligne'}
+                <span className={`font-medium ${isOffline ? 'text-destructive' : 'text-success'}`}>
+                  {isOffline ? '🔴 Hors ligne' : '🟢 En ligne'}
                 </span>
               </div>
 
               {pendingCount > 0 && (
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">En attente</span>
-                  <span className="text-orange-500 font-medium">{pendingCount}</span>
+                  <span className="font-medium text-warning">{pendingCount}</span>
                 </div>
               )}
 
               {failedCount > 0 && (
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Erreurs</span>
-                  <span className="text-destructive font-medium">{failedCount}</span>
+                  <span className="font-medium text-destructive">{failedCount}</span>
                 </div>
               )}
 
               {lastSyncTime && (
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Dernière sync</span>
-                  <span>
-                    {format(lastSyncTime, 'HH:mm', { locale: fr })}
-                  </span>
+                  <span className="font-medium">{format(lastSyncTime, 'HH:mm:ss', { locale: fr })}</span>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-2 pt-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1"
-                onClick={forceSync}
-                disabled={isSyncing || isOffline}
-              >
-                <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <div className="flex gap-2 pt-1">
+              <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={forceSync} disabled={isSyncing || isOffline}>
+                <RefreshCw className={`h-3 w-3 mr-1.5 ${isSyncing ? 'animate-spin' : ''}`} />
                 Synchroniser
               </Button>
-              
               {failedCount > 0 && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={retryFailed}
-                  disabled={isSyncing || isOffline}
-                >
+                <Button size="sm" variant="outline" className="text-xs" onClick={retryFailed} disabled={isSyncing || isOffline}>
                   Réessayer
                 </Button>
               )}
             </div>
 
             {isOffline && (
-              <p className="text-xs text-muted-foreground text-center">
-                Les modifications seront synchronisées automatiquement à la reconnexion
+              <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg p-2">
+                💾 Vos modifications sont sauvegardées localement et seront synchronisées automatiquement
               </p>
             )}
           </div>
         </PopoverContent>
       </Popover>
-    </TooltipProvider>
+    </div>
   );
 };
