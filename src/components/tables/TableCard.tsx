@@ -199,7 +199,7 @@ export const TableCard: React.FC<TableCardProps> = ({
         </div>
 
         {session && (
-          <div className="space-y-3 pt-4 border-t-2 border-border">
+          <div className="space-y-2.5 pt-3 border-t border-border/60">
             <div className={`flex items-center gap-2.5 text-sm font-medium ${styles.icon}`}>
               <Clock className="h-4 w-4" />
               <span>
