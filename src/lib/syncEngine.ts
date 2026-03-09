@@ -100,10 +100,26 @@ class SyncEngine {
     if (result?.id) await storeIdMapping({ localId, serverId: result.id, table });
   }
 
-  private async processUpdate(table: OfflineDataType, data: Record<string, unknown>): Promise<void> {
+  private async processUpdate(table: OfflineDataType, data: Record<string, unknown>, mutation?: QueuedMutation): Promise<void> {
     let id = data.id as string;
     if (isLocalId(id)) { const mapped = await getServerIdForLocalId(id); if (!mapped) throw new Error('No server ID'); id = mapped; }
-    const updateData = { ...data }; delete updateData.id;
+    
+    // Fetch server data for conflict detection
+    const { data: serverRow } = await supabase.from(table).select('*').eq('id', id).single();
+    
+    let updateData: Record<string, unknown>;
+    if (serverRow && mutation) {
+      const conflict = detectConflict(data, serverRow as Record<string, unknown>, mutation.timestamp);
+      if (conflict) {
+        updateData = resolveConflict(mutation, serverRow as Record<string, unknown>);
+      } else {
+        updateData = { ...data };
+      }
+    } else {
+      updateData = { ...data };
+    }
+    
+    delete updateData.id;
     const { error } = await supabase.from(table).update(updateData as never).eq('id', id);
     if (error) throw error;
   }
