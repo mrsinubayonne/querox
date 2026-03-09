@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { QueuedMutation, getPendingMutations, getFailedMutations, updateMutation, storeIdMapping, isLocalId, getServerIdForLocalId, OfflineDataType, setLastSyncTime, getStorageStats, clearSyncedMutations, generateLocalId } from './offlineStorage';
+import { resolveConflict, detectConflict } from './conflictResolution';
 
 export interface SyncResult { success: boolean; synced: number; failed: number; errors: string[]; }
 export interface SyncStatus { isSyncing: boolean; lastSyncTime: Date | null; pendingCount: number; failedCount: number; progress: number; }
