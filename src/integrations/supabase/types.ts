@@ -2512,6 +2512,7 @@ export type Database = {
         Args: { _member_email: string; _permission_name: string }
         Returns: boolean
       }
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       cleanup_rate_limits: { Args: never; Returns: undefined }
       generate_invoice_number: { Args: never; Returns: string }
       generate_outlet_access_code: {
