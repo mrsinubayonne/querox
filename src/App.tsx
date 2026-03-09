@@ -1,93 +1,90 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { RestaurantProvider } from '@/contexts/RestaurantContext';
-
-// Import des pages
-import Index from '@/pages/Index';
-import Auth from '@/pages/Auth';
-import Blog from '@/pages/Blog';
-import Dashboard from '@/pages/Dashboard';
-import Menus from '@/pages/Menus';
-import AllMenus from '@/pages/AllMenus';
-import Commandes from '@/pages/Commandes';
-import Tables from '@/pages/Tables';
-import Inventaire from '@/pages/Inventaire';
-import QRCodes from '@/pages/QRCodes';
-import SiteWeb from '@/pages/SiteWeb';
-import SiteWebContainer from '@/pages/SiteWebContainer';
-import SiteWebBenefits from '@/pages/SiteWebBenefits';
-import Statistiques from '@/pages/Statistiques';
-import Parametres from '@/pages/Parametres';
-import Abonnement from '@/pages/Abonnement';
-import PublicMenu from '@/pages/PublicMenu';
-import PublicWebsite from '@/pages/PublicWebsite';
-import NotFound from '@/pages/NotFound';
-import PaymentSuccess from '@/pages/PaymentSuccess';
-import PaymentFailure from '@/pages/PaymentFailure';
-import Comptabilite from '@/pages/Comptabilite';
-
-// Marketing pages
-import MarketingHub from '@/pages/MarketingHub';
-import Marketing from '@/pages/Marketing';
-import ConceptionGraphique from '@/pages/ConceptionGraphique';
-import ReseauxSociaux from '@/pages/ReseauxSociaux';
-import PubliciteFacebook from '@/pages/PubliciteFacebook';
-
-// Services pages
-import Services from '@/pages/Services';
-import Consulting from '@/pages/Consulting';
-import Plus from '@/pages/Plus';
-
-// Admin pages
-import AdminSubscriptions from '@/pages/AdminSubscriptions';
-import AdminDashboard from '@/pages/AdminDashboard';
-import AdminRoles from '@/pages/AdminRoles';
-import AdminAccessCodes from '@/pages/AdminAccessCodes';
-import AdminRestaurants from '@/pages/AdminRestaurants';
-import AdminRevenues from '@/pages/AdminRevenues';
-import AdminRealTime from '@/pages/AdminRealTime';
-import AdminAlerts from '@/pages/AdminAlerts';
-import AdminSupport from '@/pages/AdminSupport';
-import AdminGlobalControl from '@/pages/AdminGlobalControl';
-import AdminSystemSettings from '@/pages/AdminSystemSettings';
-import AdminComptabilite from '@/pages/AdminComptabilite';
-
-
-// Partner pages
-import PartnerSignup from '@/pages/PartnerSignup';
-import PartnerDashboard from '@/pages/PartnerDashboard';
-
-// Support & Reservations pages
-import Reservations from '@/pages/Reservations';
-import Support from '@/pages/Support';
-import Factures from '@/pages/Factures';
-import RapportsJournaliers from '@/pages/RapportsJournaliers';
-import Equipe from '@/pages/Equipe';
-import StaffRequest from '@/pages/StaffRequest';
-import Clients from '@/pages/Clients';
-import Debiteurs from '@/pages/Debiteurs';
-import PerformancePersonnel from '@/pages/PerformancePersonnel';
-import SelectOutlet from '@/pages/SelectOutlet';
-import TeamMemberAuth from '@/pages/TeamMemberAuth';
-import TeamJoin from '@/pages/TeamJoin';
-import TeamMemberSetup from '@/pages/TeamMemberSetup';
-import CGUCGV from '@/pages/CGUCGV';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
-import OnboardingTour from "@/components/OnboardingTour";
 import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvider";
+
+// Lightweight page loading spinner
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
+  </div>
+);
+
+// Lazy-loaded pages — splits bundle into on-demand chunks
+const Index = lazy(() => import('@/pages/Index'));
+const Auth = lazy(() => import('@/pages/Auth'));
+const Blog = lazy(() => import('@/pages/Blog'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Menus = lazy(() => import('@/pages/Menus'));
+const AllMenus = lazy(() => import('@/pages/AllMenus'));
+const Commandes = lazy(() => import('@/pages/Commandes'));
+const Tables = lazy(() => import('@/pages/Tables'));
+const Inventaire = lazy(() => import('@/pages/Inventaire'));
+const QRCodes = lazy(() => import('@/pages/QRCodes'));
+const SiteWeb = lazy(() => import('@/pages/SiteWeb'));
+const SiteWebContainer = lazy(() => import('@/pages/SiteWebContainer'));
+const SiteWebBenefits = lazy(() => import('@/pages/SiteWebBenefits'));
+const Statistiques = lazy(() => import('@/pages/Statistiques'));
+const Parametres = lazy(() => import('@/pages/Parametres'));
+const Abonnement = lazy(() => import('@/pages/Abonnement'));
+const PublicMenu = lazy(() => import('@/pages/PublicMenu'));
+const PublicWebsite = lazy(() => import('@/pages/PublicWebsite'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
+const PaymentSuccess = lazy(() => import('@/pages/PaymentSuccess'));
+const PaymentFailure = lazy(() => import('@/pages/PaymentFailure'));
+const Comptabilite = lazy(() => import('@/pages/Comptabilite'));
+const MarketingHub = lazy(() => import('@/pages/MarketingHub'));
+const Marketing = lazy(() => import('@/pages/Marketing'));
+const ConceptionGraphique = lazy(() => import('@/pages/ConceptionGraphique'));
+const ReseauxSociaux = lazy(() => import('@/pages/ReseauxSociaux'));
+const PubliciteFacebook = lazy(() => import('@/pages/PubliciteFacebook'));
+const Services = lazy(() => import('@/pages/Services'));
+const Consulting = lazy(() => import('@/pages/Consulting'));
+const Plus = lazy(() => import('@/pages/Plus'));
+const AdminSubscriptions = lazy(() => import('@/pages/AdminSubscriptions'));
+const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'));
+const AdminRoles = lazy(() => import('@/pages/AdminRoles'));
+const AdminAccessCodes = lazy(() => import('@/pages/AdminAccessCodes'));
+const AdminRestaurants = lazy(() => import('@/pages/AdminRestaurants'));
+const AdminRevenues = lazy(() => import('@/pages/AdminRevenues'));
+const AdminRealTime = lazy(() => import('@/pages/AdminRealTime'));
+const AdminAlerts = lazy(() => import('@/pages/AdminAlerts'));
+const AdminSupport = lazy(() => import('@/pages/AdminSupport'));
+const AdminGlobalControl = lazy(() => import('@/pages/AdminGlobalControl'));
+const AdminSystemSettings = lazy(() => import('@/pages/AdminSystemSettings'));
+const AdminComptabilite = lazy(() => import('@/pages/AdminComptabilite'));
+const PartnerSignup = lazy(() => import('@/pages/PartnerSignup'));
+const PartnerDashboard = lazy(() => import('@/pages/PartnerDashboard'));
+const Reservations = lazy(() => import('@/pages/Reservations'));
+const Support = lazy(() => import('@/pages/Support'));
+const Factures = lazy(() => import('@/pages/Factures'));
+const RapportsJournaliers = lazy(() => import('@/pages/RapportsJournaliers'));
+const Equipe = lazy(() => import('@/pages/Equipe'));
+const StaffRequest = lazy(() => import('@/pages/StaffRequest'));
+const Clients = lazy(() => import('@/pages/Clients'));
+const Debiteurs = lazy(() => import('@/pages/Debiteurs'));
+const PerformancePersonnel = lazy(() => import('@/pages/PerformancePersonnel'));
+const SelectOutlet = lazy(() => import('@/pages/SelectOutlet'));
+const TeamMemberAuth = lazy(() => import('@/pages/TeamMemberAuth'));
+const TeamJoin = lazy(() => import('@/pages/TeamJoin'));
+const TeamMemberSetup = lazy(() => import('@/pages/TeamMemberSetup'));
+const CGUCGV = lazy(() => import('@/pages/CGUCGV'));
 
 function App() {
   return (
     <RestaurantProvider restaurantUserId={null} outletId={null}>
-        <Router>
-          <div className="min-h-screen bg-background">
+      <Router>
+        <div className="min-h-screen bg-background">
+          <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Routes publiques */}
               <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
+              <Route path="/auth" element={<Auth />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/cgu-cgv" element={<CGUCGV />} />
               <Route path="/menu/:menuId" element={<PublicMenu />} />
@@ -139,7 +136,6 @@ function App() {
               <Route path="/admin/support" element={<ProtectedRoute><AdminSupport /></ProtectedRoute>} />
               <Route path="/admin/global-control" element={<ProtectedRoute><AdminGlobalControl /></ProtectedRoute>} />
               <Route path="/admin/system-settings" element={<ProtectedRoute><AdminSystemSettings /></ProtectedRoute>} />
-              
               <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
               <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
               <Route path="/admin/access-codes" element={<ProtectedRoute><AdminAccessCodes /></ProtectedRoute>} />
@@ -150,25 +146,25 @@ function App() {
               {/* Routes Support & Reservations */}
               <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
-          <Route path="/factures" element={<ProtectedRoute><Factures /></ProtectedRoute>} />
-          <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
-          <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
-          <Route path="/debiteurs" element={<ProtectedRoute><Debiteurs /></ProtectedRoute>} />
-          <Route path="/performance-personnel" element={<ProtectedRoute><PerformancePersonnel /></ProtectedRoute>} />
-          <Route path="/staff-request" element={<ProtectedRoute><StaffRequest /></ProtectedRoute>} />
+              <Route path="/factures" element={<ProtectedRoute><Factures /></ProtectedRoute>} />
+              <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
+              <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+              <Route path="/debiteurs" element={<ProtectedRoute><Debiteurs /></ProtectedRoute>} />
+              <Route path="/performance-personnel" element={<ProtectedRoute><PerformancePersonnel /></ProtectedRoute>} />
+              <Route path="/staff-request" element={<ProtectedRoute><StaffRequest /></ProtectedRoute>} />
 
               {/* Redirection par défaut */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </div>
-          <Toaster />
-          <Sonner />
-          <InvoicePaidCelebration />
-          <KeyboardShortcutsProvider />
-        </Router>
-      </RestaurantProvider>
+          </Suspense>
+        </div>
+        <Toaster />
+        <Sonner />
+        <InvoicePaidCelebration />
+        <KeyboardShortcutsProvider />
+      </Router>
+    </RestaurantProvider>
   );
 }
-
 
 export default App;
