@@ -45,7 +45,7 @@ const ModernStatCard: React.FC<ModernStatCardProps> = ({
       
       <CardContent className="relative p-6">
         <div className="flex items-start justify-between mb-6">
-          <div className={`p-3.5 rounded-2xl ${colorClasses[color]} transform group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+          <div className={`p-3 rounded-xl ${colorClasses[color]} transform group-hover:scale-105 transition-transform duration-200`}>
             {icon}
           </div>
           {change && (
