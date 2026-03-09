@@ -1,10 +1,11 @@
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { WifiOff, Wifi, RefreshCw, CloudOff } from 'lucide-react';
+import { WifiOff, Wifi, RefreshCw, CloudOff, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { getPendingCount } from '@/lib/offlineQueue';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
+import { useOfflineHealth } from '@/hooks/useOfflineHealth';
 
 export const NetworkStatusBanner = () => {
   const { status, isOffline, isUnstable, retryConnection } = useNetworkStatus();
