@@ -59,7 +59,15 @@ export const NetworkStatusBanner = () => {
         <Wifi className="h-3.5 w-3.5 flex-shrink-0 animate-pulse" />
       )}
 
-      <span>{isOffline ? 'Mode hors ligne' : 'Connexion instable'}</span>
+      <span>
+        {isCritical ? 'Attention: Synchronisation bloquée' : isOffline ? 'Mode hors ligne' : 'Connexion instable'}
+      </span>
+
+      {isCritical && oldestPendingAge && (
+        <span className="hidden sm:inline opacity-80 border-l border-current pl-2 ml-1">
+          bloqué depuis {oldestPendingAge}
+        </span>
+      )}
 
       {totalPending > 0 && (
         <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold min-w-[20px] text-center">
