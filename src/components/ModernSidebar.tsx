@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, Utensils, UserPlus, Award, User, Zap } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, Utensils, UserPlus, Award, User } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
+
 import { useButtonTracking, TRACKED_BUTTONS } from '@/hooks/useButtonTracking';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +16,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
 interface ModernSidebarProps {
@@ -41,9 +53,10 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
   const handleOutletChange = async (outletId: string) => {
     await selectOutlet(outletId);
-    window.location.reload();
+    window.location.reload(); // Recharger la page pour rafraîchir toutes les données
   };
 
+  // Define menuItems FIRST before using it
   const menuItems = [{
     icon: Home,
     label: 'Dashboard',
@@ -121,92 +134,159 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     path: '/publicite-facebook'
   }] : [];
 
+
   const adminItems = [
-    { icon: Crown, label: 'Tableau de Bord', path: '/admin/dashboard' },
-    { icon: Building2, label: 'Gestion Restaurants', path: '/admin/restaurants' },
-    { icon: BarChart3, label: 'Activité Temps Réel', path: '/admin/real-time' },
-    { icon: Calculator, label: 'Comptabilité', path: '/admin/comptabilite' },
-    { icon: Shield, label: 'Alertes Globales', path: '/admin/alerts' },
-    { icon: Settings, label: 'Contrôle Global', path: '/admin/global-control' },
-    { icon: CreditCard, label: 'Abonnements', path: '/admin/subscriptions' },
-    { icon: UserCog, label: 'Gestion des Rôles', path: '/admin/roles' },
-    { icon: Shield, label: 'Codes d\'Accès', path: '/admin/access-codes' },
-    { icon: Settings, label: 'Paramètres Système', path: '/admin/system-settings' },
+    {
+      icon: Crown,
+      label: 'Tableau de Bord',
+      path: '/admin/dashboard'
+    },
+    {
+      icon: Building2,
+      label: 'Gestion Restaurants',
+      path: '/admin/restaurants'
+    },
+    {
+      icon: BarChart3,
+      label: 'Activité Temps Réel',
+      path: '/admin/real-time'
+    },
+    {
+      icon: Calculator,
+      label: 'Comptabilité',
+      path: '/admin/comptabilite'
+    },
+    {
+      icon: Shield,
+      label: 'Alertes Globales',
+      path: '/admin/alerts'
+    },
+    {
+      icon: Settings,
+      label: 'Contrôle Global',
+      path: '/admin/global-control'
+    },
+    {
+      icon: CreditCard,
+      label: 'Abonnements',
+      path: '/admin/subscriptions'
+    },
+    {
+      icon: UserCog,
+      label: 'Gestion des Rôles',
+      path: '/admin/roles'
+    },
+    {
+      icon: Shield,
+      label: 'Codes d\'Accès',
+      path: '/admin/access-codes'
+    },
+    {
+      icon: Settings,
+      label: 'Paramètres Système',
+      path: '/admin/system-settings'
+    }
   ];
 
   const bottomMenuItems = [
-    ...(hasPermission('settings') ? [{ icon: Settings, label: 'Paramètres', path: '/parametres' }] : []),
-    { icon: CreditCard, label: 'Abonnement', path: '/abonnement' },
+    ...(hasPermission('settings') ? [{
+      icon: Settings,
+      label: 'Paramètres',
+      path: '/parametres'
+    }] : []),
+    {
+      icon: CreditCard,
+      label: 'Abonnement',
+      path: '/abonnement'
+    }
   ];
 
   const handleNavigation = (path: string, label?: string) => {
-    if (label) trackClick(`Navigation: ${label}`, 'navigation');
+    // Track navigation click
+    if (label) {
+      trackClick(`Navigation: ${label}`, 'navigation');
+    }
     navigate(path);
-    if (path.includes('/marketing') || path.includes('/conception-graphique') || path.includes('/reseaux-sociaux') || path.includes('/publicite-facebook')) setMarketingExpanded(true);
-    if (path.includes('/admin')) setAdminExpanded(true);
+    if (path.includes('/marketing') || path.includes('/conception-graphique') || path.includes('/reseaux-sociaux') || path.includes('/publicite-facebook')) {
+      setMarketingExpanded(true);
+    }
+    if (path.includes('/admin')) {
+      setAdminExpanded(true);
+    }
+  };
+
+  const toggleMarketingExpanded = () => {
+    setMarketingExpanded(!marketingExpanded);
+  };
+
+  const toggleAdminExpanded = () => {
+    setAdminExpanded(!adminExpanded);
   };
 
   const isActive = (path: string) => location.pathname === path;
+
   const isPlusSection = ['/clients', '/equipe', '/performance-personnel', '/qr-codes', '/debiteurs', '/site-web', '/plus'].some(p => location.pathname.startsWith(p));
   const isMarketingSection = location.pathname.includes('/marketing') || location.pathname.includes('/conception-graphique') || location.pathname.includes('/reseaux-sociaux') || location.pathname.includes('/publicite-facebook');
   const isAdminSection = location.pathname.includes('/admin');
 
-  return (
-    <div
-      className={`flex flex-col transition-all duration-300 ${collapsed ? 'w-[72px]' : 'w-[260px]'}`}
-      style={{ background: 'var(--gradient-sidebar)' }}
-    >
-      {/* Logo */}
-      <div className="flex items-center justify-between p-4 h-16">
-        {!collapsed && (
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-glow">
-              <Zap className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-bold text-sidebar-accent-foreground tracking-tight font-display">
-              Querox
-            </span>
-          </div>
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 rounded-lg text-sidebar-muted hover:text-sidebar-accent-foreground hover:bg-sidebar-accent transition-all"
-        >
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+  return <div className={`bg-card border-r border-border transition-all duration-300 flex flex-col ${collapsed ? 'w-16' : 'w-64'}`}>
+      {/* Header */}
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        {!collapsed && <h2 className="text-xl font-bold text-foreground">Querox</h2>}
+        <button onClick={() => setCollapsed(!collapsed)} className="p-2 rounded-lg hover:bg-accent transition-colors">
+          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
       </div>
 
-      {/* Outlet Selector */}
+
+      {/* Outlet Selector - Hidden for admins */}
       {!isAdmin && outlets.length > 0 && (
-        <div className={`px-3 pb-3 ${collapsed ? 'flex justify-center' : ''}`}>
+        <div className={`p-3 border-b border-border ${collapsed ? 'flex justify-center' : ''}`}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className={`flex items-center gap-2 w-full rounded-lg border border-sidebar-border bg-sidebar-accent/50 hover:bg-sidebar-accent transition-colors ${collapsed ? 'w-10 h-10 justify-center p-0' : 'px-3 py-2'}`}>
-                <Building2 size={16} className="text-sidebar-muted flex-shrink-0" />
+              <Button variant="outline" className={`w-full justify-start ${collapsed ? 'w-10 h-10 p-0' : ''}`}>
+                <Building2 size={18} className={collapsed ? '' : 'mr-2'} />
                 {!collapsed && (
-                  <span className="truncate text-sm text-sidebar-foreground">
+                  <span className="truncate text-sm">
                     {selectedOutlet?.name || 'Sélectionner...'}
                   </span>
                 )}
-              </button>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               {outlets.map((outlet) => (
-                <DropdownMenuItem key={outlet.id} onClick={() => handleOutletChange(outlet.id)} className="flex items-center justify-between cursor-pointer">
+                <DropdownMenuItem
+                  key={outlet.id}
+                  onClick={() => handleOutletChange(outlet.id)}
+                  className="flex items-center justify-between cursor-pointer"
+                >
                   <div className="flex items-center">
                     <Building2 size={16} className="mr-2" />
                     <span>{outlet.name}</span>
                   </div>
-                  {outlet.id === selectedOutletId && <Check size={16} className="text-primary" />}
+                  {outlet.id === selectedOutletId && (
+                    <Check size={16} className="text-primary" />
+                  )}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => navigate(canAddMoreOutlets() ? '/select-outlet' : '/abonnement')}
+                onClick={() => {
+                  if (canAddMoreOutlets()) {
+                    navigate('/select-outlet');
+                  } else {
+                    navigate('/abonnement');
+                  }
+                }}
                 className="flex items-center cursor-pointer text-primary"
               >
                 <Plus size={16} className="mr-2" />
-                <span>{canAddMoreOutlets() ? 'Ajouter un point de vente' : `Limite (${getOutletLimit()} max)`}</span>
+                <span>
+                  {canAddMoreOutlets() 
+                    ? 'Ajouter un point de vente' 
+                    : `Limite atteinte (${getOutletLimit()} max)`
+                  }
+                </span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -214,17 +294,17 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-2 py-4 space-y-2">
         {!isAdmin && (
           <>
             {filteredMenuItems.map(item => {
-              const active = isActive(item.path);
               let dataTourAttr = '';
               if (item.label === 'Dashboard') dataTourAttr = 'dashboard';
               else if (item.label === 'Menus') dataTourAttr = 'menus';
               else if (item.label === 'Commandes') dataTourAttr = 'orders';
               else if (item.label === 'Inventaire') dataTourAttr = 'inventory';
               else if (item.label === 'Factures') dataTourAttr = 'invoices';
+              else if (item.label === 'Équipe') dataTourAttr = 'team';
               else if (item.label === 'Comptabilité') dataTourAttr = 'accounting';
               else if (item.label === 'Paramètres') dataTourAttr = 'settings';
 
@@ -233,182 +313,137 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
                   key={item.path}
                   onClick={() => handleNavigation(item.path, item.label)}
                   data-tour={dataTourAttr}
-                  className={`group w-full flex items-center px-3 py-2 rounded-lg text-left transition-all duration-200 ${
-                    active
-                      ? 'bg-primary/15 text-primary-foreground font-semibold shadow-sm'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                  }`}
+                  className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isActive(item.path) ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-accent'}`}
                 >
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all ${active ? 'bg-primary text-primary-foreground shadow-glow' : 'text-sidebar-muted group-hover:text-sidebar-accent-foreground'}`}>
-                    <item.icon size={18} />
-                  </div>
-                  {!collapsed && <span className="ml-3 text-sm">{item.label}</span>}
+                  <item.icon size={20} className="flex-shrink-0" />
+                  {!collapsed && <span className="ml-3">{item.label}</span>}
                 </button>
               );
             })}
 
-            {/* Marketing */}
-            <div className="pt-3">
-              <button
-                onClick={() => setMarketingExpanded(!marketingExpanded)}
-                className={`group w-full flex items-center px-3 py-2 rounded-lg text-left transition-all duration-200 ${
-                  isMarketingSection
-                    ? 'bg-primary/15 text-primary-foreground font-semibold'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent'
-                }`}
-              >
-                <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${isMarketingSection ? 'bg-primary text-primary-foreground' : 'text-sidebar-muted'}`}>
-                  <TrendingUp size={18} />
-                </div>
+            {/* Marketing Section */}
+            <div className="pt-2">
+              <button onClick={toggleMarketingExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isMarketingSection ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-accent'}`}>
+                <TrendingUp size={20} className="flex-shrink-0" />
                 {!collapsed && <>
-                  <span className="ml-3 flex-1 text-sm">Marketing</span>
-                  <ChevronRight size={14} className={`transition-transform text-sidebar-muted ${marketingExpanded ? 'rotate-90' : ''}`} />
-                </>}
+                    <span className="ml-3 flex-1">Marketing</span>
+                    <ChevronRight size={16} className={`transition-transform ${marketingExpanded ? 'rotate-90' : ''}`} />
+                  </>}
               </button>
-              {marketingExpanded && !collapsed && (
-                <div className="ml-5 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
-                  {marketingItems.map(item => (
-                    <button
-                      key={item.path}
-                      onClick={() => handleNavigation(item.path, item.label)}
-                      className={`w-full flex items-center px-3 py-1.5 rounded-lg text-left transition-all text-sm ${
-                        isActive(item.path)
-                          ? 'text-primary font-medium bg-primary/10'
-                          : 'text-sidebar-muted hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
-                      }`}
-                    >
-                      <item.icon size={14} className="flex-shrink-0" />
-                      <span className="ml-2">{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+
+              {/* Marketing Submenu */}
+              {marketingExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
+                  {marketingItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path, item.label)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-accent'}`}>
+                      <item.icon size={16} className="flex-shrink-0" />
+                      <span className="ml-3">{item.label}</span>
+                    </button>)}
+                </div>}
             </div>
 
-            {/* Plus */}
-            <div className="pt-1">
+            {/* Plus - Simple navigation button */}
+            <div className="pt-2">
               <button
                 onClick={() => handleNavigation('/plus', 'Plus')}
-                className={`group w-full flex items-center px-3 py-2 rounded-lg text-left transition-all duration-200 ${
-                  isPlusSection
-                    ? 'bg-primary/15 text-primary-foreground font-semibold'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent'
-                }`}
+                className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isPlusSection ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-accent'}`}
               >
-                <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${isPlusSection ? 'bg-primary text-primary-foreground' : 'text-sidebar-muted'}`}>
-                  <Plus size={18} />
-                </div>
-                {!collapsed && <span className="ml-3 text-sm">Plus</span>}
+                <Plus size={20} className="flex-shrink-0" />
+                {!collapsed && <span className="ml-3">Plus</span>}
               </button>
             </div>
           </>
         )}
 
-        {/* Admin Section */}
+        {/* Admin Section - Only visible to admins */}
         {isAdmin && (
-          <div>
-            <button
-              onClick={() => setAdminExpanded(!adminExpanded)}
-              className={`group w-full flex items-center px-3 py-2 rounded-lg text-left transition-all duration-200 ${
-                isAdminSection ? 'bg-destructive/15 text-destructive font-semibold' : 'text-sidebar-foreground hover:bg-sidebar-accent'
-              }`}
-            >
-              <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${isAdminSection ? 'bg-destructive text-destructive-foreground' : 'text-sidebar-muted'}`}>
-                <Shield size={18} />
-              </div>
+          <div className="pt-2">
+            <button onClick={toggleAdminExpanded} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${isAdminSection ? 'bg-destructive/10 text-destructive font-medium' : 'text-foreground hover:bg-accent'}`}>
+              <Shield size={20} className="flex-shrink-0" />
               {!collapsed && <>
-                <span className="ml-3 flex-1 text-sm">Administrateur</span>
-                <ChevronRight size={14} className={`transition-transform text-sidebar-muted ${adminExpanded ? 'rotate-90' : ''}`} />
-              </>}
+                  <span className="ml-3 flex-1">Administrateur</span>
+                  <ChevronRight size={16} className={`transition-transform ${adminExpanded ? 'rotate-90' : ''}`} />
+                </>}
             </button>
-            {adminExpanded && !collapsed && (
-              <div className="ml-5 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
-                {adminItems.map(item => (
-                  <button
-                    key={item.path}
-                    onClick={() => handleNavigation(item.path)}
-                    className={`w-full flex items-center px-3 py-1.5 rounded-lg text-left transition-all text-sm ${
-                      isActive(item.path)
-                        ? 'text-destructive font-medium bg-destructive/10'
-                        : 'text-sidebar-muted hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
-                    }`}
-                  >
-                    <item.icon size={14} className="flex-shrink-0" />
-                    <span className="ml-2">{item.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+
+            {/* Admin Submenu */}
+            {adminExpanded && !collapsed && <div className="ml-6 mt-1 space-y-1">
+                {adminItems.map(item => <button key={item.path} onClick={() => handleNavigation(item.path)} className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-sm ${isActive(item.path) ? 'bg-destructive/10 text-destructive font-medium' : 'text-muted-foreground hover:bg-accent'}`}>
+                    <item.icon size={16} className="flex-shrink-0" />
+                    <span className="ml-3">{item.label}</span>
+                  </button>)}
+              </div>}
           </div>
         )}
       </nav>
 
-      {/* Bottom */}
+      {/* Bottom Navigation */}
       {!isAdmin && (
-        <div className="border-t border-sidebar-border px-2 py-3 space-y-0.5">
-          {profileSession && !collapsed && (
-            <div className="px-3 py-2 mb-2 rounded-lg bg-sidebar-accent/50 border border-sidebar-border">
-              <div className="flex items-center gap-2 mb-0.5">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                  <User size={12} className="text-primary" />
-                </div>
-                <span className="text-xs font-semibold text-sidebar-accent-foreground">{profileSession.profileName}</span>
+        <div className="border-t border-border px-2 py-4 space-y-2">
+          {/* Profile Info */}
+          {profileSession && (
+            <div className={`px-3 py-2 mb-2 rounded-lg bg-accent border border-border ${collapsed ? 'hidden' : ''}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <User size={16} className="text-primary" />
+                <span className="text-xs font-semibold text-foreground">{profileSession.profileName}</span>
               </div>
-              <p className="text-xs text-sidebar-muted capitalize ml-8">{profileSession.role}</p>
+              <p className="text-xs text-muted-foreground capitalize">{profileSession.role}</p>
+              <p className="text-xs text-muted-foreground">{profileSession.outletName}</p>
             </div>
           )}
 
-          {bottomMenuItems.map(item => {
-            const active = isActive(item.path);
-            return (
-              <button
-                key={item.path}
-                onClick={() => handleNavigation(item.path)}
-                data-tour={item.label === 'Paramètres' ? 'settings' : ''}
-                className={`group w-full flex items-center px-3 py-2 rounded-lg text-left transition-all duration-200 ${
-                  active
-                    ? 'bg-primary/15 text-primary-foreground font-semibold'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent'
-                }`}
-              >
-                <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${active ? 'bg-primary text-primary-foreground' : 'text-sidebar-muted'}`}>
-                  <item.icon size={18} />
-                </div>
-                {!collapsed && <span className="ml-3 text-sm">{item.label}</span>}
-              </button>
-            );
-          })}
+          {bottomMenuItems.map(item => (
+            <button 
+              key={item.path} 
+              onClick={() => handleNavigation(item.path)}
+              data-tour={item.label === 'Paramètres' ? 'settings' : ''}
+              className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
+                isActive(item.path) 
+                  ? 'bg-primary/10 text-primary font-medium' 
+                  : 'text-foreground hover:bg-accent'
+              }`}
+            >
+              <item.icon size={20} className="flex-shrink-0" />
+              {!collapsed && <span className="ml-3">{item.label}</span>}
+            </button>
+          ))}
 
+          {/* Logout/Close Session Button */}
           <button
             onClick={() => {
-              if (isProfileAuthenticated()) { profileLogout(); navigate('/profile-login'); }
-              else { signOut(); navigate('/auth'); }
+              if (isProfileAuthenticated()) {
+                profileLogout();
+                navigate('/profile-login');
+              } else {
+                signOut();
+                navigate('/auth');
+              }
             }}
-            className="group w-full flex items-center px-3 py-2 rounded-lg text-left transition-all duration-200 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive"
+            className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-destructive hover:bg-destructive/10"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg text-sidebar-muted group-hover:text-destructive">
-              <LogOut size={18} />
-            </div>
-            {!collapsed && <span className="ml-3 text-sm">Déconnexion</span>}
+            <LogOut size={20} className="flex-shrink-0" />
+            {!collapsed && (
+              <span className="ml-3">Déconnexion</span>
+            )}
           </button>
         </div>
       )}
       
+      {/* Admin Logout Button */}
       {isAdmin && (
-        <div className="border-t border-sidebar-border px-2 py-3">
+        <div className="border-t border-border px-2 py-4">
           <button
-            onClick={() => { signOut(); navigate('/auth'); }}
-            className="group w-full flex items-center px-3 py-2 rounded-lg text-left transition-all duration-200 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => {
+              signOut();
+              navigate('/auth');
+            }}
+            className="w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-destructive hover:bg-destructive/10"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg text-sidebar-muted group-hover:text-destructive">
-              <LogOut size={18} />
-            </div>
-            {!collapsed && <span className="ml-3 text-sm">Déconnexion</span>}
+            <LogOut size={20} className="flex-shrink-0" />
+            {!collapsed && <span className="ml-3">Déconnexion</span>}
           </button>
         </div>
       )}
-    </div>
-  );
+
+    </div>;
 };
 
 export default ModernSidebar;
