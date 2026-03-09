@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { QueuedMutation, getPendingMutations, getFailedMutations, updateMutation, storeIdMapping, isLocalId, getServerIdForLocalId, OfflineDataType, setLastSyncTime, getStorageStats, clearSyncedMutations, generateLocalId } from './offlineStorage';
+import { resolveConflict, detectConflict } from './conflictResolution';
 
 export interface SyncResult { success: boolean; synced: number; failed: number; errors: string[]; }
 export interface SyncStatus { isSyncing: boolean; lastSyncTime: Date | null; pendingCount: number; failedCount: number; progress: number; }
@@ -87,7 +88,7 @@ class SyncEngine {
   private async processMutation(m: QueuedMutation): Promise<void> {
     const resolved = await this.resolveLocalIds(m.data);
     if (m.operation === 'insert') await this.processInsert(m.table, resolved, m.localId);
-    else if (m.operation === 'update') await this.processUpdate(m.table, resolved);
+    else if (m.operation === 'update') await this.processUpdate(m.table, resolved, m);
     else if (m.operation === 'delete') await this.processDelete(m.table, resolved.id as string);
     await setLastSyncTime(m.table, Date.now());
   }
@@ -99,10 +100,26 @@ class SyncEngine {
     if (result?.id) await storeIdMapping({ localId, serverId: result.id, table });
   }
 
-  private async processUpdate(table: OfflineDataType, data: Record<string, unknown>): Promise<void> {
+  private async processUpdate(table: OfflineDataType, data: Record<string, unknown>, mutation?: QueuedMutation): Promise<void> {
     let id = data.id as string;
     if (isLocalId(id)) { const mapped = await getServerIdForLocalId(id); if (!mapped) throw new Error('No server ID'); id = mapped; }
-    const updateData = { ...data }; delete updateData.id;
+    
+    // Fetch server data for conflict detection
+    const { data: serverRow } = await supabase.from(table).select('*').eq('id', id).single();
+    
+    let updateData: Record<string, unknown>;
+    if (serverRow && mutation) {
+      const conflict = detectConflict(data, serverRow as Record<string, unknown>, mutation.timestamp);
+      if (conflict) {
+        updateData = resolveConflict(mutation, serverRow as Record<string, unknown>);
+      } else {
+        updateData = { ...data };
+      }
+    } else {
+      updateData = { ...data };
+    }
+    
+    delete updateData.id;
     const { error } = await supabase.from(table).update(updateData as never).eq('id', id);
     if (error) throw error;
   }
