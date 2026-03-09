@@ -60,11 +60,11 @@ const ModernStatCard: React.FC<ModernStatCardProps> = ({
           )}
         </div>
         
-        <div className="space-y-1.5">
-          <h3 className="text-2xl font-bold tracking-tight text-foreground">
+        <div className="space-y-2">
+          <h3 className="text-3xl font-bold tracking-tight text-foreground">
             {value}
           </h3>
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+          <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
             {title}
           </p>
           {change && (

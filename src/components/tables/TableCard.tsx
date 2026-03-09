@@ -171,7 +171,7 @@ export const TableCard: React.FC<TableCardProps> = ({
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1.5 flex-1">
             <div className="flex items-center gap-2">
-              <h3 className={`text-2xl font-bold tracking-tight ${styles.title}`}>
+              <h3 className={`text-3xl font-bold tracking-tight ${styles.title}`}>
                 {displayName}
               </h3>
               {onRename && session && (
