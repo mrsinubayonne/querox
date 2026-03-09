@@ -88,7 +88,7 @@ class SyncEngine {
   private async processMutation(m: QueuedMutation): Promise<void> {
     const resolved = await this.resolveLocalIds(m.data);
     if (m.operation === 'insert') await this.processInsert(m.table, resolved, m.localId);
-    else if (m.operation === 'update') await this.processUpdate(m.table, resolved);
+    else if (m.operation === 'update') await this.processUpdate(m.table, resolved, m);
     else if (m.operation === 'delete') await this.processDelete(m.table, resolved.id as string);
     await setLastSyncTime(m.table, Date.now());
   }
