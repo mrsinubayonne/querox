@@ -164,6 +164,7 @@ function App() {
           <Toaster />
           <Sonner />
           <InvoicePaidCelebration />
+          <KeyboardShortcutsProvider />
         </Router>
       </RestaurantProvider>
   );
