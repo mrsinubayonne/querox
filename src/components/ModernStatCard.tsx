@@ -39,13 +39,13 @@ const ModernStatCard: React.FC<ModernStatCardProps> = ({
   };
 
   return (
-    <Card className="group relative overflow-hidden hover:shadow-2xl transition-all duration-500 border-0 shadow-lg bg-gradient-to-br from-card to-card/80 backdrop-blur-sm hover:scale-[1.02]">
+    <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 border shadow-sm bg-card hover:scale-[1.015]">
       {/* Background Gradient Effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       
       <CardContent className="relative p-6">
         <div className="flex items-start justify-between mb-6">
-          <div className={`p-3.5 rounded-2xl ${colorClasses[color]} transform group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+          <div className={`p-3 rounded-xl ${colorClasses[color]} transform group-hover:scale-105 transition-transform duration-200`}>
             {icon}
           </div>
           {change && (
@@ -60,11 +60,11 @@ const ModernStatCard: React.FC<ModernStatCardProps> = ({
           )}
         </div>
         
-        <div className="space-y-2">
-          <h3 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+        <div className="space-y-1.5">
+          <h3 className="text-2xl font-bold tracking-tight text-foreground">
             {value}
           </h3>
-          <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
             {title}
           </p>
           {change && (
