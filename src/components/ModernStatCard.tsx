@@ -39,7 +39,7 @@ const ModernStatCard: React.FC<ModernStatCardProps> = ({
   };
 
   return (
-    <Card className="group relative overflow-hidden hover:shadow-2xl transition-all duration-500 border-0 shadow-lg bg-gradient-to-br from-card to-card/80 backdrop-blur-sm hover:scale-[1.02]">
+    <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 border shadow-sm bg-card hover:scale-[1.015]">
       {/* Background Gradient Effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       
