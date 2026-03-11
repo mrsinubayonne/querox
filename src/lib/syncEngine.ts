@@ -17,8 +17,23 @@ class SyncEngine {
 
   private constructor() {
     if (typeof window !== 'undefined') {
-      window.addEventListener('online', () => this.startBackgroundSync());
-      window.addEventListener('offline', () => this.stopBackgroundSync());
+      window.addEventListener('online', () => {
+        console.log('[SyncEngine] Network online detected, starting sync...');
+        this.startBackgroundSync();
+        // Immediate sync on reconnection
+        setTimeout(() => this.sync(), 1000);
+      });
+      window.addEventListener('offline', () => {
+        console.log('[SyncEngine] Network offline detected');
+        this.stopBackgroundSync();
+      });
+      // Sync when user returns to tab
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && navigator.onLine && !this.isSyncing) {
+          console.log('[SyncEngine] Tab visible, triggering sync...');
+          this.sync();
+        }
+      });
       if (navigator.onLine) this.startBackgroundSync();
     }
   }
