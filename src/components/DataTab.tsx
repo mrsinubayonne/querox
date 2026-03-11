@@ -3,11 +3,13 @@ import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload, Trash2 } from "lucide-react";
+import { Download, Upload, Trash2, RefreshCw, Wrench } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { clearAllData, clearAllMutations } from "@/lib/offlineStorage";
+import { queryClient } from "@/lib/queryClient";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -146,6 +148,164 @@ export const DataTab: React.FC = () => {
     }
   };
 
+  const deleteMenusByUser = async (userId: string) => {
+    const { data: menus, error: menusError } = await supabase
+      .from('menus')
+      .select('id')
+      .eq('user_id', userId);
+
+    if (menusError) throw menusError;
+
+    if (menus && menus.length > 0) {
+      const menuIds = menus.map((m) => m.id);
+
+      const { data: categories, error: categoriesError } = await supabase
+        .from('menu_categories')
+        .select('id')
+        .in('menu_id', menuIds);
+
+      if (categoriesError) throw categoriesError;
+
+      if (categories && categories.length > 0) {
+        const categoryIds = categories.map((c) => c.id);
+
+        const { error: itemsError } = await supabase
+          .from('menu_items')
+          .delete()
+          .in('category_id', categoryIds);
+
+        if (itemsError) throw itemsError;
+
+        const { error: categoriesDeleteError } = await supabase
+          .from('menu_categories')
+          .delete()
+          .in('menu_id', menuIds);
+
+        if (categoriesDeleteError) throw categoriesDeleteError;
+      }
+    }
+
+    const { error: deleteMenusError } = await supabase
+      .from('menus')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteMenusError) throw deleteMenusError;
+  };
+
+  const deleteSectionData = async (section: string, userId: string) => {
+    const deleteByUser = async (tableName: string) => {
+      const { error } = await (supabase.from(tableName as any).delete().eq('user_id', userId) as any);
+      if (error) throw error;
+    };
+
+    if (section === 'all') {
+      await deleteMenusByUser(userId);
+
+      const orderedTables = [
+        'debtor_payments',
+        'invoices',
+        'transactions',
+        'orders',
+        'table_sessions',
+        'reservations',
+        'business_periods',
+        'purchase_orders',
+        'inventory_losses',
+        'inventory_reorder_rules',
+        'inventory_items',
+        'business_customers',
+        'customers',
+        'events',
+        'invoice_settings',
+      ];
+
+      for (const tableName of orderedTables) {
+        await deleteByUser(tableName);
+      }
+      return;
+    }
+
+    if (section === 'menus') {
+      await deleteMenusByUser(userId);
+      return;
+    }
+
+    const tableBySection: Record<string, string> = {
+      orders: 'orders',
+      table_sessions: 'table_sessions',
+      customers: 'customers',
+      inventory: 'inventory_items',
+      transactions: 'transactions',
+      invoices: 'invoices',
+      reservations: 'reservations',
+      events: 'events',
+    };
+
+    const tableName = tableBySection[section];
+    if (!tableName) throw new Error('Section inconnue');
+
+    await deleteByUser(tableName);
+  };
+
+  const handleClearPendingSyncQueue = async () => {
+    try {
+      await clearAllMutations();
+      await queryClient.invalidateQueries();
+      toast({
+        title: 'File vidée',
+        description: 'Toutes les données en attente de synchronisation ont été supprimées localement.',
+      });
+    } catch (error) {
+      console.error('Clear pending queue error:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de vider la file de synchronisation locale.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRepairApplicationCache = async () => {
+    try {
+      await Promise.all([clearAllMutations(), clearAllData()]);
+      queryClient.clear();
+
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('subscription_cache_') || key === 'selectedOutletId' || key === 'selectedProfileId')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map((n) => caches.delete(n)));
+      }
+
+      toast({
+        title: 'Réparation terminée',
+        description: "L'application va redémarrer avec un cache propre.",
+      });
+
+      setTimeout(() => window.location.reload(), 700);
+    } catch (error) {
+      console.error('Repair cache error:', error);
+      toast({
+        title: 'Erreur',
+        description: "Impossible de réparer l'application.",
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleDeleteSection = async () => {
     if (!sectionToDelete || !password) return;
 
@@ -176,67 +336,12 @@ export const DataTab: React.FC = () => {
         return;
       }
 
-      let error = null;
-      
-      // Suppressions spéciales pour les menus
-      if (sectionToDelete === 'menus') {
-        const { data: menus } = await supabase
-          .from('menus')
-          .select('id')
-          .eq('user_id', user.id);
+      await deleteSectionData(sectionToDelete, user.id);
 
-        if (menus && menus.length > 0) {
-          const menuIds = menus.map(m => m.id);
-          
-          const { data: categories } = await supabase
-            .from('menu_categories')
-            .select('id')
-            .in('menu_id', menuIds);
-
-          if (categories && categories.length > 0) {
-            const categoryIds = categories.map(c => c.id);
-            
-            await supabase
-              .from('menu_items')
-              .delete()
-              .in('category_id', categoryIds);
-            
-            await supabase
-              .from('menu_categories')
-              .delete()
-              .in('menu_id', menuIds);
-          }
-        }
-
-        const result = await supabase
-          .from('menus')
-          .delete()
-          .eq('user_id', user.id);
-        error = result.error;
-      } else if (sectionToDelete === 'orders') {
-        const result = await supabase.from('orders').delete().eq('user_id', user.id);
-        error = result.error;
-      } else if (sectionToDelete === 'customers') {
-        const result = await supabase.from('customers').delete().eq('user_id', user.id);
-        error = result.error;
-      } else if (sectionToDelete === 'inventory') {
-        const result = await supabase.from('inventory_items').delete().eq('user_id', user.id);
-        error = result.error;
-      } else if (sectionToDelete === 'transactions') {
-        const result = await supabase.from('transactions').delete().eq('user_id', user.id);
-        error = result.error;
-      } else if (sectionToDelete === 'invoices') {
-        const result = await supabase.from('invoices').delete().eq('user_id', user.id);
-        error = result.error;
-      } else if (sectionToDelete === 'reservations') {
-        const result = await supabase.from('reservations').delete().eq('user_id', user.id);
-        error = result.error;
-      } else if (sectionToDelete === 'events') {
-        const result = await supabase.from('events').delete().eq('user_id', user.id);
-        error = result.error;
+      if (sectionToDelete === 'all') {
+        await Promise.all([clearAllMutations(), clearAllData()]);
+        queryClient.clear();
       }
-
-      if (error) throw error;
 
       toast({
         title: "Suppression réussie",
@@ -257,7 +362,9 @@ export const DataTab: React.FC = () => {
 
   const getSectionLabel = (section: string): string => {
     const labels: { [key: string]: string } = {
+      all: 'Tout (incl. tables)',
       orders: 'Commandes',
+      table_sessions: 'Tables (sessions)',
       customers: 'Clients',
       inventory: 'Inventaire',
       transactions: 'Transactions',
@@ -270,6 +377,8 @@ export const DataTab: React.FC = () => {
   };
 
   const sections = [
+    { id: 'all', label: 'Tout (incl. tables)' },
+    { id: 'table_sessions', label: 'Tables (sessions)' },
     { id: 'menus', label: 'Menus' },
     { id: 'orders', label: 'Commandes' },
     { id: 'customers', label: 'Clients' },
@@ -337,6 +446,31 @@ export const DataTab: React.FC = () => {
             onChange={handleFileChange}
             className="hidden"
           />
+        </div>
+
+        <div className="border-t pt-6 mt-6">
+          <h3 className="text-sm font-semibold mb-4">Maintenance</h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Utilisez ces actions pour corriger rapidement les problèmes de synchronisation locale.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              className="flex items-center justify-between gap-2"
+              onClick={handleClearPendingSyncQueue}
+            >
+              <span>Vider la file de synchro</span>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              className="flex items-center justify-between gap-2"
+              onClick={handleRepairApplicationCache}
+            >
+              <span>Réparer l'application</span>
+              <Wrench className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="border-t pt-6 mt-6">
