@@ -65,6 +65,24 @@ class SyncEngine {
     if (this.syncInterval) { clearInterval(this.syncInterval); this.syncInterval = null; }
   }
 
+  private async ensureAuthSession(): Promise<boolean> {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
+        console.warn('[SyncEngine] No active session, attempting refresh...');
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.error('[SyncEngine] Auth refresh failed:', refreshError.message);
+          return false;
+        }
+      }
+      return true;
+    } catch (e) {
+      console.error('[SyncEngine] Auth check failed:', e);
+      return false;
+    }
+  }
+
   async sync(): Promise<SyncResult> {
     if (this.isSyncing) return { success: false, synced: 0, failed: 0, errors: ['Sync in progress'] };
     if (!navigator.onLine) return { success: false, synced: 0, failed: 0, errors: ['Offline'] };
@@ -76,17 +94,33 @@ class SyncEngine {
       const pending = await getPendingMutations();
       if (pending.length === 0) { this.lastSyncTime = new Date(); this.isSyncing = false; this.currentProgress = 100; await this.notifyListeners(); return result; }
 
+      console.log(`[SyncEngine] Starting sync: ${pending.length} pending mutations`);
+
+      // Ensure we have a valid auth session before syncing
+      const hasAuth = await this.ensureAuthSession();
+      if (!hasAuth) {
+        console.warn('[SyncEngine] Skipping sync - no valid auth session');
+        this.isSyncing = false; await this.notifyListeners();
+        return { success: false, synced: 0, failed: 0, errors: ['No auth session'] };
+      }
+
       for (let i = 0; i < pending.length; i++) {
         const m = pending[i];
         try {
           await this.processMutation(m);
           result.synced++;
           await updateMutation(m.id, { synced: true });
+          console.log(`[SyncEngine] ✅ Synced ${m.operation} on ${m.table} (${m.id})`);
         } catch (e) {
           const msg = e instanceof Error ? e.message : 'Error';
+          console.error(`[SyncEngine] ❌ Failed ${m.operation} on ${m.table}:`, msg, JSON.stringify(m.data).slice(0, 200));
           result.errors.push(`${m.table}: ${msg}`);
-          if (m.retryCount + 1 >= m.maxRetries) { await updateMutation(m.id, { failed: true, retryCount: m.retryCount + 1, errorMessage: msg }); result.failed++; }
-          else await updateMutation(m.id, { retryCount: m.retryCount + 1 });
+          if (m.retryCount + 1 >= m.maxRetries) {
+            await updateMutation(m.id, { failed: true, retryCount: m.retryCount + 1, errorMessage: msg });
+            result.failed++;
+          } else {
+            await updateMutation(m.id, { retryCount: m.retryCount + 1 });
+          }
         }
         this.currentProgress = Math.round(((i + 1) / pending.length) * 100);
         await this.notifyListeners();
@@ -94,7 +128,13 @@ class SyncEngine {
       await clearSyncedMutations();
       this.lastSyncTime = new Date();
       result.success = result.failed === 0;
-    } catch (e) { result.success = false; result.errors.push(e instanceof Error ? e.message : 'Failed'); }
+      console.log(`[SyncEngine] Sync complete: ${result.synced} synced, ${result.failed} failed`);
+    } catch (e) {
+      result.success = false;
+      const msg = e instanceof Error ? e.message : 'Failed';
+      result.errors.push(msg);
+      console.error('[SyncEngine] Sync error:', msg);
+    }
 
     this.isSyncing = false; await this.notifyListeners();
     return result;
