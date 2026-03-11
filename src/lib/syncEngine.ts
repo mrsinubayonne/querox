@@ -149,9 +149,29 @@ class SyncEngine {
   }
 
   private async processInsert(table: OfflineDataType, data: Record<string, unknown>, localId: string): Promise<void> {
-    const insertData = { ...data }; if (isLocalId(insertData.id as string)) delete insertData.id;
+    const insertData = { ...data };
+    if (isLocalId(insertData.id as string)) delete insertData.id;
+    
+    // Check if record already exists (avoid duplicate inserts on retry)
+    const recordId = insertData.id as string | undefined;
+    if (recordId) {
+      const { data: existing } = await supabase.from(table).select('id').eq('id', recordId).maybeSingle();
+      if (existing) {
+        console.log(`[SyncEngine] Record ${recordId} already exists in ${table}, skipping insert`);
+        await storeIdMapping({ localId, serverId: recordId, table });
+        return;
+      }
+    }
+    
     const { data: result, error } = await supabase.from(table).insert(insertData as never).select('id').single();
-    if (error) throw error;
+    if (error) {
+      // Handle duplicate key error gracefully
+      if (error.code === '23505') {
+        console.log(`[SyncEngine] Duplicate key for ${table}, record already synced`);
+        return;
+      }
+      throw error;
+    }
     if (result?.id) await storeIdMapping({ localId, serverId: result.id, table });
   }
 
