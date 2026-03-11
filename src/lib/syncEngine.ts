@@ -55,10 +55,20 @@ class SyncEngine {
     this.listeners.forEach(l => l(status));
   }
 
-  startBackgroundSync(intervalMs = 30000): void {
+  startBackgroundSync(intervalMs = 15000): void {
     if (this.syncInterval) return;
     this.sync();
-    this.syncInterval = setInterval(() => { if (navigator.onLine && !this.isSyncing) this.sync(); }, intervalMs);
+    this.syncInterval = setInterval(() => {
+      if (navigator.onLine && !this.isSyncing) {
+        this.sync().then(result => {
+          // Auto-retry failed mutations every cycle
+          if (result.failed > 0 || result.errors.length > 0) {
+            console.log('[SyncEngine] Auto-retrying failed mutations...');
+            this.retryFailed();
+          }
+        });
+      }
+    }, intervalMs);
   }
 
   stopBackgroundSync(): void {
