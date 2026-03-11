@@ -362,7 +362,9 @@ export const DataTab: React.FC = () => {
 
   const getSectionLabel = (section: string): string => {
     const labels: { [key: string]: string } = {
+      all: 'Tout (incl. tables)',
       orders: 'Commandes',
+      table_sessions: 'Tables (sessions)',
       customers: 'Clients',
       inventory: 'Inventaire',
       transactions: 'Transactions',
@@ -375,6 +377,8 @@ export const DataTab: React.FC = () => {
   };
 
   const sections = [
+    { id: 'all', label: 'Tout (incl. tables)' },
+    { id: 'table_sessions', label: 'Tables (sessions)' },
     { id: 'menus', label: 'Menus' },
     { id: 'orders', label: 'Commandes' },
     { id: 'customers', label: 'Clients' },
