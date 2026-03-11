@@ -449,6 +449,31 @@ export const DataTab: React.FC = () => {
         </div>
 
         <div className="border-t pt-6 mt-6">
+          <h3 className="text-sm font-semibold mb-4">Maintenance</h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Utilisez ces actions pour corriger rapidement les problèmes de synchronisation locale.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              className="flex items-center justify-between gap-2"
+              onClick={handleClearPendingSyncQueue}
+            >
+              <span>Vider la file de synchro</span>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              className="flex items-center justify-between gap-2"
+              onClick={handleRepairApplicationCache}
+            >
+              <span>Réparer l'application</span>
+              <Wrench className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="border-t pt-6 mt-6">
           <h3 className="text-sm font-semibold mb-4 text-destructive">Zone dangereuse</h3>
           <p className="text-xs text-muted-foreground mb-4">
             Supprimez les données par section. Cette action est irréversible.
