@@ -3,11 +3,13 @@ import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload, Trash2 } from "lucide-react";
+import { Download, Upload, Trash2, RefreshCw, Wrench } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { clearAllData, clearAllMutations } from "@/lib/offlineStorage";
+import { queryClient } from "@/lib/queryClient";
 import {
   AlertDialog,
   AlertDialogAction,
