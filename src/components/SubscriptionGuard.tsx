@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, Crown, RefreshCw, Shield, Wrench, Users } from 'lucide-react';
@@ -100,6 +101,7 @@ const repairApplicationCache = async () => {
 const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children, feature = "cette fonctionnalité" }) => {
   const { isSubscriptionActive, loading, refetch, isAdmin, subscription, hasCachedData } = useSubscription();
   const navigate = useNavigate();
+  const { isOffline } = useNetworkStatus();
   const isTeamMember = getTeamMemberFromStorage();
   const hasValidCache = useRef(hasAnyValidCachedSubscription());
 
@@ -125,6 +127,9 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children, feature
     await refetch(true);
     toast.success('Statut actualisé');
   };
+
+  // ── Offline bypass: allow access when offline (user already authenticated) ──
+  if (isOffline) return <>{children}</>;
 
   // ── Render logic (no side-effects, no refetch triggers) ────────────
   if (isAdmin) {
