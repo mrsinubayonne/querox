@@ -101,6 +101,7 @@ const repairApplicationCache = async () => {
 const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children, feature = "cette fonctionnalité" }) => {
   const { isSubscriptionActive, loading, refetch, isAdmin, subscription, hasCachedData } = useSubscription();
   const navigate = useNavigate();
+  const { isOffline } = useNetworkStatus();
   const isTeamMember = getTeamMemberFromStorage();
   const hasValidCache = useRef(hasAnyValidCachedSubscription());
 
