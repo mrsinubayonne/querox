@@ -128,6 +128,9 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children, feature
     toast.success('Statut actualisé');
   };
 
+  // ── Offline bypass: allow access when offline (user already authenticated) ──
+  if (isOffline) return <>{children}</>;
+
   // ── Render logic (no side-effects, no refetch triggers) ────────────
   if (isAdmin) {
     return (
