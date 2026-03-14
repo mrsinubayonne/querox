@@ -145,9 +145,9 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       : undefined;
 
     const merged = [
-      ...fromQuery,
-      ...((cachedScoped?.data || []) as TableSession[]),
       ...((cachedUnscoped?.data || []) as TableSession[]),
+      ...((cachedScoped?.data || []) as TableSession[]),
+      ...fromQuery,
     ];
 
     return Array.from(new Map(merged.map((session) => [session.id, session])).values());
@@ -167,6 +167,15 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
     if (user) {
       await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
+
+      const cachedUnscoped = await getData<TableSession[]>('table_sessions', resolvedUserId);
+      const unscopedList = (cachedUnscoped?.data || []) as TableSession[];
+      if (unscopedList.length > 0) {
+        const updatedUnscoped = unscopedList.map((s) =>
+          s.id === updatedSession.id ? { ...s, ...updatedSession } : s
+        );
+        await storeData('table_sessions', updatedUnscoped, resolvedUserId);
+      }
     }
   }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
@@ -182,6 +191,13 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     queryClient.setQueryData(sessionsQueryKey, filtered);
     if (user) {
       await storeData('table_sessions', filtered, resolvedUserId, scopedOutletId);
+
+      const cachedUnscoped = await getData<TableSession[]>('table_sessions', resolvedUserId);
+      const unscopedList = (cachedUnscoped?.data || []) as TableSession[];
+      if (unscopedList.length > 0) {
+        const unscopedFiltered = unscopedList.filter((s) => s.id !== sessionId);
+        await storeData('table_sessions', unscopedFiltered, resolvedUserId);
+      }
     }
   }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
@@ -194,6 +210,12 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
     if (user) {
       await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
+
+      const cachedUnscoped = await getData<TableSession[]>('table_sessions', resolvedUserId);
+      const unscopedList = (cachedUnscoped?.data || []) as TableSession[];
+      const withoutDuplicateUnscoped = unscopedList.filter((s) => s.id !== newSession.id);
+      const updatedUnscoped = [newSession, ...withoutDuplicateUnscoped];
+      await storeData('table_sessions', updatedUnscoped, resolvedUserId);
     }
   }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
@@ -670,27 +692,25 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         if (invoicePaymentError) throw invoicePaymentError;
       }
 
-      paidInvoiceMeta = invoiceForSession as { id: string; invoice_number: string; total_amount: number };
+      // 2) Safety first: always force the session to paid after invoice payment.
+      // This guarantees table release even if the DB trigger is delayed or unavailable.
+      const { error: sessionPaidError } = await supabase
+        .from('table_sessions')
+        .update({ status: 'paid', payment_method: normalizedPaymentMethod })
+        .eq('id', sessionId);
 
-      // 2) Safety fallback: if invoice was already paid before this click,
-      // trigger won't re-fire, so ensure the session is paid as well.
-      if (invoiceForSession.status === 'paid') {
-        const { error: sessionError } = await supabase
+      if (sessionPaidError) {
+        console.error('[markSessionAsPaid] Session paid update failed:', sessionPaidError);
+        const { error: retryError } = await supabase
           .from('table_sessions')
           .update({ status: 'paid', payment_method: normalizedPaymentMethod })
-          .eq('id', sessionId);
+          .eq('id', sessionId)
+          .eq('user_id', resolvedUserId);
 
-        if (sessionError) {
-          console.error('[markSessionAsPaid] Session fallback update failed:', sessionError);
-          const { error: retryError } = await supabase
-            .from('table_sessions')
-            .update({ status: 'paid', payment_method: normalizedPaymentMethod })
-            .eq('id', sessionId)
-            .eq('user_id', resolvedUserId);
-
-          if (retryError) throw retryError;
-        }
+        if (retryError) throw retryError;
       }
+
+      paidInvoiceMeta = invoiceForSession as { id: string; invoice_number: string; total_amount: number };
 
       // 3) Create accounting transaction when we have paid invoice metadata
       if (!isDebtorDb && paidInvoiceMeta) {
