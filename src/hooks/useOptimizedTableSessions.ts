@@ -167,6 +167,15 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
     if (user) {
       await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
+
+      const cachedUnscoped = await getData<TableSession[]>('table_sessions', resolvedUserId);
+      const unscopedList = (cachedUnscoped?.data || []) as TableSession[];
+      if (unscopedList.length > 0) {
+        const updatedUnscoped = unscopedList.map((s) =>
+          s.id === updatedSession.id ? { ...s, ...updatedSession } : s
+        );
+        await storeData('table_sessions', updatedUnscoped, resolvedUserId);
+      }
     }
   }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
