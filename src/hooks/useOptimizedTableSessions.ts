@@ -191,6 +191,13 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     queryClient.setQueryData(sessionsQueryKey, filtered);
     if (user) {
       await storeData('table_sessions', filtered, resolvedUserId, scopedOutletId);
+
+      const cachedUnscoped = await getData<TableSession[]>('table_sessions', resolvedUserId);
+      const unscopedList = (cachedUnscoped?.data || []) as TableSession[];
+      if (unscopedList.length > 0) {
+        const unscopedFiltered = unscopedList.filter((s) => s.id !== sessionId);
+        await storeData('table_sessions', unscopedFiltered, resolvedUserId);
+      }
     }
   }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
