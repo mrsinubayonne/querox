@@ -145,9 +145,9 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       : undefined;
 
     const merged = [
-      ...fromQuery,
-      ...((cachedScoped?.data || []) as TableSession[]),
       ...((cachedUnscoped?.data || []) as TableSession[]),
+      ...((cachedScoped?.data || []) as TableSession[]),
+      ...fromQuery,
     ];
 
     return Array.from(new Map(merged.map((session) => [session.id, session])).values());
