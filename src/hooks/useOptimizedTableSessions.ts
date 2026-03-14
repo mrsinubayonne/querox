@@ -210,6 +210,12 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
     if (user) {
       await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
+
+      const cachedUnscoped = await getData<TableSession[]>('table_sessions', resolvedUserId);
+      const unscopedList = (cachedUnscoped?.data || []) as TableSession[];
+      const withoutDuplicateUnscoped = unscopedList.filter((s) => s.id !== newSession.id);
+      const updatedUnscoped = [newSession, ...withoutDuplicateUnscoped];
+      await storeData('table_sessions', updatedUnscoped, resolvedUserId);
     }
   }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
 
