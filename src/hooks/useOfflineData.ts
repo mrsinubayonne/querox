@@ -281,6 +281,39 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
 
   console.log(`${logPrefix} Preloading critical data for user:`, normalizedUserId, '| outlet:', normalizedOutletId);
 
+  const getRecordOutletId = (record: unknown): string | undefined => {
+    if (!record || typeof record !== 'object') return undefined;
+    const outletValue = (record as Record<string, unknown>).outlet_id;
+    return typeof outletValue === 'string' ? sanitizeStorageId(outletValue) : undefined;
+  };
+
+  const storeOutletScopedCopies = async (table: OfflineDataType, data: unknown[]) => {
+    const records = Array.isArray(data) ? (data as Array<Record<string, unknown>>) : [];
+    const outletIds = new Set<string>();
+
+    if (normalizedOutletId) {
+      outletIds.add(normalizedOutletId);
+    }
+
+    for (const record of records) {
+      const recordOutletId = getRecordOutletId(record);
+      if (recordOutletId) {
+        outletIds.add(recordOutletId);
+      }
+    }
+
+    await Promise.all(
+      Array.from(outletIds).map((currentOutletId) => {
+        const scoped = records.filter((record) => {
+          const recordOutletId = getRecordOutletId(record);
+          return !recordOutletId || recordOutletId === currentOutletId;
+        });
+
+        return storeData(table, scoped, normalizedUserId, currentOutletId);
+      })
+    );
+  };
+
   const safeFetchAndStore = async (table: OfflineDataType, fetchFn?: () => Promise<unknown[]>) => {
     try {
       let data: unknown[];
@@ -304,14 +337,7 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
         : normalizedFresh;
 
       await storeData(table, finalData, normalizedUserId);
-
-      // Also store scoped by outlet if provided
-      if (normalizedOutletId && Array.isArray(finalData)) {
-        const scoped = (finalData as Array<Record<string, unknown>>).filter(
-          item => !item.outlet_id || item.outlet_id === normalizedOutletId
-        );
-        await storeData(table, scoped, normalizedUserId, normalizedOutletId);
-      }
+      await storeOutletScopedCopies(table, finalData);
 
       console.log(
         `${logPrefix} Preloaded ${table}:`,
@@ -334,6 +360,7 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
     if (error) throw error;
     menus = (data || []) as Array<{ id: string }>;
     await storeData('menus', data || [], normalizedUserId);
+    await storeOutletScopedCopies('menus', data || []);
     console.log(`${logPrefix} Preloaded menus:`, (data || []).length, 'items');
   } catch (error) {
     console.warn(`${logPrefix} Failed to preload menus:`, error);

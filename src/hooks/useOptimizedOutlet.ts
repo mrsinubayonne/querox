@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getSelectedOutletIdFromStorage, sanitizeStorageId } from '@/lib/offlineIdentity';
 
 interface OutletCache {
   outletId: string | null;
@@ -24,30 +25,30 @@ export const useOptimizedOutlet = () => {
       }
 
       try {
-        // Always check localStorage first as primary source of truth
-        const localOutletId = localStorage.getItem('selectedOutletId');
+        const localOutletId = getSelectedOutletIdFromStorage();
         if (localOutletId) {
           setOutletId(localOutletId);
           setLoading(false);
           return;
         }
 
-        // Vérifier le cache
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
           try {
             const parsedCache: OutletCache = JSON.parse(cached);
-            if (Date.now() - parsedCache.timestamp < CACHE_DURATION) {
-              setOutletId(parsedCache.outletId);
+            const cachedOutletId = sanitizeStorageId(parsedCache.outletId);
+
+            if (Date.now() - parsedCache.timestamp < CACHE_DURATION && cachedOutletId) {
+              localStorage.setItem('selectedOutletId', cachedOutletId);
+              setOutletId(cachedOutletId);
               setLoading(false);
               return;
             }
-          } catch (e) {
-            // Cache invalide, on continue
+          } catch {
+            localStorage.removeItem(CACHE_KEY);
           }
         }
 
-        // Obtenir l'outlet depuis la DB
         const selectedProfileId = localStorage.getItem('selectedProfileId');
         let outlet: string | null = null;
 
@@ -67,22 +68,20 @@ export const useOptimizedOutlet = () => {
           outlet = data?.selected_outlet_id ?? null;
         }
 
-        // Mettre en cache
+        const sanitizedOutlet = sanitizeStorageId(outlet);
         const cacheData: OutletCache = {
-          outletId: outlet,
+          outletId: sanitizedOutlet ?? null,
           timestamp: Date.now()
         };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-        if (outlet) {
-          localStorage.setItem('selectedOutletId', outlet);
+        if (sanitizedOutlet) {
+          localStorage.setItem('selectedOutletId', sanitizedOutlet);
         }
 
-        setOutletId(outlet);
+        setOutletId(sanitizedOutlet ?? null);
       } catch (error) {
         console.warn('[useOptimizedOutlet] Error fetching outlet:', error);
-        // Fallback to localStorage even if DB fails
-        const fallback = localStorage.getItem('selectedOutletId');
-        setOutletId(fallback);
+        setOutletId(getSelectedOutletIdFromStorage() ?? null);
       } finally {
         setLoading(false);
       }
