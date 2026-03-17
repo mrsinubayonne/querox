@@ -85,18 +85,72 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
+  const resolveOutletIdForPreload = async (userId: string): Promise<string | undefined> => {
+    const cachedOutletId = getSelectedOutletIdFromStorage();
+    if (cachedOutletId) return cachedOutletId;
+
+    try {
+      const selectedProfileId = localStorage.getItem('selectedProfileId');
+
+      if (selectedProfileId) {
+        const { data } = await supabase
+          .from('user_profiles')
+          .select('selected_outlet_id')
+          .eq('id', selectedProfileId)
+          .maybeSingle();
+
+        const profileOutletId = data?.selected_outlet_id ?? undefined;
+        if (profileOutletId) {
+          localStorage.setItem('selectedOutletId', profileOutletId);
+          return profileOutletId;
+        }
+      }
+
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('selected_outlet_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const profileOutletId = profileData?.selected_outlet_id ?? undefined;
+      if (profileOutletId) {
+        localStorage.setItem('selectedOutletId', profileOutletId);
+        return profileOutletId;
+      }
+
+      const { data: outlets } = await supabase
+        .from('outlets')
+        .select('id')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true })
+        .limit(1);
+
+      const fallbackOutletId = outlets?.[0]?.id;
+      if (fallbackOutletId) {
+        localStorage.setItem('selectedOutletId', fallbackOutletId);
+      }
+
+      return fallbackOutletId;
+    } catch (error) {
+      console.warn('⚠️ [Offline] Impossible de résoudre outletId pour le preload:', error);
+      return undefined;
+    }
+  };
+
   const triggerPreloadOnce = (userId: string) => {
     if (!userId) return;
     if (!navigator.onLine) return;
     if (preloadTriggeredRef.current) return;
     preloadTriggeredRef.current = true;
 
-    const outletId = getSelectedOutletIdFromStorage();
-    preloadCriticalData(userId, outletId).then(() => {
-      console.log('✅ [Offline] Preload critique terminé');
-    }).catch(err => {
-      console.warn('⚠️ [Offline] Erreur preload:', err);
-    });
+    void resolveOutletIdForPreload(userId)
+      .then((outletId) => preloadCriticalData(userId, outletId))
+      .then(() => {
+        console.log('✅ [Offline] Preload critique terminé');
+      })
+      .catch(err => {
+        console.warn('⚠️ [Offline] Erreur preload:', err);
+      });
   };
 
   // Re-preload when coming back online (using a ref to avoid stale closure)

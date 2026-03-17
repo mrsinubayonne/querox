@@ -10,17 +10,42 @@ export function sanitizeStorageId(value: string | null | undefined): string | un
   return normalized;
 }
 
+function getOutletIdFromCache(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+
+  const rawCache = localStorage.getItem('outlet_cache');
+  if (!rawCache) return undefined;
+
+  try {
+    const parsed = JSON.parse(rawCache) as { outletId?: string | null };
+    const cachedOutletId = sanitizeStorageId(parsed?.outletId ?? undefined);
+
+    if (cachedOutletId) {
+      localStorage.setItem('selectedOutletId', cachedOutletId);
+      return cachedOutletId;
+    }
+  } catch {
+    localStorage.removeItem('outlet_cache');
+  }
+
+  return undefined;
+}
+
 export function getSelectedOutletIdFromStorage(): string | undefined {
   if (typeof window === 'undefined') return undefined;
 
   const raw = localStorage.getItem('selectedOutletId');
   const sanitized = sanitizeStorageId(raw);
 
-  if (!sanitized && raw) {
+  if (sanitized) {
+    return sanitized;
+  }
+
+  if (raw) {
     localStorage.removeItem('selectedOutletId');
   }
 
-  return sanitized;
+  return getOutletIdFromCache();
 }
 
 export function resolveOfflineUserId(params: {
