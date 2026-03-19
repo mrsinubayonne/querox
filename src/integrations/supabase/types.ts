@@ -2514,6 +2514,7 @@ export type Database = {
       }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
       cleanup_rate_limits: { Args: never; Returns: undefined }
+      cleanup_stale_table_sessions: { Args: never; Returns: undefined }
       generate_invoice_number: { Args: never; Returns: string }
       generate_outlet_access_code: {
         Args: {
