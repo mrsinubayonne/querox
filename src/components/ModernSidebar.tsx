@@ -55,6 +55,7 @@ const ADMIN_ITEMS = [
   { icon: UserCog, label: 'Gestion des Rôles', path: '/admin/roles' },
   { icon: Shield, label: "Codes d'Accès", path: '/admin/access-codes' },
   { icon: Settings, label: 'Paramètres Système', path: '/admin/system-settings' },
+  { icon: FlaskConical, label: 'Diagnostics', path: '/admin/diagnostics' },
 ] as const;
 
 const TOUR_MAP: Record<string, string> = {
