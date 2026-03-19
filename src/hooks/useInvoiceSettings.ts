@@ -41,7 +41,8 @@ export const useInvoiceSettings = () => {
     }
 
     try {
-      const outletId = await getSelectedOutletId();
+      const outletId = getOutletId();
+      setSelectedOutletId(outletId);
       
       if (!outletId) {
         console.log('No outlet selected');
