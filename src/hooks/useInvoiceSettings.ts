@@ -28,30 +28,10 @@ export const useInvoiceSettings = () => {
   const [loading, setLoading] = useState(true);
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
 
-  const getSelectedOutletId = async () => {
-    if (!user) return null;
-
-    const selectedProfileId = localStorage.getItem('selectedProfileId');
-    let outletId: string | null = null;
-
-    if (selectedProfileId) {
-      const { data: userProfile } = await supabase
-        .from('user_profiles')
-        .select('selected_outlet_id')
-        .eq('id', selectedProfileId)
-        .maybeSingle();
-      outletId = userProfile?.selected_outlet_id ?? null;
-    } else {
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('selected_outlet_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      outletId = profile?.selected_outlet_id ?? null;
-    }
-
-    setSelectedOutletId(outletId);
-    return outletId;
+  const getOutletId = (): string | null => {
+    const stored = localStorage.getItem('selectedOutletId');
+    if (stored && stored !== 'null' && stored !== 'undefined') return stored;
+    return null;
   };
 
   const fetchSettings = async () => {
