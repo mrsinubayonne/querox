@@ -375,7 +375,7 @@ const AdminDiagnostics: React.FC = () => {
                             <Loader2 className="w-5 h-5 animate-spin text-primary" />
                           )}
                           {test.status === 'passed' && (
-                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                            <CheckCircle2 className="w-5 h-5 text-primary" />
                           )}
                           {test.status === 'failed' && (
                             <XCircle className="w-5 h-5 text-destructive" />
