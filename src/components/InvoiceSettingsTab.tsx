@@ -106,7 +106,7 @@ export const InvoiceSettingsTab: React.FC = () => {
     e.preventDefault();
     if (!user) return;
 
-    const outletId = selectedOutletId || await getSelectedOutletId();
+    const outletId = selectedOutletId || getOutletId();
     
     if (!outletId) {
       toast({
