@@ -166,7 +166,17 @@ const Factures: React.FC = () => {
   };
 
   const filteredInvoices = useMemo(() => {
-    return invoices.filter((invoice) => {
+    // Deduplicate by invoice_number (keep most recent)
+    const seen = new Map<string, Invoice>();
+    for (const invoice of invoices) {
+      const existing = seen.get(invoice.invoice_number);
+      if (!existing || new Date(invoice.created_at) > new Date(existing.created_at)) {
+        seen.set(invoice.invoice_number, invoice);
+      }
+    }
+    const uniqueInvoices = Array.from(seen.values());
+
+    return uniqueInvoices.filter((invoice) => {
       const matchesSearch =
         invoice.invoice_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (invoice.notes && invoice.notes.toLowerCase().includes(searchQuery.toLowerCase()));
