@@ -58,6 +58,7 @@ const AdminSupport = lazy(() => import('@/pages/AdminSupport'));
 const AdminGlobalControl = lazy(() => import('@/pages/AdminGlobalControl'));
 const AdminSystemSettings = lazy(() => import('@/pages/AdminSystemSettings'));
 const AdminComptabilite = lazy(() => import('@/pages/AdminComptabilite'));
+const AdminDiagnostics = lazy(() => import('@/pages/AdminDiagnostics'));
 const PartnerSignup = lazy(() => import('@/pages/PartnerSignup'));
 const PartnerDashboard = lazy(() => import('@/pages/PartnerDashboard'));
 const Reservations = lazy(() => import('@/pages/Reservations'));
