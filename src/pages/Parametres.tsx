@@ -6,27 +6,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, 
   User, 
-  Bell, 
   Shield,
   Globe,
   Database,
   FileText,
-  UserCog,
   Store
 } from "lucide-react";
 import ProfileTab from "@/components/ProfileTab";
-import { NotificationsTab } from "@/components/NotificationsTab";
 import { SecurityTab } from "@/components/SecurityTab";
 import DomainTab from "@/components/DomainTab";
 import { DataTab } from "@/components/DataTab";
 import { InvoiceSettingsTab } from "@/components/InvoiceSettingsTab";
-import { UserProfilesTab } from "@/components/UserProfilesTab";
 import { OutletSettingsTab } from "@/components/OutletSettingsTab";
 
 const Parametres = () => {
   const [searchParams] = useSearchParams();
-  const [notifications, setNotifications] = useState(true);
-  const [emailUpdates, setEmailUpdates] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
@@ -54,7 +48,7 @@ const Parametres = () => {
       
       <main className="container max-w-4xl py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-3xl mx-auto">
-          <TabsList className="mb-8 grid grid-cols-8 w-full mx-auto">
+          <TabsList className="mb-8 grid grid-cols-6 w-full mx-auto">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profil
@@ -67,17 +61,9 @@ const Parametres = () => {
               <FileText className="h-4 w-4" />
               Factures
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notifications
-            </TabsTrigger>
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Sécurité
-            </TabsTrigger>
-            <TabsTrigger value="profiles" className="flex items-center gap-2">
-              <UserCog className="h-4 w-4" />
-              Profils
             </TabsTrigger>
             <TabsTrigger value="domain" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
@@ -100,22 +86,9 @@ const Parametres = () => {
           <TabsContent value="invoices" className="space-y-6">
             <InvoiceSettingsTab />
           </TabsContent>
-          
-          <TabsContent value="notifications" className="space-y-6">
-            <NotificationsTab
-              notifications={notifications}
-              setNotifications={setNotifications}
-              emailUpdates={emailUpdates}
-              setEmailUpdates={setEmailUpdates}
-            />
-          </TabsContent>
 
           <TabsContent value="security" className="space-y-6">
             <SecurityTab />
-          </TabsContent>
-
-          <TabsContent value="profiles" className="space-y-6">
-            <UserProfilesTab />
           </TabsContent>
 
           <TabsContent value="domain" className="space-y-6">

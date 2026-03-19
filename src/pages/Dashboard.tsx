@@ -30,7 +30,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import OnboardingTour from '@/components/OnboardingTour';
+
 
 type Period = 'day' | 'week' | 'month';
 
