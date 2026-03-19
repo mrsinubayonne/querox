@@ -83,7 +83,7 @@ export const useInvoiceSettings = () => {
       return false;
     }
 
-    const outletId = selectedOutletId || await getSelectedOutletId();
+    const outletId = selectedOutletId || getOutletId();
     
     if (!outletId) {
       toast({
