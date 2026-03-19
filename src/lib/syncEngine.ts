@@ -97,13 +97,18 @@ class SyncEngine {
     if (this.isSyncing) return { success: false, synced: 0, failed: 0, errors: ['Sync in progress'] };
     if (!navigator.onLine) return { success: false, synced: 0, failed: 0, errors: ['Offline'] };
 
+    // Quick check: skip heavy sync if nothing pending (no state change, no logs)
+    const pending = await getPendingMutations();
+    if (pending.length === 0) {
+      this.lastSyncTime = new Date();
+      await this.notifyListeners();
+      return { success: true, synced: 0, failed: 0, errors: [] };
+    }
+
     this.isSyncing = true; this.currentProgress = 0; await this.notifyListeners();
     const result: SyncResult = { success: true, synced: 0, failed: 0, errors: [] };
 
     try {
-      const pending = await getPendingMutations();
-      if (pending.length === 0) { this.lastSyncTime = new Date(); this.isSyncing = false; this.currentProgress = 100; await this.notifyListeners(); return result; }
-
       console.log(`[SyncEngine] Starting sync: ${pending.length} pending mutations`);
 
       // Ensure we have a valid auth session before syncing
