@@ -58,6 +58,7 @@ const AdminSupport = lazy(() => import('@/pages/AdminSupport'));
 const AdminGlobalControl = lazy(() => import('@/pages/AdminGlobalControl'));
 const AdminSystemSettings = lazy(() => import('@/pages/AdminSystemSettings'));
 const AdminComptabilite = lazy(() => import('@/pages/AdminComptabilite'));
+const AdminDiagnostics = lazy(() => import('@/pages/AdminDiagnostics'));
 const PartnerSignup = lazy(() => import('@/pages/PartnerSignup'));
 const PartnerDashboard = lazy(() => import('@/pages/PartnerDashboard'));
 const Reservations = lazy(() => import('@/pages/Reservations'));
@@ -139,6 +140,7 @@ function App() {
               <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
               <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
               <Route path="/admin/access-codes" element={<ProtectedRoute><AdminAccessCodes /></ProtectedRoute>} />
+              <Route path="/admin/diagnostics" element={<ProtectedRoute><AdminDiagnostics /></ProtectedRoute>} />
 
               {/* Routes Partner */}
               <Route path="/partner-dashboard" element={<ProtectedRoute><PartnerDashboard /></ProtectedRoute>} />

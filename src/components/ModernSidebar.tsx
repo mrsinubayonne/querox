@@ -1,6 +1,6 @@
 
 import React, { useMemo, useCallback } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, Utensils, UserPlus, Award, User } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, Utensils, UserPlus, Award, User, FlaskConical } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -55,6 +55,7 @@ const ADMIN_ITEMS = [
   { icon: UserCog, label: 'Gestion des Rôles', path: '/admin/roles' },
   { icon: Shield, label: "Codes d'Accès", path: '/admin/access-codes' },
   { icon: Settings, label: 'Paramètres Système', path: '/admin/system-settings' },
+  { icon: FlaskConical, label: 'Diagnostics', path: '/admin/diagnostics' },
 ] as const;
 
 const TOUR_MAP: Record<string, string> = {
