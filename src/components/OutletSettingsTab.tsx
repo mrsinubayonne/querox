@@ -25,6 +25,7 @@ export const OutletSettingsTab: React.FC = () => {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({ name: '', address: '', phone: '' });
+  const [confirmName, setConfirmName] = useState('');
 
   const currentOutlet = outlets.find(o => o.id === selectedOutletId);
 
@@ -58,7 +59,7 @@ export const OutletSettingsTab: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (!selectedOutletId) return;
+    if (!selectedOutletId || !currentOutlet) return;
     if (outlets.length <= 1) {
       toast({
         title: "Impossible",
@@ -67,7 +68,16 @@ export const OutletSettingsTab: React.FC = () => {
       });
       return;
     }
+    if (confirmName !== currentOutlet.name) {
+      toast({
+        title: "Erreur",
+        description: "Le nom saisi ne correspond pas au point de vente",
+        variant: "destructive"
+      });
+      return;
+    }
     await deleteOutlet(selectedOutletId);
+    setConfirmName('');
     navigate('/select-outlet');
   };
 
@@ -150,13 +160,31 @@ export const OutletSettingsTab: React.FC = () => {
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Supprimer "{currentOutlet.name}" ?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Cette action est irréversible. Toutes les données associées à ce point de vente (commandes, factures, inventaire, etc.) seront définitivement supprimées.
+                <AlertDialogDescription className="space-y-3">
+                  <span className="block">
+                    Cette action est irréversible. Toutes les données associées à ce point de vente (commandes, factures, inventaire, etc.) seront définitivement supprimées.
+                  </span>
+                  <span className="block font-semibold text-destructive">
+                    Pour confirmer, tapez le nom exact du point de vente ci-dessous :
+                  </span>
+                  <span className="block font-mono bg-muted px-2 py-1 rounded text-foreground">
+                    {currentOutlet.name}
+                  </span>
                 </AlertDialogDescription>
               </AlertDialogHeader>
+              <Input
+                value={confirmName}
+                onChange={(e) => setConfirmName(e.target.value)}
+                placeholder="Tapez le nom du point de vente"
+                className="mt-2"
+              />
               <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                <AlertDialogCancel onClick={() => setConfirmName('')}>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  disabled={confirmName !== currentOutlet.name}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
                   Supprimer définitivement
                 </AlertDialogAction>
               </AlertDialogFooter>
