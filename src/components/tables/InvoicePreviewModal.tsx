@@ -199,7 +199,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
               </div>
 
               {/* Footer note */}
-              {settings?.footer_note && (
+              {opts.show_footer_note && settings?.footer_note && (
                 <div className="pt-4 border-t">
                   <p className="text-xs text-muted-foreground whitespace-pre-line">
                     {settings.footer_note}
