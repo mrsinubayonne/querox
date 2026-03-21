@@ -132,7 +132,7 @@ export const InvoiceSettingsTab: React.FC = () => {
         sanitizedData.logo_url = (sanitizedData.logo_url as any).value;
       }
 
-      const payload = {
+      const payload: Record<string, any> = {
         ...sanitizedData,
         display_options: displayOptions,
       };
