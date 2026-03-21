@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
+import { InvoiceDisplayOptions, DEFAULT_DISPLAY_OPTIONS } from '@/types/invoiceDisplayOptions';
 
 interface InvoicePreviewProps {
   settings: {
@@ -17,15 +18,18 @@ interface InvoicePreviewProps {
     logo_url?: string;
     primary_color?: string;
   };
+  displayOptions?: InvoiceDisplayOptions;
 }
 
-const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
+const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings, displayOptions }) => {
+  const opts = { ...DEFAULT_DISPLAY_OPTIONS, ...displayOptions };
+
   return (
     <Card className="p-8 bg-white shadow-lg max-w-4xl mx-auto">
       {/* En-tête */}
       <div className="flex justify-between items-start mb-8 pb-6 border-b-2" style={{ borderColor: settings.primary_color || '#3B82F6' }}>
         <div>
-          {settings.logo_url && (
+          {opts.show_logo && settings.logo_url && (
             <img 
               src={settings.logo_url} 
               alt="Logo" 
@@ -35,50 +39,60 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
           <h1 className="text-2xl font-bold text-black mb-1">
             {settings.company_name || 'Nom de l\'entreprise'}
           </h1>
-          {settings.company_address && (
+          {opts.show_company_address && settings.company_address && (
             <p className="text-sm text-black whitespace-pre-line">{settings.company_address}</p>
           )}
-          {settings.company_phone && (
+          {opts.show_company_phone && settings.company_phone && (
             <p className="text-xs text-black mt-1">Tél: {settings.company_phone}</p>
           )}
-          {settings.company_email && (
+          {opts.show_company_email && settings.company_email && (
             <p className="text-xs text-black">{settings.company_email}</p>
           )}
-          {settings.tax_id && (
+          {opts.show_tax_id && settings.tax_id && (
             <p className="text-xs text-black">SIRET/TVA: {settings.tax_id}</p>
           )}
-          {settings.nif_number && (
+          {opts.show_nif && settings.nif_number && (
             <p className="text-xs text-black">NIU: {settings.nif_number}</p>
           )}
-          {settings.rccm_number && (
+          {opts.show_rccm && settings.rccm_number && (
             <p className="text-xs text-black">RCCM: {settings.rccm_number}</p>
           )}
-          {settings.other_registration && (
+          {opts.show_other_registration && settings.other_registration && (
             <p className="text-xs text-black">{settings.other_registration}</p>
           )}
         </div>
         <div className="text-right">
-          <h2 
-            className="text-xl font-bold mb-1 text-black"
-          >
+          <h2 className="text-xl font-bold mb-1 text-black">
             {settings.invoice_title || 'FACTURE'}
           </h2>
-          <p 
-            className="text-base font-semibold text-black"
-          >
-            INV-202501-0001
-          </p>
-          <p className="text-xs text-black mt-1">Date: {new Date().toLocaleDateString('fr-FR')}</p>
+          {opts.show_invoice_number && (
+            <p className="text-base font-semibold text-black">
+              INV-202501-0001
+            </p>
+          )}
+          {opts.show_date && (
+            <p className="text-xs text-black mt-1">Date: {new Date().toLocaleDateString('fr-FR')}</p>
+          )}
+          {opts.show_table_number && (
+            <p className="text-xs text-black mt-1">Table: 5</p>
+          )}
         </div>
       </div>
 
       {/* Informations client */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-black mb-1">Facturé à:</h3>
-        <p className="text-sm text-black">Client Exemple</p>
-        <p className="text-xs text-black">client@exemple.com</p>
-        <p className="text-xs text-black">+33 6 12 34 56 78</p>
-      </div>
+      {opts.show_customer_info && (
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-black mb-1">Facturé à:</h3>
+          <p className="text-sm text-black">Client Exemple</p>
+          <p className="text-xs text-black">client@exemple.com</p>
+          <p className="text-xs text-black">+33 6 12 34 56 78</p>
+        </div>
+      )}
+
+      {/* Served by */}
+      {opts.show_served_by && (
+        <p className="text-xs text-black mb-4">Servi par: Jean Dupont</p>
+      )}
 
       {/* Tableau */}
       <div className="mb-6">
@@ -137,18 +151,24 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ settings }) => {
 
       {/* Conditions */}
       <div className="border-t-2 pt-4 mt-6" style={{ borderColor: settings.primary_color || '#3B82F6' }}>
-        <h3 className="text-xs font-semibold text-black mb-1">Conditions de paiement:</h3>
-        <p className="text-xs text-black mb-3 whitespace-pre-line">
-          {settings.payment_terms || 'Paiement à effectuer sous 30 jours à compter de la date de facturation.'}
-        </p>
-        {settings.footer_note && (
+        {opts.show_payment_terms && (
+          <>
+            <h3 className="text-xs font-semibold text-black mb-1">Conditions de paiement:</h3>
+            <p className="text-xs text-black mb-3 whitespace-pre-line">
+              {settings.payment_terms || 'Paiement à effectuer sous 30 jours à compter de la date de facturation.'}
+            </p>
+          </>
+        )}
+        {opts.show_footer_note && settings.footer_note && (
           <p className="text-xs text-black mb-3 whitespace-pre-line">
             {settings.footer_note}
           </p>
         )}
-        <p className="text-xs text-black text-center mt-4">
-          {settings.company_name || 'Mon Restaurant'}
-        </p>
+        {opts.show_querox_branding && (
+          <p className="text-xs text-black text-center mt-4">
+            Généré par QUEROX.me
+          </p>
+        )}
       </div>
     </Card>
   );

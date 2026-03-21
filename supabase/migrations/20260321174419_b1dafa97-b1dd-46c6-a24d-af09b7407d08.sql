@@ -1,0 +1,2 @@
+ALTER TABLE public.invoice_settings 
+ADD COLUMN IF NOT EXISTS display_options jsonb DEFAULT '{"show_logo":true,"show_table_number":true,"show_company_address":true,"show_company_phone":true,"show_company_email":true,"show_tax_id":true,"show_rccm":true,"show_nif":true,"show_other_registration":true,"show_payment_terms":true,"show_footer_note":true,"show_served_by":true,"show_customer_info":true,"show_date":true,"show_invoice_number":true,"show_querox_branding":true}'::jsonb;

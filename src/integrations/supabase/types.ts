@@ -615,6 +615,7 @@ export type Database = {
           company_name: string | null
           company_phone: string | null
           created_at: string
+          display_options: Json | null
           footer_note: string | null
           id: string
           invoice_title: string
@@ -635,6 +636,7 @@ export type Database = {
           company_name?: string | null
           company_phone?: string | null
           created_at?: string
+          display_options?: Json | null
           footer_note?: string | null
           id?: string
           invoice_title?: string
@@ -655,6 +657,7 @@ export type Database = {
           company_name?: string | null
           company_phone?: string | null
           created_at?: string
+          display_options?: Json | null
           footer_note?: string | null
           id?: string
           invoice_title?: string

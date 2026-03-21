@@ -7,10 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FileText, Save, Loader2, Eye } from 'lucide-react';
 import LogoUpload from './LogoUpload';
 import InvoicePreview from './invoices/InvoicePreview';
+import InvoiceDisplayToggles from './invoices/InvoiceDisplayToggles';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { InvoiceDisplayOptions, DEFAULT_DISPLAY_OPTIONS } from '@/types/invoiceDisplayOptions';
 
 export const InvoiceSettingsTab: React.FC = () => {
   const { user } = useAuth();
@@ -35,6 +37,8 @@ export const InvoiceSettingsTab: React.FC = () => {
     logo_url: '',
     primary_color: '#3B82F6',
   });
+
+  const [displayOptions, setDisplayOptions] = useState<InvoiceDisplayOptions>(DEFAULT_DISPLAY_OPTIONS);
 
   useEffect(() => {
     fetchSettings();
@@ -62,7 +66,6 @@ export const InvoiceSettingsTab: React.FC = () => {
         return;
       }
 
-      // Récupérer les paramètres de facture pour ce PDV
       const { data, error } = await supabase
         .from('invoice_settings')
         .select('*')
@@ -89,6 +92,11 @@ export const InvoiceSettingsTab: React.FC = () => {
           logo_url: typeof data.logo_url === 'string' ? data.logo_url : (data.logo_url as any)?.value || '',
           primary_color: data.primary_color || '#3B82F6',
         });
+        // Load display options
+        const savedOptions = (data as any).display_options;
+        if (savedOptions && typeof savedOptions === 'object') {
+          setDisplayOptions({ ...DEFAULT_DISPLAY_OPTIONS, ...savedOptions });
+        }
       }
     } catch (error: any) {
       console.error('Error fetching invoice settings:', error);
@@ -119,32 +127,34 @@ export const InvoiceSettingsTab: React.FC = () => {
 
     setSaving(true);
     try {
-      // S'assurer que le logo est stocké comme simple chaîne
       const sanitizedData = { ...formData };
       if (sanitizedData.logo_url && typeof sanitizedData.logo_url === 'object' && (sanitizedData.logo_url as any).value) {
         sanitizedData.logo_url = (sanitizedData.logo_url as any).value;
       }
 
+      const payload: Record<string, any> = {
+        ...sanitizedData,
+        display_options: displayOptions,
+      };
+
       if (settingsId) {
-        // Mettre à jour les paramètres existants
         const { error } = await supabase
           .from('invoice_settings')
           .update({
-            ...sanitizedData,
+            ...payload,
             updated_at: new Date().toISOString()
-          })
+          } as any)
           .eq('id', settingsId);
 
         if (error) throw error;
       } else {
-        // Créer de nouveaux paramètres pour ce PDV
         const { data, error } = await supabase
           .from('invoice_settings')
           .insert({
             user_id: user.id,
             outlet_id: outletId,
-            ...sanitizedData,
-          })
+            ...payload,
+          } as any)
           .select()
           .single();
 
@@ -185,14 +195,18 @@ export const InvoiceSettingsTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="edit" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="edit">
             <FileText className="w-4 h-4 mr-2" />
             Modifier
           </TabsTrigger>
+          <TabsTrigger value="display">
+            <Eye className="w-4 h-4 mr-2" />
+            Affichage
+          </TabsTrigger>
           <TabsTrigger value="preview">
             <Eye className="w-4 h-4 mr-2" />
-            Aperçu en temps réel
+            Aperçu
           </TabsTrigger>
         </TabsList>
         
@@ -209,7 +223,6 @@ export const InvoiceSettingsTab: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* En-tête de facture */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">En-tête de facture</h3>
             
@@ -251,7 +264,6 @@ export const InvoiceSettingsTab: React.FC = () => {
             </div>
           </div>
 
-          {/* Informations de l'entreprise */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Informations de l'entreprise</h3>
             
@@ -309,7 +321,6 @@ export const InvoiceSettingsTab: React.FC = () => {
               />
             </div>
 
-            {/* Numéros d'entreprise optionnels */}
             <div className="space-y-4 pt-4 border-t border-border">
               <h4 className="text-sm font-medium text-muted-foreground">Numéros d'entreprise (optionnel)</h4>
               
@@ -347,7 +358,6 @@ export const InvoiceSettingsTab: React.FC = () => {
             </div>
           </div>
 
-          {/* Pied de page */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Pied de page</h3>
             
@@ -394,6 +404,30 @@ export const InvoiceSettingsTab: React.FC = () => {
           </form>
         </TabsContent>
 
+        <TabsContent value="display">
+          <div className="space-y-6">
+            <InvoiceDisplayToggles
+              displayOptions={displayOptions}
+              onChange={setDisplayOptions}
+            />
+            <div className="flex justify-end">
+              <Button onClick={handleSubmit} disabled={saving} className="gap-2">
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Enregistrer les options d'affichage
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
         <TabsContent value="preview">
           <div className="space-y-4">
             <Card>
@@ -404,7 +438,7 @@ export const InvoiceSettingsTab: React.FC = () => {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <InvoicePreview settings={formData} />
+            <InvoicePreview settings={formData} displayOptions={displayOptions} />
           </div>
         </TabsContent>
       </Tabs>
