@@ -100,6 +100,8 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
     });
   });
 
+  const opts: InvoiceDisplayOptions = { ...DEFAULT_DISPLAY_OPTIONS, ...(settings?.display_options || {}) };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh]">
@@ -120,7 +122,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
               {/* Header */}
               <div className="flex justify-between items-start pb-4 border-b">
                 <div>
-                  {settings?.logo_url && (
+                  {opts.show_logo && settings?.logo_url && (
                     <img
                       src={settings.logo_url}
                       alt="Logo"
@@ -130,26 +132,26 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
                   <h2 className="text-xl font-bold">
                     {settings?.company_name || "Mon Restaurant"}
                   </h2>
-                  {settings?.company_address && (
+                  {opts.show_company_address && settings?.company_address && (
                     <p className="text-sm text-muted-foreground whitespace-pre-line">
                       {settings.company_address}
                     </p>
                   )}
-                  {settings?.company_phone && (
+                  {opts.show_company_phone && settings?.company_phone && (
                     <p className="text-sm text-muted-foreground">
                       Tél: {settings.company_phone}
                     </p>
                   )}
-                  {settings?.tax_id && (
+                  {opts.show_tax_id && settings?.tax_id && (
                     <p className="text-sm text-muted-foreground">SIRET/TVA: {settings.tax_id}</p>
                   )}
-                  {settings?.nif_number && (
+                  {opts.show_nif && settings?.nif_number && (
                     <p className="text-sm text-muted-foreground">NIU: {settings.nif_number}</p>
                   )}
-                  {settings?.rccm_number && (
+                  {opts.show_rccm && settings?.rccm_number && (
                     <p className="text-sm text-muted-foreground">RCCM: {settings.rccm_number}</p>
                   )}
-                  {settings?.other_registration && (
+                  {opts.show_other_registration && settings?.other_registration && (
                     <p className="text-sm text-muted-foreground">{settings.other_registration}</p>
                   )}
                 </div>
@@ -160,9 +162,11 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
                   <h3 className="text-lg font-bold">
                     {settings?.invoice_title || "FACTURE"}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Table {tableNumber}
-                  </p>
+                  {opts.show_table_number && (
+                    <p className="text-sm text-muted-foreground">
+                      Table {tableNumber}
+                    </p>
+                  )}
                 </div>
               </div>
 
