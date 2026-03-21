@@ -160,6 +160,9 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
       const reportsMap = new Map<string, DailyReport>();
 
       orders.forEach((order: any) => {
+        // Exclure les commandes annulées du comptage
+        if (order.status === 'cancelled' || order.status === 'rejected') return;
+
         const orderDate = new Date(order.created_at);
         const dateKey = format(orderDate, 'yyyy-MM-dd');
         const outletKey = `${dateKey}-${order.outlet_id}`;
@@ -182,9 +185,9 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
 
         const report = reportsMap.get(outletKey)!;
         report.total_orders += 1;
-        report.total_revenue += Number(order.total_amount);
       });
 
+      // Le CA est basé sur les factures payées (source de vérité comptable)
       invoices.forEach((invoice: any) => {
         const invoiceDate = new Date(invoice.created_at);
         const dateKey = format(invoiceDate, 'yyyy-MM-dd');
@@ -210,6 +213,8 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         report.total_invoices += 1;
         if (invoice.status === 'paid') {
           report.paid_invoices += 1;
+          // CA = somme des factures payées uniquement
+          report.total_revenue += Math.round(Number(invoice.total_amount));
         } else {
           report.unpaid_invoices += 1;
         }
@@ -217,7 +222,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
 
       reportsMap.forEach((report) => {
         if (report.total_orders > 0) {
-          report.average_order_value = report.total_revenue / report.total_orders;
+          report.average_order_value = Math.round(report.total_revenue / report.total_orders);
         }
       });
 
