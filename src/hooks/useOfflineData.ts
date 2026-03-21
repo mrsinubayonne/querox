@@ -91,9 +91,17 @@ function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string): T[] {
     if (typeof item !== 'object' || item === null) return true;
     const itemOutletId = (item as Record<string, unknown>).outlet_id;
 
-    // Important offline safety: keep records without outlet_id to avoid
-    // "ghost free tables" when legacy/local rows were saved unscoped.
+    // STRICT: only keep records that match the current outlet.
+    // Records with null outlet_id are kept only for tables that don't
+    // always have an outlet (e.g. legacy data). For table_sessions this
+    // prevents cross-outlet leaks.
     if (itemOutletId === null || typeof itemOutletId === 'undefined') {
+      // Check if this looks like a table that should always be outlet-scoped
+      const tableLike = (item as Record<string, unknown>);
+      if ('table_number' in tableLike || 'session_id' in tableLike) {
+        // table_sessions/orders with null outlet_id should NOT leak into scoped views
+        return false;
+      }
       return true;
     }
 
