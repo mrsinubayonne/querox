@@ -66,6 +66,16 @@ class ErrorBoundary extends Component<Props, State> {
               <p className="text-muted-foreground">
                 Désolé, quelque chose s'est mal passé. Veuillez rafraîchir la page ou contacter le support si le problème persiste.
               </p>
+              {this.state.error && (
+                <details className="mt-2 text-left">
+                  <summary className="text-xs text-muted-foreground cursor-pointer">Détails techniques</summary>
+                  <pre className="mt-1 p-2 bg-muted rounded text-xs text-destructive overflow-auto max-h-32">
+                    {this.state.error.message}
+                    {'\n'}
+                    {this.state.error.stack?.split('\n').slice(0, 5).join('\n')}
+                  </pre>
+                </details>
+              )}
             </div>
             <div className="flex flex-col gap-3 items-center">
               <Button
