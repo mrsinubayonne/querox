@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Minus, Search, X } from "lucide-react";
-import { useMenuData } from "@/hooks/useMenuData";
+import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -40,42 +40,15 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  const { menuItems } = useInternalMenuItems(isOpen);
 
   React.useEffect(() => {
-    const fetchActiveMenu = async () => {
-      if (!user) return;
-      
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("selected_outlet_id")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const outletId = profile?.selected_outlet_id;
-
-      const { data: menus } = await supabase
-        .from("menus")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .eq("outlet_id", outletId)
-        .limit(1)
-        .maybeSingle();
-
-      if (menus) {
-        setActiveMenuId(menus.id);
-      }
-    };
-
     if (isOpen) {
-      fetchActiveMenu();
       setCart([]);
       setSearchTerm("");
     }
-  }, [user, isOpen]);
-
-  const { menuItems } = useMenuData(activeMenuId);
+  }, [isOpen]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return [];
