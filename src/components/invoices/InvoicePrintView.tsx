@@ -159,6 +159,8 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
       });
     };
 
+    const opts: InvoiceDisplayOptions = { ...DEFAULT_DISPLAY_OPTIONS, ...((settings as any)?.display_options || {}) };
+
     // Create a portal that attaches directly to the body for printing
     return createPortal(
       <div
