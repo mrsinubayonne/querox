@@ -271,47 +271,53 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
         {/* Header */}
         <div className="invoice-header flex justify-between items-start mb-2 pb-1 border-b border-gray-300">
           <div>
-            {settings?.logo_url && <img src={settings.logo_url} alt="Logo" className="h-12 mb-1" />}
+            {opts.show_logo && settings?.logo_url && <img src={settings.logo_url} alt="Logo" className="h-12 mb-1" />}
             <h1 className="text-xl font-bold text-black mb-0">
               {settings?.company_name || outlet?.name || 'Mon Restaurant'}
             </h1>
-            {settings?.company_address && (
+            {opts.show_company_address && settings?.company_address && (
               <p className="text-xs text-black whitespace-pre-line">{settings.company_address}</p>
             )}
-            {!settings?.company_address && outlet?.address && (
+            {opts.show_company_address && !settings?.company_address && outlet?.address && (
               <p className="text-xs text-black whitespace-pre-line">{outlet.address}</p>
             )}
-            {settings?.company_phone && <p className="text-xs text-black">Tél: {settings.company_phone}</p>}
-            {!settings?.company_phone && outlet?.phone && (
+            {opts.show_company_phone && settings?.company_phone && <p className="text-xs text-black">Tél: {settings.company_phone}</p>}
+            {opts.show_company_phone && !settings?.company_phone && outlet?.phone && (
               <p className="text-xs text-black">Tél: {outlet.phone}</p>
             )}
-            {settings?.company_email && <p className="text-xs text-black">{settings.company_email}</p>}
-            {settings?.tax_id && <p className="text-xs text-black">SIRET/TVA: {settings.tax_id}</p>}
-            {(settings as any)?.nif_number && (
+            {opts.show_company_email && settings?.company_email && <p className="text-xs text-black">{settings.company_email}</p>}
+            {opts.show_tax_id && settings?.tax_id && <p className="text-xs text-black">SIRET/TVA: {settings.tax_id}</p>}
+            {opts.show_nif && (settings as any)?.nif_number && (
               <p className="text-xs text-black">NIU: {(settings as any).nif_number}</p>
             )}
-            {(settings as any)?.rccm_number && (
+            {opts.show_rccm && (settings as any)?.rccm_number && (
               <p className="text-xs text-black">RCCM: {(settings as any).rccm_number}</p>
             )}
-            {(settings as any)?.other_registration && (
+            {opts.show_other_registration && (settings as any)?.other_registration && (
               <p className="text-xs text-black">{(settings as any).other_registration}</p>
             )}
           </div>
           <div className="text-right">
             <h2 className="text-2xl font-bold mb-0 text-black">{settings?.invoice_title || 'FACTURE'}</h2>
-            <p className="text-base text-black font-semibold">{invoice.invoice_number}</p>
-            <p className="text-xs text-black">Date: {formatDate(invoice.created_at)}</p>
+            {opts.show_invoice_number && (
+              <p className="text-base text-black font-semibold">{invoice.invoice_number}</p>
+            )}
+            {opts.show_date && (
+              <p className="text-xs text-black">Date: {formatDate(invoice.created_at)}</p>
+            )}
           </div>
         </div>
 
         {/* Customer info */}
-        <div className="mb-2">
-          <h3 className="text-sm font-bold text-black mb-0">Facturé à:</h3>
-          <p className="text-xs text-black font-semibold">{invoice.customer_name || 'Client'}</p>
-          {invoice.customer_email && <p className="text-xs text-black">{invoice.customer_email}</p>}
-          {invoice.customer_phone && <p className="text-xs text-black">{invoice.customer_phone}</p>}
-          {servedBy && <p className="text-xs text-black">Servi par: {servedBy}</p>}
-        </div>
+        {opts.show_customer_info && (
+          <div className="mb-2">
+            <h3 className="text-sm font-bold text-black mb-0">Facturé à:</h3>
+            <p className="text-xs text-black font-semibold">{invoice.customer_name || 'Client'}</p>
+            {invoice.customer_email && <p className="text-xs text-black">{invoice.customer_email}</p>}
+            {invoice.customer_phone && <p className="text-xs text-black">{invoice.customer_phone}</p>}
+          </div>
+        )}
+        {opts.show_served_by && servedBy && <p className="text-xs text-black mb-2">Servi par: {servedBy}</p>}
 
         {/* Invoice items */}
         <div className="mb-2">
