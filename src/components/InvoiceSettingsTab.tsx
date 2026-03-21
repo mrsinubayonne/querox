@@ -143,7 +143,7 @@ export const InvoiceSettingsTab: React.FC = () => {
           .update({
             ...payload,
             updated_at: new Date().toISOString()
-          })
+          } as any)
           .eq('id', settingsId);
 
         if (error) throw error;
