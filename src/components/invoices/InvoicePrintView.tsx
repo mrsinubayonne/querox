@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { InvoiceSettings } from '@/hooks/useInvoiceSettings';
 import { getData } from '@/lib/offlineStorage';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { InvoiceDisplayOptions, DEFAULT_DISPLAY_OPTIONS } from '@/types/invoiceDisplayOptions';
 
 interface InvoicePrintViewProps {
   invoice: Invoice;
