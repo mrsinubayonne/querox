@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
+import { InvoiceDisplayOptions, DEFAULT_DISPLAY_OPTIONS } from "@/types/invoiceDisplayOptions";
 
 interface InvoicePreviewModalProps {
   isOpen: boolean;
