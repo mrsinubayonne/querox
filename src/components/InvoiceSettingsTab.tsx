@@ -154,7 +154,7 @@ export const InvoiceSettingsTab: React.FC = () => {
             user_id: user.id,
             outlet_id: outletId,
             ...payload,
-          })
+          } as any)
           .select()
           .single();
 
