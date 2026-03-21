@@ -301,7 +301,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         const totalInvoices = reports.reduce((sum, r) => sum + r.total_invoices, 0);
         const totalPaid = reports.reduce((sum, r) => sum + r.paid_invoices, 0);
         const totalUnpaid = reports.reduce((sum, r) => sum + r.unpaid_invoices, 0);
-        const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+        const avgOrder = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
 
         tableData.push([
           'Total', '', '',
