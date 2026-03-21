@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Minus, Search, X } from "lucide-react";
-import { useMenuData } from "@/hooks/useMenuData";
+import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
