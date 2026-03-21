@@ -46,6 +46,7 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: true,
         cleanupOutdatedCaches: true,
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/~oauth/],
         // Mettre en cache TOUS les assets de l'app
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,json}'],
         maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MB
