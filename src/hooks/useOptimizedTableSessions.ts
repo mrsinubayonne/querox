@@ -85,18 +85,20 @@ export const useOptimizedTableSessions = () => {
     table: 'table_sessions',
     queryKey: ['table-sessions'],
     buildQuery: async (userId, outletId) => {
+      // CRITICAL: table sessions MUST be scoped to an outlet to prevent cross-outlet leaks
+      if (!outletId) {
+        console.warn('[table-sessions] No outletId — returning empty to prevent cross-outlet leak');
+        return { data: [], error: null };
+      }
       try {
-        let query = supabase
+        const query = supabase
           .from('table_sessions')
           .select('*')
           .eq('user_id', userId)
+          .eq('outlet_id', outletId)
           .in('status', ['active', 'closed']) // ONLY fetch non-paid sessions
           .order('started_at', { ascending: false })
           .limit(50);
-
-        if (outletId) {
-          query = query.eq('outlet_id', outletId);
-        }
 
         const { data, error } = await query;
         if (error) {
@@ -113,7 +115,7 @@ export const useOptimizedTableSessions = () => {
         return { data: [], error: e };
       }
     },
-    enabled: !!resolvedUserId,
+    enabled: !!resolvedUserId && !!scopedOutletId,
     // Important for published app: always refresh server truth on mount when online.
     refetchOnMount: isOffline ? false : 'always',
   });
