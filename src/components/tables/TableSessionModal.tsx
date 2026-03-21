@@ -140,28 +140,44 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
     if (!session) return;
     setLoading(true);
     try {
-      if (isOffline) {
-        const outletId = (session as any).outlet_id || localStorage.getItem('selectedOutletId') || undefined;
-        const cachedScoped = await getData<Order[]>('orders', resolvedUserId, outletId);
-        const cachedFallback = !cachedScoped?.data && outletId
-          ? await getData<Order[]>('orders', resolvedUserId)
-          : cachedScoped;
+      const outletId = (session as any).outlet_id || localStorage.getItem('selectedOutletId') || undefined;
 
-        const list = (cachedFallback?.data || cachedScoped?.data || []) as Order[];
-        const sessionOrders = list.filter((o) => (o as any).session_id === session.id);
-        setOrders(sessionOrders);
+      // Always load from local cache (may contain unsynced offline orders)
+      const cachedScoped = await getData<Order[]>('orders', resolvedUserId, outletId);
+      const cachedFallback = !cachedScoped?.data && outletId
+        ? await getData<Order[]>('orders', resolvedUserId)
+        : cachedScoped;
+      const cachedList = (cachedFallback?.data || cachedScoped?.data || []) as Order[];
+      const cachedSessionOrders = cachedList.filter((o) => (o as any).session_id === session.id);
+
+      if (isOffline) {
+        setOrders(cachedSessionOrders);
         setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("orders" as any)
-        .select("*")
-        .eq("session_id", session.id)
-        .order("created_at", { ascending: true });
+      // Online: fetch from server and merge with cache
+      try {
+        const { data, error } = await supabase
+          .from("orders" as any)
+          .select("*")
+          .eq("session_id", session.id)
+          .order("created_at", { ascending: true });
 
-      if (error) throw error;
-      setOrders(data as any || []);
+        if (error) throw error;
+        const serverOrders = (data as any || []) as Order[];
+
+        // Merge: server data + any cached orders not yet synced (local IDs)
+        const serverIds = new Set(serverOrders.map(o => o.id));
+        const unsyncedLocal = cachedSessionOrders.filter(o => !serverIds.has(o.id));
+        const merged = [...serverOrders, ...unsyncedLocal];
+
+        setOrders(merged);
+      } catch (error) {
+        // Network error during online mode — fallback to cache
+        console.warn("Error fetching orders, using cache:", error);
+        setOrders(cachedSessionOrders);
+      }
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {

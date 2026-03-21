@@ -133,7 +133,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         // IMPORTANT: Supabase default limit is 1000 rows — use explicit high limit
         let ordersQuery = supabase
           .from('orders')
-          .select('id, total_amount, created_at, outlet_id, customer_name')
+          .select('id, total_amount, created_at, outlet_id, customer_name, status')
           .eq('user_id', user.id)
           .gte('created_at', startISO)
           .lte('created_at', endISO)
@@ -141,7 +141,6 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         if (scopedOutletId) ordersQuery = ordersQuery.eq('outlet_id', scopedOutletId);
         const { data: ordersData, error: ordersError } = await ordersQuery;
         if (ordersError) throw ordersError;
-        orders = dedupeById(ordersData || []);
 
         let invoicesQuery = supabase
           .from('invoices')
@@ -153,7 +152,40 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         if (scopedOutletId) invoicesQuery = invoicesQuery.eq('outlet_id', scopedOutletId);
         const { data: invoicesData, error: invoicesError } = await invoicesQuery;
         if (invoicesError) throw invoicesError;
-        invoices = dedupeById(invoicesData || []);
+
+        // CRITICAL: Merge with local offline cache to preserve unsynced data
+        // during offline→online transition
+        const selectedOutlet = scopedOutletId || localStorage.getItem('selectedOutletId') || undefined;
+        const scopedOrders = await getData<any[]>('orders', user.id, selectedOutlet);
+        const unscopedOrders = await getData<any[]>('orders', user.id);
+        const scopedInvoices = await getData<any[]>('invoices', user.id, selectedOutlet);
+        const unscopedInvoices = await getData<any[]>('invoices', user.id);
+
+        const cachedOrders = dedupeById([
+          ...(((scopedOrders?.data as any[]) || [])),
+          ...(((unscopedOrders?.data as any[]) || [])),
+        ]).filter((o: any) => {
+          const d = o.created_at;
+          if (!d) return false;
+          if (d < startISO || d > endISO) return false;
+          if (scopedOutletId && o.outlet_id !== scopedOutletId) return false;
+          return true;
+        });
+
+        const cachedInvoices = dedupeById([
+          ...(((scopedInvoices?.data as any[]) || [])),
+          ...(((unscopedInvoices?.data as any[]) || [])),
+        ]).filter((inv: any) => {
+          const d = inv.created_at;
+          if (!d) return false;
+          if (d < startISO || d > endISO) return false;
+          if (scopedOutletId && inv.outlet_id !== scopedOutletId) return false;
+          return true;
+        });
+
+        // Merge server + cache (cache may contain unsynced offline records)
+        orders = dedupeById([...(ordersData || []), ...cachedOrders]);
+        invoices = dedupeById([...(invoicesData || []), ...cachedInvoices]);
       }
 
       // Build reports map
