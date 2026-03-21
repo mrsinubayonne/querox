@@ -372,12 +372,14 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
 
         {/* Footer */}
         <div className="invoice-footer border-t border-gray-300 pt-2 mt-2">
-          {settings?.footer_note && (
+          {opts.show_footer_note && settings?.footer_note && (
             <p className="text-xs text-black mb-1 whitespace-pre-line">{settings.footer_note}</p>
           )}
-          <p className="text-xs text-black text-center" style={{ fontFamily: 'Arial, sans-serif', fontStyle: 'italic' }}>
-            Généré par QUEROX.me - Logiciel de gestion, automatisation et optimisation
-          </p>
+          {opts.show_querox_branding && (
+            <p className="text-xs text-black text-center" style={{ fontFamily: 'Arial, sans-serif', fontStyle: 'italic' }}>
+              Généré par QUEROX.me - Logiciel de gestion, automatisation et optimisation
+            </p>
+          )}
         </div>
       </div>,
       document.body
