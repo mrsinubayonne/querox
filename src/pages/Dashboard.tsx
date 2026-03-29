@@ -30,6 +30,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import LowStockAlert from '@/components/LowStockAlert';
 
 
 type Period = 'day' | 'week' | 'month';
@@ -179,6 +180,9 @@ const Dashboard: React.FC = () => {
                 Mois
               </Button>
             </div>
+
+            {/* Low Stock Alert */}
+            <LowStockAlert />
 
             {/* Main Stats */}
             <div className="mb-10">
