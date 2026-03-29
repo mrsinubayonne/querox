@@ -354,6 +354,83 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
           styles: { fontSize: 8 },
         });
 
+        let finalY = (doc as any).lastAutoTable.finalY || 50;
+
+        // --- Fetch and add consumption data (beverages & ingredients) ---
+        if (!isOffline) {
+          try {
+            const startISO = startOfDay(dateRange!.from!).toISOString();
+            const endISO = endOfDay(dateRange!.to!).toISOString();
+            const scopedOutletId = outletId || localStorage.getItem('selectedOutletId') || undefined;
+
+            let movQuery = supabase
+              .from('stock_movements')
+              .select(`
+                item_id, quantity, movement_type,
+                inventory_items!inner(name, category, unit, user_id, outlet_id)
+              `)
+              .eq('inventory_items.user_id', user!.id)
+              .in('movement_type', ['out', 'sale', 'adjustment_down', 'loss'])
+              .gte('created_at', startISO)
+              .lte('created_at', endISO)
+              .limit(5000);
+
+            if (scopedOutletId) {
+              movQuery = movQuery.eq('inventory_items.outlet_id', scopedOutletId);
+            }
+
+            const { data: movements } = await movQuery;
+
+            if (movements && movements.length > 0) {
+              const agg = new Map<string, { name: string; category: string; unit: string; qty: number }>();
+              movements.forEach((m: any) => {
+                const key = m.item_id;
+                const ex = agg.get(key);
+                const qty = Math.abs(m.quantity);
+                if (ex) { ex.qty += qty; }
+                else { agg.set(key, { name: m.inventory_items?.name || '?', category: m.inventory_items?.category || '', unit: m.inventory_items?.unit || 'pcs', qty }); }
+              });
+
+              const allItems = Array.from(agg.values()).sort((a, b) => b.qty - a.qty);
+              const boissons = allItems.filter(i => i.category === 'Boissons');
+              const ingredients = allItems.filter(i => i.category === 'Ingrédients');
+              const autres = allItems.filter(i => i.category !== 'Boissons' && i.category !== 'Ingrédients');
+
+              finalY += 10;
+              if (finalY > 230) { doc.addPage(); finalY = 20; }
+
+              doc.setFontSize(14);
+              doc.setFont('helvetica', 'bold');
+              doc.text('Articles consommés durant la période', 14, finalY);
+              finalY += 6;
+
+              const addSection = (title: string, items: typeof allItems) => {
+                if (items.length === 0) return;
+                if (finalY > 250) { doc.addPage(); finalY = 20; }
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text(title, 14, finalY);
+                finalY += 2;
+                autoTable(doc, {
+                  head: [['Article', 'Quantité']],
+                  body: items.map(i => [i.name, `${i.qty} ${i.unit}`]),
+                  startY: finalY,
+                  theme: 'grid',
+                  headStyles: { fillColor: [34, 197, 94] },
+                  styles: { fontSize: 8 },
+                });
+                finalY = (doc as any).lastAutoTable.finalY + 8;
+              };
+
+              addSection('Boissons utilisées', boissons);
+              addSection('Ingrédients utilisés', ingredients);
+              if (autres.length > 0) addSection('Autres articles', autres);
+            }
+          } catch (consumptionErr) {
+            console.warn('Could not fetch consumption for PDF:', consumptionErr);
+          }
+        }
+
         const fileName = `rapport_${reportType}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
         doc.save(fileName);
         toast.success('Rapport PDF téléchargé avec succès');
