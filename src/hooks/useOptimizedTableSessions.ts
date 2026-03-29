@@ -743,7 +743,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
               payment_method: normalizedPaymentMethod,
             }]);
         }
-        }
+      }
 
         // 4) Auto-deduct inventory based on menu_item_ingredients
         try {
