@@ -301,9 +301,16 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
       } else {
         const doc = new jsPDF();
 
+        const formatFCFA = (value: number) => {
+          const rounded = Math.round(Number(value) || 0);
+          return `${rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} FCFA`;
+        };
+
         doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
         doc.text(`Rapport ${reportType}`, 14, 20);
         doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
         doc.text(`Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm')}`, 14, 28);
 
         const periodText = `Période: ${dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : ''} - ${dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : ''}`;
@@ -316,16 +323,19 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
           doc.text('(Données locales — mode hors ligne)', 14, timeRange ? 48 : 42);
         }
 
+        const startTableY = isOffline ? (timeRange ? 54 : 48) : (timeRange ? 48 : 44);
+
+        // --- SUMMARY TABLE (same as before) ---
         const tableData = reports.map((report) => [
           report.date,
           report.time || '-',
           report.outlet_name,
           report.total_orders.toString(),
-          `${report.total_revenue.toLocaleString()} CFA`,
+          formatFCFA(report.total_revenue),
           report.total_invoices.toString(),
           report.paid_invoices.toString(),
           report.unpaid_invoices.toString(),
-          `${report.average_order_value.toLocaleString()} CFA`,
+          formatFCFA(report.average_order_value),
         ]);
 
         const totalOrders = reports.reduce((sum, r) => sum + r.total_orders, 0);
@@ -336,27 +346,89 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         const avgOrder = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
 
         tableData.push([
-          'Total', '', '',
+          'TOTAL', '', '',
           totalOrders.toString(),
-          `${totalRevenue.toLocaleString()} CFA`,
+          formatFCFA(totalRevenue),
           totalInvoices.toString(),
           totalPaid.toString(),
           totalUnpaid.toString(),
-          `${avgOrder.toLocaleString()} CFA`,
+          formatFCFA(avgOrder),
         ]);
 
         autoTable(doc, {
-          head: [['Date', 'Heure', 'Point de vente', 'Commandes', 'CA', 'Factures', 'Payées', 'Impayées', 'Panier moyen']],
+          head: [['Date', 'Heure', 'PDV', 'Commandes', 'CA', 'Factures', 'Payées', 'Impayées', 'Panier moyen']],
           body: tableData,
-          startY: isOffline ? (timeRange ? 54 : 48) : (timeRange ? 48 : 44),
+          startY: startTableY,
           theme: 'grid',
           headStyles: { fillColor: [59, 130, 246] },
           styles: { fontSize: 8 },
+          columnStyles: { 4: { halign: 'right' }, 8: { halign: 'right' } },
         });
 
         let finalY = (doc as any).lastAutoTable.finalY || 50;
 
-        // --- Fetch and add consumption data (beverages & ingredients) ---
+        // --- TOTAL ---
+        finalY += 8;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`TOTAL ${periodText.split(': ')[1]}: ${formatFCFA(totalRevenue)}`, 14, finalY);
+        finalY += 10;
+
+        // --- DETAILED TRANSACTIONS TABLE (matching period report format) ---
+        if (!isOffline) {
+          try {
+            const startISO = startOfDay(dateRange!.from!).toISOString();
+            const endISO = endOfDay(dateRange!.to!).toISOString();
+            const scopedOutletId = outletId || localStorage.getItem('selectedOutletId') || undefined;
+
+            let invoicesQuery = supabase
+              .from('invoices')
+              .select('id, invoice_number, customer_name, total_amount, status, created_at, outlet_id')
+              .eq('user_id', user!.id)
+              .eq('status', 'paid')
+              .gte('created_at', startISO)
+              .lte('created_at', endISO)
+              .order('created_at', { ascending: false })
+              .limit(10000);
+            if (scopedOutletId) invoicesQuery = invoicesQuery.eq('outlet_id', scopedOutletId);
+            const { data: paidInvoices } = await invoicesQuery;
+
+            if (paidInvoices && paidInvoices.length > 0) {
+              if (finalY > 230) { doc.addPage(); finalY = 20; }
+              doc.setFontSize(14);
+              doc.setFont('helvetica', 'bold');
+              doc.text('Détail des transactions', 14, finalY);
+              finalY += 4;
+
+              const detailData = paidInvoices.map((inv: any) => {
+                const d = new Date(inv.created_at);
+                return [
+                  format(d, 'dd/MM/yyyy'),
+                  format(d, 'HH:mm'),
+                  inv.invoice_number || '-',
+                  inv.customer_name || 'Client',
+                  formatFCFA(inv.total_amount),
+                  'Payée',
+                ];
+              });
+
+              autoTable(doc, {
+                head: [['Date', 'Heure', 'Référence', 'Client', 'Montant', 'Statut']],
+                body: detailData,
+                startY: finalY,
+                theme: 'grid',
+                headStyles: { fillColor: [59, 130, 246] },
+                styles: { fontSize: 8 },
+                columnStyles: { 4: { halign: 'right' } },
+              });
+              finalY = (doc as any).lastAutoTable.finalY + 8;
+            }
+          } catch (detailErr) {
+            console.warn('Could not fetch detailed transactions for PDF:', detailErr);
+          }
+        }
+
+        // --- CONSUMPTION DATA ---
         if (!isOffline) {
           try {
             const startISO = startOfDay(dateRange!.from!).toISOString();
@@ -396,7 +468,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
               const ingredients = allItems.filter(i => i.category === 'Ingrédients');
               const autres = allItems.filter(i => i.category !== 'Boissons' && i.category !== 'Ingrédients');
 
-              finalY += 10;
+              finalY += 4;
               if (finalY > 230) { doc.addPage(); finalY = 20; }
 
               doc.setFontSize(14);

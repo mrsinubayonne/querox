@@ -14,8 +14,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Minus, Search, X } from "lucide-react";
 import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { queueMutation, generateLocalId } from "@/lib/offlineStorage";
+import { Badge } from "@/components/ui/badge";
+import { WifiOff } from "lucide-react";
 
 interface QuickOrderModalProps {
   isOpen: boolean;
@@ -35,8 +40,12 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { toast } = useToast();
+  const { outletId } = useRestaurant();
+  const { isOffline } = useNetworkStatus();
+  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || user?.id || '') : (user?.id || '');
+  const scopedOutletId = localStorage.getItem('selectedOutletId') || outletId || undefined;
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,7 +60,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
   }, [isOpen]);
 
   const filteredItems = useMemo(() => {
-    if (!searchTerm.trim()) return [];
+    if (!searchTerm.trim()) return menuItems;
     const term = searchTerm.toLowerCase();
     return menuItems.filter(
       (item) =>
@@ -110,14 +119,6 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
     try {
       if (!user) throw new Error("Non authentifié");
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("selected_outlet_id")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const outletId = profile?.selected_outlet_id;
-
       const orderItems = cart.map((item) => ({
         id: item.id,
         name: item.name,
@@ -125,24 +126,54 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
         quantity: item.quantity,
       }));
 
-      const { error: orderError } = await supabase.from("orders").insert([
-        {
-          user_id: user.id,
-          outlet_id: outletId,
-          order_type: "a_emporter",
-          customer_name: "Client",
-          items: orderItems,
-          total_amount: totalAmount,
-          status: "pending",
-        },
-      ]);
+      if (isOffline) {
+        const orderId = generateLocalId();
+        await queueMutation({
+          table: 'orders',
+          operation: 'insert',
+          data: {
+            id: orderId,
+            user_id: resolvedUserId,
+            outlet_id: scopedOutletId,
+            order_type: 'a_emporter',
+            customer_name: 'Client',
+            items: orderItems,
+            total_amount: totalAmount,
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          localId: orderId,
+          userId: resolvedUserId,
+          outletId: scopedOutletId,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
 
-      if (orderError) throw orderError;
+        toast({
+          title: "Commande créée (hors ligne)",
+          description: `Commande de ${cart.length} plat(s) enregistrée. Sera synchronisée.`,
+        });
+      } else {
+        const { error: orderError } = await supabase.from("orders").insert([
+          {
+            user_id: resolvedUserId,
+            outlet_id: scopedOutletId,
+            order_type: "a_emporter",
+            customer_name: "Client",
+            items: orderItems,
+            total_amount: totalAmount,
+            status: "pending",
+          },
+        ]);
 
-      toast({
-        title: "Commande créée",
-        description: `Commande de ${cart.length} plat(s) créée avec succès.`,
-      });
+        if (orderError) throw orderError;
+
+        toast({
+          title: "Commande créée",
+          description: `Commande de ${cart.length} plat(s) créée avec succès.`,
+        });
+      }
 
       setCart([]);
       setSearchTerm("");
@@ -164,7 +195,15 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Nouvelle Commande</DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>Nouvelle Commande</DialogTitle>
+            {isOffline && (
+              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                <WifiOff className="h-3 w-3 mr-1" />
+                Hors ligne
+              </Badge>
+            )}
+          </div>
           <DialogDescription>
             Recherchez et ajoutez des plats à la commande.
           </DialogDescription>
@@ -186,7 +225,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
                   autoFocus
                 />
               </div>
-              {searchTerm && filteredItems.length > 0 && (
+              {filteredItems.length > 0 && (
                 <ScrollArea className="h-48 border rounded-md">
                   <div className="p-2 space-y-1">
                     {filteredItems.map((item) => (
@@ -211,6 +250,11 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
                     ))}
                   </div>
                 </ScrollArea>
+              )}
+              {menuItems.length === 0 && (
+                <p className="text-sm text-muted-foreground py-2">
+                  {isOffline ? "Aucun plat en cache. Connectez-vous pour charger le menu." : "Chargement des plats..."}
+                </p>
               )}
             </div>
           </div>
