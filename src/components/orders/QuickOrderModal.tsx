@@ -251,6 +251,36 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
                   </div>
                 </ScrollArea>
               )}
+              {menuItems.length === 0 && (
+                <p className="text-sm text-muted-foreground py-2">
+                  {isOffline ? "Aucun plat en cache. Connectez-vous pour charger le menu." : "Chargement des plats..."}
+                </p>
+              )}
+                <ScrollArea className="h-48 border rounded-md">
+                  <div className="p-2 space-y-1">
+                    {filteredItems.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => addToCart(item)}
+                        className="w-full text-left p-3 hover:bg-accent rounded-md flex justify-between items-center"
+                      >
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          {item.description && (
+                            <p className="text-xs text-muted-foreground line-clamp-1">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-muted-foreground font-medium ml-4">
+                          {item.price.toLocaleString()} FCFA
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
             </div>
           </div>
 
