@@ -269,10 +269,92 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
           columnStyles: { 6: { halign: 'right' } },
         });
 
-        const finalY = (doc as any).lastAutoTable.finalY || 40;
+        let finalY = (doc as any).lastAutoTable.finalY || 40;
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text(`TOTAL ${periodText.split(': ')[1]}: ${formatFCFA(totalAmount)}`, 14, finalY + 10);
+        finalY += 20;
+
+        // --- Fetch and add consumption data (beverages & ingredients) ---
+        try {
+          const period = await supabase
+            .from('business_periods')
+            .select('started_at, ended_at, outlet_id')
+            .eq('id', periodId!)
+            .single();
+          
+          if (period.data) {
+            const startISO = period.data.started_at;
+            const endISO = period.data.ended_at || new Date().toISOString();
+            
+            let movQuery = supabase
+              .from('stock_movements')
+              .select(`
+                item_id, quantity, movement_type,
+                inventory_items!inner(name, category, unit, user_id, outlet_id)
+              `)
+              .eq('inventory_items.user_id', user!.id)
+              .in('movement_type', ['out', 'sale', 'adjustment_down', 'loss'])
+              .gte('created_at', startISO)
+              .lte('created_at', endISO)
+              .limit(5000);
+
+            if (period.data.outlet_id) {
+              movQuery = movQuery.eq('inventory_items.outlet_id', period.data.outlet_id);
+            }
+
+            const { data: movements } = await movQuery;
+
+            if (movements && movements.length > 0) {
+              // Aggregate
+              const agg = new Map<string, { name: string; category: string; unit: string; qty: number }>();
+              movements.forEach((m: any) => {
+                const key = m.item_id;
+                const ex = agg.get(key);
+                const qty = Math.abs(m.quantity);
+                if (ex) { ex.qty += qty; }
+                else { agg.set(key, { name: m.inventory_items?.name || '?', category: m.inventory_items?.category || '', unit: m.inventory_items?.unit || 'pcs', qty }); }
+              });
+
+              const allItems = Array.from(agg.values()).sort((a, b) => b.qty - a.qty);
+              const boissons = allItems.filter(i => i.category === 'Boissons');
+              const ingredients = allItems.filter(i => i.category === 'Ingrédients');
+              const autres = allItems.filter(i => i.category !== 'Boissons' && i.category !== 'Ingrédients');
+
+              // Check if need new page
+              if (finalY > 230) { doc.addPage(); finalY = 20; }
+
+              doc.setFontSize(14);
+              doc.setFont('helvetica', 'bold');
+              doc.text('Articles consommés durant la période', 14, finalY);
+              finalY += 6;
+
+              const addSection = (title: string, items: typeof allItems) => {
+                if (items.length === 0) return;
+                if (finalY > 250) { doc.addPage(); finalY = 20; }
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text(title, 14, finalY);
+                finalY += 2;
+                autoTable(doc, {
+                  head: [['Article', 'Quantité']],
+                  body: items.map(i => [i.name, `${i.qty} ${i.unit}`]),
+                  startY: finalY,
+                  theme: 'grid',
+                  headStyles: { fillColor: [34, 197, 94] },
+                  styles: { fontSize: 8 },
+                });
+                finalY = (doc as any).lastAutoTable.finalY + 8;
+              };
+
+              addSection('Boissons utilisées', boissons);
+              addSection('Ingrédients utilisés', ingredients);
+              if (autres.length > 0) addSection('Autres articles', autres);
+            }
+          }
+        } catch (consumptionErr) {
+          console.warn('Could not fetch consumption data for PDF:', consumptionErr);
+        }
 
         const fileName = `rapport_detaille_${formatDate(new Date(), 'yyyy-MM-dd')}.pdf`;
         doc.save(fileName);
