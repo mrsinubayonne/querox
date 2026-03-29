@@ -745,91 +745,88 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         }
       }
 
-        // 4) Auto-deduct inventory based on menu_item_ingredients
-        try {
-          // Get all orders for this session to find menu items
-          const { data: sessionOrders } = await supabase
-            .from('orders')
-            .select('items')
-            .eq('session_id', sessionId)
-            .eq('user_id', resolvedUserId);
+      // 4) Auto-deduct inventory based on menu_item_ingredients
+      try {
+        // Get all orders for this session to find menu items
+        const { data: sessionOrders } = await supabase
+          .from('orders')
+          .select('items')
+          .eq('session_id', sessionId)
+          .eq('user_id', resolvedUserId);
 
-          if (sessionOrders && sessionOrders.length > 0) {
-            const allOrderItems = sessionOrders.flatMap((o: any) =>
-              Array.isArray(o.items) ? o.items : []
-            );
+        if (sessionOrders && sessionOrders.length > 0) {
+          const allOrderItems = sessionOrders.flatMap((o: any) =>
+            Array.isArray(o.items) ? o.items : []
+          );
 
-            // Get unique menu item IDs (exclude custom items)
-            const menuItemIds = [...new Set(
-              allOrderItems
-                .map((item: any) => item.id)
-                .filter((id: string) => id && !id.startsWith('custom-'))
-            )];
+          // Get unique menu item IDs (exclude custom items)
+          const menuItemIds = [...new Set(
+            allOrderItems
+              .map((item: any) => item.id)
+              .filter((id: string) => id && !id.startsWith('custom-'))
+          )];
 
-            if (menuItemIds.length > 0) {
-              // Fetch ingredients for these menu items
-              const { data: ingredients } = await supabase
-                .from('menu_item_ingredients')
-                .select('menu_item_id, inventory_item_id, quantity_needed, unit')
-                .in('menu_item_id', menuItemIds);
+          if (menuItemIds.length > 0) {
+            // Fetch ingredients for these menu items
+            const { data: ingredients } = await supabase
+              .from('menu_item_ingredients')
+              .select('menu_item_id, inventory_item_id, quantity_needed, unit')
+              .in('menu_item_id', menuItemIds);
 
-              if (ingredients && ingredients.length > 0) {
-                // Build quantity map from orders (item_id -> total quantity ordered)
-                const qtyMap = new Map<string, number>();
-                allOrderItems.forEach((item: any) => {
-                  const current = qtyMap.get(item.id) || 0;
-                  qtyMap.set(item.id, current + (item.quantity || 1));
-                });
+            if (ingredients && ingredients.length > 0) {
+              // Build quantity map from orders (item_id -> total quantity ordered)
+              const qtyMap = new Map<string, number>();
+              allOrderItems.forEach((item: any) => {
+                const current = qtyMap.get(item.id) || 0;
+                qtyMap.set(item.id, current + (item.quantity || 1));
+              });
 
-                // Aggregate deductions per inventory item
-                const deductions = new Map<string, { qty: number; unit: string }>();
-                ingredients.forEach((ing: any) => {
-                  const orderedQty = qtyMap.get(ing.menu_item_id) || 0;
-                  if (orderedQty <= 0) return;
-                  const totalNeeded = ing.quantity_needed * orderedQty;
-                  const existing = deductions.get(ing.inventory_item_id);
-                  if (existing) {
-                    existing.qty += totalNeeded;
-                  } else {
-                    deductions.set(ing.inventory_item_id, { qty: totalNeeded, unit: ing.unit });
-                  }
-                });
+              // Aggregate deductions per inventory item
+              const deductions = new Map<string, { qty: number; unit: string }>();
+              ingredients.forEach((ing: any) => {
+                const orderedQty = qtyMap.get(ing.menu_item_id) || 0;
+                if (orderedQty <= 0) return;
+                const totalNeeded = ing.quantity_needed * orderedQty;
+                const existing = deductions.get(ing.inventory_item_id);
+                if (existing) {
+                  existing.qty += totalNeeded;
+                } else {
+                  deductions.set(ing.inventory_item_id, { qty: totalNeeded, unit: ing.unit });
+                }
+              });
 
-                // Apply deductions
-                for (const [inventoryItemId, { qty }] of deductions) {
-                  // Get current stock
-                  const { data: invItem } = await supabase
+              // Apply deductions
+              for (const [inventoryItemId, { qty }] of deductions) {
+                const { data: invItem } = await supabase
+                  .from('inventory_items')
+                  .select('id, current_stock')
+                  .eq('id', inventoryItemId)
+                  .maybeSingle();
+
+                if (invItem) {
+                  const newStock = Math.max(0, (invItem.current_stock || 0) - qty);
+                  await supabase
                     .from('inventory_items')
-                    .select('id, current_stock')
-                    .eq('id', inventoryItemId)
-                    .maybeSingle();
+                    .update({ current_stock: newStock })
+                    .eq('id', inventoryItemId);
 
-                  if (invItem) {
-                    const newStock = Math.max(0, (invItem.current_stock || 0) - qty);
-                    await supabase
-                      .from('inventory_items')
-                      .update({ current_stock: newStock })
-                      .eq('id', inventoryItemId);
-
-                    // Record stock movement
-                    await supabase
-                      .from('stock_movements')
-                      .insert({
-                        item_id: inventoryItemId,
-                        quantity: -qty,
-                        movement_type: 'sale',
-                        reason: `Vente - Table ${session?.table_number || ''}`,
-                        before_quantity: invItem.current_stock || 0,
-                        after_quantity: newStock,
-                      });
-                  }
+                  await supabase
+                    .from('stock_movements')
+                    .insert({
+                      item_id: inventoryItemId,
+                      quantity: -qty,
+                      movement_type: 'sale',
+                      reason: `Vente - Table ${session?.table_number || ''}`,
+                      before_quantity: invItem.current_stock || 0,
+                      after_quantity: newStock,
+                    });
                 }
               }
             }
           }
-        } catch (deductionErr) {
-          console.warn('[markSessionAsPaid] Auto-deduction failed (non-blocking):', deductionErr);
         }
+      } catch (deductionErr) {
+        console.warn('[markSessionAsPaid] Auto-deduction failed (non-blocking):', deductionErr);
       }
 
       // Local cache already cleared optimistically at the top of this mutation.
