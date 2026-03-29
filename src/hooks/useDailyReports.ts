@@ -153,39 +153,47 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         const { data: invoicesData, error: invoicesError } = await invoicesQuery;
         if (invoicesError) throw invoicesError;
 
-        // CRITICAL: Merge with local offline cache to preserve unsynced data
-        // during offline→online transition
-        const selectedOutlet = scopedOutletId || localStorage.getItem('selectedOutletId') || undefined;
-        const scopedOrders = await getData<any[]>('orders', user.id, selectedOutlet);
-        const unscopedOrders = await getData<any[]>('orders', user.id);
-        const scopedInvoices = await getData<any[]>('invoices', user.id, selectedOutlet);
-        const unscopedInvoices = await getData<any[]>('invoices', user.id);
+        // Only merge with local cache if there are pending offline mutations
+        // to avoid doubling data when server already has everything
+        const pendingMutations = await import('@/lib/offlineStorage').then(m => m.getPendingMutations());
+        const hasPendingOrderMutations = pendingMutations.some(m => m.table === 'orders');
+        const hasPendingInvoiceMutations = pendingMutations.some(m => m.table === 'invoices');
 
-        const cachedOrders = dedupeById([
-          ...(((scopedOrders?.data as any[]) || [])),
-          ...(((unscopedOrders?.data as any[]) || [])),
-        ]).filter((o: any) => {
-          const d = o.created_at;
-          if (!d) return false;
-          if (d < startISO || d > endISO) return false;
-          if (scopedOutletId && o.outlet_id !== scopedOutletId) return false;
-          return true;
-        });
+        if (hasPendingOrderMutations || hasPendingInvoiceMutations) {
+          const selectedOutlet = scopedOutletId || localStorage.getItem('selectedOutletId') || undefined;
+          const scopedOrders = await getData<any[]>('orders', user.id, selectedOutlet);
+          const unscopedOrders = await getData<any[]>('orders', user.id);
+          const scopedInvoices = await getData<any[]>('invoices', user.id, selectedOutlet);
+          const unscopedInvoices = await getData<any[]>('invoices', user.id);
 
-        const cachedInvoices = dedupeById([
-          ...(((scopedInvoices?.data as any[]) || [])),
-          ...(((unscopedInvoices?.data as any[]) || [])),
-        ]).filter((inv: any) => {
-          const d = inv.created_at;
-          if (!d) return false;
-          if (d < startISO || d > endISO) return false;
-          if (scopedOutletId && inv.outlet_id !== scopedOutletId) return false;
-          return true;
-        });
+          const cachedOrders = dedupeById([
+            ...(((scopedOrders?.data as any[]) || [])),
+            ...(((unscopedOrders?.data as any[]) || [])),
+          ]).filter((o: any) => {
+            const d = o.created_at;
+            if (!d) return false;
+            if (d < startISO || d > endISO) return false;
+            if (scopedOutletId && o.outlet_id !== scopedOutletId) return false;
+            return true;
+          });
 
-        // Merge server + cache (cache may contain unsynced offline records)
-        orders = dedupeById([...(ordersData || []), ...cachedOrders]);
-        invoices = dedupeById([...(invoicesData || []), ...cachedInvoices]);
+          const cachedInvoices = dedupeById([
+            ...(((scopedInvoices?.data as any[]) || [])),
+            ...(((unscopedInvoices?.data as any[]) || [])),
+          ]).filter((inv: any) => {
+            const d = inv.created_at;
+            if (!d) return false;
+            if (d < startISO || d > endISO) return false;
+            if (scopedOutletId && inv.outlet_id !== scopedOutletId) return false;
+            return true;
+          });
+
+          orders = dedupeById([...(ordersData || []), ...cachedOrders]);
+          invoices = dedupeById([...(invoicesData || []), ...cachedInvoices]);
+        } else {
+          orders = ordersData || [];
+          invoices = invoicesData || [];
+        }
       }
 
       // Build reports map

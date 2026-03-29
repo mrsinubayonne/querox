@@ -55,20 +55,27 @@ const Comptabilite = () => {
   const combinedTransactions = useMemo(() => {
     const base = transactions || [];
 
+    // Extract invoice number from transaction title (supports FAC-XXXX, INV-X-X, OFF-X-X, etc.)
+    const extractInvoiceNum = (title: string): string | null => {
+      // Match "Facture XXX" pattern - extract everything after "Facture "
+      const facMatch = title.match(/^Facture\s+(.+)$/i);
+      if (facMatch) return facMatch[1].trim();
+      return null;
+    };
+
     // Dédupliquer les transactions par numéro de facture (garder la plus récente)
     const seenInvoiceNumbers = new Map<string, any>();
     const deduplicatedBase: typeof base = [];
     
     for (const t of base) {
       if (t.category === 'facture' && typeof t.title === 'string') {
-        const match = t.title.match(/INV-\d+-\d+/);
-        if (match) {
-          const invoiceNum = match[0];
+        const invoiceNum = extractInvoiceNum(t.title);
+        if (invoiceNum) {
           const existing = seenInvoiceNumbers.get(invoiceNum);
           if (!existing || new Date(t.created_at) > new Date(existing.created_at)) {
             seenInvoiceNumbers.set(invoiceNum, t);
           }
-          continue; // Ne pas ajouter maintenant, on ajoutera à la fin
+          continue;
         }
       }
       deduplicatedBase.push(t);
@@ -84,10 +91,9 @@ const Comptabilite = () => {
       Array.from(seenInvoiceNumbers.keys())
     );
 
-    // Ajouter les factures payées qui n'ont pas de transaction
-    // EXCLURE les factures B2B (débiteurs) impayées
+    // Ajouter les factures payées qui n'ont pas de transaction correspondante
     const syntheticFromInvoices = invoices
-      .filter((inv) => inv.status === 'paid') // Seulement les factures payées
+      .filter((inv) => inv.status === 'paid')
       .filter((inv) => !invoiceNumbersFromTx.has(inv.invoice_number))
       .map((inv) => ({
         id: `invoice-${inv.id}`,

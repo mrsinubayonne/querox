@@ -29,20 +29,15 @@ export const useInventoryAnalytics = () => {
     try {
       setLoading(true);
       
-      const selectedProfileId = localStorage.getItem('selectedProfileId');
-      let outletId = null;
-      
-      if (selectedProfileId) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('selected_outlet_id')
-          .eq('id', selectedProfileId)
-          .maybeSingle();
-        outletId = userProfile?.selected_outlet_id;
-      }
-      
+      let outletId = localStorage.getItem('selectedOutletId');
+
       if (!outletId) {
-        outletId = localStorage.getItem('selectedOutletId');
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('selected_outlet_id')
+          .eq('id', user.id)
+          .maybeSingle();
+        outletId = profile?.selected_outlet_id || null;
       }
 
       if (!outletId) {
@@ -50,19 +45,38 @@ export const useInventoryAnalytics = () => {
         return;
       }
 
-      const { data, error } = await supabase.rpc('calculate_reorder_suggestions', {
-        p_user_id: user.id,
-        p_outlet_id: outletId
-      });
+      // Calculate reorder suggestions client-side instead of relying on RPC
+      const { data: items, error } = await supabase
+        .from('inventory_items')
+        .select('id, name, current_stock, min_stock, reorder_quantity, unit_price, supplier, unit')
+        .eq('user_id', user.id)
+        .eq('outlet_id', outletId);
 
       if (error) throw error;
 
-      setReorderSuggestions((data || []) as ReorderSuggestion[]);
+      const suggestions: ReorderSuggestion[] = (items || [])
+        .filter(item => (item.current_stock || 0) <= (item.min_stock || 0))
+        .map(item => {
+          const suggestedQty = (item.reorder_quantity || item.min_stock || 10) - (item.current_stock || 0);
+          const qty = Math.max(suggestedQty, 1);
+          return {
+            item_id: item.id,
+            item_name: item.name,
+            current_stock: item.current_stock || 0,
+            min_stock: item.min_stock || 0,
+            suggested_order_quantity: qty,
+            supplier_name: item.supplier || null,
+            unit_price: item.unit_price || null,
+            total_cost: qty * (item.unit_price || 0),
+          };
+        });
+
+      setReorderSuggestions(suggestions);
     } catch (error: any) {
       console.error('Reorder suggestions fetch error:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de calculer les suggestions",
+        description: "Impossible de calculer les suggestions de réapprovisionnement",
         variant: "destructive"
       });
       setReorderSuggestions([]);
