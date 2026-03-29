@@ -745,81 +745,94 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         }
       }
 
-      // 4) Auto-deduct inventory based on menu_item_ingredients
+      // 4) Auto-deduct inventory based on menu_item_ingredients (idempotent)
       try {
-        // Get all orders for this session to find menu items
-        const { data: sessionOrders } = await supabase
-          .from('orders')
-          .select('items')
-          .eq('session_id', sessionId)
-          .eq('user_id', resolvedUserId);
+        // Idempotency check: skip if deductions were already recorded for this session
+        const { data: existingDeductions } = await supabase
+          .from('stock_movements')
+          .select('id')
+          .eq('movement_type', 'sale')
+          .eq('notes', `session:${sessionId}`)
+          .limit(1);
 
-        if (sessionOrders && sessionOrders.length > 0) {
-          const allOrderItems = sessionOrders.flatMap((o: any) =>
-            Array.isArray(o.items) ? o.items : []
-          );
+        if (existingDeductions && existingDeductions.length > 0) {
+          console.log('[markSessionAsPaid] Stock already deducted for session', sessionId);
+        } else {
+          // Get all orders for this session to find menu items
+          const { data: sessionOrders } = await supabase
+            .from('orders')
+            .select('items')
+            .eq('session_id', sessionId)
+            .eq('user_id', resolvedUserId);
 
-          // Get unique menu item IDs (exclude custom items)
-          const menuItemIds = [...new Set(
-            allOrderItems
-              .map((item: any) => item.id)
-              .filter((id: string) => id && !id.startsWith('custom-'))
-          )];
+          if (sessionOrders && sessionOrders.length > 0) {
+            const allOrderItems = sessionOrders.flatMap((o: any) =>
+              Array.isArray(o.items) ? o.items : []
+            );
 
-          if (menuItemIds.length > 0) {
-            // Fetch ingredients for these menu items
-            const { data: ingredients } = await supabase
-              .from('menu_item_ingredients')
-              .select('menu_item_id, inventory_item_id, quantity_needed, unit')
-              .in('menu_item_id', menuItemIds);
+            // Get unique menu item IDs (exclude custom items)
+            const menuItemIds = [...new Set(
+              allOrderItems
+                .map((item: any) => item.id)
+                .filter((id: string) => id && !id.startsWith('custom-'))
+            )];
 
-            if (ingredients && ingredients.length > 0) {
-              // Build quantity map from orders (item_id -> total quantity ordered)
-              const qtyMap = new Map<string, number>();
-              allOrderItems.forEach((item: any) => {
-                const current = qtyMap.get(item.id) || 0;
-                qtyMap.set(item.id, current + (item.quantity || 1));
-              });
+            if (menuItemIds.length > 0) {
+              // Fetch ingredients for these menu items
+              const { data: ingredients } = await supabase
+                .from('menu_item_ingredients')
+                .select('menu_item_id, inventory_item_id, quantity_needed, unit')
+                .in('menu_item_id', menuItemIds);
 
-              // Aggregate deductions per inventory item
-              const deductions = new Map<string, { qty: number; unit: string }>();
-              ingredients.forEach((ing: any) => {
-                const orderedQty = qtyMap.get(ing.menu_item_id) || 0;
-                if (orderedQty <= 0) return;
-                const totalNeeded = ing.quantity_needed * orderedQty;
-                const existing = deductions.get(ing.inventory_item_id);
-                if (existing) {
-                  existing.qty += totalNeeded;
-                } else {
-                  deductions.set(ing.inventory_item_id, { qty: totalNeeded, unit: ing.unit });
-                }
-              });
+              if (ingredients && ingredients.length > 0) {
+                // Build quantity map from orders (item_id -> total quantity ordered)
+                const qtyMap = new Map<string, number>();
+                allOrderItems.forEach((item: any) => {
+                  const current = qtyMap.get(item.id) || 0;
+                  qtyMap.set(item.id, current + (item.quantity || 1));
+                });
 
-              // Apply deductions
-              for (const [inventoryItemId, { qty }] of deductions) {
-                const { data: invItem } = await supabase
-                  .from('inventory_items')
-                  .select('id, current_stock')
-                  .eq('id', inventoryItemId)
-                  .maybeSingle();
+                // Aggregate deductions per inventory item
+                const deductions = new Map<string, { qty: number; unit: string }>();
+                ingredients.forEach((ing: any) => {
+                  const orderedQty = qtyMap.get(ing.menu_item_id) || 0;
+                  if (orderedQty <= 0) return;
+                  const totalNeeded = ing.quantity_needed * orderedQty;
+                  const existing = deductions.get(ing.inventory_item_id);
+                  if (existing) {
+                    existing.qty += totalNeeded;
+                  } else {
+                    deductions.set(ing.inventory_item_id, { qty: totalNeeded, unit: ing.unit });
+                  }
+                });
 
-                if (invItem) {
-                  const newStock = Math.max(0, (invItem.current_stock || 0) - qty);
-                  await supabase
+                // Apply deductions
+                for (const [inventoryItemId, { qty }] of deductions) {
+                  const { data: invItem } = await supabase
                     .from('inventory_items')
-                    .update({ current_stock: newStock })
-                    .eq('id', inventoryItemId);
+                    .select('id, current_stock, name, min_stock')
+                    .eq('id', inventoryItemId)
+                    .maybeSingle();
 
-                  await supabase
-                    .from('stock_movements')
-                    .insert({
-                      item_id: inventoryItemId,
-                      quantity: -qty,
-                      movement_type: 'sale',
-                      reason: `Vente - Table ${session?.table_number || ''}`,
-                      before_quantity: invItem.current_stock || 0,
-                      after_quantity: newStock,
-                    });
+                  if (invItem) {
+                    const newStock = Math.max(0, (invItem.current_stock || 0) - qty);
+                    await supabase
+                      .from('inventory_items')
+                      .update({ current_stock: newStock })
+                      .eq('id', inventoryItemId);
+
+                    await supabase
+                      .from('stock_movements')
+                      .insert({
+                        item_id: inventoryItemId,
+                        quantity: -qty,
+                        movement_type: 'sale',
+                        reason: `Vente - Table ${session?.table_number || ''}`,
+                        before_quantity: invItem.current_stock || 0,
+                        after_quantity: newStock,
+                        notes: `session:${sessionId}`,
+                      });
+                  }
                 }
               }
             }
