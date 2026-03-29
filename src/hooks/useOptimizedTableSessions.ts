@@ -838,6 +838,8 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       queryClient.refetchQueries({ queryKey: ['table-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
       toast({
         title: isOffline ? "Paiement enregistré (hors ligne)" : "Paiement enregistré",
         description: "La facture est marquée payée et la table est libérée.",
