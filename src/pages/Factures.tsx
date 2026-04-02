@@ -185,7 +185,7 @@ const Factures: React.FC = () => {
       const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [invoices, searchQuery, statusFilter]);
+  }, [safeInvoices, searchQuery, statusFilter]);
 
   return (
     <SubscriptionGuard feature="la gestion des factures">
