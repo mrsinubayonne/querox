@@ -165,10 +165,12 @@ const Factures: React.FC = () => {
     setStatusFilter('all');
   };
 
+  const safeInvoices = invoices ?? [];
+
   const filteredInvoices = useMemo(() => {
     // Deduplicate by invoice_number (keep most recent)
     const seen = new Map<string, Invoice>();
-    for (const invoice of invoices) {
+    for (const invoice of safeInvoices) {
       const existing = seen.get(invoice.invoice_number);
       if (!existing || new Date(invoice.created_at) > new Date(existing.created_at)) {
         seen.set(invoice.invoice_number, invoice);
