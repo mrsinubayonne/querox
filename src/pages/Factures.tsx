@@ -259,7 +259,7 @@ const Factures: React.FC = () => {
           ) : filteredInvoices.length === 0 ? (
             <EmptyState
               icon={FileText}
-              title={invoices.length === 0 ? 'Aucune facture' : 'Aucun résultat'}
+              title={safeInvoices.length === 0 ? 'Aucune facture' : 'Aucun résultat'}
               description={
                 invoices.length === 0
                   ? 'Les factures seront générées automatiquement pour chaque commande'
