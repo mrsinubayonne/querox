@@ -234,7 +234,7 @@ const Factures: React.FC = () => {
               <CardHeader className="pb-3">
                 <CardDescription>En attente</CardDescription>
                 <CardTitle className="text-3xl text-orange-600">
-                  {invoices.filter((i) => i.status === 'unpaid').length}
+                  {safeInvoices.filter((i) => i.status === 'unpaid').length}
                 </CardTitle>
               </CardHeader>
             </Card>
