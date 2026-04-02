@@ -219,7 +219,7 @@ const Factures: React.FC = () => {
             <Card>
               <CardHeader className="pb-3">
                 <CardDescription>Total des factures</CardDescription>
-                <CardTitle className="text-3xl">{invoices.length}</CardTitle>
+                <CardTitle className="text-3xl">{safeInvoices.length}</CardTitle>
               </CardHeader>
             </Card>
             <Card>
