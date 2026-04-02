@@ -165,10 +165,12 @@ const Factures: React.FC = () => {
     setStatusFilter('all');
   };
 
+  const safeInvoices = invoices ?? [];
+
   const filteredInvoices = useMemo(() => {
     // Deduplicate by invoice_number (keep most recent)
     const seen = new Map<string, Invoice>();
-    for (const invoice of invoices) {
+    for (const invoice of safeInvoices) {
       const existing = seen.get(invoice.invoice_number);
       if (!existing || new Date(invoice.created_at) > new Date(existing.created_at)) {
         seen.set(invoice.invoice_number, invoice);
@@ -183,7 +185,7 @@ const Factures: React.FC = () => {
       const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [invoices, searchQuery, statusFilter]);
+  }, [safeInvoices, searchQuery, statusFilter]);
 
   return (
     <SubscriptionGuard feature="la gestion des factures">
@@ -217,14 +219,14 @@ const Factures: React.FC = () => {
             <Card>
               <CardHeader className="pb-3">
                 <CardDescription>Total des factures</CardDescription>
-                <CardTitle className="text-3xl">{invoices.length}</CardTitle>
+                <CardTitle className="text-3xl">{safeInvoices.length}</CardTitle>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader className="pb-3">
                 <CardDescription>Factures payées</CardDescription>
                 <CardTitle className="text-3xl text-emerald-600">
-                  {invoices.filter((i) => i.status === 'paid').length}
+                  {safeInvoices.filter((i) => i.status === 'paid').length}
                 </CardTitle>
               </CardHeader>
             </Card>
@@ -232,7 +234,7 @@ const Factures: React.FC = () => {
               <CardHeader className="pb-3">
                 <CardDescription>En attente</CardDescription>
                 <CardTitle className="text-3xl text-orange-600">
-                  {invoices.filter((i) => i.status === 'unpaid').length}
+                  {safeInvoices.filter((i) => i.status === 'unpaid').length}
                 </CardTitle>
               </CardHeader>
             </Card>
@@ -257,9 +259,9 @@ const Factures: React.FC = () => {
           ) : filteredInvoices.length === 0 ? (
             <EmptyState
               icon={FileText}
-              title={invoices.length === 0 ? 'Aucune facture' : 'Aucun résultat'}
+              title={safeInvoices.length === 0 ? 'Aucune facture' : 'Aucun résultat'}
               description={
-                invoices.length === 0
+                safeInvoices.length === 0
                   ? 'Les factures seront générées automatiquement pour chaque commande'
                   : 'Aucune facture ne correspond à vos critères de recherche'
               }
