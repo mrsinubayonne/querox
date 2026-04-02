@@ -226,7 +226,7 @@ const Factures: React.FC = () => {
               <CardHeader className="pb-3">
                 <CardDescription>Factures payées</CardDescription>
                 <CardTitle className="text-3xl text-emerald-600">
-                  {invoices.filter((i) => i.status === 'paid').length}
+                  {safeInvoices.filter((i) => i.status === 'paid').length}
                 </CardTitle>
               </CardHeader>
             </Card>
