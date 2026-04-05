@@ -164,36 +164,23 @@ export const useDashboardStats = (period: Period = 'day') => {
         0
       );
 
-      // Previous period revenue with the same logic
+      // Previous period revenue — same logic: only paid invoices
       const previousPaidInvoices =
         previousInvoices?.filter((inv) => inv.status === 'paid') || [];
 
-      const previousSessionsWithPaidInvoice = new Set(
-        previousPaidInvoices
-          .filter((inv: any) => inv.session_id)
-          .map((inv: any) => inv.session_id)
-      );
+      const prevInvoiceMap = new Map<string, any>();
+      for (const inv of previousPaidInvoices) {
+        const existing = prevInvoiceMap.get(inv.invoice_number);
+        if (!existing || new Date(inv.updated_at) > new Date(existing.updated_at)) {
+          prevInvoiceMap.set(inv.invoice_number, inv);
+        }
+      }
+      const uniquePreviousPaidInvoices = Array.from(prevInvoiceMap.values());
 
-      const previousOrdersForRevenue =
-        previousOrders?.filter(
-          (order: any) =>
-            !order.session_id ||
-            !previousSessionsWithPaidInvoice.has(order.session_id)
-        ) || [];
-
-      const previousOrderRevenue = previousOrdersForRevenue.reduce(
-        (sum, order: any) => sum + Number(order.total_amount || 0),
+      const previousRevenue = uniquePreviousPaidInvoices.reduce(
+        (sum, inv: any) => sum + Number(inv.total_amount || 0),
         0
       );
-
-      const previousOrderIds = new Set(previousOrdersForRevenue.map((o: any) => o.id));
-      const previousInvoiceRevenue = previousPaidInvoices
-        .filter(
-          (inv: any) => !inv.order_id || !previousOrderIds.has(inv.order_id)
-        )
-        .reduce((sum, inv: any) => sum + Number(inv.total_amount || 0), 0);
-
-      const previousRevenue = previousOrderRevenue + previousInvoiceRevenue;
 
       const revenueChange =
         previousRevenue > 0
