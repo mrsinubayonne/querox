@@ -126,7 +126,8 @@ async function getScopedPendingMutations(
     if (mutation.table !== table) return false;
     if (mutation.userId !== userId) return false;
     if (!outletId) return true;
-    return mutation.outletId === outletId || typeof mutation.outletId === 'undefined' || mutation.outletId === null;
+    // STRICT: only include mutations for THIS outlet (not null/undefined)
+    return mutation.outletId === outletId;
   });
 }
 
