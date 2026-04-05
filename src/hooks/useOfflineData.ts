@@ -126,7 +126,8 @@ async function getScopedPendingMutations(
     if (mutation.table !== table) return false;
     if (mutation.userId !== userId) return false;
     if (!outletId) return true;
-    return mutation.outletId === outletId || typeof mutation.outletId === 'undefined' || mutation.outletId === null;
+    // STRICT: only include mutations for THIS outlet (not null/undefined)
+    return mutation.outletId === outletId;
   });
 }
 
@@ -226,9 +227,10 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
           ) as unknown as TData[]
         : freshData;
       
-      // Store for offline use (never overwrite pending local state with stale reconnect payload)
-      await storeData(table, finalData, userId, outletId);
-      console.log(`[Online] Cached ${table}:`, finalData.length, 'items', shouldProtectLocalState ? '(merge pending)' : '');
+      // Store for offline use — filter by outlet to prevent cross-outlet cache contamination
+      const dataToStore = filterArrayByOutletIfPossible(finalData as unknown as Record<string, unknown>[], outletId) as unknown as TData[];
+      await storeData(table, dataToStore, userId, outletId);
+      console.log(`[Online] Cached ${table}:`, dataToStore.length, 'items', shouldProtectLocalState ? '(merge pending)' : '');
       return finalData;
     } catch (error) {
       // Network error while online - fallback to cache

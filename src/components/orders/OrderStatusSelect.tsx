@@ -51,19 +51,32 @@ export const OrderStatusSelect: React.FC<OrderStatusSelectProps> = ({
           .single();
 
         if (!orderError && order) {
-          // Create transaction in accounting
-          await supabase
+          // Check if a transaction already exists for this order to avoid duplicates
+          const txTitle = `Commande livrée - ${order.customer_name}`;
+          const { data: existingTx } = await supabase
             .from('transactions')
-            .insert({
-              user_id: order.user_id,
-              title: `Commande livrée - ${order.customer_name}`,
-              amount: order.total_amount,
-              type: 'income',
-              category: 'ventes',
-              date: new Date().toISOString().split('T')[0],
-              status: 'completed',
-              description: `Commande #${orderId.substring(0, 8)} livrée`
-            });
+            .select('id')
+            .eq('title', txTitle)
+            .eq('user_id', order.user_id)
+            .eq('amount', order.total_amount)
+            .maybeSingle();
+
+          if (!existingTx) {
+            await supabase
+              .from('transactions')
+              .insert({
+                user_id: order.user_id,
+                outlet_id: order.outlet_id,
+                title: txTitle,
+                amount: order.total_amount,
+                type: 'income',
+                category: 'ventes',
+                date: new Date().toISOString().split('T')[0],
+                status: 'completed',
+                description: `Commande #${orderId.substring(0, 8)} livrée`,
+                payment_method: 'Espèces',
+              });
+          }
 
           // Update invoice status to paid if exists
           await supabase

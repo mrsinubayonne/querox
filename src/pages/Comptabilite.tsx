@@ -55,46 +55,75 @@ const Comptabilite = () => {
   const combinedTransactions = useMemo(() => {
     const base = transactions || [];
 
-    // Extract invoice number from transaction title (supports FAC-XXXX, INV-X-X, OFF-X-X, etc.)
+    // Extract invoice number from transaction title
     const extractInvoiceNum = (title: string): string | null => {
-      // Match "Facture XXX" pattern - extract everything after "Facture "
       const facMatch = title.match(/^Facture\s+(.+)$/i);
       if (facMatch) return facMatch[1].trim();
+      // Also match "Paiement Table X" pattern — these are offline table payments
       return null;
     };
 
-    // Dédupliquer les transactions par numéro de facture (garder la plus récente)
-    const seenInvoiceNumbers = new Map<string, any>();
+    // Build a fingerprint set to deduplicate: title+amount+date
+    const seenFingerprints = new Map<string, any>();
     const deduplicatedBase: typeof base = [];
     
     for (const t of base) {
+      // Create fingerprint for all income/facture transactions
+      const fingerprint = `${t.title}|${t.amount}|${t.date}`;
+      const existing = seenFingerprints.get(fingerprint);
+      if (existing) {
+        // Keep most recent
+        if (new Date(t.created_at) > new Date(existing.created_at)) {
+          seenFingerprints.set(fingerprint, t);
+        }
+        continue;
+      }
+      
       if (t.category === 'facture' && typeof t.title === 'string') {
         const invoiceNum = extractInvoiceNum(t.title);
         if (invoiceNum) {
-          const existing = seenInvoiceNumbers.get(invoiceNum);
-          if (!existing || new Date(t.created_at) > new Date(existing.created_at)) {
-            seenInvoiceNumbers.set(invoiceNum, t);
-          }
+          seenFingerprints.set(fingerprint, t);
           continue;
         }
       }
+      
+      // For "Paiement Table" or "Commande livrée" entries, also fingerprint
+      if (typeof t.title === 'string' && (t.title.startsWith('Paiement Table') || t.title.startsWith('Commande livrée'))) {
+        seenFingerprints.set(fingerprint, t);
+        continue;
+      }
+      
       deduplicatedBase.push(t);
     }
     
-    // Ajouter les transactions de facture dédupliquées
-    for (const t of seenInvoiceNumbers.values()) {
+    // Add deduplicated transactions
+    for (const t of seenFingerprints.values()) {
       deduplicatedBase.push(t);
     }
 
-    // Extraire les numéros de factures des transactions existantes
-    const invoiceNumbersFromTx = new Set(
-      Array.from(seenInvoiceNumbers.keys())
-    );
+    // Collect all invoice numbers and order-related titles already in transactions
+    const coveredInvoiceNumbers = new Set<string>();
+    const coveredOrderTitles = new Set<string>();
+    for (const t of deduplicatedBase) {
+      if (typeof t.title === 'string') {
+        const invoiceNum = extractInvoiceNum(t.title);
+        if (invoiceNum) coveredInvoiceNumbers.add(invoiceNum);
+        if (t.title.startsWith('Commande livrée')) coveredOrderTitles.add(t.title);
+      }
+    }
 
-    // Ajouter les factures payées qui n'ont pas de transaction correspondante
+    // Add ONLY paid invoices that have NO transaction AND no "Commande livrée" covering them
     const syntheticFromInvoices = invoices
       .filter((inv) => inv.status === 'paid')
-      .filter((inv) => !invoiceNumbersFromTx.has(inv.invoice_number))
+      .filter((inv) => !coveredInvoiceNumbers.has(inv.invoice_number))
+      // Also skip invoices whose order already has a "Commande livrée" transaction
+      .filter((inv) => {
+        if (!inv.order_id) return true;
+        // Check if any "Commande livrée" transaction covers this order's amount
+        return !deduplicatedBase.some(
+          (t) => t.category === 'ventes' && t.amount === inv.total_amount && typeof t.title === 'string' && t.title.startsWith('Commande livrée')
+        );
+      })
       .map((inv) => ({
         id: `invoice-${inv.id}`,
         title: `Facture ${inv.invoice_number}`,
