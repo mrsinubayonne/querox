@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useContext } from 'react';
-
-// Import the context directly to avoid the throwing hook
-const AuthCtx = await import('@/contexts/AuthContext').then(m => m.AuthContext ?? m.default);
 
 export const InvoicePaidCelebration = () => {
-  const auth = useContext(AuthCtx);
-  const user = auth?.user ?? null;
   const [show, setShow] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Get user directly from supabase to avoid AuthContext dependency issues
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     const channel = supabase
       .channel('invoice-paid-celebration')
@@ -21,10 +25,9 @@ export const InvoicePaidCelebration = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'invoices',
-          filter: `user_id=eq.${user.id}`,
+          filter: `user_id=eq.${userId}`,
         },
         (payload: any) => {
-          // Vérifier si le statut est passé à "paid"
           if (payload.new?.status === 'paid' && payload.old?.status !== 'paid') {
             setShow(true);
             setTimeout(() => setShow(false), 5000);
@@ -36,7 +39,7 @@ export const InvoicePaidCelebration = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [userId]);
 
   if (!show) return null;
 
