@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useContext } from 'react';
+
+// Import the context directly to avoid the throwing hook
+const AuthCtx = await import('@/contexts/AuthContext').then(m => m.AuthContext ?? m.default);
 
 export const InvoicePaidCelebration = () => {
-  const { user } = useAuth();
+  const auth = useContext(AuthCtx);
+  const user = auth?.user ?? null;
   const [show, setShow] = useState(false);
 
   useEffect(() => {
