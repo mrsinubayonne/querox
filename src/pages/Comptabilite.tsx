@@ -112,17 +112,18 @@ const Comptabilite = () => {
       }
     }
 
-    // Add ONLY paid invoices that have NO transaction AND no "Commande livrée" covering them
+    // Safety net: add ONLY paid invoices that have absolutely NO matching transaction
+    // The DB trigger should create all transactions, so this should rarely produce entries
     const syntheticFromInvoices = invoices
       .filter((inv) => inv.status === 'paid')
       .filter((inv) => !coveredInvoiceNumbers.has(inv.invoice_number))
-      // Also skip invoices whose order already has a "Commande livrée" transaction
+      // Also check by amount+date fingerprint to catch transactions with different titles
       .filter((inv) => {
-        if (!inv.order_id) return true;
-        // Check if any "Commande livrée" transaction covers this order's amount
-        return !deduplicatedBase.some(
-          (t) => t.category === 'ventes' && t.amount === inv.total_amount && typeof t.title === 'string' && t.title.startsWith('Commande livrée')
+        const invDate = inv.paid_date || inv.created_at?.split('T')[0];
+        const matchByFingerprint = deduplicatedBase.some(
+          (t) => t.amount === inv.total_amount && t.date === invDate && t.type === 'income'
         );
+        return !matchByFingerprint;
       })
       .map((inv) => ({
         id: `invoice-${inv.id}`,

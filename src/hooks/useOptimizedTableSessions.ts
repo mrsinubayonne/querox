@@ -551,16 +551,10 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
               payment_method: paymentMethod || 'Espèces',
             } as Invoice;
 
-            await queueMutation({
-              table: 'invoices',
-              operation: 'insert',
-              data: invoiceForSession as unknown as Record<string, unknown>,
-              localId: generatedInvoiceId,
-              userId: resolvedUserId || user?.id || '',
-              outletId: scopedOutletId,
-              maxRetries: 3,
-              conflictResolution: 'client-wins',
-            });
+            // Don't queue invoice insert for sync — the DB trigger
+            // `create_invoice_for_closed_session` will create the official FAC-xxx
+            // invoice when the session status syncs to 'closed'/'paid'.
+            // The local invoice is kept in cache only for receipt printing.
           } else {
             await queueMutation({
               table: 'invoices',
@@ -598,28 +592,8 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
             await storeData('invoices', finalInvoices as any, resolvedUserId, scopedOutletId);
           }
 
-          // Create transaction
-          await queueMutation({
-            table: 'transactions',
-            operation: 'insert',
-            data: {
-              id: generateLocalId(),
-              user_id: resolvedUserId || user?.id,
-              outlet_id: scopedOutletId,
-              title: `Paiement Table ${session?.table_number}`,
-              amount: session?.total_amount || 0,
-              type: 'income',
-              category: 'facture',
-              status: 'completed',
-              date: new Date().toISOString().split('T')[0],
-              payment_method: paymentMethod || 'Espèces',
-            },
-            localId: generateLocalId(),
-            userId: resolvedUserId || user?.id || '',
-            outletId: scopedOutletId,
-            maxRetries: 3,
-            conflictResolution: 'client-wins',
-          });
+          // Transaction creation is handled by the DB trigger
+          // `create_transaction_from_paid_invoice` when the invoice is marked paid.
         }
 
         // Ensure a business period exists for offline reports
@@ -714,36 +688,8 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
       paidInvoiceMeta = invoiceForSession as { id: string; invoice_number: string; total_amount: number };
 
-      // 3) Create accounting transaction when we have paid invoice metadata
-      if (!isDebtorDb && paidInvoiceMeta) {
-        const invoiceNum = paidInvoiceMeta.invoice_number;
-        const invoiceAmount = paidInvoiceMeta.total_amount;
-
-        // Check if transaction already exists to avoid duplicates
-        const { data: existingTx } = await supabase
-          .from('transactions')
-          .select('id')
-          .eq('title', `Facture ${invoiceNum}`)
-          .eq('user_id', resolvedUserId)
-          .maybeSingle();
-
-        if (!existingTx) {
-          await supabase
-            .from('transactions')
-            .insert([{
-              user_id: resolvedUserId,
-              outlet_id: scopedOutletId,
-              title: `Facture ${invoiceNum}`,
-              amount: invoiceAmount,
-              type: 'income',
-              category: 'facture',
-              status: 'completed',
-              date: new Date().toISOString().split('T')[0],
-              description: `Paiement de la facture ${invoiceNum}`,
-              payment_method: normalizedPaymentMethod,
-            }]);
-        }
-      }
+      // 3) Transaction creation is now handled by the DB trigger
+      // `create_transaction_from_paid_invoice` — no manual insert needed.
 
       // 4) Ne pas déduire le stock côté client en ligne.
       // La déduction est déjà gérée côté Supabase au paiement de la facture;
