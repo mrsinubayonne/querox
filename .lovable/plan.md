@@ -1,87 +1,68 @@
 
-# Correction definitive : Menus et Plats en mode Hors-ligne
 
-## Diagnostic précis
+# Plan de Correction Definitive -- QUEROX
 
-### Problème 1 : Section Tables (QuickAddOrderToSessionModal)
+## Diagnostic Confirmé (données live)
 
-La sequence d'execution actuelle crée une condition de course (race condition) :
+| Probleme | Cause racine | Preuve |
+|----------|-------------|--------|
+| Factures doublees | Offline queue insère OFF-xxx + trigger SQL crée FAC-xxx | **1074 factures doublées** en base |
+| Transactions doublees | Frontend crée manuellement dans 3 endroits, aucun trigger auto | **23 transactions doublées** en base |
+| Tables qui disparaissent | `cleanup_stale_table_sessions` = 12h trop court | Fonction SQL confirmée |
+| "Marqué payé" absent du rapport | OrderStatusSelect crée catégorie `ventes` au lieu de `facture` | Code confirmé ligne 74 |
 
-```text
-1. Modal s'ouvre → setOfflineMenuItems([]) est appelé (reset)
-2. loadOfflineMenuItems() démarre (async)
-3. useMenuData(activeMenuId) s'execute en parallele
-   → cherche dans localStorage (publicMenu_v2_xxx) — souvent absent
-   → onlineMenuItems = []
-4. menuItems = merge([]) = [] → affichage vide
-5. loadOfflineMenuItems() se termine → setOfflineMenuItems([items])
-   MAIS useMenuData retourne toujours [] car activeMenuId peut ne pas être set encore
-```
+## Etapes d'Implementation
 
-La dépendance croisée entre `useMenuData` (qui cherche dans `localStorage` avec le préfixe `publicMenu_v2_`) et la logique IndexedDB crée un vide systématique.
+### Etape 1 -- Migration SQL (nettoyage + trigger manquant)
 
-### Problème 2 : Page Menus (/menus)
+1. **Attacher le trigger `create_transaction_from_paid_invoice`** sur la table `invoices` (AFTER UPDATE) -- chaque facture passant à "paid" créera automatiquement sa transaction
+2. **Supprimer les 1074 factures OFF-xxx doublées** (garder FAC-xxx quand les deux existent pour une même session)
+3. **Supprimer les 23 transactions doublées** (garder la plus récente par fingerprint)
+4. **Augmenter le délai de nettoyage** de 12h à 24h dans `cleanup_stale_table_sessions`
 
-`Menus.tsx` appelle directement Supabase sans aucun fallback offline. Quand la connexion échoue, `menus` reste vide et `MenuItemManager` n'affiche rien. La page ne lit pas du tout IndexedDB.
+### Etape 2 -- OrderStatusSelect.tsx : supprimer la création manuelle de transaction
 
----
+Quand une commande passe à "delivered" :
+- Garder la mise à jour du statut de la commande
+- Garder la mise à jour de la facture à "paid" (le trigger `create_invoice_for_order` crée déjà la facture à l'INSERT, et le nouveau trigger créera la transaction quand on la marque "paid")
+- **Supprimer** le bloc lignes 54-79 (création manuelle de transaction "Commande livrée")
+- Ajouter `payment_method` lors de la mise à jour de la facture pour que le trigger ait l'info
 
-## Solution
+### Etape 3 -- useOptimizedTableSessions.ts : supprimer les créations manuelles
 
-### Fix 1 : QuickAddOrderToSessionModal — Supprimer la dépendance à useMenuData
+**Flux online (lignes 717-745)** :
+- **Supprimer** le bloc qui crée manuellement `Facture FAC-xxx` dans les transactions
+- Le trigger SQL s'en charge maintenant automatiquement
 
-Le hook `useMenuData` est conçu pour le menu PUBLIC (affiché aux clients) et utilise le cache `localStorage publicMenu_v2_`. Il n'est pas adapté à l'usage interne (tables). La correction consiste à :
+**Flux offline (lignes 554-622)** :
+- **Supprimer** le `queueMutation` pour l'INSERT de facture (ligne 554-563) -- la facture locale reste en cache pour l'impression du reçu mais n'est plus envoyée au serveur (le trigger `create_invoice_for_closed_session` la créera côté serveur)
+- **Supprimer** le `queueMutation` pour l'INSERT de transaction (ligne 602-622) -- le trigger s'en chargera quand la facture sera marquée payée après sync
+- Garder le `queueMutation` pour l'UPDATE de facture existante (ligne 565-580) -- nécessaire pour marquer les factures existantes comme payées
 
-1. **Supprimer `useMenuData`** du composant — il n'est utile que si online ET que le cache localStorage existe
-2. **Toujours charger depuis IndexedDB d'abord** (online ou offline), puis enrichir avec les données fraiches si online
-3. **Corriger l'ordre des opérations** : ne pas reset `offlineMenuItems` avant que le chargement soit terminé
+### Etape 4 -- Comptabilite.tsx : simplifier la déduplication
 
-Nouvelle logique :
-```text
-Modal s'ouvre :
-  1. Lancer loadMenuItems() immédiatement (sans reset préalable)
-  2. loadMenuItems() lit IndexedDB → setState avec les données du cache
-  3. Si online : appel Supabase en arrière-plan → mise à jour si données fraîches
-  4. Plus de dépendance à useMenuData
-```
+- Renforcer le filtre des synthétiques : ne créer une entrée synthétique que si AUCUNE transaction avec le même `invoice_number` OU le même `amount+date` n'existe déjà
+- Cela sert de filet de sécurité uniquement, le trigger étant la source principale
 
-### Fix 2 : Page Menus — Ajouter un fallback IndexedDB
-
-Modifier `Menus.tsx` pour lire le cache IndexedDB quand Supabase échoue (ou quand offline) :
+## Résumé des Changements
 
 ```text
-fetchMenus() :
-  1. Si isOffline → lire depuis IndexedDB (getData('menus', userId))
-  2. Si online → appel Supabase normal, avec catch → fallback IndexedDB
-  3. Passer les menus récupérés à setMenus() dans tous les cas
+AVANT :
+  Commande livrée → frontend crée transaction + trigger crée facture → DOUBLON
+  Table payée online → frontend crée transaction + (pas de trigger) → OK mais inconsistant
+  Table payée offline → queue(invoice OFF-xxx) + queue(transaction) → sync → trigger crée FAC-xxx → DOUBLON x2
+  Cleanup 12h → tables actives supprimées pendant le service
+
+APRÈS :
+  Commande livrée → trigger crée facture → frontend marque paid → trigger crée transaction → 1 seule entrée
+  Table payée online → frontend marque facture paid → trigger crée transaction → 1 seule entrée
+  Table payée offline → session sync → trigger crée FAC-xxx + marque paid → trigger crée transaction → 1 seule entrée
+  Cleanup 24h → marge suffisante pour le service
 ```
 
-Pour `MenuItemManager`, il utilise `useMenus()` qui a déjà une logique offline correcte — le problème vient uniquement de `Menus.tsx` qui ne lui donne pas de menu actif.
+**Fichiers modifiés** : 3 fichiers + 1 migration SQL
+- `supabase/migrations/xxx.sql`
+- `src/components/orders/OrderStatusSelect.tsx`
+- `src/hooks/useOptimizedTableSessions.ts`
+- `src/pages/Comptabilite.tsx`
 
----
-
-## Fichiers à modifier
-
-### `src/components/tables/QuickAddOrderToSessionModal.tsx`
-- Supprimer l'import et l'usage de `useMenuData`
-- Réécrire `loadOfflineMenuItems` en `loadMenuItems` : charge IndexedDB d'abord, puis Supabase si online
-- Supprimer le reset prématuré `setOfflineMenuItems([])`
-- Renommer `offlineMenuItems` en `menuItems` (unique source de vérité)
-- Supprimer la logique de merge `onlineMenuItems / offlineMenuItems`
-
-### `src/pages/Menus.tsx`
-- Ajouter `useNetworkStatus` pour détecter le mode hors-ligne
-- Modifier `fetchMenus()` pour lire IndexedDB quand offline ou en cas d'erreur réseau
-- Ajouter `getData` de `@/lib/offlineStorage` pour le fallback
-- Ne plus bloquer sur `!selectedOutletId` en mode offline (utiliser `localStorage`)
-
----
-
-## Résultat attendu
-
-| Scénario | Avant | Après |
-|---|---|---|
-| Tables → ouvrir commande (offline) | Liste vide | Plats du cache IndexedDB |
-| Section Menus (offline) | Page blanche | Menus du cache IndexedDB |
-| Tables → ouvrir commande (online) | Plats ok | Plats ok (inchangé) |
-| Section Menus (online) | Menus ok | Menus ok (inchangé) |
