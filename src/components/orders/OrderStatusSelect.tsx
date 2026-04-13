@@ -41,52 +41,18 @@ export const OrderStatusSelect: React.FC<OrderStatusSelectProps> = ({
         throw error;
       }
 
-      // If status changed to "delivered", create transaction and update invoice
+      // If status changed to "delivered", mark invoice as paid
+      // The DB trigger `create_transaction_from_paid_invoice` will automatically
+      // create the accounting transaction when the invoice status changes to 'paid'
       if (newStatus === 'delivered') {
-        // Get order details
-        const { data: order, error: orderError } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('id', orderId)
-          .single();
-
-        if (!orderError && order) {
-          // Check if a transaction already exists for this order to avoid duplicates
-          const txTitle = `Commande livrée - ${order.customer_name}`;
-          const { data: existingTx } = await supabase
-            .from('transactions')
-            .select('id')
-            .eq('title', txTitle)
-            .eq('user_id', order.user_id)
-            .eq('amount', order.total_amount)
-            .maybeSingle();
-
-          if (!existingTx) {
-            await supabase
-              .from('transactions')
-              .insert({
-                user_id: order.user_id,
-                outlet_id: order.outlet_id,
-                title: txTitle,
-                amount: order.total_amount,
-                type: 'income',
-                category: 'ventes',
-                date: new Date().toISOString().split('T')[0],
-                status: 'completed',
-                description: `Commande #${orderId.substring(0, 8)} livrée`,
-                payment_method: 'Espèces',
-              });
-          }
-
-          // Update invoice status to paid if exists
-          await supabase
-            .from('invoices')
-            .update({ 
-              status: 'paid',
-              paid_date: new Date().toISOString().split('T')[0]
-            })
-            .eq('order_id', orderId);
-        }
+        await supabase
+          .from('invoices')
+          .update({ 
+            status: 'paid',
+            paid_date: new Date().toISOString().split('T')[0],
+            payment_method: 'Espèces',
+          })
+          .eq('order_id', orderId);
       }
 
       toast({
