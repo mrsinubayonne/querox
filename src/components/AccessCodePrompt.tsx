@@ -10,12 +10,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock } from 'lucide-react';
+import { Lock, Loader2 } from 'lucide-react';
 
 interface AccessCodePromptProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onVerify: (code: string) => boolean;
+  onVerify: (code: string) => Promise<boolean> | boolean;
   title: string;
   description: string;
 }
@@ -29,15 +29,22 @@ const AccessCodePrompt: React.FC<AccessCodePromptProps> = ({
 }) => {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (onVerify(code)) {
-      setCode('');
-      setError('');
-      onOpenChange(false);
-    } else {
-      setError('Code incorrect. Veuillez réessayer.');
+    setLoading(true);
+    try {
+      const ok = await Promise.resolve(onVerify(code));
+      if (ok) {
+        setCode('');
+        setError('');
+        onOpenChange(false);
+      } else {
+        setError('Code incorrect. Veuillez réessayer.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,6 +74,7 @@ const AccessCodePrompt: React.FC<AccessCodePromptProps> = ({
               }}
               className={error ? 'border-destructive' : ''}
               autoFocus
+              disabled={loading}
             />
             {error && (
               <p className="text-sm text-destructive">{error}</p>
@@ -81,10 +89,12 @@ const AccessCodePrompt: React.FC<AccessCodePromptProps> = ({
                 setCode('');
                 setError('');
               }}
+              disabled={loading}
             >
               Annuler
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Vérifier
             </Button>
           </DialogFooter>
