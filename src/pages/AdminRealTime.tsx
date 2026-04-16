@@ -13,7 +13,7 @@ import ButtonUsageStats from '@/components/admin/ButtonUsageStats';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
-type PeriodFilter = 'today' | 'week' | 'month';
+type PeriodFilter = 'today' | 'week' | 'month' | 'all';
 
 interface RealtimeOrder {
   id: string;
