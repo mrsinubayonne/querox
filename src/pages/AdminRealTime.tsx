@@ -320,6 +320,9 @@ const AdminRealTime: React.FC = () => {
                   <ToggleGroupItem value="month" className="text-sm px-4">
                     Mois
                   </ToggleGroupItem>
+                  <ToggleGroupItem value="all" className="text-sm px-4">
+                    Tout
+                  </ToggleGroupItem>
                 </ToggleGroup>
               </div>
 
