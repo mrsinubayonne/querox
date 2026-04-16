@@ -2753,6 +2753,10 @@ export type Database = {
         Args: { _button_category?: string; _button_name: string }
         Returns: undefined
       }
+      update_user_access_codes: {
+        Args: { _accounting_code: string; _management_code: string }
+        Returns: boolean
+      }
       verify_outlet_access_code: {
         Args: { _access_code: string; _session_id: string }
         Returns: {
@@ -2789,6 +2793,10 @@ export type Database = {
           role: string
           status: string
         }[]
+      }
+      verify_user_access_code: {
+        Args: { _code: string; _type: string; _user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
