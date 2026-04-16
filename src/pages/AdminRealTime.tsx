@@ -110,8 +110,8 @@ const AdminRealTime: React.FC = () => {
       
       const startDate = getDateRange();
       
-      // Get ALL orders from today with outlet information
-      const { data: todayOrders, error: ordersError } = await supabase
+      // Get ALL orders from period with outlet information
+      let ordersQuery = supabase
         .from('orders')
         .select(`
           id, 
@@ -130,17 +130,27 @@ const AdminRealTime: React.FC = () => {
             user_id
           )
         `)
-        .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false });
+
+      if (startDate) {
+        ordersQuery = ordersQuery.gte('created_at', startDate.toISOString());
+      }
+
+      const { data: todayOrders, error: ordersError } = await ordersQuery;
 
       if (ordersError) throw ordersError;
 
-      // Get ALL paid invoices from today
-      const { data: todayInvoices, error: invoicesError } = await supabase
+      // Get ALL paid invoices from period
+      let invoicesQuery = supabase
         .from('invoices')
         .select('id, total_amount, order_id, outlet_id')
-        .eq('status', 'paid')
-        .gte('created_at', startDate.toISOString());
+        .eq('status', 'paid');
+
+      if (startDate) {
+        invoicesQuery = invoicesQuery.gte('created_at', startDate.toISOString());
+      }
+
+      const { data: todayInvoices, error: invoicesError } = await invoicesQuery;
 
       if (invoicesError) throw invoicesError;
 
