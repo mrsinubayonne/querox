@@ -13,7 +13,7 @@ import ButtonUsageStats from '@/components/admin/ButtonUsageStats';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
-type PeriodFilter = 'today' | 'week' | 'month';
+type PeriodFilter = 'today' | 'week' | 'month' | 'all';
 
 interface RealtimeOrder {
   id: string;
@@ -71,7 +71,7 @@ const AdminRealTime: React.FC = () => {
     }
   }, [isAdmin, periodFilter]);
 
-  const getDateRange = () => {
+  const getDateRange = (): Date | null => {
     const now = new Date();
     let startDate = new Date();
     
@@ -84,6 +84,8 @@ const AdminRealTime: React.FC = () => {
         startDate.setMonth(now.getMonth() - 1);
         startDate.setHours(0, 0, 0, 0);
         break;
+      case 'all':
+        return null;
       case 'today':
       default:
         startDate.setHours(0, 0, 0, 0);
@@ -97,6 +99,7 @@ const AdminRealTime: React.FC = () => {
     switch (periodFilter) {
       case 'week': return 'de la semaine';
       case 'month': return 'du mois';
+      case 'all': return 'depuis le début';
       default: return 'du jour';
     }
   };
@@ -107,8 +110,8 @@ const AdminRealTime: React.FC = () => {
       
       const startDate = getDateRange();
       
-      // Get ALL orders from today with outlet information
-      const { data: todayOrders, error: ordersError } = await supabase
+      // Get ALL orders from period with outlet information
+      let ordersQuery = supabase
         .from('orders')
         .select(`
           id, 
@@ -127,17 +130,27 @@ const AdminRealTime: React.FC = () => {
             user_id
           )
         `)
-        .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false });
+
+      if (startDate) {
+        ordersQuery = ordersQuery.gte('created_at', startDate.toISOString());
+      }
+
+      const { data: todayOrders, error: ordersError } = await ordersQuery;
 
       if (ordersError) throw ordersError;
 
-      // Get ALL paid invoices from today
-      const { data: todayInvoices, error: invoicesError } = await supabase
+      // Get ALL paid invoices from period
+      let invoicesQuery = supabase
         .from('invoices')
         .select('id, total_amount, order_id, outlet_id')
-        .eq('status', 'paid')
-        .gte('created_at', startDate.toISOString());
+        .eq('status', 'paid');
+
+      if (startDate) {
+        invoicesQuery = invoicesQuery.gte('created_at', startDate.toISOString());
+      }
+
+      const { data: todayInvoices, error: invoicesError } = await invoicesQuery;
 
       if (invoicesError) throw invoicesError;
 
@@ -306,6 +319,9 @@ const AdminRealTime: React.FC = () => {
                   </ToggleGroupItem>
                   <ToggleGroupItem value="month" className="text-sm px-4">
                     Mois
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="all" className="text-sm px-4">
+                    Tout
                   </ToggleGroupItem>
                 </ToggleGroup>
               </div>
