@@ -20,8 +20,8 @@ const ProtectedAccessRoute: React.FC<ProtectedAccessRouteProps> = ({
   const [isVerified, setIsVerified] = useState(false);
   const { verifyCode, loading } = useAccessCodes();
 
-  const handleVerify = (code: string): boolean => {
-    const isValid = verifyCode(code, type);
+  const handleVerify = async (code: string): Promise<boolean> => {
+    const isValid = await verifyCode(code, type);
     if (isValid) {
       setIsVerified(true);
       setShowPrompt(false);

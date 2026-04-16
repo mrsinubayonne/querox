@@ -2,16 +2,15 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface AccessCodes {
+interface AccessCodesMeta {
   id: string;
   user_id: string;
-  accounting_code: string;
-  management_code: string;
   last_modified_at: string;
+  has_codes: boolean;
 }
 
 export const useAccessCodes = () => {
-  const [codes, setCodes] = useState<AccessCodes | null>(null);
+  const [codes, setCodes] = useState<AccessCodesMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -22,24 +21,38 @@ export const useAccessCodes = () => {
 
       const { data, error } = await supabase
         .from('user_access_codes')
-        .select('*')
+        .select('id, user_id, last_modified_at, accounting_code, management_code')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
 
       if (!data) {
-        // Créer les codes par défaut
-        const { data: newCodes, error: insertError } = await supabase
-          .from('user_access_codes')
-          .insert([{ user_id: user.id }])
-          .select()
-          .single();
+        // Créer des codes par défaut hashés via RPC
+        const defaultAcc = '0000';
+        const defaultMgmt = '0000';
+        const { error: rpcError } = await supabase.rpc('update_user_access_codes', {
+          _accounting_code: defaultAcc,
+          _management_code: defaultMgmt,
+        });
+        if (rpcError) throw rpcError;
 
-        if (insertError) throw insertError;
-        setCodes(newCodes);
+        const { data: created } = await supabase
+          .from('user_access_codes')
+          .select('id, user_id, last_modified_at')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (created) {
+          setCodes({ ...created, has_codes: true });
+        }
       } else {
-        setCodes(data);
+        setCodes({
+          id: data.id,
+          user_id: data.user_id,
+          last_modified_at: data.last_modified_at,
+          has_codes: !!(data.accounting_code && data.management_code),
+        });
       }
     } catch (error: any) {
       console.error('Error fetching access codes:', error);
@@ -53,13 +66,10 @@ export const useAccessCodes = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
 
-      const { error } = await supabase
-        .from('user_access_codes')
-        .update({
-          accounting_code: accountingCode,
-          management_code: managementCode,
-        })
-        .eq('user_id', user.id);
+      const { error } = await supabase.rpc('update_user_access_codes', {
+        _accounting_code: accountingCode,
+        _management_code: managementCode,
+      });
 
       if (error) throw error;
 
@@ -80,11 +90,26 @@ export const useAccessCodes = () => {
     }
   };
 
-  const verifyCode = (code: string, type: 'accounting' | 'management'): boolean => {
-    if (!codes) return false;
-    return type === 'accounting' 
-      ? codes.accounting_code === code 
-      : codes.management_code === code;
+  const verifyCode = async (
+    code: string,
+    type: 'accounting' | 'management'
+  ): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { data, error } = await supabase.rpc('verify_user_access_code', {
+        _user_id: user.id,
+        _code: code,
+        _type: type,
+      });
+
+      if (error) throw error;
+      return data === true;
+    } catch (error) {
+      console.error('Error verifying access code:', error);
+      return false;
+    }
   };
 
   useEffect(() => {
