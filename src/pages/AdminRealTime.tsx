@@ -71,7 +71,7 @@ const AdminRealTime: React.FC = () => {
     }
   }, [isAdmin, periodFilter]);
 
-  const getDateRange = () => {
+  const getDateRange = (): Date | null => {
     const now = new Date();
     let startDate = new Date();
     
@@ -84,6 +84,8 @@ const AdminRealTime: React.FC = () => {
         startDate.setMonth(now.getMonth() - 1);
         startDate.setHours(0, 0, 0, 0);
         break;
+      case 'all':
+        return null;
       case 'today':
       default:
         startDate.setHours(0, 0, 0, 0);
@@ -97,6 +99,7 @@ const AdminRealTime: React.FC = () => {
     switch (periodFilter) {
       case 'week': return 'de la semaine';
       case 'month': return 'du mois';
+      case 'all': return 'depuis le début';
       default: return 'du jour';
     }
   };
