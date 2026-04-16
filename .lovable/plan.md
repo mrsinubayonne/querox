@@ -1,68 +1,79 @@
 
 
-# Plan de Correction Definitive -- QUEROX
+## Audit de sécurité — Explication détaillée
 
-## Diagnostic Confirmé (données live)
+L'audit a révélé **13 problèmes de sécurité**, dont **5 critiques**. Voici ce que ça signifie concrètement pour QUEROX et tes clients.
 
-| Probleme | Cause racine | Preuve |
-|----------|-------------|--------|
-| Factures doublees | Offline queue insère OFF-xxx + trigger SQL crée FAC-xxx | **1074 factures doublées** en base |
-| Transactions doublees | Frontend crée manuellement dans 3 endroits, aucun trigger auto | **23 transactions doublées** en base |
-| Tables qui disparaissent | `cleanup_stale_table_sessions` = 12h trop court | Fonction SQL confirmée |
-| "Marqué payé" absent du rapport | OrderStatusSelect crée catégorie `ventes` au lieu de `facture` | Code confirmé ligne 74 |
+---
 
-## Etapes d'Implementation
+### 🔴 Vulnérabilités critiques (à corriger en urgence)
 
-### Etape 1 -- Migration SQL (nettoyage + trigger manquant)
+**1. Codes d'accès stockés en clair**
+- Les PIN des profils de point de vente (`outlet_profiles.access_code`), les codes admin (`user_access_codes`) et les tokens d'invitation équipe (`team_members`) sont stockés tels quels dans la base.
+- **Risque** : si quelqu'un accède à la base (fuite, employé Supabase, backup volé), il voit tous les PIN en clair et peut se connecter à n'importe quel profil caissier.
+- **Fix** : hasher avec `crypt()` (bcrypt) — comme un mot de passe normal.
 
-1. **Attacher le trigger `create_transaction_from_paid_invoice`** sur la table `invoices` (AFTER UPDATE) -- chaque facture passant à "paid" créera automatiquement sa transaction
-2. **Supprimer les 1074 factures OFF-xxx doublées** (garder FAC-xxx quand les deux existent pour une même session)
-3. **Supprimer les 23 transactions doublées** (garder la plus récente par fingerprint)
-4. **Augmenter le délai de nettoyage** de 12h à 24h dans `cleanup_stale_table_sessions`
+**2. Données Stripe exposées au rôle `public`**
+- La table `subscribers` (qui contient `stripe_customer_id`, emails, montants d'abonnement) est lisible par le rôle `public` au lieu de `authenticated`.
+- **Risque** : un visiteur non connecté pourrait potentiellement lister tes clients payants et leurs revenus mensuels.
+- **Fix** : restreindre les politiques RLS au rôle `authenticated` uniquement.
 
-### Etape 2 -- OrderStatusSelect.tsx : supprimer la création manuelle de transaction
+**3. Politiques RLS trop permissives (`USING true`)**
+- Certaines tables (`api_rate_limits` pour service_role, et historiquement d'autres) ont des règles qui disent « tout le monde peut tout voir/faire ».
+- **Risque** : contourne complètement le contrôle d'accès.
+- **Fix** : remplacer par des conditions strictes (`auth.uid() = user_id`).
 
-Quand une commande passe à "delivered" :
-- Garder la mise à jour du statut de la commande
-- Garder la mise à jour de la facture à "paid" (le trigger `create_invoice_for_order` crée déjà la facture à l'INSERT, et le nouveau trigger créera la transaction quand on la marque "paid")
-- **Supprimer** le bloc lignes 54-79 (création manuelle de transaction "Commande livrée")
-- Ajouter `payment_method` lors de la mise à jour de la facture pour que le trigger ait l'info
+**4. Bucket d'images sans isolation par utilisateur**
+- Le bucket Supabase `images` n'a pas de politique qui force `auth.uid()` dans le chemin du fichier.
+- **Risque** : utilisateur A peut écraser/supprimer le logo de utilisateur B s'il devine le chemin.
+- **Fix** : politique `storage.foldername(name)[1] = auth.uid()::text`.
 
-### Etape 3 -- useOptimizedTableSessions.ts : supprimer les créations manuelles
+**5. Élévation de privilèges possible sur `user_roles`**
+- Si un utilisateur peut s'INSÉRER lui-même un rôle `admin` dans `user_roles`, c'est game over.
+- **Risque** : n'importe qui devient admin de toute la plateforme.
+- **Fix** : politique INSERT qui exige `is_admin()` pour pouvoir attribuer un rôle.
 
-**Flux online (lignes 717-745)** :
-- **Supprimer** le bloc qui crée manuellement `Facture FAC-xxx` dans les transactions
-- Le trigger SQL s'en charge maintenant automatiquement
+---
 
-**Flux offline (lignes 554-622)** :
-- **Supprimer** le `queueMutation` pour l'INSERT de facture (ligne 554-563) -- la facture locale reste en cache pour l'impression du reçu mais n'est plus envoyée au serveur (le trigger `create_invoice_for_closed_session` la créera côté serveur)
-- **Supprimer** le `queueMutation` pour l'INSERT de transaction (ligne 602-622) -- le trigger s'en chargera quand la facture sera marquée payée après sync
-- Garder le `queueMutation` pour l'UPDATE de facture existante (ligne 565-580) -- nécessaire pour marquer les factures existantes comme payées
+### 🟡 Avertissements (importants mais non urgents)
 
-### Etape 4 -- Comptabilite.tsx : simplifier la déduplication
+- **PostgreSQL obsolète** : version actuelle < 15, des CVE connues existent. Upgrade via dashboard Supabase.
+- **Protection mots de passe faibles désactivée** : Supabase peut bloquer les mots de passe leakés sur HaveIBeenPwned — c'est désactivé.
+- **`menus.user_id` exposé** : le champ est visible publiquement (pour le menu public), ce qui révèle l'identifiant interne du propriétaire.
 
-- Renforcer le filtre des synthétiques : ne créer une entrée synthétique que si AUCUNE transaction avec le même `invoice_number` OU le même `amount+date` n'existe déjà
-- Cela sert de filet de sécurité uniquement, le trigger étant la source principale
+---
 
-## Résumé des Changements
+### 🛠️ Plan de correction proposé
 
-```text
-AVANT :
-  Commande livrée → frontend crée transaction + trigger crée facture → DOUBLON
-  Table payée online → frontend crée transaction + (pas de trigger) → OK mais inconsistant
-  Table payée offline → queue(invoice OFF-xxx) + queue(transaction) → sync → trigger crée FAC-xxx → DOUBLON x2
-  Cleanup 12h → tables actives supprimées pendant le service
+**Migration SQL automatique** :
+1. Hasher tous les `access_code` existants avec `crypt()` + créer fonction `verify_access_code()`
+2. Restreindre `subscribers` au rôle `authenticated`
+3. Ajouter politique storage `images` scopée par `auth.uid()`
+4. Durcir RLS sur `user_roles`, `accounting_entries`, `stock_movements`
+5. Masquer `user_id` du retour public de `menus`
 
-APRÈS :
-  Commande livrée → trigger crée facture → frontend marque paid → trigger crée transaction → 1 seule entrée
-  Table payée online → frontend marque facture paid → trigger crée transaction → 1 seule entrée
-  Table payée offline → session sync → trigger crée FAC-xxx + marque paid → trigger crée transaction → 1 seule entrée
-  Cleanup 24h → marge suffisante pour le service
-```
+**Actions manuelles côté Supabase** (dashboard, je ne peux pas le faire) :
+1. Activer **Leaked Password Protection** dans Authentication → Policies
+2. Lancer l'upgrade PostgreSQL dans Settings → Database
 
-**Fichiers modifiés** : 3 fichiers + 1 migration SQL
-- `supabase/migrations/xxx.sql`
-- `src/components/orders/OrderStatusSelect.tsx`
-- `src/hooks/useOptimizedTableSessions.ts`
-- `src/pages/Comptabilite.tsx`
+---
+
+### ⚠️ Impact pour les utilisateurs
+
+Le hashage des codes d'accès est **irréversible** : les codes actuels deviendront invalides côté serveur. Deux options :
+- **Option A** (recommandée) : on hashe les codes existants tels quels — aucun changement visible pour les utilisateurs.
+- **Option B** : on force tout le monde à régénérer son code au prochain login.
+
+Je recommande **Option A** : la migration lit chaque code en clair, le hashe, le réécrit. Personne ne s'en aperçoit, mais à partir de là tout est sécurisé.
+
+---
+
+### Fichiers impactés
+
+- 1 migration SQL (hashage + RLS + storage policies)
+- `src/hooks/useAccessCodes.ts` → utiliser `verify_access_code()` RPC au lieu de comparaison string
+- `src/hooks/useOutletProfile.ts` → idem pour PIN profil
+- `src/components/AccessCodePrompt.tsx` → adapter le flux de vérification
+
+**Veux-tu que je lance ce plan ?** Confirme « oui » et je passe en mode implémentation.
 
