@@ -238,7 +238,7 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
         : freshData;
       
       // Store for offline use — filter by outlet to prevent cross-outlet cache contamination
-      const dataToStore = filterArrayByOutletIfPossible(finalData as unknown as Record<string, unknown>[], outletId) as unknown as TData[];
+      const dataToStore = filterArrayByOutletIfPossible(finalData as unknown as Record<string, unknown>[], outletId, table) as unknown as TData[];
       await storeData(table, dataToStore, userId, outletId);
       console.log(`[Online] Cached ${table}:`, dataToStore.length, 'items', shouldProtectLocalState ? '(merge pending)' : '');
       return finalData;
