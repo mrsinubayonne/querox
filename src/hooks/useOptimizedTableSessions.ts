@@ -181,17 +181,25 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
   const getSessionsSnapshot = useCallback(async (): Promise<TableSession[]> => {
     const fromQuery = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
     const cachedScoped = await getData<TableSession[]>('table_sessions', resolvedUserId, scopedOutletId);
-    const cachedUnscoped = scopedOutletId
-      ? await getData<TableSession[]>('table_sessions', resolvedUserId)
-      : undefined;
 
-    const merged = [
-      ...((cachedUnscoped?.data || []) as TableSession[]),
-      ...((cachedScoped?.data || []) as TableSession[]),
-      ...fromQuery,
-    ];
+    // STRICT: si un outlet est sélectionné, ne JAMAIS fusionner avec le cache unscoped
+    // (évite l'injection de sessions d'autres PDV).
+    const merged = scopedOutletId
+      ? [
+          ...((cachedScoped?.data || []) as TableSession[]),
+          ...fromQuery,
+        ]
+      : (() => {
+          // Fallback uniquement si aucun outlet (pas de risque de fuite inter-PDV)
+          return [...((cachedScoped?.data || []) as TableSession[]), ...fromQuery];
+        })();
 
-    return Array.from(new Map(merged.map((session) => [session.id, session])).values());
+    // Déduplication par id ET filtrage strict par outlet
+    const deduped = Array.from(new Map(merged.map((s) => [s.id, s])).values());
+    if (scopedOutletId) {
+      return deduped.filter((s) => s.outlet_id === scopedOutletId);
+    }
+    return deduped;
   }, [queryClient, sessionsQueryKey, resolvedUserId, scopedOutletId]);
 
   const updateLocalCache = useCallback(async (updatedSession: Partial<TableSession> & { id: string }) => {
