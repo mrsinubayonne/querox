@@ -79,7 +79,15 @@ async function getCachedWithFallback<T>(
   return scoped ?? unscoped;
 }
 
-function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string): T[] {
+// Tables soumises à un scoping outlet strict — aucune fuite tolérée
+const STRICT_OUTLET_TABLES: ReadonlySet<string> = new Set([
+  'table_sessions',
+  'orders',
+  'invoices',
+  'transactions',
+]);
+
+function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string, table?: string): T[] {
   if (!outletId) return data;
   if (!Array.isArray(data) || data.length === 0) return data;
 
@@ -87,19 +95,21 @@ function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string): T[] {
   if (typeof first !== 'object' || first === null) return data;
   if (!('outlet_id' in (first as Record<string, unknown>))) return data;
 
+  const isStrict = table ? STRICT_OUTLET_TABLES.has(table) : false;
+
   return data.filter((item) => {
     if (typeof item !== 'object' || item === null) return true;
     const itemOutletId = (item as Record<string, unknown>).outlet_id;
 
-    // STRICT: only keep records that match the current outlet.
-    // Records with null outlet_id are kept only for tables that don't
-    // always have an outlet (e.g. legacy data). For table_sessions this
-    // prevents cross-outlet leaks.
+    // STRICT: pour table_sessions/orders/invoices/transactions, REJETER tout
+    // ce qui n'est pas exactement le bon outlet, y compris les null.
+    if (isStrict) {
+      return itemOutletId === outletId;
+    }
+
     if (itemOutletId === null || typeof itemOutletId === 'undefined') {
-      // Check if this looks like a table that should always be outlet-scoped
       const tableLike = (item as Record<string, unknown>);
       if ('table_number' in tableLike || 'session_id' in tableLike) {
-        // table_sessions/orders with null outlet_id should NOT leak into scoped views
         return false;
       }
       return true;
