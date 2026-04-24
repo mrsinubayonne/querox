@@ -163,13 +163,13 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children, feature
 
   if (isActive) return <>{children}</>;
 
-  // Trust cache while loading (unless expired)
+  // Trust cache while loading (unless expired) — never block the UI when cache is valid
   if ((hasValidCache.current || hasCachedData) && !isExpired) return <>{children}</>;
 
   // Expired → paywall immediately
   if (isExpired) { /* fall through to paywall */ }
 
-  // Grace period spinner (no retry loop)
+  // Short grace period spinner (max 2s) — only when no cache at all
   if (!isExpired && (!gracePeriodExpired || loading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
