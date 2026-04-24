@@ -77,6 +77,15 @@ const SubscriptionActions: React.FC<SubscriptionActionsProps> = ({
             <Button
               size="sm"
               variant="outline"
+              onClick={() => onExtendSubscription(subscription.id, 1)}
+              className="flex-1"
+            >
+              <Calendar className="w-3 h-3 mr-1" />
+              +1j
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => onExtendSubscription(subscription.id, 7)}
               className="flex-1"
             >
