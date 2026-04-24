@@ -218,8 +218,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const loadOfflineAuth = async () => {
       try {
-        if (!navigator.onLine) {
-          await restoreCachedAuth('startup-offline');
+        const hasForcedOfflineMode = typeof window !== 'undefined' && localStorage.getItem(FORCE_OFFLINE_MODE_KEY) === '1';
+
+        if (!navigator.onLine || hasForcedOfflineMode) {
+          await restoreCachedAuth(hasForcedOfflineMode ? 'startup-forced-offline' : 'startup-offline');
+        } else {
+          const restored = await restoreCachedAuth('startup-cache-check');
+          if (restored) {
+            console.log('📦 Session locale détectée au démarrage, accès hors ligne conservé');
+          }
         }
       } finally {
         offlineAuthCheckDoneRef.current = true;
