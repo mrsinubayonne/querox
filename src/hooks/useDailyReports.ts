@@ -45,6 +45,19 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
     );
   };
 
+  // Dedup invoices by invoice_number (server-truth) to avoid double-counting
+  // when the same invoice appears with both a local UUID and a server UUID
+  const dedupeInvoices = <T extends { id?: string; invoice_number?: string; outlet_id?: string }>(list: T[]): T[] => {
+    const map = new Map<string, T>();
+    for (const inv of list) {
+      const key = inv.invoice_number
+        ? `num:${inv.invoice_number}:${inv.outlet_id || ''}`
+        : `id:${inv.id || Math.random()}`;
+      if (!map.has(key)) map.set(key, inv);
+    }
+    return Array.from(map.values());
+  };
+
   useEffect(() => {
     if (user && dateRange?.from && dateRange?.to) {
       fetchReports();
