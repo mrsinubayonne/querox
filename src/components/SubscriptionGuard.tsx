@@ -105,10 +105,10 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children, feature
   const isTeamMember = getTeamMemberFromStorage();
   const hasValidCache = useRef(hasAnyValidCachedSubscription());
 
-  // Single grace period – NO retry loop, NO refetch on mount
+  // Short grace period – avoid blocking the user; trust cache quickly
   const [gracePeriodExpired, setGracePeriodExpired] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setGracePeriodExpired(true), 10000);
+    const t = setTimeout(() => setGracePeriodExpired(true), 2000);
     return () => clearTimeout(t);
   }, []);
 
