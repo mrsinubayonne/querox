@@ -279,7 +279,16 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
 
     const channel = supabase
       .channel(channelName)
-      .on('postgres_changes', { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` }, (payload: any) => {
+        // Si la table est outlet-scopée et qu'un outlet est sélectionné,
+        // ignorer les changements concernant un AUTRE PDV (évite les fuites
+        // realtime entre points de vente du même propriétaire).
+        if (outletId && STRICT_OUTLET_TABLES.has(table)) {
+          const newOutletId = payload?.new?.outlet_id;
+          const oldOutletId = payload?.old?.outlet_id;
+          const matches = newOutletId === outletId || oldOutletId === outletId;
+          if (!matches) return;
+        }
         queryClient.invalidateQueries({ queryKey: queryKey.concat([userId, outletId]) });
       })
       .subscribe();
