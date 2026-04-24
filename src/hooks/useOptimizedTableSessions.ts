@@ -38,24 +38,63 @@ function generateOfflineInvoiceNumber(): string {
 }
 
 // Module-level set to track session IDs that have been paid locally.
-// After payment, the session is REMOVED from cache; this set prevents
-// any realtime/refetch from re-adding it for a grace period.
+// PERSISTÉ dans localStorage pour survivre aux redémarrages de PC et fenêtres
+// offline longues (clé: querox_paid_session_ids_v1).
+const PAID_SESSIONS_STORAGE_KEY = 'querox_paid_session_ids_v1';
+const PAID_RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
+
 const localPaidSessionIds = new Set<string>();
 const localPaidTimestamps = new Map<string, number>();
+
+function loadPaidSessionsFromStorage() {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem(PAID_SESSIONS_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as Record<string, number>;
+    const now = Date.now();
+    for (const [id, ts] of Object.entries(parsed)) {
+      if (now - ts < PAID_RETENTION_MS) {
+        localPaidSessionIds.add(id);
+        localPaidTimestamps.set(id, ts);
+      }
+    }
+  } catch (e) {
+    console.warn('[paid-sessions] Échec lecture localStorage:', e);
+  }
+}
+
+function persistPaidSessionsToStorage() {
+  if (typeof window === 'undefined') return;
+  try {
+    const obj: Record<string, number> = {};
+    for (const [id, ts] of localPaidTimestamps.entries()) obj[id] = ts;
+    localStorage.setItem(PAID_SESSIONS_STORAGE_KEY, JSON.stringify(obj));
+  } catch (e) {
+    console.warn('[paid-sessions] Échec écriture localStorage:', e);
+  }
+}
+
+// Initialiser au chargement du module
+loadPaidSessionsFromStorage();
 
 function markSessionPaidLocally(sessionId: string) {
   localPaidSessionIds.add(sessionId);
   localPaidTimestamps.set(sessionId, Date.now());
+  persistPaidSessionsToStorage();
 }
 
 function cleanOldPaidMarkers() {
   const now = Date.now();
+  let mutated = false;
   for (const [id, ts] of localPaidTimestamps.entries()) {
-    if (now - ts > 300_000) {
+    if (now - ts > PAID_RETENTION_MS) {
       localPaidSessionIds.delete(id);
       localPaidTimestamps.delete(id);
+      mutated = true;
     }
   }
+  if (mutated) persistPaidSessionsToStorage();
 }
 
 export const useOptimizedTableSessions = () => {
