@@ -205,7 +205,7 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
 
     // Always try to get cached data first (with fallback to non outlet-scoped cache)
     const cached = await getCachedWithFallback<TData[]>(table, userId, outletId);
-    const cachedList = filterArrayByOutletIfPossible((cached?.data || []) as TData[], outletId);
+    const cachedList = filterArrayByOutletIfPossible((cached?.data || []) as TData[], outletId, table);
     
     if (isOffline) {
       // Return cached data in offline mode
