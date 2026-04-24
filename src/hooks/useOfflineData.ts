@@ -44,6 +44,13 @@ async function getCachedWithFallback<T>(
   if (!userId) return undefined;
 
   const scoped = await getData<T>(table, userId, outletId);
+
+  // Pour les tables outlet-scopées strictes, NE JAMAIS fusionner avec le cache
+  // unscoped : cela injecterait des sessions/factures d'autres PDV.
+  if (outletId && STRICT_OUTLET_TABLES_INIT.has(table)) {
+    return scoped;
+  }
+
   const unscoped = outletId ? await getData<T>(table, userId) : undefined;
 
   const scopedData = scoped?.data as unknown;
@@ -78,6 +85,14 @@ async function getCachedWithFallback<T>(
   if (unscopedData !== undefined && unscopedData !== null) return unscoped;
   return scoped ?? unscoped;
 }
+
+// Référencée par getCachedWithFallback avant que STRICT_OUTLET_TABLES soit déclaré
+const STRICT_OUTLET_TABLES_INIT: ReadonlySet<string> = new Set([
+  'table_sessions',
+  'orders',
+  'invoices',
+  'transactions',
+]);
 
 // Tables soumises à un scoping outlet strict — aucune fuite tolérée
 const STRICT_OUTLET_TABLES: ReadonlySet<string> = new Set([
