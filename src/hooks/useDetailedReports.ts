@@ -34,15 +34,17 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
   const [transactions, setTransactions] = useState<DetailedTransaction[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const shouldUseOfflineCache = isOffline || (typeof window !== 'undefined' && localStorage.getItem('querox_force_offline_mode') === '1');
+
   useEffect(() => {
     if (user && periodId) {
       fetchTransactions();
     }
-  }, [user, outletId, periodId, isOffline]);
+  }, [user, outletId, periodId, shouldUseOfflineCache]);
 
   // Real-time updates (online only)
   useEffect(() => {
-    if (!user || !periodId || isOffline) return;
+    if (!user || !periodId || shouldUseOfflineCache) return;
 
     const ordersChannel = supabase
       .channel('orders-changes')
@@ -58,7 +60,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(invoicesChannel);
     };
-  }, [user, periodId, isOffline]);
+  }, [user, periodId, shouldUseOfflineCache]);
 
   const fetchTransactions = async () => {
     if (!user || !periodId) return;
@@ -68,7 +70,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
       const allTransactions: DetailedTransaction[] = [];
       const outletNameById = new Map<string, string>();
 
-      if (isOffline) {
+      if (shouldUseOfflineCache) {
         // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
         let cachedPeriods = await getData<any[]>('business_periods', user.id);
         const periods = (cachedPeriods?.data as any[]) || [];
