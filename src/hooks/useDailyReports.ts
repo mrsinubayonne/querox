@@ -37,6 +37,8 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const shouldUseOfflineCache = isOffline || (typeof window !== 'undefined' && localStorage.getItem('querox_force_offline_mode') === '1');
+
   const dedupeById = <T extends { id?: string }>(list: T[]): T[] => {
     return Array.from(
       new Map(list.map((item, index) => [item.id || `idx-${index}`, item])).values()
@@ -47,7 +49,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
     if (user && dateRange?.from && dateRange?.to) {
       fetchReports();
     }
-  }, [user, outletId, dateRange, reportType, timeRange, isOffline]);
+  }, [user, outletId, dateRange, reportType, timeRange, shouldUseOfflineCache]);
 
   const fetchReports = async () => {
     if (!user || !dateRange?.from || !dateRange?.to) return;
@@ -71,7 +73,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
       let invoices: any[] = [];
       const outletNameById = new Map<string, string>();
 
-      if (isOffline) {
+      if (shouldUseOfflineCache) {
         // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
         // Try with outletId first, then without (fallback)
         const selectedOutlet = outletId || localStorage.getItem('selectedOutletId') || undefined;
