@@ -12,7 +12,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiresSubscription = false,
 }) => {
-  const { user, loading: authLoading, isTeamMember, teamMemberSession } = useAuth();
+  const { user, loading: authLoading, isTeamMember, teamMemberSession, isOfflineMode } = useAuth();
   const { selectedOutletId, loading: outletsLoading } = useOutlets();
   const location = useLocation();
 
@@ -38,7 +38,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <>{children}</>;
   }
 
-  if (!user) {
+  const hasForcedOfflineMode = typeof window !== 'undefined' && localStorage.getItem('querox_force_offline_mode') === '1';
+  const hasOfflineAccess = !!user || isOfflineMode || hasForcedOfflineMode;
+
+  if (!hasOfflineAccess) {
     return <Navigate to="/auth" replace />;
   }
 
