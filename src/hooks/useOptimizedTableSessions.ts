@@ -540,6 +540,18 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       const isDebtorSession = session ? session.debtor_id !== null : false;
 
       if (isOffline) {
+        // ANTI-REJEU: supprimer toute mutation antérieure en attente sur cette session
+        // qui voudrait remettre status='closed' ou 'active' (sinon le sync rejoue
+        // ces états après le 'paid' et la table revient occupée/en attente).
+        await removePendingMutationsByFilter((m) => {
+          if (m.table !== 'table_sessions') return false;
+          if (m.operation !== 'update') return false;
+          const data = m.data as Record<string, unknown>;
+          if (data?.id !== sessionId) return false;
+          const status = data?.status as string | undefined;
+          return status === 'closed' || status === 'active';
+        });
+
         await queueMutation({
           table: 'table_sessions',
           operation: 'update',
