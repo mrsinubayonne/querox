@@ -90,11 +90,22 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         const cachedOutlets = await getData<any[]>('outlets', user.id);
         ((cachedOutlets?.data as any[]) || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
-        // Factures payées dans la période - try outlet-scoped cache first
+        // Factures payées dans la période — UN SEUL cache (pas de fusion)
         const selectedOutlet = scopedOutletId || localStorage.getItem('selectedOutletId') || undefined;
-        let cachedInvoices = await getData<any[]>('invoices', user.id, selectedOutlet);
-        if (!cachedInvoices?.data) cachedInvoices = await getData<any[]>('invoices', user.id);
-        const invoices = ((cachedInvoices?.data as any[]) || []).filter((inv: any) => {
+        const cachedInvoices = selectedOutlet
+          ? await getData<any[]>('invoices', user.id, selectedOutlet)
+          : await getData<any[]>('invoices', user.id);
+
+        // Dédup par invoice_number+outlet pour éviter doublons local/serveur
+        const rawInvoices = ((cachedInvoices?.data as any[]) || []);
+        const dedupedMap = new Map<string, any>();
+        for (const inv of rawInvoices) {
+          const key = inv.invoice_number
+            ? `num:${inv.invoice_number}:${inv.outlet_id || ''}`
+            : `id:${inv.id}`;
+          if (!dedupedMap.has(key)) dedupedMap.set(key, inv);
+        }
+        const invoices = Array.from(dedupedMap.values()).filter((inv: any) => {
           if (inv.status !== 'paid') return false;
           if (!inv.created_at) return false;
           if (inv.created_at < startISO || inv.created_at > endISO) return false;
