@@ -115,6 +115,14 @@ window.addEventListener('online', () => {
   });
 });
 
+// Ask the browser to persist IndexedDB/cache storage on disk when possible.
+// This reduces the risk of offline reports being evicted after shutdown/restart.
+if (typeof navigator !== 'undefined' && 'storage' in navigator && typeof navigator.storage.persist === 'function') {
+  void navigator.storage.persist().catch((error) => {
+    console.warn('[Offline] Persistent storage request failed:', error);
+  });
+}
+
 // PWA hardening: avoid white screens after update / stale cache
 const reloadOnce = (reason: string) => {
   try {

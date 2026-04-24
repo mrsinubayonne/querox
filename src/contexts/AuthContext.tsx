@@ -58,6 +58,8 @@ const getInitialTeamMemberState = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const initialState = getInitialTeamMemberState();
+  const OFFLINE_AUTH_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+  const FORCE_OFFLINE_MODE_KEY = 'querox_force_offline_mode';
   
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -71,6 +73,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const offlineAuthCheckDoneRef = useRef(false);
   const explicitSignOutRef = useRef(false);
   const preloadTriggeredRef = useRef(false);
+
+  const setForcedOfflineMode = (enabled: boolean) => {
+    try {
+      if (enabled) {
+        localStorage.setItem(FORCE_OFFLINE_MODE_KEY, '1');
+      } else {
+        localStorage.removeItem(FORCE_OFFLINE_MODE_KEY);
+      }
+      window.dispatchEvent(new CustomEvent('querox-force-offline-mode-changed'));
+    } catch (error) {
+      console.warn('⚠️ Impossible de mettre à jour le mode hors ligne forcé:', error);
+    }
+  };
+
+  const restoreCachedAuth = async (reason: string): Promise<boolean> => {
+    try {
+      const cachedAuth = await getAuthData();
+      const cachedAge = cachedAuth?.cachedAt ? Date.now() - cachedAuth.cachedAt : 0;
+      const isUsable = !!cachedAuth?.user && (!cachedAuth.cachedAt || cachedAge <= OFFLINE_AUTH_MAX_AGE);
+
+      if (!isUsable) {
+        if (cachedAuth?.cachedAt && cachedAge > OFFLINE_AUTH_MAX_AGE) {
+          console.warn(`⚠️ Cache auth ignoré (${reason}) : trop ancien`);
+        }
+        return false;
+      }
+
+      console.log(`📱 Restauration de la session locale (${reason})`);
+      setUser(cachedAuth.user as unknown as User);
+      setSession(null);
+      setIsOfflineMode(true);
+      setForcedOfflineMode(true);
+      setLoading(false);
+      offlineAuthLoadedRef.current = true;
+      return true;
+    } catch (error) {
+      console.warn(`⚠️ Impossible de restaurer la session locale (${reason}):`, error);
+      return false;
+    }
+  };
 
   const persistAuthCache = (nextSession: Session) => {
     void storeAuthData({
@@ -175,17 +217,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Load cached auth data for offline mode
   useEffect(() => {
     const loadOfflineAuth = async () => {
-      if (!navigator.onLine) {
-        try {
-          const cachedAuth = await getAuthData();
-          if (cachedAuth && cachedAuth.user) {
-            console.log('📱 Loading cached auth for offline mode');
-            setUser(cachedAuth.user as unknown as User);
-            setIsOfflineMode(true);
-            offlineAuthLoadedRef.current = true;
-          }
-        } finally {
-          offlineAuthCheckDoneRef.current = true;
+      try {
+        if (!navigator.onLine) {
+          await restoreCachedAuth('startup-offline');
+        }
+      } finally {
+        offlineAuthCheckDoneRef.current = true;
+        if (!navigator.onLine || offlineAuthLoadedRef.current) {
           setLoading(false);
         }
       }
@@ -253,6 +291,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user) {
           setSession(session);
           setUser(session.user);
+          setForcedOfflineMode(false);
         } else if (event === 'SIGNED_OUT' && explicitSignOutRef.current) {
           setSession(null);
           setUser(null);
@@ -270,6 +309,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Store auth data for offline use when user signs in
         if (event === 'SIGNED_IN' && session?.user) {
           persistAuthCache(session);
+          setForcedOfflineMode(false);
 
           // Preload critical data for offline use
           triggerPreloadOnce(session.user.id);
@@ -281,6 +321,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Update stored auth data
           if (session) {
             persistAuthCache(session);
+            setForcedOfflineMode(false);
 
             // Ensure we preload at least once even if user never hits SIGNED_IN in this tab
             triggerPreloadOnce(session.user.id);
@@ -297,6 +338,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setIsTeamMember(false);
             setTeamMemberSession(null);
             setIsOfflineMode(false);
+            setForcedOfflineMode(false);
 
             // Reset refs
             offlineAuthLoadedRef.current = false;
@@ -306,31 +348,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
 
           // Unexpected SIGNED_OUT: try to keep user in offline mode using cached auth
-          void getAuthData().then((cachedAuth) => {
-            if (cachedAuth?.user) {
-              console.warn('⚠️ SIGNED_OUT non manuel détecté: restauration session locale offline');
-              setUser(cachedAuth.user as unknown as User);
-              setSession(null);
-              setIsOfflineMode(true);
-              setLoading(false);
-              offlineAuthLoadedRef.current = true;
-              return;
-            }
+          void restoreCachedAuth('unexpected-signed-out').then((restored) => {
+            if (restored) return;
 
             // No cache available → fallback to logged-out state
             setUser(null);
             setSession(null);
             setIsOfflineMode(false);
+            setForcedOfflineMode(false);
             setIsTeamMember(false);
             setTeamMemberSession(null);
           });
+        }
+
+        if (event === 'INITIAL_SESSION' && !session && !explicitSignOutRef.current) {
+          void restoreCachedAuth('initial-session-null');
         }
       }
     );
 
     // Check for existing Supabase session only if not a team member
     if (!hasTeamSession && navigator.onLine) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
         // If offline auth is already restored, don't wipe it out with a null session.
         if (!navigator.onLine && offlineAuthLoadedRef.current && !session) {
           setIsOfflineMode(true);
@@ -344,11 +383,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Store for offline if we have a session
         if (session?.user) {
+          setForcedOfflineMode(false);
           persistAuthCache(session);
 
           // IMPORTANT: when the user is already signed in, SIGNED_IN might not fire.
           // We still need to preload critical tables at least once while online.
           triggerPreloadOnce(session.user.id);
+        } else if (!explicitSignOutRef.current) {
+          const restored = await restoreCachedAuth('get-session-null');
+          if (!restored) {
+            setForcedOfflineMode(false);
+          }
         }
       });
     }
@@ -390,6 +435,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     explicitSignOutRef.current = true;
     // Clear all localStorage data before signing out
     localStorage.clear();
+    setForcedOfflineMode(false);
     await clearAuthData();
     setIsTeamMember(false);
     setTeamMemberSession(null);
