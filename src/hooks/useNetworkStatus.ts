@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 
 type NetworkStatus = 'online' | 'offline' | 'unstable';
 
+const FORCE_OFFLINE_MODE_KEY = 'querox_force_offline_mode';
+
+const isForcedOfflineModeEnabled = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(FORCE_OFFLINE_MODE_KEY) === '1';
+};
+
 interface UseNetworkStatusReturn {
   status: NetworkStatus;
   isOnline: boolean;
@@ -35,14 +42,19 @@ export const markRequestSuccess = () => {
 
 export const useNetworkStatus = (): UseNetworkStatusReturn => {
   const [status, setStatus] = useState<NetworkStatus>(() => {
+    if (isForcedOfflineModeEnabled()) {
+      return 'offline';
+    }
+
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       return 'offline';
     }
+
     return 'online';
   });
 
   const updateStatus = useCallback(() => {
-    if (!navigator.onLine) {
+    if (isForcedOfflineModeEnabled() || !navigator.onLine) {
       setStatus('offline');
     } else if (failedRequestCount >= UNSTABLE_THRESHOLD) {
       setStatus('unstable');
@@ -58,6 +70,11 @@ export const useNetworkStatus = (): UseNetworkStatusReturn => {
 
   useEffect(() => {
     const handleOnline = () => {
+      if (isForcedOfflineModeEnabled()) {
+        setStatus('offline');
+        return;
+      }
+
       failedRequestCount = 0;
       setStatus('online');
     };
@@ -74,16 +91,22 @@ export const useNetworkStatus = (): UseNetworkStatusReturn => {
       updateStatus();
     };
 
+    const handleForcedOfflineModeChange = () => {
+      updateStatus();
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('network-request-failed', handleRequestFailed);
     window.addEventListener('network-request-success', handleRequestSuccess);
+    window.addEventListener('querox-force-offline-mode-changed', handleForcedOfflineModeChange);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('network-request-failed', handleRequestFailed);
       window.removeEventListener('network-request-success', handleRequestSuccess);
+      window.removeEventListener('querox-force-offline-mode-changed', handleForcedOfflineModeChange);
     };
   }, [updateStatus]);
 
