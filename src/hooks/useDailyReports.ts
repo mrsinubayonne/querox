@@ -167,7 +167,6 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         orders = dedupeById(ordersData || []);
         invoices = dedupeInvoices(invoicesData || []);
       }
-      }
 
       // Build reports map
       const reportsMap = new Map<string, DailyReport>();
