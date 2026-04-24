@@ -1,8 +1,11 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOfflineData } from '@/hooks/useOfflineData';
+import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from '@/hooks/useOfflineMutation';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 interface Customer {
   id: string;
@@ -18,61 +21,44 @@ interface Customer {
 }
 
 export const useCustomers = () => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isOffline } = useNetworkStatus();
+  const outletId = localStorage.getItem('selectedOutletId') || undefined;
 
-  const fetchCustomers = useCallback(async () => {
-    if (!user) {
-      setCustomers([]);
-      setLoading(false);
-      return;
-    }
+  const { data: customers, isLoading: loading, refetch: fetchCustomers } = useOfflineData<Customer>({
+    table: 'customers',
+    queryKey: ['customers'],
+    enabled: !!user,
+    buildQuery: async (userId, selectedOutletId) => {
+      if (!selectedOutletId) return { data: [], error: null };
 
-    try {
-      setLoading(true);
-      
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      const outletId = profile?.selected_outlet_id;
-      if (!outletId) {
-        setCustomers([]);
-        setLoading(false);
-        return;
-      }
-      
       const { data, error } = await supabase
         .from('customers')
-        .select('id, name, email, phone, total_visits, total_spent, last_visit, status, created_at, updated_at, user_id')
-        .eq('user_id', user.id)
-        .eq('outlet_id', outletId)
+        .select('id, name, email, phone, total_visits, total_spent, last_visit, status, created_at, updated_at, user_id, outlet_id')
+        .eq('user_id', userId)
+        .eq('outlet_id', selectedOutletId)
         .order('name')
-        .limit(200);
+        .limit(10000);
 
-      if (error) {
-        console.error('Error fetching customers:', error);
-        throw error;
-      }
+      return { data: (data || []) as Customer[], error };
+    },
+  });
 
-      setCustomers(data || []);
-    } catch (error: any) {
-      console.error('Customers fetch error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les clients",
-        variant: "destructive"
-      });
-      setCustomers([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, toast]);
+  const insertMutation = useOfflineInsert({
+    table: 'customers',
+    queryKey: ['customers', user?.id, outletId],
+  });
+
+  const updateMutation = useOfflineUpdate({
+    table: 'customers',
+    queryKey: ['customers', user?.id, outletId],
+  });
+
+  const deleteMutation = useOfflineDelete({
+    table: 'customers',
+    queryKey: ['customers', user?.id, outletId],
+  });
 
   const createCustomer = useCallback(async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
@@ -85,14 +71,6 @@ export const useCustomers = () => {
     }
 
     try {
-      // Get selected outlet
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_outlet_id')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      const outletId = profile?.selected_outlet_id;
       if (!outletId) {
         toast({
           title: "Erreur",
@@ -101,28 +79,18 @@ export const useCustomers = () => {
         });
         return false;
       }
-      
-      const { data, error } = await supabase
-        .from('customers')
-        .insert({ 
+
+      const data = await insertMutation.mutateAsync({
           ...customerData, 
           user_id: user.id,
           outlet_id: outletId,
           total_visits: customerData.total_visits || 0,
           total_spent: customerData.total_spent || 0
-        })
-        .select()
-        .single();
+        } as unknown as Record<string, unknown>) as unknown as Customer;
 
-      if (error) {
-        console.error('Error creating customer:', error);
-        throw error;
-      }
-
-      setCustomers(prev => [...prev, data]);
       toast({
         title: "Succès",
-        description: "Client créé avec succès"
+        description: isOffline ? "Client enregistré localement" : "Client créé avec succès"
       });
 
       return data;
@@ -135,22 +103,13 @@ export const useCustomers = () => {
       });
       return false;
     }
-  }, [user, toast]);
+  }, [user, toast, outletId, insertMutation, isOffline]);
 
   const updateCustomer = useCallback(async (id: string, updates: Partial<Customer>) => {
     if (!user) return false;
 
     try {
-      const { data, error } = await supabase
-        .from('customers')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setCustomers(prev => prev.map(customer => customer.id === id ? data : customer));
+      const data = await updateMutation.mutateAsync({ id, ...updates } as unknown as Record<string, unknown> & { id: string }) as unknown as Customer;
       return data;
     } catch (error: any) {
       console.error('Update error:', error);
@@ -161,23 +120,16 @@ export const useCustomers = () => {
       });
       return false;
     }
-  }, [user, toast]);
+  }, [user, toast, updateMutation]);
 
   const deleteCustomer = useCallback(async (id: string) => {
     if (!user) return false;
 
     try {
-      const { error } = await supabase
-        .from('customers')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setCustomers(prev => prev.filter(customer => customer.id !== id));
+      await deleteMutation.mutateAsync(id);
       toast({
         title: "Succès",
-        description: "Client supprimé avec succès"
+        description: isOffline ? "Client supprimé localement" : "Client supprimé avec succès"
       });
       return true;
     } catch (error: any) {
@@ -189,11 +141,7 @@ export const useCustomers = () => {
       });
       return false;
     }
-  }, [user, toast]);
-
-  useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+  }, [user, toast, deleteMutation, isOffline]);
 
   return {
     customers,
