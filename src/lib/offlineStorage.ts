@@ -164,6 +164,26 @@ export async function clearAllMutations(): Promise<void> {
   await clear(mutationStore);
 }
 
+/**
+ * Supprime de la file d'attente toutes les mutations qui matchent un prédicat.
+ * Utilisé pour annuler des mutations devenues obsolètes (ex: un 'closed' devient
+ * caduc dès qu'on enfile un 'paid' sur la même session).
+ */
+export async function removePendingMutationsByFilter(
+  predicate: (m: QueuedMutation) => boolean
+): Promise<number> {
+  const all = await getAllMutations();
+  let removed = 0;
+  for (const mutation of all) {
+    if (mutation.synced || mutation.failed) continue;
+    if (predicate(mutation)) {
+      await del(mutation.id, mutationStore);
+      removed++;
+    }
+  }
+  return removed;
+}
+
 // ============= AUTH STORAGE =============
 
 export interface OfflineAuthData {

@@ -45,6 +45,19 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
     );
   };
 
+  // Dedup invoices by invoice_number (server-truth) to avoid double-counting
+  // when the same invoice appears with both a local UUID and a server UUID
+  const dedupeInvoices = <T extends { id?: string; invoice_number?: string; outlet_id?: string }>(list: T[]): T[] => {
+    const map = new Map<string, T>();
+    for (const inv of list) {
+      const key = inv.invoice_number
+        ? `num:${inv.invoice_number}:${inv.outlet_id || ''}`
+        : `id:${inv.id || Math.random()}`;
+      if (!map.has(key)) map.set(key, inv);
+    }
+    return Array.from(map.values());
+  };
+
   useEffect(() => {
     if (user && dateRange?.from && dateRange?.to) {
       fetchReports();
@@ -74,48 +87,43 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
       const outletNameById = new Map<string, string>();
 
       if (shouldUseOfflineCache) {
-        // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
-        // Try with outletId first, then without (fallback)
+        // --- MODE HORS-LIGNE : lecture d'UN SEUL cache (pas de fusion) ---
+        // Si outlet sélectionné: cache scopé uniquement. Sinon: cache global.
         const selectedOutlet = outletId || localStorage.getItem('selectedOutletId') || undefined;
-        const scopedOrders = await getData<any[]>('orders', user.id, selectedOutlet);
-        const unscopedOrders = await getData<any[]>('orders', user.id);
-        const scopedInvoices = await getData<any[]>('invoices', user.id, selectedOutlet);
-        const unscopedInvoices = await getData<any[]>('invoices', user.id);
+        const cachedOrders = selectedOutlet
+          ? await getData<any[]>('orders', user.id, selectedOutlet)
+          : await getData<any[]>('orders', user.id);
+        const cachedInvoices = selectedOutlet
+          ? await getData<any[]>('invoices', user.id, selectedOutlet)
+          : await getData<any[]>('invoices', user.id);
         const cachedOutlets = await getData<any[]>('outlets', user.id);
 
         // Outlets map
         ((cachedOutlets?.data as any[]) || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
-        const mergedOrders = dedupeById([
-          ...(((scopedOrders?.data as any[]) || [])),
-          ...(((unscopedOrders?.data as any[]) || [])),
-        ]);
+        const rawOrders = ((cachedOrders?.data as any[]) || []);
+        const rawInvoices = ((cachedInvoices?.data as any[]) || []);
 
-        const mergedInvoices = dedupeById([
-          ...(((scopedInvoices?.data as any[]) || [])),
-          ...(((unscopedInvoices?.data as any[]) || [])),
-        ]);
-
-        // Filtrer par date et outlet
-        orders = mergedOrders.filter((o: any) => {
+        // Filtrer par date et outlet (filet de sécurité supplémentaire)
+        orders = dedupeById(rawOrders.filter((o: any) => {
           const d = o.created_at;
           if (!d) return false;
           if (d < startISO || d > endISO) return false;
           if (outletId && o.outlet_id !== outletId) return false;
           return true;
-        });
+        }));
 
-        invoices = mergedInvoices.filter((inv: any) => {
+        invoices = dedupeInvoices(rawInvoices.filter((inv: any) => {
           const d = inv.created_at;
           if (!d) return false;
           if (d < startISO || d > endISO) return false;
           if (outletId && inv.outlet_id !== outletId) return false;
           return true;
-        });
+        }));
 
         console.log('[Offline] Rapports depuis cache — commandes:', orders.length, '| factures:', invoices.length);
       } else {
-        // --- MODE EN LIGNE ---
+        // --- MODE EN LIGNE : serveur = source unique de vérité, AUCUNE fusion cache ---
         let scopedOutletId = outletId;
         if (!scopedOutletId) {
           const { data: profile } = await supabase
@@ -146,7 +154,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
 
         let invoicesQuery = supabase
           .from('invoices')
-          .select('id, total_amount, status, created_at, outlet_id')
+          .select('id, total_amount, status, created_at, outlet_id, invoice_number')
           .eq('user_id', user.id)
           .gte('created_at', startISO)
           .lte('created_at', endISO)
@@ -155,47 +163,9 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         const { data: invoicesData, error: invoicesError } = await invoicesQuery;
         if (invoicesError) throw invoicesError;
 
-        // Only merge with local cache if there are pending offline mutations
-        // to avoid doubling data when server already has everything
-        const pendingMutations = await import('@/lib/offlineStorage').then(m => m.getPendingMutations());
-        const hasPendingOrderMutations = pendingMutations.some(m => m.table === 'orders');
-        const hasPendingInvoiceMutations = pendingMutations.some(m => m.table === 'invoices');
-
-        if (hasPendingOrderMutations || hasPendingInvoiceMutations) {
-          const selectedOutlet = scopedOutletId || localStorage.getItem('selectedOutletId') || undefined;
-          const scopedOrders = await getData<any[]>('orders', user.id, selectedOutlet);
-          const unscopedOrders = await getData<any[]>('orders', user.id);
-          const scopedInvoices = await getData<any[]>('invoices', user.id, selectedOutlet);
-          const unscopedInvoices = await getData<any[]>('invoices', user.id);
-
-          const cachedOrders = dedupeById([
-            ...(((scopedOrders?.data as any[]) || [])),
-            ...(((unscopedOrders?.data as any[]) || [])),
-          ]).filter((o: any) => {
-            const d = o.created_at;
-            if (!d) return false;
-            if (d < startISO || d > endISO) return false;
-            if (scopedOutletId && o.outlet_id !== scopedOutletId) return false;
-            return true;
-          });
-
-          const cachedInvoices = dedupeById([
-            ...(((scopedInvoices?.data as any[]) || [])),
-            ...(((unscopedInvoices?.data as any[]) || [])),
-          ]).filter((inv: any) => {
-            const d = inv.created_at;
-            if (!d) return false;
-            if (d < startISO || d > endISO) return false;
-            if (scopedOutletId && inv.outlet_id !== scopedOutletId) return false;
-            return true;
-          });
-
-          orders = dedupeById([...(ordersData || []), ...cachedOrders]);
-          invoices = dedupeById([...(invoicesData || []), ...cachedInvoices]);
-        } else {
-          orders = ordersData || [];
-          invoices = invoicesData || [];
-        }
+        // Pas de fusion cache — déduplication par id et invoice_number en filet
+        orders = dedupeById(ordersData || []);
+        invoices = dedupeInvoices(invoicesData || []);
       }
 
       // Build reports map

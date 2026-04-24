@@ -44,6 +44,13 @@ async function getCachedWithFallback<T>(
   if (!userId) return undefined;
 
   const scoped = await getData<T>(table, userId, outletId);
+
+  // Pour les tables outlet-scopées strictes, NE JAMAIS fusionner avec le cache
+  // unscoped : cela injecterait des sessions/factures d'autres PDV.
+  if (outletId && STRICT_OUTLET_TABLES_INIT.has(table)) {
+    return scoped;
+  }
+
   const unscoped = outletId ? await getData<T>(table, userId) : undefined;
 
   const scopedData = scoped?.data as unknown;
@@ -79,7 +86,23 @@ async function getCachedWithFallback<T>(
   return scoped ?? unscoped;
 }
 
-function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string): T[] {
+// Référencée par getCachedWithFallback avant que STRICT_OUTLET_TABLES soit déclaré
+const STRICT_OUTLET_TABLES_INIT: ReadonlySet<string> = new Set([
+  'table_sessions',
+  'orders',
+  'invoices',
+  'transactions',
+]);
+
+// Tables soumises à un scoping outlet strict — aucune fuite tolérée
+const STRICT_OUTLET_TABLES: ReadonlySet<string> = new Set([
+  'table_sessions',
+  'orders',
+  'invoices',
+  'transactions',
+]);
+
+function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string, table?: string): T[] {
   if (!outletId) return data;
   if (!Array.isArray(data) || data.length === 0) return data;
 
@@ -87,19 +110,21 @@ function filterArrayByOutletIfPossible<T>(data: T[], outletId?: string): T[] {
   if (typeof first !== 'object' || first === null) return data;
   if (!('outlet_id' in (first as Record<string, unknown>))) return data;
 
+  const isStrict = table ? STRICT_OUTLET_TABLES.has(table) : false;
+
   return data.filter((item) => {
     if (typeof item !== 'object' || item === null) return true;
     const itemOutletId = (item as Record<string, unknown>).outlet_id;
 
-    // STRICT: only keep records that match the current outlet.
-    // Records with null outlet_id are kept only for tables that don't
-    // always have an outlet (e.g. legacy data). For table_sessions this
-    // prevents cross-outlet leaks.
+    // STRICT: pour table_sessions/orders/invoices/transactions, REJETER tout
+    // ce qui n'est pas exactement le bon outlet, y compris les null.
+    if (isStrict) {
+      return itemOutletId === outletId;
+    }
+
     if (itemOutletId === null || typeof itemOutletId === 'undefined') {
-      // Check if this looks like a table that should always be outlet-scoped
       const tableLike = (item as Record<string, unknown>);
       if ('table_number' in tableLike || 'session_id' in tableLike) {
-        // table_sessions/orders with null outlet_id should NOT leak into scoped views
         return false;
       }
       return true;
@@ -195,7 +220,7 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
 
     // Always try to get cached data first (with fallback to non outlet-scoped cache)
     const cached = await getCachedWithFallback<TData[]>(table, userId, outletId);
-    const cachedList = filterArrayByOutletIfPossible((cached?.data || []) as TData[], outletId);
+    const cachedList = filterArrayByOutletIfPossible((cached?.data || []) as TData[], outletId, table);
     
     if (isOffline) {
       // Return cached data in offline mode
@@ -228,7 +253,7 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
         : freshData;
       
       // Store for offline use — filter by outlet to prevent cross-outlet cache contamination
-      const dataToStore = filterArrayByOutletIfPossible(finalData as unknown as Record<string, unknown>[], outletId) as unknown as TData[];
+      const dataToStore = filterArrayByOutletIfPossible(finalData as unknown as Record<string, unknown>[], outletId, table) as unknown as TData[];
       await storeData(table, dataToStore, userId, outletId);
       console.log(`[Online] Cached ${table}:`, dataToStore.length, 'items', shouldProtectLocalState ? '(merge pending)' : '');
       return finalData;
@@ -269,7 +294,16 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
 
     const channel = supabase
       .channel(channelName)
-      .on('postgres_changes', { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` }, (payload: any) => {
+        // Si la table est outlet-scopée et qu'un outlet est sélectionné,
+        // ignorer les changements concernant un AUTRE PDV (évite les fuites
+        // realtime entre points de vente du même propriétaire).
+        if (outletId && STRICT_OUTLET_TABLES.has(table)) {
+          const newOutletId = payload?.new?.outlet_id;
+          const oldOutletId = payload?.old?.outlet_id;
+          const matches = newOutletId === outletId || oldOutletId === outletId;
+          if (!matches) return;
+        }
         queryClient.invalidateQueries({ queryKey: queryKey.concat([userId, outletId]) });
       })
       .subscribe();
