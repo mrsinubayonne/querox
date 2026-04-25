@@ -10,7 +10,7 @@ import PageWithSidebar from '@/components/PageWithSidebar';
 import EmptyState from '@/components/EmptyState';
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
 import CreateMenuModal from '@/components/CreateMenuModal';
-import { Menu, Eye, Trash2 } from 'lucide-react';
+import { Menu, Eye, Trash2, Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
