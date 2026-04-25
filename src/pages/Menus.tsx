@@ -10,7 +10,7 @@ import PageWithSidebar from '@/components/PageWithSidebar';
 import EmptyState from '@/components/EmptyState';
 import MenuItemManager from '@/components/menu-management/MenuItemManager';
 import CreateMenuModal from '@/components/CreateMenuModal';
-import { Menu, Eye, Trash2 } from 'lucide-react';
+import { Menu, Eye, Trash2, Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -217,6 +217,149 @@ const Menus: React.FC = () => {
     }
   };
 
+  const handleExportMenu = async () => {
+    if (!activeMenu || !user) return;
+    try {
+      const { data: menuRow } = await supabase
+        .from('menus')
+        .select('name, description, is_active, header_image_url, logo_url')
+        .eq('id', activeMenu.id)
+        .maybeSingle();
+
+      const { data: categories } = await supabase
+        .from('menu_categories')
+        .select('id, name, description, order_index')
+        .eq('menu_id', activeMenu.id)
+        .order('order_index');
+
+      const categoryIds = (categories || []).map(c => c.id);
+      let items: any[] = [];
+      if (categoryIds.length > 0) {
+        const { data: itemsData } = await supabase
+          .from('menu_items')
+          .select('category_id, name, description, price, image_url, is_available, order_index, allergens')
+          .in('category_id', categoryIds);
+        items = itemsData || [];
+      }
+
+      const exportPayload = {
+        format: 'querox-menu-v1',
+        exported_at: new Date().toISOString(),
+        menu: {
+          name: menuRow?.name || activeMenu.name,
+          description: menuRow?.description || null,
+          is_active: menuRow?.is_active ?? true,
+          header_image_url: menuRow?.header_image_url || null,
+          logo_url: menuRow?.logo_url || null,
+        },
+        categories: (categories || []).map(c => ({
+          name: c.name,
+          description: c.description,
+          order_index: c.order_index,
+          items: items
+            .filter(i => i.category_id === c.id)
+            .map(i => ({
+              name: i.name,
+              description: i.description,
+              price: i.price,
+              image_url: i.image_url,
+              is_available: i.is_available,
+              order_index: i.order_index,
+              allergens: i.allergens,
+            })),
+        })),
+      };
+
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = (menuRow?.name || activeMenu.name).replace(/[^a-z0-9-_]+/gi, '_');
+      a.download = `menu_${safeName}_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({ title: 'Export réussi', description: 'Le menu a été exporté en JSON' });
+    } catch (e) {
+      console.error('Export menu failed', e);
+      toast({ title: 'Erreur', description: "Impossible d'exporter le menu", variant: 'destructive' });
+    }
+  };
+
+  const handleImportMenu = () => {
+    if (!user) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    input.onchange = async (e: any) => {
+      const file = e.target?.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const payload = JSON.parse(text);
+        if (payload?.format !== 'querox-menu-v1' || !payload?.menu || !Array.isArray(payload?.categories)) {
+          toast({ title: 'Fichier invalide', description: 'Format de menu non reconnu (querox-menu-v1 attendu)', variant: 'destructive' });
+          return;
+        }
+
+        const resolvedOutletId = selectedOutletId || localStorage.getItem('selectedOutletId') || null;
+
+        const { data: createdMenu, error: menuErr } = await supabase
+          .from('menus')
+          .insert({
+            user_id: user.id,
+            outlet_id: resolvedOutletId,
+            name: `${payload.menu.name || 'Menu importé'} (importé)`,
+            description: payload.menu.description || null,
+            is_active: payload.menu.is_active ?? true,
+            header_image_url: payload.menu.header_image_url || null,
+            logo_url: payload.menu.logo_url || null,
+          })
+          .select()
+          .single();
+
+        if (menuErr || !createdMenu) throw menuErr || new Error('Création du menu échouée');
+
+        for (const cat of payload.categories) {
+          const { data: createdCat, error: catErr } = await supabase
+            .from('menu_categories')
+            .insert({
+              menu_id: createdMenu.id,
+              name: cat.name,
+              description: cat.description || null,
+              order_index: cat.order_index ?? 0,
+            })
+            .select()
+            .single();
+          if (catErr || !createdCat) continue;
+
+          if (Array.isArray(cat.items) && cat.items.length > 0) {
+            const itemsToInsert = cat.items.map((it: any) => ({
+              category_id: createdCat.id,
+              name: it.name,
+              description: it.description || null,
+              price: Number(it.price) || 0,
+              image_url: it.image_url || null,
+              is_available: it.is_available ?? true,
+              order_index: it.order_index ?? 0,
+              allergens: it.allergens || null,
+            }));
+            await supabase.from('menu_items').insert(itemsToInsert);
+          }
+        }
+
+        toast({ title: 'Import réussi', description: 'Le menu a été importé avec succès' });
+        fetchMenus();
+      } catch (err) {
+        console.error('Import menu failed', err);
+        toast({ title: 'Erreur', description: "Impossible d'importer le menu", variant: 'destructive' });
+      }
+    };
+    input.click();
+  };
+
   return (
     <PageWithSidebar>
       <div className="space-y-8">
@@ -227,7 +370,24 @@ const Menus: React.FC = () => {
             <p className="text-gray-600 mt-2">Gérez vos menus et vos plats</p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={handleImportMenu}
+              variant="outline"
+              disabled={isOffline}
+              title={isOffline ? "Indisponible hors-ligne" : "Importer un menu (.json)"}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Importer
+            </Button>
+            <Button
+              onClick={handleExportMenu}
+              variant="outline"
+              disabled={!activeMenu}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Exporter
+            </Button>
             <Button 
               onClick={handleViewPublicMenu}
               variant="outline" 
