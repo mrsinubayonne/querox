@@ -7,7 +7,9 @@ import { useRestaurant } from "@/contexts/RestaurantContext";
 import { useLocation } from "react-router-dom";
 
 export const ORDER_TYPE_OPTIONS = [
-  { value: "sur_place", label: "À manger sur place" }
+  { value: "sur_place", label: "Sur place (avec n° table)" },
+  { value: "emporter", label: "À emporter" },
+  { value: "livrer", label: "À livrer" },
 ];
 
 export const TABLE_NUMBERS = Array.from({ length: 120 }, (_, i) => (i + 1).toString().padStart(2, '0'));
@@ -43,8 +45,18 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       return;
     }
 
-    if (!tableNumber) {
+    if (orderType === "sur_place" && !tableNumber) {
       toast({ title: "Numéro de table requis", description: "Veuillez sélectionner un numéro de table.", variant: "destructive" });
+      return;
+    }
+
+    if (orderType === "livrer" && !deliveryAddress.trim()) {
+      toast({ title: "Adresse requise", description: "Veuillez indiquer une adresse de livraison.", variant: "destructive" });
+      return;
+    }
+
+    if ((orderType === "livrer" || orderType === "emporter") && !customerPhone.trim()) {
+      toast({ title: "Téléphone requis", description: "Veuillez fournir un numéro de téléphone pour vous joindre.", variant: "destructive" });
       return;
     }
 
@@ -129,17 +141,63 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
 
       if (error) throw error;
 
-      toast({
-        title: "Commande envoyée !",
-        description: "Votre commande a été transmise au restaurant.",
-      });
+      // Récupérer le numéro WhatsApp du point de vente
+      let whatsappNumber: string | null = sessionStorage.getItem(`whatsapp_${outletId}`);
+      let outletName: string | null = sessionStorage.getItem(`outletName_${outletId}`);
+      if (!whatsappNumber) {
+        try {
+          const { data: outletData } = await supabase
+            .from("outlets")
+            .select("whatsapp_number, name, phone")
+            .eq("id", outletId)
+            .maybeSingle();
+          if (outletData) {
+            whatsappNumber = (outletData as any).whatsapp_number || (outletData as any).phone || null;
+            outletName = (outletData as any).name || outletName;
+            if (whatsappNumber) sessionStorage.setItem(`whatsapp_${outletId}`, whatsappNumber);
+          }
+        } catch { /* ignore */ }
+      }
+
+      // Construire le message WhatsApp
+      const typeLabel = orderType === "sur_place" ? `Sur place — Table ${tableNumber}` : orderType === "emporter" ? "À emporter" : "À livrer";
+      const itemsText = cart.map(it => `• ${it.quantity}× ${it.name} — ${it.price * it.quantity} XAF`).join("\n");
+      const lines = [
+        `*Nouvelle commande${outletName ? ` — ${outletName}` : ""}*`,
+        ``,
+        `*Type :* ${typeLabel}`,
+        customerName ? `*Client :* ${customerName}` : null,
+        customerPhone ? `*Téléphone :* ${customerPhone}` : null,
+        orderType === "livrer" && deliveryAddress ? `*Adresse :* ${deliveryAddress}` : null,
+        ``,
+        `*Commande :*`,
+        itemsText,
+        ``,
+        `*Total : ${totalPrice} XAF*`,
+        notes ? `\n*Notes :* ${notes}` : null,
+      ].filter(Boolean).join("\n");
+
+      if (whatsappNumber) {
+        const cleanNumber = whatsappNumber.replace(/[^\d]/g, "");
+        const waUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(lines)}`;
+        window.open(waUrl, "_blank");
+        toast({
+          title: "Commande envoyée !",
+          description: "WhatsApp s'ouvre pour confirmer la commande au restaurant.",
+        });
+      } else {
+        toast({
+          title: "Commande envoyée !",
+          description: "Votre commande a été transmise au restaurant.",
+        });
+      }
 
       // Reset form
       setCustomerName("");
       setCustomerPhone("");
       setDeliveryAddress("");
       setNotes("");
-      setOrderType("");
+      setOrderType("sur_place");
       setTableNumber("");
       setNumberOfPeople("");
       onOpenChange(false);

@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useOutlets } from '@/hooks/useOutlets';
-import { Loader2, Store, Trash2, AlertTriangle } from 'lucide-react';
+import { useProfile } from '@/hooks/useProfile';
+import { Loader2, Store, Trash2, AlertTriangle, Link2, Copy, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -21,10 +22,11 @@ import {
 
 export const OutletSettingsTab: React.FC = () => {
   const { outlets, selectedOutletId, updateOutlet, deleteOutlet, loading } = useOutlets();
+  const { profile } = useProfile();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({ name: '', address: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', address: '', phone: '', whatsapp_number: '' });
   const [confirmName, setConfirmName] = useState('');
 
   const currentOutlet = outlets.find(o => o.id === selectedOutletId);
@@ -35,9 +37,26 @@ export const OutletSettingsTab: React.FC = () => {
         name: currentOutlet.name || '',
         address: currentOutlet.address || '',
         phone: currentOutlet.phone || '',
+        whatsapp_number: (currentOutlet as any).whatsapp_number || '',
       });
     }
   }, [currentOutlet]);
+
+  const restaurantSlug = (profile as any)?.restaurant_slug || '';
+  const outletSlug = (currentOutlet as any)?.slug || '';
+  const publicUrl = restaurantSlug && outletSlug
+    ? `https://querox.me/${restaurantSlug}/${outletSlug}`
+    : '';
+
+  const copyUrl = async () => {
+    if (!publicUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      toast({ title: 'Lien copié', description: publicUrl });
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de copier', variant: 'destructive' });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +68,8 @@ export const OutletSettingsTab: React.FC = () => {
         name: formData.name,
         address: formData.address,
         phone: formData.phone,
-      });
+        whatsapp_number: formData.whatsapp_number,
+      } as any);
       toast({ title: "Succès", description: "Point de vente mis à jour" });
     } catch {
       toast({ title: "Erreur", description: "Impossible de mettre à jour", variant: "destructive" });
@@ -127,8 +147,50 @@ export const OutletSettingsTab: React.FC = () => {
               <Label htmlFor="phone">Téléphone</Label>
               <Input id="phone" name="phone" value={formData.phone} onChange={handleChange} placeholder="+33 1 23 45 67 89" />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp_number" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-emerald-600" />
+                Numéro WhatsApp (pour réception des commandes du menu public)
+              </Label>
+              <Input
+                id="whatsapp_number"
+                name="whatsapp_number"
+                value={formData.whatsapp_number}
+                onChange={handleChange}
+                placeholder="+242 06 123 4567"
+              />
+              <p className="text-xs text-muted-foreground">
+                Format international avec indicatif. Les clients qui commandent via le menu public ouvriront WhatsApp avec leur commande pré-remplie vers ce numéro.
+              </p>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Lien public du menu */}
+        {publicUrl && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Link2 className="h-5 w-5 text-primary" />
+                <CardTitle>Lien public du menu</CardTitle>
+              </div>
+              <CardDescription>
+                Partagez ce lien ou imprimez-le en QR code pour que vos clients commandent en ligne
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <code className="flex-1 px-3 py-2 bg-muted rounded-md text-sm font-mono break-all">
+                  {publicUrl}
+                </code>
+                <Button type="button" variant="outline" onClick={copyUrl}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copier
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex justify-end">
           <Button type="submit" disabled={saving}>

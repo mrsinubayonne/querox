@@ -1079,8 +1079,10 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          slug: string | null
           updated_at: string
           user_id: string
+          whatsapp_number: string | null
         }
         Insert: {
           address?: string | null
@@ -1088,8 +1090,10 @@ export type Database = {
           id?: string
           name: string
           phone?: string | null
+          slug?: string | null
           updated_at?: string
           user_id: string
+          whatsapp_number?: string | null
         }
         Update: {
           address?: string | null
@@ -1097,8 +1101,10 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          slug?: string | null
           updated_at?: string
           user_id?: string
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -1211,6 +1217,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          restaurant_slug: string | null
           selected_outlet_id: string | null
           updated_at: string
         }
@@ -1220,6 +1227,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          restaurant_slug?: string | null
           selected_outlet_id?: string | null
           updated_at?: string
         }
@@ -1229,6 +1237,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          restaurant_slug?: string | null
           selected_outlet_id?: string | null
           updated_at?: string
         }
@@ -2743,6 +2752,18 @@ export type Database = {
         Args: { new_password: string; user_email: string }
         Returns: Json
       }
+      resolve_public_menu: {
+        Args: { _outlet_slug: string; _restaurant_slug: string }
+        Returns: {
+          menu_id: string
+          outlet_id: string
+          outlet_name: string
+          restaurant_name: string
+          user_id: string
+          whatsapp_number: string
+        }[]
+      }
+      slugify: { Args: { _input: string }; Returns: string }
       team_member_login: {
         Args: { _access_code: string; _email: string }
         Returns: {
@@ -2757,6 +2778,7 @@ export type Database = {
         Args: { _button_category?: string; _button_name: string }
         Returns: undefined
       }
+      unaccent_string: { Args: { _input: string }; Returns: string }
       update_user_access_codes: {
         Args: { _accounting_code: string; _management_code: string }
         Returns: boolean
