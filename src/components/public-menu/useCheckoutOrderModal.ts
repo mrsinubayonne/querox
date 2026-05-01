@@ -7,7 +7,9 @@ import { useRestaurant } from "@/contexts/RestaurantContext";
 import { useLocation } from "react-router-dom";
 
 export const ORDER_TYPE_OPTIONS = [
-  { value: "sur_place", label: "À manger sur place" }
+  { value: "sur_place", label: "Sur place (avec n° table)" },
+  { value: "emporter", label: "À emporter" },
+  { value: "livrer", label: "À livrer" },
 ];
 
 export const TABLE_NUMBERS = Array.from({ length: 120 }, (_, i) => (i + 1).toString().padStart(2, '0'));
