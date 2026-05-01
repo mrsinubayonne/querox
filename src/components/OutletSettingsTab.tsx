@@ -37,9 +37,26 @@ export const OutletSettingsTab: React.FC = () => {
         name: currentOutlet.name || '',
         address: currentOutlet.address || '',
         phone: currentOutlet.phone || '',
+        whatsapp_number: (currentOutlet as any).whatsapp_number || '',
       });
     }
   }, [currentOutlet]);
+
+  const restaurantSlug = (profile as any)?.restaurant_slug || '';
+  const outletSlug = (currentOutlet as any)?.slug || '';
+  const publicUrl = restaurantSlug && outletSlug
+    ? `https://querox.me/${restaurantSlug}/${outletSlug}`
+    : '';
+
+  const copyUrl = async () => {
+    if (!publicUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      toast({ title: 'Lien copié', description: publicUrl });
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de copier', variant: 'destructive' });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
