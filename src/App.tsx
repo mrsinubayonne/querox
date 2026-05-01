@@ -157,6 +157,9 @@ function App() {
               <Route path="/staff-request" element={<ProtectedRoute><StaffRequest /></ProtectedRoute>} />
 
               {/* Redirection par défaut */}
+              {/* Route publique slug : querox.me/{restaurant}/{pdv} — placée avant le catch-all */}
+              <Route path="/:restaurantSlug/:outletSlug" element={<PublicMenuBySlug />} />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
