@@ -33,6 +33,7 @@ const Statistiques = lazy(() => import('@/pages/Statistiques'));
 const Parametres = lazy(() => import('@/pages/Parametres'));
 const Abonnement = lazy(() => import('@/pages/Abonnement'));
 const PublicMenu = lazy(() => import('@/pages/PublicMenu'));
+const PublicMenuBySlug = lazy(() => import('@/pages/PublicMenuBySlug'));
 const PublicWebsite = lazy(() => import('@/pages/PublicWebsite'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const PaymentSuccess = lazy(() => import('@/pages/PaymentSuccess'));
