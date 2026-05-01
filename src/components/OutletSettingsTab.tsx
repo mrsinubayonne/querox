@@ -22,10 +22,11 @@ import {
 
 export const OutletSettingsTab: React.FC = () => {
   const { outlets, selectedOutletId, updateOutlet, deleteOutlet, loading } = useOutlets();
+  const { profile } = useProfile();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({ name: '', address: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', address: '', phone: '', whatsapp_number: '' });
   const [confirmName, setConfirmName] = useState('');
 
   const currentOutlet = outlets.find(o => o.id === selectedOutletId);
