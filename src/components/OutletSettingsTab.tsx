@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useOutlets } from '@/hooks/useOutlets';
-import { Loader2, Store, Trash2, AlertTriangle } from 'lucide-react';
+import { useProfile } from '@/hooks/useProfile';
+import { Loader2, Store, Trash2, AlertTriangle, Link2, Copy, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
