@@ -68,7 +68,8 @@ export const OutletSettingsTab: React.FC = () => {
         name: formData.name,
         address: formData.address,
         phone: formData.phone,
-      });
+        whatsapp_number: formData.whatsapp_number,
+      } as any);
       toast({ title: "Succès", description: "Point de vente mis à jour" });
     } catch {
       toast({ title: "Erreur", description: "Impossible de mettre à jour", variant: "destructive" });
