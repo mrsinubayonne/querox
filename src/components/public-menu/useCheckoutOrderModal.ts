@@ -45,8 +45,18 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       return;
     }
 
-    if (!tableNumber) {
+    if (orderType === "sur_place" && !tableNumber) {
       toast({ title: "Numéro de table requis", description: "Veuillez sélectionner un numéro de table.", variant: "destructive" });
+      return;
+    }
+
+    if (orderType === "livrer" && !deliveryAddress.trim()) {
+      toast({ title: "Adresse requise", description: "Veuillez indiquer une adresse de livraison.", variant: "destructive" });
+      return;
+    }
+
+    if ((orderType === "livrer" || orderType === "emporter") && !customerPhone.trim()) {
+      toast({ title: "Téléphone requis", description: "Veuillez fournir un numéro de téléphone pour vous joindre.", variant: "destructive" });
       return;
     }
 
