@@ -14,47 +14,66 @@ serve(async (req) => {
 
   try {
     const { order, restaurantEmail } = await req.json();
-    
+
     console.log('📧 Sending order notification email...');
     console.log('Order ID:', order.id);
-    console.log('Customer:', order.customer_name);
-    console.log('Restaurant email:', restaurantEmail);
 
-    // Format order items for email
-    const itemsList = order.items.map((item: any) => 
-      `<li>${item.quantity}x ${item.name} - ${item.price}€</li>`
+    // Escape user-controlled values to prevent HTML/email injection
+    const esc = (v: unknown): string =>
+      String(v ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    // Validate restaurantEmail format (basic) before using
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!restaurantEmail || typeof restaurantEmail !== 'string' || !emailRegex.test(restaurantEmail)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid restaurantEmail' }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
+      );
+    }
+
+    // Format order items for email (escape every user-supplied field)
+    const itemsArr = Array.isArray(order?.items) ? order.items : [];
+    const itemsList = itemsArr.map((item: any) =>
+      `<li>${esc(item?.quantity)}x ${esc(item?.name)} - ${esc(item?.price)}€</li>`
     ).join('');
+
+    const orderIdShort = esc(String(order?.id ?? '').substring(0, 8));
 
     const orderDetailsHtml = `
       <h2 style="color: #10b981;">🎉 Nouvelle Commande Reçue !</h2>
       <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
         <h3>Détails de la commande</h3>
-        <p><strong>Numéro:</strong> ${order.id.substring(0, 8)}</p>
-        <p><strong>Client:</strong> ${order.customer_name}</p>
-        <p><strong>Email:</strong> ${order.customer_email || 'Non fourni'}</p>
-        <p><strong>Téléphone:</strong> ${order.customer_phone || 'Non fourni'}</p>
-        ${order.order_type ? `<p><strong>Type:</strong> ${order.order_type}</p>` : ''}
-        ${order.table_number ? `<p><strong>Table:</strong> ${order.table_number}</p>` : ''}
-        ${order.delivery_address ? `<p><strong>Adresse:</strong> ${order.delivery_address}</p>` : ''}
+        <p><strong>Numéro:</strong> ${orderIdShort}</p>
+        <p><strong>Client:</strong> ${esc(order?.customer_name)}</p>
+        <p><strong>Email:</strong> ${esc(order?.customer_email || 'Non fourni')}</p>
+        <p><strong>Téléphone:</strong> ${esc(order?.customer_phone || 'Non fourni')}</p>
+        ${order?.order_type ? `<p><strong>Type:</strong> ${esc(order.order_type)}</p>` : ''}
+        ${order?.table_number ? `<p><strong>Table:</strong> ${esc(order.table_number)}</p>` : ''}
+        ${order?.delivery_address ? `<p><strong>Adresse:</strong> ${esc(order.delivery_address)}</p>` : ''}
       </div>
-      
+
       <div style="background: #fff; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
         <h3>Articles commandés</h3>
         <ul style="list-style: none; padding: 0;">
           ${itemsList}
         </ul>
         <hr style="border: 1px solid #e5e7eb; margin: 15px 0;">
-        <p style="font-size: 18px; font-weight: bold;">Total: ${order.total_amount}€</p>
+        <p style="font-size: 18px; font-weight: bold;">Total: ${esc(order?.total_amount)}€</p>
       </div>
-      
-      ${order.notes ? `
+
+      ${order?.notes ? `
         <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          <strong>📝 Notes:</strong> ${order.notes}
+          <strong>📝 Notes:</strong> ${esc(order.notes)}
         </div>
       ` : ''}
-      
+
       <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-        Cette commande a été passée à ${new Date(order.created_at).toLocaleString('fr-FR')}
+        Cette commande a été passée à ${esc(new Date(order?.created_at || Date.now()).toLocaleString('fr-FR'))}
       </p>
     `;
 
