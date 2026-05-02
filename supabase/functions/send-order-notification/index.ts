@@ -102,21 +102,21 @@ serve(async (req) => {
     console.log('✅ Restaurant notification sent:', restaurantData);
 
     // Send confirmation email to customer if email provided
-    if (order.customer_email) {
+    if (order.customer_email && emailRegex.test(String(order.customer_email))) {
       const customerHtml = `
         <h2 style="color: #10b981;">Merci pour votre commande !</h2>
-        <p>Bonjour ${order.customer_name},</p>
+        <p>Bonjour ${esc(order.customer_name)},</p>
         <p>Nous avons bien reçu votre commande et nous la préparons avec soin.</p>
-        
+
         <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3>Récapitulatif</h3>
           <ul style="list-style: none; padding: 0;">
             ${itemsList}
           </ul>
           <hr style="border: 1px solid #e5e7eb; margin: 15px 0;">
-          <p style="font-size: 18px; font-weight: bold;">Total: ${order.total_amount}€</p>
+          <p style="font-size: 18px; font-weight: bold;">Total: ${esc(order?.total_amount)}€</p>
         </div>
-        
+
         <p>Vous recevrez une notification dès que votre commande sera prête.</p>
         <p style="color: #6b7280; font-size: 14px;">Merci de votre confiance !</p>
       `;
