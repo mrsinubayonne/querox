@@ -39,11 +39,11 @@ export const useProfile = () => {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
-        
+
         // Si le JWT a expiré, déconnecter l'utilisateur
         if (error.code === 'PGRST301' || error.message?.includes('JWT expired')) {
           toast({
@@ -53,15 +53,32 @@ export const useProfile = () => {
           });
           await signOut();
           navigate('/auth');
-        } else {
+          return;
+        }
+
+        // En mode hors-ligne ou erreur réseau, ne pas afficher de toast bloquant
+        const isNetworkError = error.message?.toLowerCase().includes('failed to fetch')
+          || error.message?.toLowerCase().includes('network');
+        if (!isNetworkError) {
           toast({
             title: "Erreur",
             description: "Impossible de charger le profil",
             variant: "destructive",
           });
         }
-      } else {
+      } else if (data) {
         setProfile(data);
+      } else {
+        // Aucune ligne profile : créer un profil minimal côté client
+        setProfile({
+          id: user.id,
+          email: user.email ?? null,
+          full_name: (user.user_metadata as any)?.full_name ?? null,
+          avatar_url: (user.user_metadata as any)?.avatar_url ?? null,
+          selected_outlet_id: null,
+          created_at: user.created_at ?? new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
