@@ -100,18 +100,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
 
-      // N'activer le mode hors-ligne forcé QUE si le navigateur est réellement hors-ligne.
-      // Sinon, on conserve juste l'utilisateur en cache pour éviter un flash de déconnexion,
-      // mais on laisse l'app fonctionner normalement en ligne.
+      // CRITIQUE: ne restaurer l'utilisateur depuis le cache QUE si on est réellement hors-ligne.
+      // Si on est en ligne sans session Supabase, restaurer setUser() ferait croire à l'app
+      // que l'utilisateur est authentifié alors qu'aucun JWT n'est envoyé aux requêtes Supabase,
+      // ce qui provoque des erreurs RLS sur toutes les écritures (création outlet, menu, etc.).
       const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
 
-      console.log(`📱 Restauration de la session locale (${reason})${browserOffline ? ' [offline]' : ' [online]'}`);
-      setUser(cachedAuth.user as unknown as User);
-      if (browserOffline) {
-        setSession(null);
-        setIsOfflineMode(true);
-        setForcedOfflineMode(true);
+      if (!browserOffline) {
+        console.log(`🌐 Cache auth disponible mais en ligne (${reason}) : on laisse Supabase gérer la session`);
+        return false;
       }
+
+      console.log(`📱 Restauration de la session locale (${reason}) [offline]`);
+      setUser(cachedAuth.user as unknown as User);
+      setSession(null);
+      setIsOfflineMode(true);
+      setForcedOfflineMode(true);
       setLoading(false);
       offlineAuthLoadedRef.current = true;
       return true;
