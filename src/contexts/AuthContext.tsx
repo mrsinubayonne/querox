@@ -100,11 +100,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
 
-      console.log(`📱 Restauration de la session locale (${reason})`);
+      // N'activer le mode hors-ligne forcé QUE si le navigateur est réellement hors-ligne.
+      // Sinon, on conserve juste l'utilisateur en cache pour éviter un flash de déconnexion,
+      // mais on laisse l'app fonctionner normalement en ligne.
+      const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+      console.log(`📱 Restauration de la session locale (${reason})${browserOffline ? ' [offline]' : ' [online]'}`);
       setUser(cachedAuth.user as unknown as User);
-      setSession(null);
-      setIsOfflineMode(true);
-      setForcedOfflineMode(true);
+      if (browserOffline) {
+        setSession(null);
+        setIsOfflineMode(true);
+        setForcedOfflineMode(true);
+      }
       setLoading(false);
       offlineAuthLoadedRef.current = true;
       return true;
@@ -221,7 +228,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const hasForcedOfflineMode = typeof window !== 'undefined' && localStorage.getItem(FORCE_OFFLINE_MODE_KEY) === '1';
 
         if (!navigator.onLine || hasForcedOfflineMode) {
-          await restoreCachedAuth(hasForcedOfflineMode ? 'startup-forced-offline' : 'startup-offline');
+          // Si on est en ligne mais que le flag est resté actif, on le nettoie.
+          if (navigator.onLine && hasForcedOfflineMode) {
+            console.log('🌐 Connexion détectée au démarrage : désactivation du mode hors-ligne forcé');
+            setForcedOfflineMode(false);
+            setIsOfflineMode(false);
+            await restoreCachedAuth('startup-online-cleanup');
+          } else {
+            await restoreCachedAuth(hasForcedOfflineMode ? 'startup-forced-offline' : 'startup-offline');
+          }
         } else {
           const restored = await restoreCachedAuth('startup-cache-check');
           if (restored) {
