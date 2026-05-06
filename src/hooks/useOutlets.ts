@@ -257,13 +257,25 @@ export const useOutlets = () => {
         .single();
 
       if (error) throw error;
-      
+
+      // ✅ Sélection optimiste IMMÉDIATE pour débloquer la création de menu
+      setSelectedOutletId(data.id);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('selectedOutletId', data.id);
+        localStorage.removeItem('outlet_cache');
+      }
+      // Ajout optimiste à la liste avant rechargement
+      setOutlets((prev) => {
+        if (prev.some((o) => o.id === data.id)) return prev;
+        return [...prev, data as Outlet];
+      });
+
       toast.success('Point de vente créé avec succès');
-      await loadOutlets();
-      
-      // Sélectionner automatiquement le nouveau outlet
+
+      // Persister la sélection (user_profiles) puis recharger la liste depuis le serveur
       await selectOutlet(data.id, true);
-      
+      await loadOutlets();
+
       return data;
     } catch (error: any) {
       console.error('Error creating outlet:', error);
