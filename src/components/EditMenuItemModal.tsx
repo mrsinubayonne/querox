@@ -211,6 +211,8 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
           <ImageUpload
             currentImage={formData.image_url}
             onImageChange={(imageUrl) => setFormData(prev => ({ ...prev, image_url: imageUrl }))}
+            dishName={formData.name}
+            dishDescription={formData.description}
           />
 
           <div>
