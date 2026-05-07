@@ -28,7 +28,14 @@ Deno.serve(async (req) => {
       throw new Error("LOVABLE_API_KEY non configurée");
     }
 
-    const prompt = `Photographie culinaire professionnelle, appétissante et réaliste d'un plat: "${name}"${description ? `. Description: ${description}` : ""}. Vue de dessus ou 3/4, lumière naturelle douce, dressage soigné dans une assiette, fond neutre épuré, style restaurant haut de gamme, ultra détaillé, 4K.`;
+    const prompt = `Photographie culinaire ultra-réaliste et fidèle du plat exact suivant: "${name}".${description ? ` Détails du plat: ${description}.` : ""} 
+
+CONSIGNES STRICTES:
+- Représenter EXACTEMENT le plat nommé "${name}", avec ses ingrédients réels et caractéristiques. Ne pas inventer un autre plat.
+- Si le plat est africain/camerounais/sénégalais/ivoirien (ex: ndolè, eru, koki, achu, poulet DG, taro sauce jaune, mbongo tchobi, thieboudienne, attiéké, alloco, jollof rice, fufu, bobolo, miondo, soya, brochettes, sauce arachide, okok, kondre, etc.), respecter scrupuleusement la recette traditionnelle, les couleurs et la présentation typique de ce plat.
+- Si c'est une boisson (jus, bissap, gingembre, foléré, bière, cocktail, soda), la servir dans le verre/bouteille approprié(e), pas dans une assiette.
+- Photographie professionnelle, vue 3/4 ou de dessus, lumière naturelle, dressage authentique, fond neutre/bois/nappe, haute résolution, appétissant.
+- Aucun texte, aucun logo, aucun filigrane sur l'image.`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
