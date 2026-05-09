@@ -251,7 +251,10 @@ const AddMenuItemModal: React.FC<AddMenuItemModalProps> = ({
             <Label htmlFor="available">Plat disponible</Label>
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="text-xs text-muted-foreground bg-blue-50 border border-blue-200 rounded-lg p-3">
+            💡 <strong>Variantes & suppléments</strong> (ex: choix de viande, fromage en plus…) :
+            après avoir créé le plat, ouvrez-le en mode <em>Édition</em> pour configurer ses groupes d'options.
+          </div>
             <Button type="button" variant="outline" onClick={onClose}>
               Annuler
             </Button>
