@@ -237,6 +237,22 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) =
           </div>
         </div>
       </CardContent>
+      {showTicket && (
+        <KitchenTicketPrint
+          ref={ticketRef}
+          outletName={outletName}
+          tableNumber={order.table_number}
+          customerName={order.customer_name}
+          orderType={getOrderTypeDisplay(order.order_type, order.table_number) || undefined}
+          reference={order.id.slice(0, 8).toUpperCase()}
+          items={(order.items || []).map((it: any) => ({
+            name: it.name,
+            quantity: it.quantity,
+            notes: it.notes,
+            selectedOptions: it.selectedOptions || it.selected_options,
+          }))}
+        />
+      )}
     </Card>
   );
 };
