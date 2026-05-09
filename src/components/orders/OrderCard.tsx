@@ -144,6 +144,16 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) =
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrintKitchen}
+              title="Imprimer bon de cuisine"
+              className="gap-1"
+            >
+              <ChefHat className="w-4 h-4" />
+              <span className="hidden sm:inline">Bon cuisine</span>
+            </Button>
             <OrderStatusSelect 
               orderId={order.id}
               currentStatus={order.status}
