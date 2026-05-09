@@ -2767,11 +2767,10 @@ export type Database = {
       team_member_login: {
         Args: { _access_code: string; _email: string }
         Returns: {
-          full_name: string
           member_id: string
-          member_role: string
-          outlet_id: string
           owner_id: string
+          role: string
+          status: string
         }[]
       }
       track_button_click: {
