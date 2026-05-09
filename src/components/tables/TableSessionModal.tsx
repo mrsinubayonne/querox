@@ -773,6 +773,13 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter une commande
               </Button>
+              <Button onClick={() => {
+                trackClick('Tables: Bon cuisine', 'tables');
+                handlePrintKitchenTicket();
+              }} variant="outline" disabled={busy}>
+                <ChefHat className="h-4 w-4 mr-2" />
+                Bon cuisine
+              </Button>
               <Button disabled={busy} onClick={async () => {
                 trackClick('Tables: Fermer session', 'tables');
                 setActionInProgress(true);
