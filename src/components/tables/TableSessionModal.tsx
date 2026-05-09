@@ -74,6 +74,24 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const printViewRef = useRef<InvoicePrintViewRef>(null);
+  const kitchenTicketRef = useRef<KitchenTicketPrintRef>(null);
+  const [showKitchenTicket, setShowKitchenTicket] = useState(false);
+  const [outletNameForTicket, setOutletNameForTicket] = useState<string | undefined>(undefined);
+
+  const handlePrintKitchenTicket = async () => {
+    try {
+      const oid = (session as any)?.outlet_id || localStorage.getItem('selectedOutletId');
+      if (oid && !outletNameForTicket) {
+        const { data } = await supabase.from('outlets').select('name').eq('id', oid).maybeSingle();
+        if (data) setOutletNameForTicket((data as any).name);
+      }
+    } catch {}
+    setShowKitchenTicket(true);
+    setTimeout(() => {
+      kitchenTicketRef.current?.print();
+      setTimeout(() => setShowKitchenTicket(false), 1200);
+    }, 250);
+  };
 
   const busy = isMutating || actionInProgress;
 
