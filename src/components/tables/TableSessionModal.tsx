@@ -26,6 +26,7 @@ import { InvoicePreviewModal } from "./InvoicePreviewModal";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { getData, queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
+import KitchenTicketPrint, { KitchenTicketPrintRef } from "@/components/orders/KitchenTicketPrint";
 
 interface Order {
   id: string;
