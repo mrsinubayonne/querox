@@ -2768,8 +2768,9 @@ export type Database = {
         Args: { _access_code: string; _email: string }
         Returns: {
           member_id: string
+          member_role: string
+          outlet_id: string
           owner_id: string
-          role: string
           status: string
         }[]
       }
