@@ -11,7 +11,7 @@ import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw, X } from "lucide-react";
+import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw, X, ChefHat } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
