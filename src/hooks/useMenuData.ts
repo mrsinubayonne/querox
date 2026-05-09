@@ -71,12 +71,7 @@ export const useMenuData = (menuId: string | null) => {
     // 2. En ligne : charger menu + catégories en parallèle
     try {
       const [menuResult, categoriesResult] = await Promise.all([
-        supabase
-          .from('menus')
-          .select('user_id, outlet_id, name, description, logo_url, header_image_url')
-          .eq('id', id)
-          .eq('is_active', true)
-          .maybeSingle(),
+        (supabase as any).rpc('get_public_menu_data', { _menu_id: id }),
         supabase
           .from('menu_categories')
           .select('id, name')
@@ -85,9 +80,10 @@ export const useMenuData = (menuId: string | null) => {
       ]);
 
       if (menuResult.error) throw new Error("Erreur lors de la récupération du menu");
-      if (!menuResult.data) throw new Error("Menu non trouvé ou inactif");
+      const menuRows = Array.isArray(menuResult.data) ? menuResult.data : [];
+      if (menuRows.length === 0) throw new Error("Menu non trouvé ou inactif");
 
-      const menuDataResult = menuResult.data;
+      const menuDataResult = menuRows[0];
       const newMenuData: MenuData = {
         id,
         name: menuDataResult.name,
