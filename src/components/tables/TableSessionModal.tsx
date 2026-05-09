@@ -915,6 +915,26 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           onReady={handlePrintReady}
         />
       )}
+
+      {/* Kitchen Ticket Print */}
+      {showKitchenTicket && (
+        <KitchenTicketPrint
+          ref={kitchenTicketRef}
+          outletName={outletNameForTicket}
+          tableNumber={session.table_number}
+          customerName={(session as any)?.customer_name}
+          orderType="Sur place"
+          reference={session.id.slice(0, 8).toUpperCase()}
+          items={orders.flatMap(o =>
+            (o.items || []).map((it: any) => ({
+              name: it.name,
+              quantity: it.quantity,
+              notes: it.notes,
+              selectedOptions: it.selectedOptions || it.selected_options,
+            }))
+          )}
+        />
+      )}
       
       {/* Invoice Preview Modal */}
       <InvoicePreviewModal
