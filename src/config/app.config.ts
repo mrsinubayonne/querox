@@ -13,8 +13,11 @@ export const APP_CONFIG = {
   
   // URLs
   urls: {
-    // Génère l'URL publique d'un menu
+    // Génère l'URL publique d'un menu (par menuId, fallback)
     getPublicMenuUrl: (menuId: string) => `https://querox.me/menu/${menuId}`,
+    // Génère l'URL publique via slugs (PDV) — préféré
+    getPublicMenuUrlBySlug: (restaurantSlug: string, outletSlug: string) =>
+      `https://querox.me/${restaurantSlug}/${outletSlug}`,
     
     // Génère l'URL publique d'un site web
     getPublicWebsiteUrl: (slug: string) => `https://querox.me/w/${slug}`,
