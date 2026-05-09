@@ -69,6 +69,9 @@ const getOrderTypeDisplay = (orderType?: string, tableNumber?: string) => {
 
 export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) => {
   const navigate = useNavigate();
+  const ticketRef = useRef<KitchenTicketPrintRef>(null);
+  const [showTicket, setShowTicket] = useState(false);
+  const [outletName, setOutletName] = useState<string | undefined>(undefined);
   const orderDate = new Date(order.created_at).toLocaleDateString('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -79,6 +82,21 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) =
 
   const orderTypeDisplay = getOrderTypeDisplay(order.order_type, order.table_number);
   const hasTable = order.order_type === 'sur_place' && order.table_number;
+
+  const handlePrintKitchen = async () => {
+    try {
+      const selectedOutletId = localStorage.getItem('selectedOutletId');
+      if (selectedOutletId && !outletName) {
+        const { data } = await supabase.from('outlets').select('name').eq('id', selectedOutletId).maybeSingle();
+        if (data) setOutletName((data as any).name);
+      }
+    } catch {}
+    setShowTicket(true);
+    setTimeout(() => {
+      ticketRef.current?.print();
+      setTimeout(() => setShowTicket(false), 1000);
+    }, 200);
+  };
 
   return (
     <Card>
