@@ -2595,6 +2595,8 @@ export type Database = {
           id: string
           logo_url: string
           name: string
+          outlet_id: string
+          user_id: string
         }[]
       }
       get_public_website_by_slug: {
