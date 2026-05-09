@@ -854,6 +854,85 @@ export type Database = {
           },
         ]
       }
+      menu_item_option_groups: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          menu_item_id: string
+          name: string
+          order_index: number
+          selection_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          menu_item_id: string
+          name: string
+          order_index?: number
+          selection_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          menu_item_id?: string
+          name?: string
+          order_index?: number
+          selection_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_option_groups_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_item_option_values: {
+        Row: {
+          created_at: string
+          extra_price: number
+          group_id: string
+          id: string
+          is_available: boolean
+          name: string
+          order_index: number
+        }
+        Insert: {
+          created_at?: string
+          extra_price?: number
+          group_id: string
+          id?: string
+          is_available?: boolean
+          name: string
+          order_index?: number
+        }
+        Update: {
+          created_at?: string
+          extra_price?: number
+          group_id?: string
+          id?: string
+          is_available?: boolean
+          name?: string
+          order_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_option_values_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "menu_item_option_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           allergens: string[] | null
