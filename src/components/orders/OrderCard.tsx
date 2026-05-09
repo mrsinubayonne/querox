@@ -1,13 +1,14 @@
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Clock, MapPin, Phone, Mail, SquareArrowOutUpRight } from 'lucide-react';
+import { MoreHorizontal, Clock, MapPin, Phone, Mail, SquareArrowOutUpRight, ChefHat } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { OrderStatusSelect } from './OrderStatusSelect';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import KitchenTicketPrint, { KitchenTicketPrintRef } from './KitchenTicketPrint';
 
 interface OrderItem {
   id: string;
