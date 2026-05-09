@@ -260,6 +260,8 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
             )}
           </div>
 
+          <MenuItemOptionsEditor menuItemId={item.id} />
+
           <div className="flex items-center space-x-2">
             <Switch
               id="available"
