@@ -2587,6 +2587,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_public_menu_data: {
+        Args: { _menu_id: string }
+        Returns: {
+          description: string
+          header_image_url: string
+          id: string
+          logo_url: string
+          name: string
+        }[]
+      }
       get_public_website_by_slug: {
         Args: { website_slug: string }
         Returns: {
@@ -2732,6 +2742,7 @@ export type Database = {
           }
       is_admin: { Args: never; Returns: boolean }
       is_current_user_admin: { Args: never; Returns: boolean }
+      is_menu_publicly_active: { Args: { _menu_id: string }; Returns: boolean }
       is_valid_public_outlet_owner: {
         Args: { _outlet_id: string; _owner_id: string }
         Returns: boolean
