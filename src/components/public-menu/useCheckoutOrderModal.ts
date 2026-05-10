@@ -160,7 +160,11 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
 
       // Construire le message WhatsApp
       const typeLabel = orderType === "sur_place" ? `Sur place — Table ${tableNumber}` : orderType === "emporter" ? "À emporter" : "À livrer";
-      const itemsText = cart.map(it => `• ${it.quantity}× ${it.name} — ${it.price * it.quantity} XAF`).join("\n");
+      const itemsText = cart.map(it => {
+        const opts = (it.selected_options || []).map(o => o.value_name).join(', ');
+        const optsText = opts ? ` (${opts})` : '';
+        return `• ${it.quantity}× ${it.name}${optsText} — ${it.unit_price * it.quantity} XAF`;
+      }).join("\n");
       const lines = [
         `*Nouvelle commande${outletName ? ` — ${outletName}` : ""}*`,
         ``,
