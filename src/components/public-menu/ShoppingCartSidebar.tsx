@@ -10,8 +10,8 @@ import { getCategoryDefaultImage } from '@/utils/categoryImages';
 
 interface ShoppingCartProps {
   cart: CartItem[];
-  onAddToCart: (item: MenuItem) => void;
-  onRemoveFromCart: (itemId: string) => void;
+  onAddToCart: (item: MenuItem | CartItem) => void;
+  onRemoveFromCart: (cartKey: string) => void;
   onClearCart: () => void;
   totalPrice: number;
   className?: string;
@@ -45,16 +45,21 @@ const ShoppingCartSidebar: React.FC<ShoppingCartProps> = ({
       ) : (
         <>
           <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2 -mr-2">
-            {cart.map(item => <div key={item.id} className="flex items-center gap-4">
+            {cart.map(item => <div key={item.cartKey} className="flex items-center gap-4">
                 <SafeImage src={item.image_url || getCategoryDefaultImage(item.category_name)} alt={item.name} className="w-16 h-16 object-cover rounded-lg" />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-gray-800 truncate">{item.name}</h4>
+                  {item.selected_options && item.selected_options.length > 0 && (
+                    <p className="text-xs text-gray-500 truncate">
+                      {item.selected_options.map(o => o.value_name).join(', ')}
+                    </p>
+                  )}
                   <p className="text-sm text-gray-500">
-                    {item.price.toLocaleString('fr-FR')} FCFA
+                    {item.unit_price.toLocaleString('fr-FR')} FCFA
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button size="icon" variant="ghost" onClick={() => onRemoveFromCart(item.id)} className="h-8 w-8 text-gray-500 hover:bg-gray-200 rounded-full">
+                  <Button size="icon" variant="ghost" onClick={() => onRemoveFromCart(item.cartKey)} className="h-8 w-8 text-gray-500 hover:bg-gray-200 rounded-full">
                     <Minus className="w-4 h-4" />
                   </Button>
                   <span className="w-8 text-center font-semibold text-gray-800">{item.quantity}</span>
