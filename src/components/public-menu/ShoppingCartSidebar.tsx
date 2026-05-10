@@ -10,8 +10,8 @@ import { getCategoryDefaultImage } from '@/utils/categoryImages';
 
 interface ShoppingCartProps {
   cart: CartItem[];
-  onAddToCart: (item: MenuItem) => void;
-  onRemoveFromCart: (itemId: string) => void;
+  onAddToCart: (item: MenuItem | CartItem) => void;
+  onRemoveFromCart: (cartKey: string) => void;
   onClearCart: () => void;
   totalPrice: number;
   className?: string;
