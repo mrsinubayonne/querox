@@ -55,10 +55,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       return;
     }
 
-    if ((orderType === "livrer" || orderType === "emporter") && !customerPhone.trim()) {
-      toast({ title: "Téléphone requis", description: "Veuillez fournir un numéro de téléphone pour vous joindre.", variant: "destructive" });
-      return;
-    }
+    // Nom et téléphone optionnels (même pour livraison/emporter)
 
     if (!restaurantUserId) {
       toast({ title: "Erreur", description: "Impossible d'identifier le restaurant. La commande ne peut être passée.", variant: "destructive" });
