@@ -15,12 +15,16 @@ const CheckoutOrderCartSummary: React.FC<Props> = ({ cart, totalPrice, orderType
       <div className="text-gray-800" style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: '900' }}>Récapitulatif :</div>
       <ul className="space-y-1 text-sm">
         {cart.map((item) => (
-          <li key={item.id} className="flex justify-between">
+          <li key={item.cartKey} className="flex justify-between">
             <span>
-              {item.name} × {item.quantity}
+              {item.name}
+              {item.selected_options && item.selected_options.length > 0 && (
+                <span className="text-xs text-gray-500"> ({item.selected_options.map(o => o.value_name).join(', ')})</span>
+              )}
+              {' '}× {item.quantity}
             </span>
             <span>
-              {(item.price * item.quantity).toLocaleString("fr-FR")} FCFA
+              {(item.unit_price * item.quantity).toLocaleString("fr-FR")} FCFA
             </span>
           </li>
         ))}
