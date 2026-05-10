@@ -29,8 +29,6 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
   orderType, setOrderType,
   tableNumber, setTableNumber,
 }) => {
-  const phoneRequired = orderType === "livrer" || orderType === "emporter";
-
   return (
     <div className="space-y-3">
       <div>
@@ -57,15 +55,12 @@ const CheckoutOrderFormFields: React.FC<Props> = ({
       </div>
 
       <div>
-        <label className="block font-medium mb-1">
-          Téléphone {phoneRequired ? "*" : "(optionnel)"}
-        </label>
+        <label className="block font-medium mb-1">Téléphone (optionnel)</label>
         <Input
           type="tel"
           value={customerPhone}
           onChange={(e) => setCustomerPhone(e.target.value)}
           placeholder="Numéro de téléphone"
-          required={phoneRequired}
         />
       </div>
 
