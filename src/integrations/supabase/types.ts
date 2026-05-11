@@ -1658,6 +1658,7 @@ export type Database = {
           quantity: number
           reason: string | null
           reason_category: string | null
+          user_id: string
         }
         Insert: {
           after_quantity?: number | null
@@ -1671,6 +1672,7 @@ export type Database = {
           quantity: number
           reason?: string | null
           reason_category?: string | null
+          user_id: string
         }
         Update: {
           after_quantity?: number | null
@@ -1684,6 +1686,7 @@ export type Database = {
           quantity?: number
           reason?: string | null
           reason_category?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -2085,11 +2088,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          accounting_code?: string
+          accounting_code: string
           created_at?: string | null
           id?: string
           last_modified_at?: string | null
-          management_code?: string
+          management_code: string
           user_id: string
         }
         Update: {
