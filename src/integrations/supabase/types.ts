@@ -2609,6 +2609,16 @@ export type Database = {
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
       cleanup_rate_limits: { Args: never; Returns: undefined }
       cleanup_stale_table_sessions: { Args: never; Returns: undefined }
+      complete_team_member_setup: {
+        Args: { _email: string; _new_access_code?: string; _token: string }
+        Returns: {
+          full_name: string
+          member_id: string
+          member_role: string
+          outlet_id: string
+          owner_id: string
+        }[]
+      }
       generate_invoice_number: { Args: never; Returns: string }
       generate_outlet_access_code: {
         Args: {
@@ -2824,6 +2834,10 @@ export type Database = {
             }
             Returns: boolean
           }
+      is_active_team_member_for_owner: {
+        Args: { _owner_id: string }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
       is_current_user_admin: { Args: never; Returns: boolean }
       is_menu_publicly_active: { Args: { _menu_id: string }; Returns: boolean }

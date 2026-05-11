@@ -18,3 +18,6 @@ verify_jwt = true
 [functions.generate-dish-image]
 verify_jwt = true
 
+[functions.team-member-auth]
+verify_jwt = false
+
