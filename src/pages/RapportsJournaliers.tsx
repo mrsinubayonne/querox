@@ -22,7 +22,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 const RapportsJournaliers: React.FC = () => {
   const { user } = useAuth();
   const { outlets, selectedOutletId } = useOutlets();
-  const [viewMode, setViewMode] = useState<'periods' | 'calendar'>('periods');
+  const [viewMode, setViewMode] = useState<'periods' | 'calendar'>('calendar');
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | undefined>();
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
