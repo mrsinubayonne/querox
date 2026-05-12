@@ -52,6 +52,14 @@ Deno.serve(async (req) => {
       );
     }
 
+    const { data: assignedOutlets } = await admin.rpc("get_team_member_outlets", {
+      _member_id: member.member_id,
+    });
+    const outletIds = Array.isArray(assignedOutlets)
+      ? assignedOutlets.map((outlet: any) => outlet.outlet_id).filter(Boolean)
+      : [];
+    const primaryOutletId = member.outlet_id || outletIds[0] || null;
+
     // 2) Ensure auth user exists with password = accessCode so client can signInWithPassword
     let authUserId: string | null = null;
 
@@ -109,7 +117,8 @@ Deno.serve(async (req) => {
           owner_id: member.owner_id,
           member_role: member.role,
           status: member.status,
-          outlet_id: member.outlet_id,
+          outlet_id: primaryOutletId,
+          outlet_ids: outletIds,
           auth_user_id: authUserId,
         },
       }),
