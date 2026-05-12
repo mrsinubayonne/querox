@@ -11,7 +11,6 @@ interface TeamMemberSession {
   memberEmail: string;
   role: string;
   outletId: string;
-  outletIds?: string[];
   expiresAt: string;
 }
 

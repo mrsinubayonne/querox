@@ -11,7 +11,7 @@ import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw, X, ChefHat } from "lucide-react";
+import { Clock, Users, FileText, Package, Receipt, Plus, Pencil, Trash2, Printer, Eye, RotateCcw, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -26,7 +26,6 @@ import { InvoicePreviewModal } from "./InvoicePreviewModal";
 import { useButtonTracking } from "@/hooks/useButtonTracking";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { getData, queueMutation, generateLocalId, storeData } from "@/lib/offlineStorage";
-import KitchenTicketPrint, { KitchenTicketPrintRef } from "@/components/orders/KitchenTicketPrint";
 
 interface Order {
   id: string;
@@ -74,24 +73,6 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const printViewRef = useRef<InvoicePrintViewRef>(null);
-  const kitchenTicketRef = useRef<KitchenTicketPrintRef>(null);
-  const [showKitchenTicket, setShowKitchenTicket] = useState(false);
-  const [outletNameForTicket, setOutletNameForTicket] = useState<string | undefined>(undefined);
-
-  const handlePrintKitchenTicket = async () => {
-    try {
-      const oid = (session as any)?.outlet_id || localStorage.getItem('selectedOutletId');
-      if (oid && !outletNameForTicket) {
-        const { data } = await supabase.from('outlets').select('name').eq('id', oid).maybeSingle();
-        if (data) setOutletNameForTicket((data as any).name);
-      }
-    } catch {}
-    setShowKitchenTicket(true);
-    setTimeout(() => {
-      kitchenTicketRef.current?.print();
-      setTimeout(() => setShowKitchenTicket(false), 1200);
-    }, 250);
-  };
 
   const busy = isMutating || actionInProgress;
 
@@ -773,13 +754,6 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter une commande
               </Button>
-              <Button onClick={() => {
-                trackClick('Tables: Bon cuisine', 'tables');
-                handlePrintKitchenTicket();
-              }} variant="outline" disabled={busy}>
-                <ChefHat className="h-4 w-4 mr-2" />
-                Bon cuisine
-              </Button>
               <Button disabled={busy} onClick={async () => {
                 trackClick('Tables: Fermer session', 'tables');
                 setActionInProgress(true);
@@ -913,26 +887,6 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           format={printFormat}
           autoPrint={false}
           onReady={handlePrintReady}
-        />
-      )}
-
-      {/* Kitchen Ticket Print */}
-      {showKitchenTicket && (
-        <KitchenTicketPrint
-          ref={kitchenTicketRef}
-          outletName={outletNameForTicket}
-          tableNumber={session.table_number}
-          customerName={(session as any)?.customer_name}
-          orderType="Sur place"
-          reference={session.id.slice(0, 8).toUpperCase()}
-          items={orders.flatMap(o =>
-            (o.items || []).map((it: any) => ({
-              name: it.name,
-              quantity: it.quantity,
-              notes: it.notes,
-              selectedOptions: it.selectedOptions || it.selected_options,
-            }))
-          )}
         />
       )}
       

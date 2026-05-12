@@ -13,7 +13,6 @@ import { useMenuCategories } from '@/hooks/useMenuCategories';
 import ImageUpload from '@/components/ImageUpload';
 import { PREDEFINED_CATEGORIES } from '@/data/menuCategories';
 import { APP_CONFIG } from '@/config/app.config';
-import MenuItemOptionsEditor from '@/components/menu-management/MenuItemOptionsEditor';
 
 interface MenuItem {
   id: string;
@@ -212,8 +211,6 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
           <ImageUpload
             currentImage={formData.image_url}
             onImageChange={(imageUrl) => setFormData(prev => ({ ...prev, image_url: imageUrl }))}
-            dishName={formData.name}
-            dishDescription={formData.description}
           />
 
           <div>
@@ -259,8 +256,6 @@ const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
               </div>
             )}
           </div>
-
-          <MenuItemOptionsEditor menuItemId={item.id} />
 
           <div className="flex items-center space-x-2">
             <Switch

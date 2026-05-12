@@ -22,16 +22,19 @@ const TeamMemberAuth: React.FC = () => {
     setLoading(true);
 
     try {
-      const normalizedEmail = formData.email.trim().toLowerCase();
-      const normalizedCode = formData.accessCode.trim().toUpperCase();
+      // Use team_member_login RPC for secure login
+      const { data: memberData, error: loginError } = await supabase
+        .rpc('team_member_login', {
+          _email: formData.email,
+          _access_code: formData.accessCode.toUpperCase()
+        });
 
-      const { data: authData, error: authError } = await supabase.functions.invoke('team-member-auth', {
-        body: { email: normalizedEmail, accessCode: normalizedCode }
-      });
+      if (loginError) {
+        console.error('Login RPC error:', loginError);
+        throw loginError;
+      }
 
-      if (authError) throw authError;
-
-      if (!authData?.success || !authData?.member) {
+      if (!memberData || memberData.length === 0) {
         toast({
           title: "Accès refusé",
           description: "Email ou code d'accès incorrect",
@@ -41,14 +44,7 @@ const TeamMemberAuth: React.FC = () => {
         return;
       }
 
-      const member = authData.member;
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password: normalizedCode,
-      });
-
-      if (signInError) throw signInError;
+      const member = memberData[0];
 
       // Store team member session info in localStorage with 8-hour expiration
       const expiresAt = new Date();
@@ -57,7 +53,7 @@ const TeamMemberAuth: React.FC = () => {
       localStorage.setItem('teamMember', JSON.stringify({
         memberId: member.member_id,
         ownerId: member.owner_id,
-        memberEmail: normalizedEmail,
+        memberEmail: formData.email,
         role: member.member_role,
         outletId: member.outlet_id,
         expiresAt: expiresAt.toISOString()
@@ -85,7 +81,11 @@ const TeamMemberAuth: React.FC = () => {
 
       console.log('🔄 Redirecting to dashboard...');
       
+      // Force navigation with page reload to ensure outlet context is loaded
       navigate('/dashboard', { replace: true });
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
     } catch (error: any) {
       console.error('Error during team member login:', error);
       toast({

@@ -1,14 +1,13 @@
 
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Clock, MapPin, Phone, Mail, SquareArrowOutUpRight, ChefHat } from 'lucide-react';
+import { MoreHorizontal, Clock, MapPin, Phone, Mail, SquareArrowOutUpRight } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { OrderStatusSelect } from './OrderStatusSelect';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import KitchenTicketPrint, { KitchenTicketPrintRef } from './KitchenTicketPrint';
 
 interface OrderItem {
   id: string;
@@ -69,9 +68,6 @@ const getOrderTypeDisplay = (orderType?: string, tableNumber?: string) => {
 
 export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) => {
   const navigate = useNavigate();
-  const ticketRef = useRef<KitchenTicketPrintRef>(null);
-  const [showTicket, setShowTicket] = useState(false);
-  const [outletName, setOutletName] = useState<string | undefined>(undefined);
   const orderDate = new Date(order.created_at).toLocaleDateString('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -82,21 +78,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) =
 
   const orderTypeDisplay = getOrderTypeDisplay(order.order_type, order.table_number);
   const hasTable = order.order_type === 'sur_place' && order.table_number;
-
-  const handlePrintKitchen = async () => {
-    try {
-      const selectedOutletId = localStorage.getItem('selectedOutletId');
-      if (selectedOutletId && !outletName) {
-        const { data } = await supabase.from('outlets').select('name').eq('id', selectedOutletId).maybeSingle();
-        if (data) setOutletName((data as any).name);
-      }
-    } catch {}
-    setShowTicket(true);
-    setTimeout(() => {
-      ticketRef.current?.print();
-      setTimeout(() => setShowTicket(false), 1000);
-    }, 200);
-  };
 
   return (
     <Card>
@@ -144,16 +125,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) =
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrintKitchen}
-              title="Imprimer bon de cuisine"
-              className="gap-1"
-            >
-              <ChefHat className="w-4 h-4" />
-              <span className="hidden sm:inline">Bon cuisine</span>
-            </Button>
             <OrderStatusSelect 
               orderId={order.id}
               currentStatus={order.status}
@@ -237,22 +208,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) =
           </div>
         </div>
       </CardContent>
-      {showTicket && (
-        <KitchenTicketPrint
-          ref={ticketRef}
-          outletName={outletName}
-          tableNumber={order.table_number}
-          customerName={order.customer_name}
-          orderType={getOrderTypeDisplay(order.order_type, order.table_number) || undefined}
-          reference={order.id.slice(0, 8).toUpperCase()}
-          items={(order.items || []).map((it: any) => ({
-            name: it.name,
-            quantity: it.quantity,
-            notes: it.notes,
-            selectedOptions: it.selectedOptions || it.selected_options,
-          }))}
-        />
-      )}
     </Card>
   );
 };

@@ -71,7 +71,12 @@ export const useMenuData = (menuId: string | null) => {
     // 2. En ligne : charger menu + catégories en parallèle
     try {
       const [menuResult, categoriesResult] = await Promise.all([
-        (supabase as any).rpc('get_public_menu_data', { _menu_id: id }),
+        supabase
+          .from('menus')
+          .select('user_id, outlet_id, name, description, logo_url, header_image_url')
+          .eq('id', id)
+          .eq('is_active', true)
+          .maybeSingle(),
         supabase
           .from('menu_categories')
           .select('id, name')
@@ -80,10 +85,9 @@ export const useMenuData = (menuId: string | null) => {
       ]);
 
       if (menuResult.error) throw new Error("Erreur lors de la récupération du menu");
-      const menuRows = Array.isArray(menuResult.data) ? menuResult.data : [];
-      if (menuRows.length === 0) throw new Error("Menu non trouvé ou inactif");
+      if (!menuResult.data) throw new Error("Menu non trouvé ou inactif");
 
-      const menuDataResult = menuRows[0];
+      const menuDataResult = menuResult.data;
       const newMenuData: MenuData = {
         id,
         name: menuDataResult.name,
@@ -120,59 +124,21 @@ export const useMenuData = (menuId: string | null) => {
 
       if (itemsError) throw new Error("Erreur lors de la récupération des plats");
 
-      const availableItems = (menuItemsData || []).filter((item: any) => item.is_available !== false);
-      const itemIds = availableItems.map((i: any) => i.id);
-
-      // 3b. Charger les groupes d'options + valeurs
-      const groupsByItem: Record<string, any[]> = {};
-      if (itemIds.length > 0) {
-        const { data: groupsData } = await (supabase as any)
-          .from('menu_item_option_groups')
-          .select('id, menu_item_id, name, selection_type, is_required, order_index')
-          .in('menu_item_id', itemIds)
-          .order('order_index', { ascending: true });
-
-        const groupIds = (groupsData || []).map((g: any) => g.id);
-        const valuesByGroup: Record<string, any[]> = {};
-        if (groupIds.length > 0) {
-          const { data: valuesData } = await (supabase as any)
-            .from('menu_item_option_values')
-            .select('id, group_id, name, extra_price, is_available, order_index')
-            .in('group_id', groupIds)
-            .order('order_index', { ascending: true });
-          for (const v of valuesData || []) {
-            if (v.is_available === false) continue;
-            (valuesByGroup[v.group_id] ||= []).push({
-              id: v.id,
-              name: v.name,
-              extra_price: Number(v.extra_price) || 0,
-            });
-          }
-        }
-        for (const g of groupsData || []) {
-          (groupsByItem[g.menu_item_id] ||= []).push({
-            id: g.id,
-            name: g.name,
-            selection_type: g.selection_type,
-            is_required: !!g.is_required,
-            values: valuesByGroup[g.id] || [],
-          });
-        }
-      }
-
-      const transformedItems: MenuItem[] = availableItems.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description || '',
-        price: Number(item.price),
-        image_url: item.image_url || undefined,
-        category_name: categoryMap.get(item.category_id) || 'Autres',
-        is_available: true,
-        option_groups: groupsByItem[item.id] || [],
-      }));
+      const transformedItems: MenuItem[] = (menuItemsData || [])
+        .filter((item: any) => item.is_available !== false)
+        .map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          price: Number(item.price),
+          image_url: item.image_url || undefined,
+          category_name: categoryMap.get(item.category_id) || 'Autres',
+          is_available: true,
+        }));
 
       setMenuItems(transformedItems);
 
+      // Sauvegarder dans le cache pour la prochaine fois (hors ligne ou réseau lent)
       writeMenuCache(id, {
         menuItems: transformedItems,
         menuData: newMenuData,

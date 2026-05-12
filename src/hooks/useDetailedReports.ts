@@ -29,42 +29,41 @@ interface UseDetailedReportsProps {
 }
 
 export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsProps) => {
-  const { user, isTeamMember, teamMemberSession } = useAuth();
+  const { user } = useAuth();
   const { isOffline } = useNetworkStatus();
   const [transactions, setTransactions] = useState<DetailedTransaction[]>([]);
   const [loading, setLoading] = useState(false);
-  const effectiveUserId = isTeamMember && teamMemberSession ? teamMemberSession.ownerId : user?.id;
 
   const shouldUseOfflineCache = isOffline || (typeof window !== 'undefined' && localStorage.getItem('querox_force_offline_mode') === '1');
 
   useEffect(() => {
-    if (effectiveUserId && periodId) {
+    if (user && periodId) {
       fetchTransactions();
     }
-  }, [effectiveUserId, outletId, periodId, shouldUseOfflineCache]);
+  }, [user, outletId, periodId, shouldUseOfflineCache]);
 
   // Real-time updates (online only)
   useEffect(() => {
-    if (!effectiveUserId || !periodId || shouldUseOfflineCache) return;
+    if (!user || !periodId || shouldUseOfflineCache) return;
 
     const ordersChannel = supabase
       .channel('orders-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${effectiveUserId}` }, () => fetchTransactions())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, () => fetchTransactions())
       .subscribe();
 
     const invoicesChannel = supabase
       .channel('invoices-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `user_id=eq.${effectiveUserId}` }, () => fetchTransactions())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `user_id=eq.${user.id}` }, () => fetchTransactions())
       .subscribe();
 
     return () => {
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(invoicesChannel);
     };
-  }, [effectiveUserId, periodId, shouldUseOfflineCache]);
+  }, [user, periodId, shouldUseOfflineCache]);
 
   const fetchTransactions = async () => {
-    if (!effectiveUserId || !periodId) return;
+    if (!user || !periodId) return;
 
     setLoading(true);
     try {
@@ -73,7 +72,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
 
       if (shouldUseOfflineCache) {
         // --- MODE HORS-LIGNE : lecture depuis IndexedDB ---
-        let cachedPeriods = await getData<any[]>('business_periods', effectiveUserId);
+        let cachedPeriods = await getData<any[]>('business_periods', user.id);
         const periods = (cachedPeriods?.data as any[]) || [];
         const period = periods.find((p: any) => p.id === periodId);
 
@@ -88,14 +87,14 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         const scopedOutletId = period.outlet_id || outletId;
 
         // Outlets map - try with fallback
-        const cachedOutlets = await getData<any[]>('outlets', effectiveUserId);
+        const cachedOutlets = await getData<any[]>('outlets', user.id);
         ((cachedOutlets?.data as any[]) || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
         // Factures payées dans la période — UN SEUL cache (pas de fusion)
         const selectedOutlet = scopedOutletId || localStorage.getItem('selectedOutletId') || undefined;
         const cachedInvoices = selectedOutlet
-          ? await getData<any[]>('invoices', effectiveUserId, selectedOutlet)
-          : await getData<any[]>('invoices', effectiveUserId);
+          ? await getData<any[]>('invoices', user.id, selectedOutlet)
+          : await getData<any[]>('invoices', user.id);
 
         // Dédup par invoice_number+outlet pour éviter doublons local/serveur
         const rawInvoices = ((cachedInvoices?.data as any[]) || []);
@@ -148,7 +147,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         const { data: outlets, error: outletsError } = await supabase
           .from('outlets')
           .select('id, name')
-          .eq('user_id', effectiveUserId);
+          .eq('user_id', user.id);
         if (outletsError) throw outletsError;
         (outlets || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
@@ -156,7 +155,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         let invoicesQuery = supabase
           .from('invoices')
           .select('*')
-          .eq('user_id', effectiveUserId)
+          .eq('user_id', user.id)
           .eq('status', 'paid')
           .gte('created_at', startISO)
           .lte('created_at', endISO)

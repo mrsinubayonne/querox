@@ -24,30 +24,12 @@ const QRCodes: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [menus, setMenus] = useState<MenuType[]>([]);
   const [activeMenu, setActiveMenu] = useState<MenuType | null>(null);
-  const [restaurantSlug, setRestaurantSlug] = useState<string>('');
-  const [outletSlug, setOutletSlug] = useState<string>('');
   const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchMenus();
-    fetchSlugs();
   }, [user]);
-
-  const fetchSlugs = async () => {
-    if (!user) return;
-    try {
-      const selectedOutletId = localStorage.getItem('selectedOutletId');
-      const [{ data: profile }, { data: outlet }] = await Promise.all([
-        supabase.from('profiles').select('restaurant_slug').eq('id', user.id).maybeSingle(),
-        selectedOutletId
-          ? supabase.from('outlets').select('slug').eq('id', selectedOutletId).maybeSingle()
-          : supabase.from('outlets').select('slug').eq('user_id', user.id).limit(1).maybeSingle(),
-      ]);
-      setRestaurantSlug((profile as any)?.restaurant_slug || '');
-      setOutletSlug((outlet as any)?.slug || '');
-    } catch {}
-  };
 
   const fetchMenus = async () => {
     if (!user) return;
@@ -73,9 +55,6 @@ const QRCodes: React.FC = () => {
   };
 
   const getMenuUrl = () => {
-    if (restaurantSlug && outletSlug) {
-      return APP_CONFIG.urls.getPublicMenuUrlBySlug(restaurantSlug, outletSlug);
-    }
     if (!activeMenu) return '';
     return APP_CONFIG.urls.getPublicMenuUrl(activeMenu.id);
   };
