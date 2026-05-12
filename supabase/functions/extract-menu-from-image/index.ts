@@ -47,9 +47,9 @@ Format de sortie attendu:
   ]
 }`;
 
-    const imageUrl = mimeType === 'application/pdf' 
-      ? `data:application/pdf;base64,${imageBase64}`
-      : `data:image/jpeg;base64,${imageBase64}`;
+    const effectiveMime = mimeType && typeof mimeType === 'string' ? mimeType : 'image/jpeg';
+    const imageUrl = `data:${effectiveMime};base64,${imageBase64}`;
+    const isPdf = effectiveMime === 'application/pdf';
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
