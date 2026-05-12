@@ -2873,6 +2873,22 @@ export type Database = {
         }[]
       }
       slugify: { Args: { _input: string }; Returns: string }
+      team_member_can_access: {
+        Args: {
+          _outlet_id: string
+          _owner_id: string
+          _permission_names: string[]
+        }
+        Returns: boolean
+      }
+      team_member_has_any_permission: {
+        Args: { _owner_id: string; _permission_names: string[] }
+        Returns: boolean
+      }
+      team_member_has_outlet_access: {
+        Args: { _outlet_id: string; _owner_id: string }
+        Returns: boolean
+      }
       team_member_login: {
         Args: { _access_code: string; _email: string }
         Returns: {
