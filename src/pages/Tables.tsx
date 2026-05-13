@@ -12,6 +12,8 @@ import { RenameTableModal } from "@/components/tables/RenameTableModal";
 import { useOptimizedTableSessions, TableSession } from "@/hooks/useOptimizedTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePaidCelebration } from "@/hooks/usePaidCelebration";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTeamPermissions } from "@/hooks/useTeamPermissions";
 
 import {
   DropdownMenu,
@@ -33,6 +35,9 @@ const Tables: React.FC = () => {
   } = useOptimizedTableSessions();
 
   const { celebrate, CelebrationMessage } = usePaidCelebration();
+  const { isTeamMember } = useAuth();
+  const { hasAnyPermission, loading: permissionsLoading } = useTeamPermissions();
+  const canManageTables = !isTeamMember || hasAnyPermission(["manage_tables", "manage_orders"]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddOrderModal, setShowAddOrderModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
@@ -119,6 +124,7 @@ const Tables: React.FC = () => {
     if (session) {
       setShowSessionModal(true);
     } else {
+      if (!canManageTables) return;
       setShowCreateModal(true);
     }
   };
@@ -191,7 +197,7 @@ const Tables: React.FC = () => {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button disabled={loading}>
+                  <Button disabled={loading || permissionsLoading || !canManageTables}>
                     <Plus className="h-4 w-4 mr-2" />
                     Nouvelle commande
                   </Button>
@@ -299,7 +305,8 @@ const Tables: React.FC = () => {
                 filteredTableNumbers={filteredTableNumbers}
                 onTableClick={handleTableClick}
                 onTableRename={handleTableRename}
-                onMarkAsPaid={handleQuickPayFromTable}
+                onMarkAsPaid={canManageTables ? handleQuickPayFromTable : undefined}
+                canManageTables={canManageTables}
               />
               {filteredTableNumbers.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
