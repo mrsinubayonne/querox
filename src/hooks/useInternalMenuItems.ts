@@ -5,6 +5,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { getData } from '@/lib/offlineStorage';
 import type { MenuItem } from '@/types/menu';
+import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from '@/lib/offlineIdentity';
 
 /**
  * Hook for loading menu items in internal (authenticated) contexts like Tables.
@@ -12,7 +13,7 @@ import type { MenuItem } from '@/types/menu';
  * NOT for public-facing menus (use useMenuData instead).
  */
 export const useInternalMenuItems = (isActive: boolean) => {
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { outletId } = useRestaurant();
   const { isOffline } = useNetworkStatus();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -20,19 +21,24 @@ export const useInternalMenuItems = (isActive: boolean) => {
   const loadingRef = useRef(false);
 
   const loadMenuItems = useCallback(async () => {
-    if (!user || loadingRef.current) return;
+    const resolvedUserId = resolveOfflineUserId({
+      userId: user?.id,
+      isTeamMember,
+      ownerId: teamMemberSession?.ownerId,
+    });
+    if (!resolvedUserId || loadingRef.current) return;
     loadingRef.current = true;
     setLoading(true);
 
     try {
-      const resolvedOutletId = outletId || localStorage.getItem('selectedOutletId');
+      const resolvedOutletId = outletId || getSelectedOutletIdFromStorage();
       const outletKey = resolvedOutletId || undefined;
 
       // --- Step 1: Always load from IndexedDB first (instant display) ---
       const buildItemsFromCache = async (): Promise<MenuItem[]> => {
-        let cachedMenus = await getData<Record<string, unknown>[]>('menus', user.id, outletKey);
+        let cachedMenus = await getData<Record<string, unknown>[]>('menus', resolvedUserId, outletKey);
         if (!cachedMenus?.data || (cachedMenus.data as any[]).length === 0) {
-          cachedMenus = await getData<Record<string, unknown>[]>('menus', user.id);
+          cachedMenus = await getData<Record<string, unknown>[]>('menus', resolvedUserId);
         }
         const menusData = (cachedMenus?.data || []) as Array<{ id: string; outlet_id?: string }>;
         const outletMenuIds = resolvedOutletId
@@ -45,18 +51,18 @@ export const useInternalMenuItems = (isActive: boolean) => {
           localStorage.setItem('activeMenuId', outletMenuIds[0]);
         }
 
-        let cachedCategories = await getData<Record<string, unknown>[]>('menu_categories', user.id, outletKey);
+        let cachedCategories = await getData<Record<string, unknown>[]>('menu_categories', resolvedUserId, outletKey);
         if (!cachedCategories?.data || (cachedCategories.data as any[]).length === 0) {
-          cachedCategories = await getData<Record<string, unknown>[]>('menu_categories', user.id);
+          cachedCategories = await getData<Record<string, unknown>[]>('menu_categories', resolvedUserId);
         }
         const categoriesData = (cachedCategories?.data || []) as Array<{ id: string; name: string; menu_id: string }>;
         const filteredCategories = categoriesData.filter(c => outletMenuIds.includes(c.menu_id));
         const categoryIds = filteredCategories.map(c => c.id);
         const categoryMap = new Map(filteredCategories.map(c => [c.id, c.name]));
 
-        let cachedItems = await getData<Record<string, unknown>[]>('menu_items', user.id, outletKey);
+        let cachedItems = await getData<Record<string, unknown>[]>('menu_items', resolvedUserId, outletKey);
         if (!cachedItems?.data || (cachedItems.data as any[]).length === 0) {
-          cachedItems = await getData<Record<string, unknown>[]>('menu_items', user.id);
+          cachedItems = await getData<Record<string, unknown>[]>('menu_items', resolvedUserId);
         }
         const allItems = (cachedItems?.data || []) as Record<string, unknown>[];
 
@@ -84,7 +90,7 @@ export const useInternalMenuItems = (isActive: boolean) => {
           let { data: menu } = await supabase
             .from('menus')
             .select('id')
-            .eq('user_id', user.id)
+            .eq('user_id', resolvedUserId)
             .eq('is_active', true)
             .eq('outlet_id', resolvedOutletId)
             .limit(1)
@@ -94,7 +100,7 @@ export const useInternalMenuItems = (isActive: boolean) => {
             const fallback = await supabase
               .from('menus')
               .select('id')
-              .eq('user_id', user.id)
+              .eq('user_id', resolvedUserId)
               .eq('is_active', true)
               .limit(1)
               .maybeSingle();
@@ -144,7 +150,7 @@ export const useInternalMenuItems = (isActive: boolean) => {
       loadingRef.current = false;
       setLoading(false);
     }
-  }, [user, outletId, isOffline]);
+  }, [user?.id, isTeamMember, teamMemberSession?.ownerId, outletId, isOffline]);
 
   useEffect(() => {
     if (isActive && user) {
