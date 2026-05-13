@@ -105,7 +105,13 @@ Deno.serve(async (req) => {
     if (authUserId) {
       await admin
         .from("team_members")
-        .update({ member_user_id: authUserId, last_login_at: new Date().toISOString() })
+        .update({
+          member_user_id: authUserId,
+          status: "accepted",
+          accepted_at: new Date().toISOString(),
+          needs_password_setup: false,
+          last_login_at: new Date().toISOString(),
+        })
         .eq("id", member.member_id);
     }
 

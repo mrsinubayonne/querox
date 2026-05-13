@@ -60,6 +60,7 @@ const TeamMemberAuth: React.FC = () => {
         memberEmail: normalizedEmail,
         role: member.member_role,
         outletId: member.outlet_id,
+        outletIds: member.outlet_ids || (member.outlet_id ? [member.outlet_id] : []),
         expiresAt: expiresAt.toISOString()
       }));
 
@@ -70,6 +71,8 @@ const TeamMemberAuth: React.FC = () => {
       } else {
         console.warn('⚠️ No outlet_id assigned to this team member');
       }
+
+      window.dispatchEvent(new CustomEvent('team-member-session-updated'));
 
       // Log activity using RPC function
       await supabase.rpc('log_team_activity', {

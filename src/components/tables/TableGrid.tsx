@@ -8,6 +8,7 @@ interface TableGridProps {
   onTableRename?: (session: TableSession) => void;
   onMarkAsPaid?: (session: TableSession) => void;
   filteredTableNumbers?: string[];
+  canManageTables?: boolean;
 }
 
 export const TableGrid: React.FC<TableGridProps> = ({
@@ -16,6 +17,7 @@ export const TableGrid: React.FC<TableGridProps> = ({
   onTableRename,
   onMarkAsPaid,
   filteredTableNumbers,
+  canManageTables = true,
 }) => {
   // Generate table numbers (default to 120 tables)
   const defaultTableNumbers = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(2, "0"));
@@ -53,7 +55,10 @@ export const TableGrid: React.FC<TableGridProps> = ({
               tableNumber={tableNumber}
               session={session}
               customName={customName}
-              onClick={() => onTableClick(tableNumber, session)}
+              onClick={() => {
+                if (!session && !canManageTables) return;
+                onTableClick(tableNumber, session);
+              }}
               onRename={session && onTableRename ? () => onTableRename(session) : undefined}
               onQuickPay={session && session.status === "closed" && onMarkAsPaid ? () => onMarkAsPaid(session) : undefined}
             />

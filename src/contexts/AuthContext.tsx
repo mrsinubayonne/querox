@@ -286,6 +286,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return false;
     };
 
+    const handleTeamMemberSessionUpdated = () => {
+      if (!checkTeamMemberSession()) {
+        setIsTeamMember(false);
+        setTeamMemberSession(null);
+      }
+    };
+
+    window.addEventListener('team-member-session-updated', handleTeamMemberSessionUpdated);
+
     // Check team member session first
     const hasTeamSession = checkTeamMemberSession();
     
@@ -425,7 +434,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('team-member-session-updated', handleTeamMemberSessionUpdated);
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
