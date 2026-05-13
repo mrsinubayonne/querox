@@ -32,10 +32,11 @@ interface UseDailyReportsProps {
 }
 
 export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: UseDailyReportsProps) => {
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [loading, setLoading] = useState(false);
+  const effectiveUserId = isTeamMember && teamMemberSession ? teamMemberSession.ownerId : user?.id;
 
   const shouldUseOfflineCache = isOffline || (typeof window !== 'undefined' && localStorage.getItem('querox_force_offline_mode') === '1');
 
@@ -59,13 +60,13 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
   };
 
   useEffect(() => {
-    if (user && dateRange?.from && dateRange?.to) {
+    if (effectiveUserId && dateRange?.from && dateRange?.to) {
       fetchReports();
     }
-  }, [user, outletId, dateRange, reportType, timeRange, shouldUseOfflineCache]);
+  }, [effectiveUserId, outletId, dateRange, reportType, timeRange, shouldUseOfflineCache]);
 
   const fetchReports = async () => {
-    if (!user || !dateRange?.from || !dateRange?.to) return;
+    if (!effectiveUserId || !dateRange?.from || !dateRange?.to) return;
 
     setLoading(true);
     try {
@@ -91,12 +92,12 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         // Si outlet sélectionné: cache scopé uniquement. Sinon: cache global.
         const selectedOutlet = outletId || localStorage.getItem('selectedOutletId') || undefined;
         const cachedOrders = selectedOutlet
-          ? await getData<any[]>('orders', user.id, selectedOutlet)
-          : await getData<any[]>('orders', user.id);
+          ? await getData<any[]>('orders', effectiveUserId, selectedOutlet)
+          : await getData<any[]>('orders', effectiveUserId);
         const cachedInvoices = selectedOutlet
-          ? await getData<any[]>('invoices', user.id, selectedOutlet)
-          : await getData<any[]>('invoices', user.id);
-        const cachedOutlets = await getData<any[]>('outlets', user.id);
+          ? await getData<any[]>('invoices', effectiveUserId, selectedOutlet)
+          : await getData<any[]>('invoices', effectiveUserId);
+        const cachedOutlets = await getData<any[]>('outlets', effectiveUserId);
 
         // Outlets map
         ((cachedOutlets?.data as any[]) || []).forEach((o: any) => outletNameById.set(o.id, o.name));
@@ -129,12 +130,12 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
           const { data: profile } = await supabase
             .from('profiles')
             .select('selected_outlet_id')
-            .eq('id', user.id)
+            .eq('id', effectiveUserId)
             .maybeSingle();
           scopedOutletId = profile?.selected_outlet_id || undefined;
         }
 
-        let outletsQuery = supabase.from('outlets').select('id, name').eq('user_id', user.id);
+        let outletsQuery = supabase.from('outlets').select('id, name').eq('user_id', effectiveUserId);
         if (scopedOutletId) outletsQuery = outletsQuery.eq('id', scopedOutletId);
         const { data: outletsData, error: outletsError } = await outletsQuery;
         if (outletsError) throw outletsError;
@@ -144,7 +145,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         let ordersQuery = supabase
           .from('orders')
           .select('id, total_amount, created_at, outlet_id, customer_name, status')
-          .eq('user_id', user.id)
+          .eq('user_id', effectiveUserId)
           .gte('created_at', startISO)
           .lte('created_at', endISO)
           .limit(10000);
@@ -155,7 +156,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         let invoicesQuery = supabase
           .from('invoices')
           .select('id, total_amount, status, created_at, outlet_id, invoice_number')
-          .eq('user_id', user.id)
+          .eq('user_id', effectiveUserId)
           .gte('created_at', startISO)
           .lte('created_at', endISO)
           .limit(10000);

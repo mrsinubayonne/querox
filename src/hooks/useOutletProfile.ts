@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTeamPermissions } from '@/hooks/useTeamPermissions';
 
 type OutletRole = 'proprietaire' | 'superviseur' | 'comptable' | 'caissier';
 
@@ -114,9 +116,36 @@ const ROLE_PERMISSIONS: Record<OutletRole, Permission> = {
 };
 
 export const useOutletProfile = () => {
+  const { isTeamMember, teamMemberSession } = useAuth();
+  const { permissions: teamPermissions, loading: teamPermissionsLoading } = useTeamPermissions();
   const [profileSession, setProfileSession] = useState<ProfileSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [permissions, setPermissions] = useState<Permission>(ROLE_PERMISSIONS.proprietaire);
+
+  const getTeamPermissionState = (): Permission => {
+    const hasAny = (...names: string[]) => names.some(name => teamPermissions.includes(name));
+    const canViewOrManage = (view: string, manage: string) => hasAny(view, manage);
+
+    return {
+      dashboard: !!teamMemberSession,
+      orders: canViewOrManage('view_orders', 'manage_orders') || canViewOrManage('view_tables', 'manage_tables'),
+      reservations: canViewOrManage('view_reservations', 'manage_reservations'),
+      menus: canViewOrManage('view_menu', 'manage_menu'),
+      inventory: canViewOrManage('view_inventory', 'manage_inventory'),
+      invoices: canViewOrManage('view_invoices', 'manage_invoices'),
+      accounting: canViewOrManage('view_accounting', 'manage_accounting'),
+      statistics: canViewOrManage('view_analytics', 'view_reports') || hasAny('manage_reports'),
+      customers: canViewOrManage('view_customers', 'manage_customers'),
+      events: canViewOrManage('view_events', 'manage_events'),
+      qrcodes: canViewOrManage('view_qrcodes', 'manage_qrcodes'),
+      settings: hasAny('manage_settings'),
+      team: hasAny('manage_team'),
+      website: canViewOrManage('view_website', 'manage_website'),
+      marketing: false,
+      staff_request: false,
+      support: false,
+    };
+  };
 
   useEffect(() => {
     loadSession();
@@ -183,6 +212,9 @@ export const useOutletProfile = () => {
   };
 
   const hasPermission = (permission: keyof Permission): boolean => {
+    if (isTeamMember) {
+      return getTeamPermissionState()[permission] === true;
+    }
     return permissions[permission];
   };
 
@@ -192,8 +224,8 @@ export const useOutletProfile = () => {
 
   return {
     profileSession,
-    loading,
-    permissions,
+    loading: isTeamMember ? teamPermissionsLoading : loading,
+    permissions: isTeamMember ? getTeamPermissionState() : permissions,
     hasPermission,
     isProfileAuthenticated,
     login,

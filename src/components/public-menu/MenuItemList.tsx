@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import MenuItemCard from './MenuItemCard';
-import { MenuItem } from '@/types/menu';
+import { MenuItem, SelectedOption } from '@/types/menu';
 import { Button } from '@/components/ui/button';
 
 interface MenuItemListProps {
   groupedItems: Record<string, MenuItem[]>;
-  onAddToCart: (item: MenuItem) => void;
+  onAddToCart: (item: MenuItem, selections?: SelectedOption[]) => void;
   menuItemsCount: number;
   filteredItemsCount: number;
 }

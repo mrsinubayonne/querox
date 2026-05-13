@@ -854,6 +854,85 @@ export type Database = {
           },
         ]
       }
+      menu_item_option_groups: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          menu_item_id: string
+          name: string
+          order_index: number
+          selection_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          menu_item_id: string
+          name: string
+          order_index?: number
+          selection_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          menu_item_id?: string
+          name?: string
+          order_index?: number
+          selection_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_option_groups_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_item_option_values: {
+        Row: {
+          created_at: string
+          extra_price: number
+          group_id: string
+          id: string
+          is_available: boolean
+          name: string
+          order_index: number
+        }
+        Insert: {
+          created_at?: string
+          extra_price?: number
+          group_id: string
+          id?: string
+          is_available?: boolean
+          name: string
+          order_index?: number
+        }
+        Update: {
+          created_at?: string
+          extra_price?: number
+          group_id?: string
+          id?: string
+          is_available?: boolean
+          name?: string
+          order_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_option_values_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "menu_item_option_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           allergens: string[] | null
@@ -1579,6 +1658,7 @@ export type Database = {
           quantity: number
           reason: string | null
           reason_category: string | null
+          user_id: string
         }
         Insert: {
           after_quantity?: number | null
@@ -1592,6 +1672,7 @@ export type Database = {
           quantity: number
           reason?: string | null
           reason_category?: string | null
+          user_id: string
         }
         Update: {
           after_quantity?: number | null
@@ -1605,6 +1686,7 @@ export type Database = {
           quantity?: number
           reason?: string | null
           reason_category?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -2006,11 +2088,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          accounting_code?: string
+          accounting_code: string
           created_at?: string | null
           id?: string
           last_modified_at?: string | null
-          management_code?: string
+          management_code: string
           user_id: string
         }
         Update: {
@@ -2527,6 +2609,16 @@ export type Database = {
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
       cleanup_rate_limits: { Args: never; Returns: undefined }
       cleanup_stale_table_sessions: { Args: never; Returns: undefined }
+      complete_team_member_setup: {
+        Args: { _email: string; _new_access_code?: string; _token: string }
+        Returns: {
+          full_name: string
+          member_id: string
+          member_role: string
+          outlet_id: string
+          owner_id: string
+        }[]
+      }
       generate_invoice_number: { Args: never; Returns: string }
       generate_outlet_access_code: {
         Args: {
@@ -2584,6 +2676,18 @@ export type Database = {
           status: string
           total_amount: number
           updated_at: string
+          user_id: string
+        }[]
+      }
+      get_public_menu_data: {
+        Args: { _menu_id: string }
+        Returns: {
+          description: string
+          header_image_url: string
+          id: string
+          logo_url: string
+          name: string
+          outlet_id: string
           user_id: string
         }[]
       }
@@ -2730,8 +2834,13 @@ export type Database = {
             }
             Returns: boolean
           }
+      is_active_team_member_for_owner: {
+        Args: { _owner_id: string }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
       is_current_user_admin: { Args: never; Returns: boolean }
+      is_menu_publicly_active: { Args: { _menu_id: string }; Returns: boolean }
       is_valid_public_outlet_owner: {
         Args: { _outlet_id: string; _owner_id: string }
         Returns: boolean
@@ -2764,14 +2873,30 @@ export type Database = {
         }[]
       }
       slugify: { Args: { _input: string }; Returns: string }
+      team_member_can_access: {
+        Args: {
+          _outlet_id: string
+          _owner_id: string
+          _permission_names: string[]
+        }
+        Returns: boolean
+      }
+      team_member_has_any_permission: {
+        Args: { _owner_id: string; _permission_names: string[] }
+        Returns: boolean
+      }
+      team_member_has_outlet_access: {
+        Args: { _outlet_id: string; _owner_id: string }
+        Returns: boolean
+      }
       team_member_login: {
         Args: { _access_code: string; _email: string }
         Returns: {
-          full_name: string
           member_id: string
           member_role: string
           outlet_id: string
           owner_id: string
+          status: string
         }[]
       }
       track_button_click: {

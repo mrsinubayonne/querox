@@ -47,9 +47,9 @@ Format de sortie attendu:
   ]
 }`;
 
-    const imageUrl = mimeType === 'application/pdf' 
-      ? `data:application/pdf;base64,${imageBase64}`
-      : `data:image/jpeg;base64,${imageBase64}`;
+    const effectiveMime = mimeType && typeof mimeType === 'string' ? mimeType : 'image/jpeg';
+    const imageUrl = `data:${effectiveMime};base64,${imageBase64}`;
+    const isPdf = effectiveMime === 'application/pdf';
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -58,25 +58,14 @@ Format de sortie attendu:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "google/gemini-2.5-flash",
         messages: [
-          { 
-            role: "system", 
-            content: systemPrompt
-          },
+          { role: "system", content: systemPrompt },
           {
             role: "user",
             content: [
-              {
-                type: "text",
-                text: "Extrais tous les plats de ce document (image ou PDF) de menu et retourne-les au format JSON."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageUrl
-                }
-              }
+              { type: "text", text: "Extrais tous les plats de ce document de menu et retourne-les au format JSON via l'outil extract_dishes." },
+              { type: "image_url", image_url: { url: imageUrl } }
             ]
           }
         ],
@@ -94,18 +83,16 @@ Format de sortie attendu:
                     items: {
                       type: "object",
                       properties: {
-                        name: { type: "string", description: "Nom du plat" },
-                        description: { type: "string", description: "Description du plat" },
-                        price: { type: "number", description: "Prix du plat" },
-                        category: { type: "string", description: "Catégorie du plat (Entrées, Plats, Desserts, etc.)" }
+                        name: { type: "string" },
+                        description: { type: "string" },
+                        price: { type: "number" },
+                        category: { type: "string" }
                       },
-                      required: ["name", "price", "category"],
-                      additionalProperties: false
+                      required: ["name", "price", "category"]
                     }
                   }
                 },
-                required: ["dishes"],
-                additionalProperties: false
+                required: ["dishes"]
               }
             }
           }
