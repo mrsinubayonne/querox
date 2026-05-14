@@ -105,19 +105,30 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           quantity: 1 
         }
       ]);
-    } else {
-      setCart((prev) => {
-        const existing = prev.find((i) => i.id === item.id);
-        if (existing) {
-          return prev.map((i) =>
-            i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-          );
-        }
-        return [...prev, { id: item.id, name: item.name, price: item.price, quantity: 1 }];
-      });
+      setSearchTerm("");
+      return;
     }
+    requestAdd(item as any);
     setSearchTerm("");
   };
+
+  const { requestAdd, pickerNode } = useMenuItemOptionsPicker((item, result) => {
+    setCart((prev) => {
+      const existing = prev.find(i => i.id === result.cartKey);
+      if (existing) {
+        return prev.map(i => i.id === result.cartKey ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      const displayName = result.optionsLabel ? `${item.name} (${result.optionsLabel})` : item.name;
+      return [...prev, {
+        id: result.cartKey,
+        name: displayName,
+        price: result.unitPrice,
+        quantity: 1,
+        selected_options: result.selectedOptions,
+        options_label: result.optionsLabel,
+      }];
+    });
+  });
 
   const updateQuantity = (id: string, delta: number) => {
     setCart((prev) => {
