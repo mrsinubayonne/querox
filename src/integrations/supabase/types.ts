@@ -2619,6 +2619,39 @@ export type Database = {
           owner_id: string
         }[]
       }
+      create_table_session_with_order: {
+        Args: {
+          _items: Json
+          _number_of_guests: number
+          _outlet_id: string
+          _owner_id: string
+          _table_number: string
+          _total_amount: number
+        }
+        Returns: {
+          closed_at: string | null
+          created_at: string | null
+          custom_table_name: string | null
+          debtor_id: string | null
+          id: string
+          notes: string | null
+          number_of_guests: number | null
+          outlet_id: string | null
+          payment_method: string | null
+          started_at: string
+          status: string
+          table_number: string
+          total_amount: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "table_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       generate_invoice_number: { Args: never; Returns: string }
       generate_outlet_access_code: {
         Args: {
