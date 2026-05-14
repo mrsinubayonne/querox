@@ -289,6 +289,105 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         doc.text(`TOTAL ${periodText.split(': ')[1]}: ${formatFCFA(totalAmount)}`, 14, finalY + 10);
         finalY += 20;
 
+        // --- ORDERS LIST + TOP DISHES ---
+        try {
+          const periodInfo = await supabase
+            .from('business_periods')
+            .select('started_at, ended_at, outlet_id')
+            .eq('id', periodId!)
+            .single();
+
+          if (periodInfo.data) {
+            const startISO = periodInfo.data.started_at;
+            const endISO = periodInfo.data.ended_at || new Date().toISOString();
+
+            let ordersQuery = supabase
+              .from('orders')
+              .select('id, customer_name, total_amount, status, created_at, items, table_number, order_type')
+              .eq('user_id', user!.id)
+              .gte('created_at', startISO)
+              .lte('created_at', endISO)
+              .order('created_at', { ascending: false })
+              .limit(10000);
+            if (periodInfo.data.outlet_id) ordersQuery = ordersQuery.eq('outlet_id', periodInfo.data.outlet_id);
+            const { data: ordersData } = await ordersQuery;
+
+            if (ordersData && ordersData.length > 0) {
+              if (finalY > 220) { doc.addPage(); finalY = 20; }
+              doc.setFontSize(14);
+              doc.setFont('helvetica', 'bold');
+              doc.text(`Commandes passées (${ordersData.length})`, 14, finalY);
+              finalY += 4;
+
+              const ordersBody = ordersData.map((o: any) => {
+                const d = new Date(o.created_at);
+                const itemsCount = Array.isArray(o.items)
+                  ? o.items.reduce((s: number, it: any) => s + (Number(it.quantity) || 0), 0)
+                  : 0;
+                return [
+                  formatDate(d, 'dd/MM/yyyy HH:mm'),
+                  o.customer_name || 'Client',
+                  o.table_number || o.order_type || '-',
+                  itemsCount.toString(),
+                  formatFCFA(o.total_amount),
+                  o.status || '-',
+                ];
+              });
+
+              autoTable(doc, {
+                head: [['Date', 'Client', 'Table/Type', 'Articles', 'Montant', 'Statut']],
+                body: ordersBody,
+                startY: finalY,
+                theme: 'grid',
+                headStyles: { fillColor: [99, 102, 241] },
+                styles: { fontSize: 8 },
+                columnStyles: { 3: { halign: 'right' }, 4: { halign: 'right' } },
+              });
+              finalY = (doc as any).lastAutoTable.finalY + 8;
+
+              const dishMap = new Map<string, { name: string; qty: number; revenue: number }>();
+              ordersData.forEach((o: any) => {
+                if (Array.isArray(o.items)) {
+                  o.items.forEach((it: any) => {
+                    const key = (it.name || it.id || 'inconnu').toString();
+                    const qty = Number(it.quantity) || 0;
+                    const price = Number(it.price) || 0;
+                    const ex = dishMap.get(key);
+                    if (ex) { ex.qty += qty; ex.revenue += qty * price; }
+                    else dishMap.set(key, { name: key, qty, revenue: qty * price });
+                  });
+                }
+              });
+              const topDishes = Array.from(dishMap.values()).sort((a, b) => b.qty - a.qty);
+
+              if (topDishes.length > 0) {
+                if (finalY > 230) { doc.addPage(); finalY = 20; }
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Plats les plus commandés', 14, finalY);
+                finalY += 4;
+                autoTable(doc, {
+                  head: [['#', 'Plat', 'Quantité', 'CA estimé']],
+                  body: topDishes.map((d, i) => [
+                    (i + 1).toString(),
+                    d.name,
+                    d.qty.toString(),
+                    formatFCFA(d.revenue),
+                  ]),
+                  startY: finalY,
+                  theme: 'grid',
+                  headStyles: { fillColor: [234, 88, 12] },
+                  styles: { fontSize: 8 },
+                  columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } },
+                });
+                finalY = (doc as any).lastAutoTable.finalY + 8;
+              }
+            }
+          }
+        } catch (ordersErr) {
+          console.warn('Could not fetch orders for PDF:', ordersErr);
+        }
+
         // --- Fetch and add consumption data (beverages & ingredients) ---
         try {
           const period = await supabase
