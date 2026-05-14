@@ -196,8 +196,7 @@ const Tables: React.FC = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => {
-                    setSelectedTable(null);
-                    setShowAddOrderModal(true);
+                    setModalState({ type: 'addOrder', tableNumber: '01' });
                   }}>
                     <UserPlus className="h-4 w-4 mr-2" />
                     Client existant
