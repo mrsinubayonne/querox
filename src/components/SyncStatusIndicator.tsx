@@ -196,6 +196,12 @@ export const SyncStatusIndicator = () => {
             </div>
           )}
 
+          {lastError && (
+            <div className="text-[11px] px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive break-words">
+              <span className="font-semibold">Dernière erreur :</span> {lastError}
+            </div>
+          )}
+
           <div className="flex gap-2 pt-2">
             <Button
               size="sm"
@@ -219,6 +225,24 @@ export const SyncStatusIndicator = () => {
               </Button>
             )}
           </div>
+
+          {stuckMutations.length > 0 && (
+            <div className="space-y-1.5 pt-1 border-t border-border/50">
+              <p className="text-[11px] text-muted-foreground">
+                {stuckMutations.length} mutation(s) bloquée(s) depuis longtemps. Si vous savez qu'elles ne sont plus utiles, vous pouvez les abandonner.
+              </p>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="w-full"
+                onClick={discardStuck}
+                disabled={discarding}
+              >
+                <Trash2 className={`h-3.5 w-3.5 mr-1.5 ${discarding ? 'animate-pulse' : ''}`} />
+                Abandonner les mutations bloquées
+              </Button>
+            </div>
+          )}
 
           {isOffline && (
             <p className="text-xs text-muted-foreground text-center">
