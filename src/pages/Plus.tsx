@@ -12,13 +12,6 @@ const Plus: React.FC = () => {
 
   const items = [
     {
-      icon: UserPlus,
-      label: 'Clients (CRM)',
-      description: 'Gérez votre base clients et fidélisez-les',
-      path: '/clients',
-      color: 'from-blue-500 to-cyan-500',
-    },
-    {
       icon: Users,
       label: 'Équipe',
       description: 'Gérez les membres de votre équipe',
