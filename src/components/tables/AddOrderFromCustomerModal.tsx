@@ -20,6 +20,8 @@ import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useMenuItemOptionsPicker } from "@/components/menu-management/useMenuItemOptionsPicker";
+import type { SelectedOption } from "@/types/menu";
 
 interface AddOrderFromCustomerModalProps {
   isOpen: boolean;
@@ -33,6 +35,8 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  selected_options?: SelectedOption[];
+  options_label?: string;
 }
 
 export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps> = ({
