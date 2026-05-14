@@ -102,15 +102,16 @@ const Tables: React.FC = () => {
     }
   }, [tableNumbers, sessions, statusFilter]);
 
-  // Sync selected session when sessions update
   useEffect(() => {
-    if (selectedSession) {
-      const updatedSession = sessions.find(s => s.id === selectedSession.id);
+    if (modalState.type === 'session') {
+      const updatedSession = sessions.find(s => s.id === modalState.session.id);
       if (updatedSession) {
-        setSelectedSession(updatedSession);
+        setModalState(prev =>
+          prev.type === 'session' ? { ...prev, session: updatedSession } : prev
+        );
       }
     }
-  }, [sessions]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sessions]);
 
   useEffect(() => {
     const handleSessionUpdate = () => refetch();
