@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, MapPin, Phone } from 'lucide-react';
+import { AlertTriangle, Building2, Plus, MapPin, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -22,8 +22,12 @@ const SelectOutlet: React.FC = () => {
   });
 
   useEffect(() => {
-    // Les membres d'équipe ont déjà un outlet assigné - les rediriger
-    if (isTeamMember && teamMemberSession?.outletId) {
+    // Les membres d'équipe ne créent jamais de PDV : ils utilisent uniquement un PDV assigné.
+    if (isTeamMember && teamMemberSession) {
+      const assignedOutletId = teamMemberSession.outletId || teamMemberSession.outletIds?.[0] || localStorage.getItem('selectedOutletId');
+      if (assignedOutletId) {
+        localStorage.setItem('selectedOutletId', assignedOutletId);
+      }
       console.log('⚠️ Team member redirected from SelectOutlet to dashboard');
       navigate('/dashboard', { replace: true });
       return;
@@ -34,6 +38,29 @@ const SelectOutlet: React.FC = () => {
       navigate('/auth', { replace: true });
     }
   }, [user, isTeamMember, teamMemberSession, navigate]);
+
+  if (isTeamMember) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 px-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center space-y-3">
+            <div className="w-14 h-14 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-7 h-7" />
+            </div>
+            <CardTitle>Point de vente non assigné</CardTitle>
+            <CardDescription>
+              Votre compte équipe doit être relié à un point de vente par le propriétaire.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => navigate('/dashboard', { replace: true })}>
+              Retour au tableau de bord
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleCreateOutlet = async (e: React.FormEvent) => {
     e.preventDefault();
