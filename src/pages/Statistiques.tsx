@@ -8,13 +8,11 @@ import ModernStatCard from "@/components/ModernStatCard";
 import StatisticsReports from "@/components/statistics/StatisticsReports";
 import { useOrders } from "@/hooks/useOrders";
 import { useCustomers } from "@/hooks/useCustomers";
-import { useTransactions } from "@/hooks/useTransactions";
 import { useInvoices } from "@/hooks/useInvoices";
 
 const Statistiques: React.FC = () => {
   const { orders, loading: ordersLoading } = useOrders();
   const { customers, loading: customersLoading } = useCustomers();
-  const { transactions, loading: transactionsLoading } = useTransactions();
   const { invoices, loading: invoicesLoading } = useInvoices();
 
   const statsData = useMemo(() => {
