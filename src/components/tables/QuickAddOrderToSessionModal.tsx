@@ -206,6 +206,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         name: item.name,
         price: item.price,
         quantity: item.quantity,
+        selected_options: item.selected_options || [],
       }));
 
       if (isOffline) {
