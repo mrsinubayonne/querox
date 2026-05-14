@@ -18,54 +18,53 @@ const Statistiques: React.FC = () => {
   const { invoices, loading: invoicesLoading } = useInvoices();
 
   const statsData = useMemo(() => {
-    // Calcul du chiffre d'affaires total à partir des transactions et factures payées
-    const totalRevenueFromTransactions = transactions
-      .filter(t => t.type === 'income' && t.status === 'completed')
-      .reduce((sum, t) => sum + t.amount, 0);
-    
-    const totalRevenueFromInvoices = invoices
-      .filter(inv => inv.status === 'paid')
-      .reduce((sum, inv) => sum + inv.total_amount, 0);
-    
-    const totalRevenue = totalRevenueFromTransactions + totalRevenueFromInvoices;
+    // CA calculé EXCLUSIVEMENT à partir des factures payées (cohérent avec
+    // la mémoire projet : "Revenue is calculated ONLY from paid invoices").
+    // Les transactions de type 'income' sont créées automatiquement par le
+    // trigger SQL `create_transaction_from_paid_invoice` -> les additionner
+    // produit un DOUBLE COMPTAGE. On dédoublonne par invoice_number pour
+    // éviter aussi les factures en double.
+    const dedupePaidInvoices = (list: typeof invoices) => {
+      const map = new Map<string, typeof invoices[number]>();
+      for (const inv of list) {
+        if (inv.status !== 'paid') continue;
+        const existing = map.get(inv.invoice_number);
+        const t = (inv as any).updated_at || (inv as any).paid_date || (inv as any).created_at;
+        const eT = existing ? ((existing as any).updated_at || (existing as any).paid_date || (existing as any).created_at) : null;
+        if (!existing || (t && eT && new Date(t) > new Date(eT))) {
+          map.set(inv.invoice_number, inv);
+        }
+      }
+      return Array.from(map.values());
+    };
+
+    const allPaid = dedupePaidInvoices(invoices);
+    const totalRevenue = Math.round(
+      allPaid.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0)
+    );
+
     const ordersCount = orders.length;
     const customersCount = customers.length;
-    
-    // Calcul de la croissance (30 derniers jours vs 30 jours précédents)
+
+    // Croissance (30 jours vs 30 jours précédents) — basée sur paid_date
     const now = new Date();
-    const last30DaysTransactions = transactions.filter(t => {
-      if (t.type !== 'income' || t.status !== 'completed') return false;
-      const transactionDate = new Date(t.date);
-      const daysDiff = Math.floor((now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60 * 24));
-      return daysDiff <= 30;
+    const inWindow = (daysFromNow: number, max: number, min = 0) => daysFromNow > min && daysFromNow <= max;
+
+    const last30Paid = allPaid.filter(inv => {
+      if (!inv.paid_date) return false;
+      const d = Math.floor((now.getTime() - new Date(inv.paid_date).getTime()) / 86400000);
+      return inWindow(d, 30);
     });
-    
-    const previous30DaysTransactions = transactions.filter(t => {
-      if (t.type !== 'income' || t.status !== 'completed') return false;
-      const transactionDate = new Date(t.date);
-      const daysDiff = Math.floor((now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60 * 24));
-      return daysDiff > 30 && daysDiff <= 60;
+    const prev30Paid = allPaid.filter(inv => {
+      if (!inv.paid_date) return false;
+      const d = Math.floor((now.getTime() - new Date(inv.paid_date).getTime()) / 86400000);
+      return inWindow(d, 60, 30);
     });
 
-    const last30DaysInvoices = invoices.filter(inv => {
-      if (inv.status !== 'paid' || !inv.paid_date) return false;
-      const paidDate = new Date(inv.paid_date);
-      const daysDiff = Math.floor((now.getTime() - paidDate.getTime()) / (1000 * 60 * 60 * 24));
-      return daysDiff <= 30;
-    });
-    
-    const previous30DaysInvoices = invoices.filter(inv => {
-      if (inv.status !== 'paid' || !inv.paid_date) return false;
-      const paidDate = new Date(inv.paid_date);
-      const daysDiff = Math.floor((now.getTime() - paidDate.getTime()) / (1000 * 60 * 60 * 24));
-      return daysDiff > 30 && daysDiff <= 60;
-    });
-
-    const last30Revenue = last30DaysTransactions.reduce((sum, t) => sum + t.amount, 0) +
-                         last30DaysInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
-    const prev30Revenue = previous30DaysTransactions.reduce((sum, t) => sum + t.amount, 0) +
-                         previous30DaysInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
+    const last30Revenue = last30Paid.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0);
+    const prev30Revenue = prev30Paid.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0);
     const growth = prev30Revenue > 0 ? ((last30Revenue - prev30Revenue) / prev30Revenue) * 100 : 0;
+
 
     return [
       {
