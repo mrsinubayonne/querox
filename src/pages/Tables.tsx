@@ -38,13 +38,14 @@ const Tables: React.FC = () => {
   const { isTeamMember } = useAuth();
   const { hasAnyPermission, loading: permissionsLoading } = useTeamPermissions();
   const canManageTables = !isTeamMember || hasAnyPermission(["manage_tables", "manage_orders"]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showAddOrderModal, setShowAddOrderModal] = useState(false);
-  const [showSessionModal, setShowSessionModal] = useState(false);
-  const [showRenameModal, setShowRenameModal] = useState(false);
-  const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [selectedSession, setSelectedSession] = useState<TableSession | null>(null);
-  const [sessionToRename, setSessionToRename] = useState<TableSession | null>(null);
+  type ModalState =
+    | { type: 'none' }
+    | { type: 'create'; tableNumber: string }
+    | { type: 'addOrder'; tableNumber: string }
+    | { type: 'session'; session: TableSession; tableNumber: string }
+    | { type: 'rename'; session: TableSession };
+
+  const [modalState, setModalState] = useState<ModalState>({ type: 'none' });
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Generate table numbers (default to 30 tables, expandable)
@@ -101,15 +102,16 @@ const Tables: React.FC = () => {
     }
   }, [tableNumbers, sessions, statusFilter]);
 
-  // Sync selected session when sessions update
   useEffect(() => {
-    if (selectedSession) {
-      const updatedSession = sessions.find(s => s.id === selectedSession.id);
+    if (modalState.type === 'session') {
+      const updatedSession = sessions.find(s => s.id === modalState.session.id);
       if (updatedSession) {
-        setSelectedSession(updatedSession);
+        setModalState(prev =>
+          prev.type === 'session' ? { ...prev, session: updatedSession } : prev
+        );
       }
     }
-  }, [sessions]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sessions]);
 
   useEffect(() => {
     const handleSessionUpdate = () => refetch();
@@ -118,21 +120,14 @@ const Tables: React.FC = () => {
   }, [refetch]);
 
   const handleTableClick = (tableNumber: string, session: TableSession | null) => {
-    setSelectedTable(tableNumber);
-    setSelectedSession(session);
-
     if (session) {
-      setShowSessionModal(true);
+      setModalState({ type: 'session', session, tableNumber });
     } else {
       if (!canManageTables) return;
-      setShowCreateModal(true);
+      setModalState({ type: 'create', tableNumber });
     }
   };
 
-  const handleCreateSuccess = () => {
-    refetch();
-    setSelectedTable(null);
-  };
 
   const handleCloseSession = async (sessionId: string) => {
     try {
@@ -140,8 +135,7 @@ const Tables: React.FC = () => {
     } catch (e) {
       console.error('Error closing session:', e);
     } finally {
-      setShowSessionModal(false);
-      setSelectedSession(null);
+      setModalState({ type: 'none' });
     }
   };
 
@@ -153,14 +147,12 @@ const Tables: React.FC = () => {
     } catch (e) {
       console.error('Error marking as paid:', e);
     } finally {
-      setShowSessionModal(false);
-      setSelectedSession(null);
+      setModalState({ type: 'none' });
     }
   };
 
   const handleTableRename = useCallback((session: TableSession) => {
-    setSessionToRename(session);
-    setShowRenameModal(true);
+    setModalState({ type: 'rename', session });
   }, []);
 
   const handleTableReopen = useCallback(async (session: TableSession) => {
@@ -204,8 +196,7 @@ const Tables: React.FC = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => {
-                    setSelectedTable(null);
-                    setShowAddOrderModal(true);
+                    setModalState({ type: 'addOrder', tableNumber: '01' });
                   }}>
                     <UserPlus className="h-4 w-4 mr-2" />
                     Client existant
@@ -327,57 +318,43 @@ const Tables: React.FC = () => {
           )}
 
           {/* Modals */}
-          {selectedTable && (
+          {modalState.type === 'create' && (
             <CreateSessionWithOrderModal
-              isOpen={showCreateModal}
-              onClose={() => {
-                setShowCreateModal(false);
-                setSelectedTable(null);
-              }}
-              onSuccess={handleCreateSuccess}
-              tableNumber={selectedTable}
+              isOpen={true}
+              onClose={() => setModalState({ type: 'none' })}
+              onSuccess={() => { refetch(); setModalState({ type: 'none' }); }}
+              tableNumber={modalState.tableNumber}
             />
           )}
 
-          <AddOrderFromCustomerModal
-            isOpen={showAddOrderModal}
-            onClose={() => {
-              setShowAddOrderModal(false);
-              setSelectedTable(null);
-            }}
-            onSuccess={handleCreateSuccess}
-            tableNumber={selectedTable || "01"}
-          />
+          {modalState.type === 'addOrder' && (
+            <AddOrderFromCustomerModal
+              isOpen={true}
+              onClose={() => setModalState({ type: 'none' })}
+              onSuccess={() => { refetch(); setModalState({ type: 'none' }); }}
+              tableNumber={modalState.tableNumber}
+            />
+          )}
 
-          <TableSessionModal
-            isOpen={showSessionModal}
-            onClose={() => {
-              setShowSessionModal(false);
-              setSelectedSession(null);
-            }}
-            session={selectedSession}
-            onCloseSession={handleCloseSession}
-            onMarkAsPaid={handleMarkAsPaid}
-            isMutating={isMutating}
-            onReopenSession={async (sessionId: string) => {
-              await reopenSession(sessionId);
-            }}
-          />
+          {modalState.type === 'session' && (
+            <TableSessionModal
+              isOpen={true}
+              onClose={() => setModalState({ type: 'none' })}
+              session={modalState.session}
+              onCloseSession={handleCloseSession}
+              onMarkAsPaid={handleMarkAsPaid}
+              isMutating={isMutating}
+              onReopenSession={async (sessionId: string) => { await reopenSession(sessionId); }}
+            />
+          )}
 
-          {sessionToRename && (
+          {modalState.type === 'rename' && (
             <RenameTableModal
-              isOpen={showRenameModal}
-              onClose={() => {
-                setShowRenameModal(false);
-                setSessionToRename(null);
-              }}
-              sessionId={sessionToRename.id}
-              currentName={sessionToRename.custom_table_name || `Table ${sessionToRename.table_number}`}
-              onSuccess={() => {
-                refetch();
-                setShowRenameModal(false);
-                setSessionToRename(null);
-              }}
+              isOpen={true}
+              onClose={() => setModalState({ type: 'none' })}
+              sessionId={modalState.session.id}
+              currentName={modalState.session.custom_table_name || `Table ${modalState.session.table_number}`}
+              onSuccess={() => { refetch(); setModalState({ type: 'none' }); }}
             />
           )}
           <CelebrationMessage />
