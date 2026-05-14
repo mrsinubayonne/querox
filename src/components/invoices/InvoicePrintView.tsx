@@ -171,35 +171,38 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
         <style>{`
           /* Hide everything except the invoice during print */
           @media print {
-            /* Hide absolutely everything */
             html, body {
               margin: 0 !important;
               padding: 0 !important;
               width: ${format === 'a4' ? '210mm' : '80mm'} !important;
               min-width: ${format === 'a4' ? '210mm' : '80mm'} !important;
               max-width: ${format === 'a4' ? '210mm' : '80mm'} !important;
+              height: auto !important;
+              min-height: 0 !important;
+              background: white !important;
               -webkit-text-size-adjust: 100% !important;
               text-size-adjust: 100% !important;
             }
-            body * {
-              visibility: hidden !important;
+            /* Remove every other root element from the page flow so only
+               the invoice is measured for pagination (avoids extra blank pages) */
+            body > *:not(#invoice-print-portal) {
+              display: none !important;
             }
-            /* Then show only the invoice portal and its children */
             #invoice-print-portal,
             #invoice-print-portal * {
               visibility: visible !important;
             }
             #invoice-print-portal {
-              position: absolute !important;
-              left: 0 !important;
-              top: 0 !important;
+              position: static !important;
+              left: auto !important;
+              top: auto !important;
               display: block !important;
               width: ${format === 'a4' ? '210mm' : '80mm'} !important;
               max-width: ${format === 'a4' ? '210mm' : '80mm'} !important;
               background: white !important;
-              z-index: 99999 !important;
               margin: 0 !important;
               padding: 0 !important;
+              page-break-after: avoid !important;
             }
             .invoice-print-container {
               padding: ${format === 'a4' ? '15mm' : '2mm'} !important;
@@ -208,6 +211,7 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
               height: auto !important;
               overflow: visible !important;
               margin: 0 !important;
+              page-break-after: avoid !important;
             }
             @page {
               size: ${format === 'a4' ? 'A4 portrait' : '80mm auto'};
