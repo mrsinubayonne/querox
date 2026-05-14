@@ -40,18 +40,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // CRITICAL: Open WhatsApp window SYNCHRONOUSLY (before any await) so mobile
-    // browsers (Safari iOS, Chrome Android) don't block it. We update its
-    // location later once the order is saved. If popup is blocked, we'll
-    // fall back to navigating the current tab.
-    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    let waWindow: Window | null = null;
-    if (!isMobile) {
-      try { waWindow = window.open('', '_blank'); } catch { waWindow = null; }
-    }
-
     if (!orderType) {
-      if (waWindow) waWindow.close();
       toast({ title: "Type de commande requis", description: "Veuillez sélectionner un type de commande.", variant: "destructive" });
       return;
     }
