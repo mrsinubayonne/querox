@@ -120,14 +120,11 @@ const Tables: React.FC = () => {
   }, [refetch]);
 
   const handleTableClick = (tableNumber: string, session: TableSession | null) => {
-    setSelectedTable(tableNumber);
-    setSelectedSession(session);
-
     if (session) {
-      setShowSessionModal(true);
+      setModalState({ type: 'session', session, tableNumber });
     } else {
       if (!canManageTables) return;
-      setShowCreateModal(true);
+      setModalState({ type: 'create', tableNumber });
     }
   };
 
