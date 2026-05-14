@@ -164,10 +164,10 @@ export const useDashboardStats = (period: Period = 'day') => {
       }
       const uniquePaidInvoices = Array.from(invoiceMap.values());
 
-      const revenue = uniquePaidInvoices.reduce(
+      const revenue = Math.round(uniquePaidInvoices.reduce(
         (sum, inv: any) => sum + Number(inv.total_amount || 0),
         0
-      );
+      ));
 
       // Previous period revenue — same logic: only paid invoices
       const previousPaidInvoices =
@@ -182,10 +182,10 @@ export const useDashboardStats = (period: Period = 'day') => {
       }
       const uniquePreviousPaidInvoices = Array.from(prevInvoiceMap.values());
 
-      const previousRevenue = uniquePreviousPaidInvoices.reduce(
+      const previousRevenue = Math.round(uniquePreviousPaidInvoices.reduce(
         (sum, inv: any) => sum + Number(inv.total_amount || 0),
         0
-      );
+      ));
 
       const revenueChange =
         previousRevenue > 0
