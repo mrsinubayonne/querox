@@ -532,8 +532,22 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     },
   });
 
+  let snapshotSessions: TableSession[] = [];
+  let snapshotInvoices: Invoice[] = [];
+
   const markSessionAsPaidMutation = useMutation({
     mutationFn: ({ sessionId, paymentMethod }: { sessionId: string; paymentMethod?: string }) => withTimeout((async () => {
+      // Guard: validate session exists and snapshot cache before any side effects
+      {
+        const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
+        const sessionToValidate = currentSessions.find(s => s.id === sessionId);
+        if (!sessionToValidate) {
+          throw new Error('Session introuvable. Rafraîchissez la page et réessayez.');
+        }
+        snapshotSessions = [...currentSessions];
+        snapshotInvoices = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) ? [...(queryClient.getQueryData(invoicesQueryKey) as Invoice[])] : [];
+      }
+
       // CRITICAL: Use raw cache to avoid stale closure over memoized `sessions`
       const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
       const session = currentSessions.find(s => s.id === sessionId);
@@ -770,9 +784,24 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         description: "La facture est marquée payée et la table est libérée.",
       });
     },
-    onError: (error: Error) => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      toast({ title: "Erreur paiement", description: error.message || "Impossible de marquer comme payée.", variant: "destructive" });
+    onError: (error: Error, variables: { sessionId: string; paymentMethod?: string }) => {
+      // ROLLBACK: undo optimistic update
+      localPaidSessionIds.delete(variables.sessionId);
+      localPaidTimestamps.delete(variables.sessionId);
+      persistPaidSessionsToStorage();
+
+      // Restore React Query cache to snapshot
+      queryClient.setQueryData(sessionsQueryKey, snapshotSessions);
+      queryClient.setQueryData(invoicesQueryKey, snapshotInvoices);
+
+      // Force refetch to get server truth
+      void queryClient.refetchQueries({ queryKey: ['table-sessions'] });
+
+      toast({
+        title: 'Erreur paiement',
+        description: error.message || 'Impossible de marquer comme payée. La table a été restaurée.',
+        variant: 'destructive',
+      });
     },
   });
 
