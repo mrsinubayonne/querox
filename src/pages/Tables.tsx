@@ -152,8 +152,7 @@ const Tables: React.FC = () => {
   };
 
   const handleTableRename = useCallback((session: TableSession) => {
-    setSessionToRename(session);
-    setShowRenameModal(true);
+    setModalState({ type: 'rename', session });
   }, []);
 
   const handleTableReopen = useCallback(async (session: TableSession) => {
