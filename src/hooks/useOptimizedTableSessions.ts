@@ -537,6 +537,17 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
   const markSessionAsPaidMutation = useMutation({
     mutationFn: ({ sessionId, paymentMethod }: { sessionId: string; paymentMethod?: string }) => withTimeout((async () => {
+      // Guard: validate session exists and snapshot cache before any side effects
+      {
+        const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
+        const sessionToValidate = currentSessions.find(s => s.id === sessionId);
+        if (!sessionToValidate) {
+          throw new Error('Session introuvable. Rafraîchissez la page et réessayez.');
+        }
+        snapshotSessions = [...currentSessions];
+        snapshotInvoices = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) ? [...(queryClient.getQueryData(invoicesQueryKey) as Invoice[])] : [];
+      }
+
       // CRITICAL: Use raw cache to avoid stale closure over memoized `sessions`
       const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
       const session = currentSessions.find(s => s.id === sessionId);
