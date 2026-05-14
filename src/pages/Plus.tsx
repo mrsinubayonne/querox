@@ -4,7 +4,7 @@ import ModernSidebar from '../components/ModernSidebar';
 import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { UserPlus, Users, Award, QrCode, CreditCard, Globe, ArrowRight } from 'lucide-react';
+import { Users, Award, QrCode, CreditCard, Globe, ArrowRight } from 'lucide-react';
 
 const Plus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
