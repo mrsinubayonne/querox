@@ -444,6 +444,7 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
             </Button>
           </DialogFooter>
         </form>
+        {pickerNode}
       </DialogContent>
     </Dialog>
   );
