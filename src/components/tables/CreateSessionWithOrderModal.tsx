@@ -20,6 +20,8 @@ import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
+import { useMenuItemOptionsPicker } from "@/components/menu-management/useMenuItemOptionsPicker";
+import type { SelectedOption } from "@/types/menu";
 
 interface CreateSessionWithOrderModalProps {
   isOpen: boolean;
@@ -33,6 +35,8 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  selected_options?: SelectedOption[];
+  options_label?: string;
 }
 
 export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalProps> = ({
