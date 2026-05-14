@@ -40,8 +40,9 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
   onSuccess,
   orderId,
 }) => {
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { toast } = useToast();
+  const { isOffline } = useNetworkStatus();
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
