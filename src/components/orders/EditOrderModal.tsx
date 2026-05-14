@@ -179,42 +179,78 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
         quantity: item.quantity,
       }));
 
-      const { error: updateError } = await supabase
-        .from("orders")
-        .update({
-          items: orderItems,
-          total_amount: totalAmount,
-        })
-        .eq("id", orderId);
+      const updatePayload = { items: orderItems, total_amount: totalAmount };
 
-      if (updateError) throw updateError;
+      if (isOffline) {
+        const resolvedUserId = resolveOfflineUserId({
+          userId: user?.id,
+          isTeamMember,
+          ownerId: teamMemberSession?.ownerId,
+        });
+        const outletId = getSelectedOutletIdFromStorage();
+        if (!resolvedUserId) throw new Error("Session introuvable");
 
-      // Mettre à jour le total de la session si nécessaire
-      const { data: order } = await supabase
-        .from("orders")
-        .select("session_id")
-        .eq("id", orderId)
-        .single();
+        // Queue the update for sync when back online
+        await queueMutation({
+          table: 'orders',
+          operation: 'update',
+          data: { id: orderId, ...updatePayload },
+          localId: orderId,
+          userId: resolvedUserId,
+          outletId,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
 
-      if (order?.session_id) {
-        const { data: sessionOrders } = await supabase
-          .from("orders")
-          .select("total_amount")
-          .eq("session_id", order.session_id);
-
-        if (sessionOrders) {
-          const sessionTotal = sessionOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
-          await supabase
-            .from("table_sessions")
-            .update({ total_amount: sessionTotal })
-            .eq("id", order.session_id);
+        // Optimistically update local IndexedDB cache
+        const cached = (await getData<any[]>('orders', resolvedUserId, outletId)) ??
+                       (outletId ? await getData<any[]>('orders', resolvedUserId) : undefined);
+        if (cached?.data) {
+          const updated = cached.data.map((o: any) =>
+            o.id === orderId ? { ...o, ...updatePayload, updated_at: new Date().toISOString() } : o
+          );
+          await storeData('orders', updated, resolvedUserId, outletId);
         }
-      }
 
-      toast({
-        title: "Commande modifiée",
-        description: "La commande a été mise à jour avec succès.",
-      });
+        toast({
+          title: "Commande modifiée (hors-ligne)",
+          description: "Sera synchronisée à la reconnexion.",
+        });
+      } else {
+        const { error: updateError } = await supabase
+          .from("orders")
+          .update(updatePayload)
+          .eq("id", orderId);
+
+        if (updateError) throw updateError;
+
+        // Mettre à jour le total de la session si nécessaire
+        const { data: order } = await supabase
+          .from("orders")
+          .select("session_id")
+          .eq("id", orderId)
+          .single();
+
+        if (order?.session_id) {
+          const { data: sessionOrders } = await supabase
+            .from("orders")
+            .select("total_amount")
+            .eq("session_id", order.session_id);
+
+          if (sessionOrders) {
+            const sessionTotal = sessionOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+            await supabase
+              .from("table_sessions")
+              .update({ total_amount: sessionTotal })
+              .eq("id", order.session_id);
+          }
+        }
+
+        toast({
+          title: "Commande modifiée",
+          description: "La commande a été mise à jour avec succès.",
+        });
+      }
 
       window.dispatchEvent(new CustomEvent("session-updated"));
       onSuccess();
@@ -223,7 +259,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
       console.error("Error updating order:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de modifier la commande.",
+        description: error.message || "Impossible de modifier la commande.",
         variant: "destructive",
       });
     } finally {
