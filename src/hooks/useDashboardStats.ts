@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOutlets } from './useOutlets';
+import { getData, storeData } from '@/lib/offlineStorage';
+import { useNetworkStatus } from './useNetworkStatus';
 
 type Period = 'day' | 'week' | 'month';
 
@@ -43,6 +45,7 @@ export const useDashboardStats = (period: Period = 'day') => {
     delayedOrders: [],
   });
   const [loading, setLoading] = useState(true);
+  const { isOffline } = useNetworkStatus();
 
   const getDateRange = (period: Period) => {
     const now = new Date();
@@ -86,6 +89,15 @@ export const useDashboardStats = (period: Period = 'day') => {
       : user?.id;
     
     if (!effectiveUserId) return;
+
+    if (isOffline) {
+      const cached = await getData('dashboard_stats' as any, effectiveUserId);
+      if (cached?.data) {
+        setStats(cached.data as DashboardStats);
+        setLoading(false);
+        return;
+      }
+    }
 
     try {
       setLoading(true);
@@ -245,7 +257,7 @@ export const useDashboardStats = (period: Period = 'day') => {
         }))
         .slice(0, 5) || [];
 
-      setStats({
+      const computedStats: DashboardStats = {
         revenue,
         previousRevenue,
         revenueChange,
@@ -257,9 +269,31 @@ export const useDashboardStats = (period: Period = 'day') => {
         topProducts,
         lowStockItems,
         delayedOrders,
-      });
+      };
+      setStats(computedStats);
+      if (!isOffline) {
+        await storeData('dashboard_stats' as any, computedStats, effectiveUserId);
+      }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      const cached = await getData('dashboard_stats' as any, effectiveUserId);
+      if (cached?.data) {
+        setStats(cached.data as DashboardStats);
+      } else {
+        setStats({
+          revenue: 0,
+          previousRevenue: 0,
+          revenueChange: 0,
+          totalOrders: 0,
+          previousOrders: 0,
+          ordersChange: 0,
+          successRate: 0,
+          averageCart: 0,
+          topProducts: [],
+          lowStockItems: [],
+          delayedOrders: [],
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -274,6 +308,15 @@ export const useDashboardStats = (period: Period = 'day') => {
 
     if (!effectiveUserId) return;
 
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const debouncedFetchStats = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        void fetchStats();
+      }, 2000);
+    };
+
     const ordersChannel = supabase
       .channel('dashboard-orders')
       .on(
@@ -284,7 +327,7 @@ export const useDashboardStats = (period: Period = 'day') => {
           table: 'orders',
           filter: `user_id=eq.${effectiveUserId}`,
         },
-        () => fetchStats()
+        debouncedFetchStats
       )
       .subscribe();
 
@@ -298,7 +341,7 @@ export const useDashboardStats = (period: Period = 'day') => {
           table: 'invoices',
           filter: `user_id=eq.${effectiveUserId}`,
         },
-        () => fetchStats()
+        debouncedFetchStats
       )
       .subscribe();
 
@@ -312,11 +355,12 @@ export const useDashboardStats = (period: Period = 'day') => {
           table: 'inventory_items',
           filter: `user_id=eq.${effectiveUserId}`,
         },
-        () => fetchStats()
+        debouncedFetchStats
       )
       .subscribe();
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(invoicesChannel);
       supabase.removeChannel(inventoryChannel);
