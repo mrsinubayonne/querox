@@ -52,43 +52,59 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
   useEffect(() => {
     const fetchOrderAndMenu = async () => {
       if (!user || !orderId || !isOpen) return;
-      
+
       setInitialLoading(true);
       try {
-        // Charger la commande existante
-        const { data: order, error: orderError } = await supabase
-          .from("orders")
-          .select("*")
-          .eq("id", orderId)
-          .single();
+        const resolvedUserId = resolveOfflineUserId({
+          userId: user.id,
+          isTeamMember,
+          ownerId: teamMemberSession?.ownerId,
+        });
+        const outletId = getSelectedOutletIdFromStorage();
 
-        if (orderError) throw orderError;
+        if (isOffline) {
+          // Load order from IndexedDB
+          const cachedOrders = (await getData<any[]>('orders', resolvedUserId, outletId)) ??
+                               (resolvedUserId ? await getData<any[]>('orders', resolvedUserId) : undefined);
+          const order = (cachedOrders?.data || []).find((o: any) => o.id === orderId);
+          if (order && Array.isArray(order.items)) {
+            setCart(order.items as unknown as CartItem[]);
+          }
+          // Load active menu id from localStorage (set by useInternalMenuItems)
+          const cachedMenuId = localStorage.getItem('activeMenuId');
+          if (cachedMenuId) setActiveMenuId(cachedMenuId);
+        } else {
+          // Online path
+          const { data: order, error: orderError } = await supabase
+            .from("orders")
+            .select("*")
+            .eq("id", orderId)
+            .single();
 
-        // Charger le menu actif
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("selected_outlet_id")
-          .eq("id", user.id)
-          .maybeSingle();
+          if (orderError) throw orderError;
 
-        const outletId = profile?.selected_outlet_id;
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("selected_outlet_id")
+            .eq("id", user.id)
+            .maybeSingle();
 
-        const { data: menus } = await supabase
-          .from("menus")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("is_active", true)
-          .eq("outlet_id", outletId)
-          .limit(1)
-          .maybeSingle();
+          const profileOutletId = profile?.selected_outlet_id || outletId;
 
-        if (menus) {
-          setActiveMenuId(menus.id);
-        }
+          const { data: menus } = await supabase
+            .from("menus")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .eq("outlet_id", profileOutletId)
+            .limit(1)
+            .maybeSingle();
 
-        // Remplir le panier avec les articles de la commande
-        if (order && Array.isArray(order.items)) {
-          setCart(order.items as unknown as CartItem[]);
+          if (menus) setActiveMenuId(menus.id);
+
+          if (order && Array.isArray(order.items)) {
+            setCart(order.items as unknown as CartItem[]);
+          }
         }
       } catch (error) {
         console.error("Error loading order:", error);
