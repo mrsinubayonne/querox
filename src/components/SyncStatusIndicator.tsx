@@ -4,7 +4,7 @@ import { useOfflineHealth } from '@/hooks/useOfflineHealth';
 import { Cloud, CloudOff, RefreshCw, AlertCircle, Check, AlertTriangle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { getAllMutations, deleteMutation, type QueuedMutation } from '@/lib/offlineStorage';
+import { getAllMutations, type QueuedMutation } from '@/lib/offlineStorage';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -25,6 +25,7 @@ export const SyncStatusIndicator = () => {
     progress,
     forceSync,
     retryFailed,
+    discardBlocked,
   } = useSyncStatus();
   const { isOffline } = useNetworkStatus();
   const { level, oldestMutationAge, alerts, refresh } = useOfflineHealth();
@@ -44,8 +45,9 @@ export const SyncStatusIndicator = () => {
       if (!cancelled) setStuckMutations(stuck);
     };
     load();
+    window.addEventListener('querox-sync-queue-changed', load);
     const i = setInterval(load, 5000);
-    return () => { cancelled = true; clearInterval(i); };
+    return () => { cancelled = true; clearInterval(i); window.removeEventListener('querox-sync-queue-changed', load); };
   }, [pendingCount, failedCount, isSyncing]);
 
   const lastError = stuckMutations.find((m) => m.errorMessage)?.errorMessage;
@@ -55,9 +57,10 @@ export const SyncStatusIndicator = () => {
     if (!window.confirm(`Abandonner ${stuckMutations.length} mutation(s) bloquée(s) ? Cette action est irréversible.`)) return;
     setDiscarding(true);
     try {
-      for (const m of stuckMutations) await deleteMutation(m.id);
-      toast({ title: 'File d\'attente vidée', description: `${stuckMutations.length} mutation(s) supprimée(s).` });
+      const removed = await discardBlocked();
+      toast({ title: 'File d\'attente vidée', description: `${removed} mutation(s) supprimée(s).` });
       setStuckMutations([]);
+      window.dispatchEvent(new CustomEvent('querox-sync-queue-changed'));
       await refresh();
       queryClient.invalidateQueries();
     } catch {
@@ -86,6 +89,7 @@ export const SyncStatusIndicator = () => {
 
   const hasIssues = failedCount > 0 || pendingCount > 0 || isOffline || level !== 'healthy';
   const totalBadge = pendingCount + failedCount;
+  const showDiscardAction = hasIssues && (failedCount > 0 || stuckMutations.length > 0 || (oldestMutationAge ?? 0) > STUCK_THRESHOLD_MS);
 
   return (
     <Popover>
@@ -202,6 +206,19 @@ export const SyncStatusIndicator = () => {
             </div>
           )}
 
+          {showDiscardAction && (
+            <Button
+              size="sm"
+              variant="destructive"
+              className="w-full"
+              onClick={discardStuck}
+              disabled={discarding || stuckMutations.length === 0}
+            >
+              <Trash2 className={`h-3.5 w-3.5 mr-1.5 ${discarding ? 'animate-pulse' : ''}`} />
+              Supprimer les blocages ({stuckMutations.length})
+            </Button>
+          )}
+
           <div className="flex gap-2 pt-2">
             <Button
               size="sm"
@@ -226,21 +243,13 @@ export const SyncStatusIndicator = () => {
             )}
           </div>
 
-          {stuckMutations.length > 0 && (
+          {showDiscardAction && (
             <div className="space-y-1.5 pt-1 border-t border-border/50">
               <p className="text-[11px] text-muted-foreground">
-                {stuckMutations.length} mutation(s) bloquée(s) depuis longtemps. Si vous savez qu'elles ne sont plus utiles, vous pouvez les abandonner.
+                {stuckMutations.length > 0
+                  ? `${stuckMutations.length} mutation(s) bloquée(s) peuvent être supprimée(s).`
+                  : 'Les blocages supprimables apparaîtront ici après 3 échecs ou 30 minutes.'}
               </p>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="w-full"
-                onClick={discardStuck}
-                disabled={discarding}
-              >
-                <Trash2 className={`h-3.5 w-3.5 mr-1.5 ${discarding ? 'animate-pulse' : ''}`} />
-                Abandonner les mutations bloquées
-              </Button>
             </div>
           )}
 

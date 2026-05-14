@@ -29,6 +29,10 @@ export function useSyncStatus() {
     return syncEngine.retryFailed();
   }, []);
 
+  const discardBlocked = useCallback(async () => {
+    return syncEngine.discardBlockedMutations();
+  }, []);
+
   const getStats = useCallback(async () => {
     return getStorageStats();
   }, []);
@@ -37,6 +41,7 @@ export function useSyncStatus() {
     ...status,
     forceSync,
     retryFailed,
+    discardBlocked,
     getStats,
   };
 }

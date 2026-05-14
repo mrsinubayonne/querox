@@ -346,21 +346,37 @@ export const useOutlets = () => {
   const deleteOutlet = async (id: string): Promise<void> => {
     if (isOffline) {
       toast.error('Impossible de supprimer un point de vente hors ligne');
-      return;
+      throw new Error('Suppression impossible hors ligne');
     }
+    let userId = user?.id;
+    if (isTeamMember && teamMemberSession) userId = teamMemberSession.ownerId;
+    if (!userId) throw new Error('Session utilisateur introuvable');
     try {
       const { error } = await supabase
         .from('outlets')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', userId);
 
       if (error) throw error;
-      
+
+      setOutlets((prev) => prev.filter((outlet) => outlet.id !== id));
+      if (selectedOutletId === id) {
+        setSelectedOutletId(null);
+        localStorage.removeItem('selectedOutletId');
+        localStorage.removeItem('outlet_cache');
+      }
+      const cached = await getData<Outlet[]>('outlets', userId);
+      if (cached?.data) await storeData('outlets', cached.data.filter((outlet) => outlet.id !== id), userId);
       toast.success('Point de vente supprimé');
       await loadOutlets();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting outlet:', error);
-      toast.error('Erreur lors de la suppression');
+      const msg = error?.code === '23503'
+        ? 'Ce point de vente contient encore des données liées. Réessayez maintenant.'
+        : error?.message || 'Erreur lors de la suppression';
+      toast.error(msg);
+      throw error;
     }
   };
 
