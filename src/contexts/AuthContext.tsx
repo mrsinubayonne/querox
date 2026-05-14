@@ -286,8 +286,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Check if session is expired
           if (expiresAt > new Date()) {
             console.log('✅ Team member session found and valid');
+            const normalizedSession = normalizeTeamMemberSession(parsed);
+            localStorage.setItem('teamMember', JSON.stringify(normalizedSession));
             setIsTeamMember(true);
-            setTeamMemberSession(parsed);
+            setTeamMemberSession(normalizedSession);
             setLoading(false);
             return true;
           } else {
