@@ -86,6 +86,7 @@ export const useInternalMenuItems = (isActive: boolean) => {
       const cachedItems = await buildItemsFromCache();
       if (cachedItems.length > 0) {
         setMenuItems(cachedItems);
+        menuItemsMemoryCache.set(cacheKey, cachedItems);
       }
 
       // --- Step 2: If online, refresh from Supabase ---
