@@ -20,6 +20,8 @@ import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
+import { useMenuItemOptionsPicker } from "@/components/menu-management/useMenuItemOptionsPicker";
+import type { SelectedOption } from "@/types/menu";
 
 interface CreateSessionWithOrderModalProps {
   isOpen: boolean;
@@ -33,6 +35,8 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  selected_options?: SelectedOption[];
+  options_label?: string;
 }
 
 export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalProps> = ({
@@ -101,19 +105,30 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           quantity: 1 
         }
       ]);
-    } else {
-      setCart((prev) => {
-        const existing = prev.find((i) => i.id === item.id);
-        if (existing) {
-          return prev.map((i) =>
-            i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-          );
-        }
-        return [...prev, { id: item.id, name: item.name, price: item.price, quantity: 1 }];
-      });
+      setSearchTerm("");
+      return;
     }
+    requestAdd(item as any);
     setSearchTerm("");
   };
+
+  const { requestAdd, pickerNode } = useMenuItemOptionsPicker((item, result) => {
+    setCart((prev) => {
+      const existing = prev.find(i => i.id === result.cartKey);
+      if (existing) {
+        return prev.map(i => i.id === result.cartKey ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      const displayName = result.optionsLabel ? `${item.name} (${result.optionsLabel})` : item.name;
+      return [...prev, {
+        id: result.cartKey,
+        name: displayName,
+        price: result.unitPrice,
+        quantity: 1,
+        selected_options: result.selectedOptions,
+        options_label: result.optionsLabel,
+      }];
+    });
+  });
 
   const updateQuantity = (id: string, delta: number) => {
     setCart((prev) => {
@@ -197,6 +212,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         name: item.name,
         price: item.price,
         quantity: item.quantity,
+        selected_options: item.selected_options || [],
       }));
 
       if (isOffline) {
@@ -655,6 +671,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             )}
           </div>
         </form>
+        {pickerNode}
       </DialogContent>
     </Dialog>
   );

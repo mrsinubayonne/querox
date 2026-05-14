@@ -21,7 +21,8 @@ import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
-import type { MenuItem } from "@/types/menu";
+import type { MenuItem, SelectedOption } from "@/types/menu";
+import { useMenuItemOptionsPicker } from "@/components/menu-management/useMenuItemOptionsPicker";
 
 interface Props {
   isOpen: boolean;
@@ -36,6 +37,8 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  selected_options?: SelectedOption[];
+  options_label?: string;
 }
 
 const QuickAddOrderToSessionModal: React.FC<Props> = ({
@@ -99,17 +102,31 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
           quantity: 1 
         }
       ]);
-    } else {
-      setCart((prev) => {
-        const existing = prev.find((i) => i.id === item.id);
-        if (existing) {
-          return prev.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
-        }
-        return [...prev, { id: item.id, name: item.name, price: item.price, quantity: 1 }];
-      });
+      setSearchTerm("");
+      return;
     }
+    requestAdd(item as any);
     setSearchTerm("");
   };
+
+  const { requestAdd, pickerNode } = useMenuItemOptionsPicker((item, result) => {
+    setCart((prev) => {
+      const existing = prev.find(i => i.id === result.cartKey);
+      if (existing) {
+        return prev.map(i => i.id === result.cartKey ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      const displayName = result.optionsLabel ? `${item.name} (${result.optionsLabel})` : item.name;
+      return [...prev, {
+        id: result.cartKey,
+        name: displayName,
+        price: result.unitPrice,
+        quantity: 1,
+        selected_options: result.selectedOptions,
+        options_label: result.optionsLabel,
+      }];
+    });
+  });
+
 
   const updateQuantity = (id: string, delta: number) => {
     setCart((prev) => {
@@ -189,6 +206,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         name: item.name,
         price: item.price,
         quantity: item.quantity,
+        selected_options: item.selected_options || [],
       }));
 
       if (isOffline) {
@@ -303,7 +321,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
           table_number: tableNumber,
           order_type: "sur_place",
           customer_name: `Table ${tableNumber}`,
-          items: orderItems,
+          items: orderItems as any,
           total_amount: totalAmount,
           status: "pending",
         },
@@ -518,6 +536,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
             </div>
           </DialogFooter>
         </form>
+        {pickerNode}
       </DialogContent>
     </Dialog>
   );

@@ -80,6 +80,7 @@ export const useInternalMenuItems = (isActive: boolean) => {
             category_name: categoryMap.get(item.category_id as string) || 'Sans catégorie',
             image_url: item.image_url as string | undefined,
             is_available: true,
+            option_groups: [],
           }));
       };
 
@@ -132,6 +133,33 @@ export const useInternalMenuItems = (isActive: boolean) => {
             .neq('is_available', false);
 
           if (freshItems && freshItems.length > 0) {
+            const itemIds = freshItems.map(i => i.id);
+            const groupsByItem = new Map<string, any[]>();
+            try {
+              const { data: groupsData } = await (supabase as any)
+                .from('menu_item_option_groups')
+                .select('id, menu_item_id, name, selection_type, is_required, order_index')
+                .in('menu_item_id', itemIds)
+                .order('order_index');
+              const groupIds = (groupsData || []).map((g: any) => g.id);
+              let valuesData: any[] = [];
+              if (groupIds.length > 0) {
+                const { data: vals } = await (supabase as any)
+                  .from('menu_item_option_values')
+                  .select('id, group_id, name, extra_price, is_available, order_index')
+                  .in('group_id', groupIds)
+                  .order('order_index');
+                valuesData = vals || [];
+              }
+              for (const g of groupsData || []) {
+                const arr = groupsByItem.get(g.menu_item_id) || [];
+                arr.push({ ...g, values: valuesData.filter((v: any) => v.group_id === g.id && v.is_available !== false) });
+                groupsByItem.set(g.menu_item_id, arr);
+              }
+            } catch (err) {
+              console.warn('[useInternalMenuItems] Option groups load failed:', err);
+            }
+
             const items: MenuItem[] = freshItems.map(item => ({
               id: item.id,
               name: item.name,
@@ -142,6 +170,7 @@ export const useInternalMenuItems = (isActive: boolean) => {
               is_available: true,
               is_custom_price: item.is_custom_price ?? false,
               is_custom_name: item.is_custom_name ?? false,
+              option_groups: groupsByItem.get(item.id) || [],
             }));
             setMenuItems(items);
             menuItemsMemoryCache.set(cacheKey, items);
