@@ -124,7 +124,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
 
         console.log('[Offline] Rapports depuis cache — commandes:', orders.length, '| factures:', invoices.length);
       } else {
-        // --- MODE EN LIGNE : serveur = source unique de vérité, AUCUNE fusion cache ---
+        // --- MODE EN LIGNE : serveur = source de vérité, fusion locale UNIQUEMENT si mutations en attente ---
         let scopedOutletId = outletId;
         if (!scopedOutletId) {
           const { data: profile } = await supabase
@@ -164,9 +164,59 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         const { data: invoicesData, error: invoicesError } = await invoicesQuery;
         if (invoicesError) throw invoicesError;
 
-        // Pas de fusion cache — déduplication par id et invoice_number en filet
-        orders = dedupeById(ordersData || []);
-        invoices = dedupeInvoices(invoicesData || []);
+        let mergedOrders = ordersData || [];
+        let mergedInvoices = invoicesData || [];
+
+        // Fusion conditionnelle : seulement si des mutations locales sont en attente
+        try {
+          const allPending = await getPendingMutations();
+          const pendingOrders = allPending.filter((m: any) =>
+            m.table === 'orders' &&
+            m.userId === effectiveUserId &&
+            (!scopedOutletId || m.outletId === scopedOutletId)
+          );
+          const pendingInvoices = allPending.filter((m: any) =>
+            m.table === 'invoices' &&
+            m.userId === effectiveUserId &&
+            (!scopedOutletId || m.outletId === scopedOutletId)
+          );
+
+          if (pendingOrders.length > 0) {
+            const cachedOrders = scopedOutletId
+              ? await getData<any[]>('orders', effectiveUserId, scopedOutletId)
+              : await getData<any[]>('orders', effectiveUserId);
+            const localOnly = ((cachedOrders?.data as any[]) || []).filter((o: any) => {
+              if (!o?.created_at) return false;
+              const d = o.created_at;
+              if (d < startISO || d > endISO) return false;
+              if (scopedOutletId && o.outlet_id !== scopedOutletId) return false;
+              // ne garder que ceux qui ont une mutation pending (pas encore sur serveur)
+              return pendingOrders.some((m: any) => (m.data?.id || m.recordId) === o.id);
+            });
+            mergedOrders = [...mergedOrders, ...localOnly];
+            console.log('[Reports] Fusion online: +' , localOnly.length, 'commandes locales en attente');
+          }
+
+          if (pendingInvoices.length > 0) {
+            const cachedInvoices = scopedOutletId
+              ? await getData<any[]>('invoices', effectiveUserId, scopedOutletId)
+              : await getData<any[]>('invoices', effectiveUserId);
+            const localOnly = ((cachedInvoices?.data as any[]) || []).filter((inv: any) => {
+              if (!inv?.created_at) return false;
+              const d = inv.created_at;
+              if (d < startISO || d > endISO) return false;
+              if (scopedOutletId && inv.outlet_id !== scopedOutletId) return false;
+              return pendingInvoices.some((m: any) => (m.data?.id || m.recordId) === inv.id);
+            });
+            mergedInvoices = [...mergedInvoices, ...localOnly];
+            console.log('[Reports] Fusion online: +', localOnly.length, 'factures locales en attente');
+          }
+        } catch (mergeErr) {
+          console.warn('[Reports] Pending merge skipped:', mergeErr);
+        }
+
+        orders = dedupeById(mergedOrders);
+        invoices = dedupeInvoices(mergedInvoices);
       }
 
       // Build reports map
