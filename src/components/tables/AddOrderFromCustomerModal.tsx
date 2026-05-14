@@ -201,7 +201,8 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
         name: item.name,
         price: item.price,
         quantity: item.quantity,
-      }));
+        selected_options: item.selected_options || [],
+      })) as any;
 
       const { error: orderError } = await supabase.from("orders").insert([
         {
