@@ -16,6 +16,9 @@ import { useMenuData } from "@/hooks/useMenuData";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { queueMutation, getData, storeData } from "@/lib/offlineStorage";
+import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from "@/lib/offlineIdentity";
 
 interface EditOrderModalProps {
   isOpen: boolean;
