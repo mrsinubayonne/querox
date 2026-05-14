@@ -321,7 +321,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
           table_number: tableNumber,
           order_type: "sur_place",
           customer_name: `Table ${tableNumber}`,
-          items: orderItems,
+          items: orderItems as any,
           total_amount: totalAmount,
           status: "pending",
         },
