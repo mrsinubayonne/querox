@@ -191,12 +191,19 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       if (whatsappNumber) {
         const cleanNumber = whatsappNumber.replace(/[^\d]/g, "");
         const waUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(lines)}`;
-        window.open(waUrl, "_blank");
+        // Use the window we pre-opened synchronously (mobile-safe).
+        // Fallback: navigate the current tab if popup was blocked.
+        if (waWindow && !waWindow.closed) {
+          try { waWindow.location.href = waUrl; } catch { window.location.href = waUrl; }
+        } else {
+          window.location.href = waUrl;
+        }
         toast({
           title: "Commande envoyée !",
           description: "WhatsApp s'ouvre pour confirmer la commande au restaurant.",
         });
       } else {
+        if (waWindow && !waWindow.closed) waWindow.close();
         toast({
           title: "Commande envoyée !",
           description: "Votre commande a été transmise au restaurant.",
