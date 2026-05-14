@@ -128,10 +128,6 @@ const Tables: React.FC = () => {
     }
   };
 
-  const handleCreateSuccess = () => {
-    refetch();
-    setSelectedTable(null);
-  };
 
   const handleCloseSession = async (sessionId: string) => {
     try {
