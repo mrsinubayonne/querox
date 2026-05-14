@@ -344,18 +344,44 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           throw new Error("Point de vente non sélectionné");
         }
 
-        // Step 2: Create session + first order atomically through the server audit wrapper.
-        const { data: sessionResponse, error: sessionError } = await supabase.functions.invoke(
+        // Step 2: Ensure the Edge Function receives a fresh JWT, even after long cashier sessions.
+        let { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session?.access_token) {
+          const refreshed = await supabase.auth.refreshSession();
+          sessionData = refreshed.data;
+        }
+
+        const accessToken = sessionData.session?.access_token;
+        if (!accessToken) {
+          throw new Error("Session expirée. Reconnectez-vous pour ouvrir une table.");
+        }
+
+        const creationPayload = {
+          _owner_id: resolvedUserId,
+          _outlet_id: scopedOutletId,
+          _table_number: tableNumber,
+          _number_of_guests: guestCount,
+          _items: orderItems,
+          _total_amount: totalAmount,
+        };
+
+        // Step 3: Create session + first order atomically through the server audit wrapper.
+        let { data: sessionResponse, error: sessionError } = await supabase.functions.invoke(
           "create-table-session-with-order",
-          { body: {
-            _owner_id: resolvedUserId,
-            _outlet_id: scopedOutletId,
-            _table_number: tableNumber,
-            _number_of_guests: guestCount,
-            _items: orderItems,
-            _total_amount: totalAmount,
-          } }
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            body: creationPayload,
+          }
         );
+
+        if (sessionError) {
+          console.warn("Edge session creation failed, falling back to RPC:", sessionError);
+          const fallback = await supabase.rpc("create_table_session_with_order", creationPayload as any);
+          sessionResponse = fallback.error
+            ? { success: false, error: fallback.error.message }
+            : { success: true, session: fallback.data };
+          sessionError = null;
+        }
 
         if (sessionError) throw sessionError;
         if (!sessionResponse?.success) {
@@ -365,13 +391,13 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         const session = sessionResponse.session;
         if (!session?.id) throw new Error("Session non créée");
 
-        // Step 3: Replace temp ID with real ID in cache
+        // Step 4: Replace temp ID with real ID in cache
         const sessionsAfterInsert = ((queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) || [])
           .map((s: any) => (s.id === tempSessionId ? { ...optimisticSession, ...session } : s));
         queryClient.setQueryData(sessionsQueryKey, sessionsAfterInsert);
         await storeData('table_sessions', sessionsAfterInsert as any, resolvedUserId, scopedOutletId);
 
-        // Step 4: Update orders cache (DB insert was already done by the RPC)
+        // Step 5: Update orders cache (DB insert was already done by the RPC)
         const orderObj = {
           id: `order-${Date.now()}`,
           user_id: resolvedUserId,
@@ -409,7 +435,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       console.error("Error creating session with order:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer la session.",
+        description: error?.message || "Impossible de créer la session.",
         variant: "destructive",
       });
     } finally {
