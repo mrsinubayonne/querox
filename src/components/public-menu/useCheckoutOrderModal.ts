@@ -69,6 +69,14 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
 
     setLoading(true);
 
+    // CRITICAL: Open the WhatsApp tab SYNCHRONOUSLY here, while we are still
+    // inside the user-gesture stack. Otherwise mobile browsers (Safari iOS,
+    // Chrome Android) silently block window.open() called after `await`.
+    // We'll update its URL once we have the WhatsApp number, or close it
+    // and fall back to current-tab navigation if popups are blocked.
+    let waWindow: Window | null = null;
+    try { waWindow = window.open('about:blank', '_blank'); } catch { waWindow = null; }
+
     try {
       // Vérifier que l'outlet_id est disponible depuis le menu
       if (!outletId) {
