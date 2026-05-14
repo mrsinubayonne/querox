@@ -4,6 +4,7 @@ import { WifiOff, Wifi, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { syncEngine } from '@/lib/syncEngine';
 
 export const NetworkStatusBanner = () => {
   const { status, isOffline, isUnstable, retryConnection } = useNetworkStatus();
@@ -18,6 +19,7 @@ export const NetworkStatusBanner = () => {
         title: 'Connexion rétablie',
         description: 'Synchronisation des données en cours...',
       });
+      syncEngine.forceSync();
       queryClient.resumePausedMutations().then(() => {
         queryClient.invalidateQueries();
       });
@@ -28,6 +30,7 @@ export const NetworkStatusBanner = () => {
   const handleRetry = async () => {
     setIsRetrying(true);
     retryConnection();
+    await syncEngine.forceSync();
     queryClient.resumePausedMutations().then(() => {
       queryClient.invalidateQueries();
     });
