@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { getData } from '@/lib/offlineStorage';
+import { getData, getPendingMutations } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
 import { DateRange } from 'react-day-picker';
 import { format, endOfDay, startOfDay, setHours, setMinutes } from 'date-fns';
