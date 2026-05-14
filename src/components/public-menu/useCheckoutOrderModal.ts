@@ -222,6 +222,9 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       onClearCart();
     } catch (err: any) {
       console.error("Order submission error:", err);
+      if (waWindow && !waWindow.closed) {
+        try { waWindow.close(); } catch { /* ignore */ }
+      }
       toast({
         title: "Erreur de soumission",
         description: err.message || "Une erreur est survenue lors de l'envoi de votre commande.",
