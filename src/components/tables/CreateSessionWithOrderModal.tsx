@@ -671,6 +671,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             )}
           </div>
         </form>
+        {pickerNode}
       </DialogContent>
     </Dialog>
   );
