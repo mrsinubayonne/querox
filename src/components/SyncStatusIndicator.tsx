@@ -1,8 +1,12 @@
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOfflineHealth } from '@/hooks/useOfflineHealth';
-import { Cloud, CloudOff, RefreshCw, AlertCircle, Check, AlertTriangle } from 'lucide-react';
+import { Cloud, CloudOff, RefreshCw, AlertCircle, Check, AlertTriangle, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { getAllMutations, deleteMutation, type QueuedMutation } from '@/lib/offlineStorage';
+import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Popover,
   PopoverContent,
