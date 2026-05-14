@@ -1645,6 +1645,57 @@ export type Database = {
         }
         Relationships: []
       }
+      session_creation_audit_logs: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          details: Json
+          error_code: string | null
+          error_message: string | null
+          id: string
+          outlet_id: string | null
+          owner_id: string | null
+          request_id: string
+          stage: string
+          success: boolean
+          table_number: string | null
+          team_member_id: string | null
+        }
+        Insert: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          outlet_id?: string | null
+          owner_id?: string | null
+          request_id?: string
+          stage: string
+          success?: boolean
+          table_number?: string | null
+          team_member_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          outlet_id?: string | null
+          owner_id?: string | null
+          request_id?: string
+          stage?: string
+          success?: boolean
+          table_number?: string | null
+          team_member_id?: string | null
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           after_quantity: number | null

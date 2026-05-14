@@ -65,16 +65,17 @@ export const useNetworkStatus = (): UseNetworkStatusReturn => {
 
   const retryConnection = useCallback(() => {
     failedRequestCount = 0;
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      localStorage.removeItem(FORCE_OFFLINE_MODE_KEY);
+      window.dispatchEvent(new CustomEvent('querox-force-offline-mode-changed'));
+    }
     updateStatus();
   }, [updateStatus]);
 
   useEffect(() => {
     const handleOnline = () => {
-      if (isForcedOfflineModeEnabled()) {
-        setStatus('offline');
-        return;
-      }
-
+      localStorage.removeItem(FORCE_OFFLINE_MODE_KEY);
+      window.dispatchEvent(new CustomEvent('querox-force-offline-mode-changed'));
       failedRequestCount = 0;
       setStatus('online');
     };

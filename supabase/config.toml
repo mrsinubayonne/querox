@@ -21,3 +21,6 @@ verify_jwt = true
 [functions.team-member-auth]
 verify_jwt = false
 
+[functions.create-table-session-with-order]
+verify_jwt = true
+

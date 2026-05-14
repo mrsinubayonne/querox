@@ -58,6 +58,7 @@ export const useOutlets = () => {
   };
 
   const canAddMoreOutlets = () => {
+    if (isTeamMember) return false;
     const limit = getOutletLimit();
     return outlets.length < limit;
   };
@@ -100,12 +101,30 @@ export const useOutlets = () => {
 
     try {
       console.log('🔄 Loading outlets for user:', userId);
-      
-      const { data, error } = await supabase
+
+      let query = supabase
         .from('outlets')
         .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: true });
+        .eq('user_id', userId);
+
+      if (isTeamMember && teamMemberSession) {
+        const assignedOutletIds = (teamMemberSession.outletIds || [])
+          .filter(Boolean);
+        const fallbackOutletId = teamMemberSession.outletId || localStorage.getItem('selectedOutletId');
+        const scopedOutletIds = assignedOutletIds.length ? assignedOutletIds : (fallbackOutletId ? [fallbackOutletId] : []);
+
+        if (scopedOutletIds.length === 0) {
+          console.warn('⚠️ Team member has no assigned outlet; refusing outlet creation flow');
+          setOutlets([]);
+          setSelectedOutletId(null);
+          setLoading(false);
+          return;
+        }
+
+        query = query.in('id', scopedOutletIds);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: true });
 
       if (error) {
         console.error('❌ Error fetching outlets:', error);
@@ -156,6 +175,15 @@ export const useOutlets = () => {
   };
 
   const loadSelectedOutlet = async (): Promise<void> => {
+    if (isTeamMember && teamMemberSession) {
+      const assignedOutletId = teamMemberSession.outletId || teamMemberSession.outletIds?.[0] || localStorage.getItem('selectedOutletId');
+      setSelectedOutletId(assignedOutletId ?? null);
+      if (assignedOutletId) {
+        localStorage.setItem('selectedOutletId', assignedOutletId);
+      }
+      return;
+    }
+
     if (!user?.id) return;
 
     const fallbackLocal = typeof window !== 'undefined' ? localStorage.getItem('selectedOutletId') : null;
@@ -222,6 +250,11 @@ export const useOutlets = () => {
   }, [selectedProfileId, user?.id]);
 
   const createOutlet = async (outletData: CreateOutletData): Promise<Outlet | undefined> => {
+    if (isTeamMember) {
+      toast.error("Action non autorisée: un membre d'équipe ne peut pas créer de point de vente.");
+      return undefined;
+    }
+
     if (isOffline) {
       toast.error('Impossible de créer un point de vente hors ligne');
       return undefined;
@@ -332,6 +365,26 @@ export const useOutlets = () => {
   };
 
   const selectOutlet = async (outletId: string, silent = false): Promise<void> => {
+    if (isTeamMember && teamMemberSession) {
+      const allowedOutletIds = (teamMemberSession.outletIds || []).filter(Boolean);
+      const isAllowed = allowedOutletIds.length > 0
+        ? allowedOutletIds.includes(outletId)
+        : teamMemberSession.outletId === outletId;
+
+      if (!isAllowed) {
+        toast.error("Accès refusé: ce point de vente n'est pas assigné à ce membre équipe.");
+        return;
+      }
+
+      setSelectedOutletId(outletId);
+      localStorage.setItem('selectedOutletId', outletId);
+      localStorage.removeItem('outlet_cache');
+      if (!silent) {
+        toast.success('Point de vente sélectionné');
+      }
+      return;
+    }
+
     if (!user?.id) return;
 
     // Offline: keep it local only
