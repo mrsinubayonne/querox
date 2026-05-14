@@ -356,21 +356,32 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           throw new Error("Session expirée. Reconnectez-vous pour ouvrir une table.");
         }
 
+        const creationPayload = {
+          _owner_id: resolvedUserId,
+          _outlet_id: scopedOutletId,
+          _table_number: tableNumber,
+          _number_of_guests: guestCount,
+          _items: orderItems,
+          _total_amount: totalAmount,
+        };
+
         // Step 3: Create session + first order atomically through the server audit wrapper.
-        const { data: sessionResponse, error: sessionError } = await supabase.functions.invoke(
+        let { data: sessionResponse, error: sessionError } = await supabase.functions.invoke(
           "create-table-session-with-order",
           {
             headers: { Authorization: `Bearer ${accessToken}` },
-            body: {
-              _owner_id: resolvedUserId,
-              _outlet_id: scopedOutletId,
-              _table_number: tableNumber,
-              _number_of_guests: guestCount,
-              _items: orderItems,
-              _total_amount: totalAmount,
-            },
+            body: creationPayload,
           }
         );
+
+        if (sessionError) {
+          console.warn("Edge session creation failed, falling back to RPC:", sessionError);
+          const fallback = await supabase.rpc("create_table_session_with_order", creationPayload as any);
+          sessionResponse = fallback.error
+            ? { success: false, error: fallback.error.message }
+            : { success: true, session: fallback.data };
+          sessionError = null;
+        }
 
         if (sessionError) throw sessionError;
         if (!sessionResponse?.success) {
