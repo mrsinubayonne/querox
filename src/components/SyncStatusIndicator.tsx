@@ -1,8 +1,12 @@
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOfflineHealth } from '@/hooks/useOfflineHealth';
-import { Cloud, CloudOff, RefreshCw, AlertCircle, Check, AlertTriangle } from 'lucide-react';
+import { Cloud, CloudOff, RefreshCw, AlertCircle, Check, AlertTriangle, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { getAllMutations, deleteMutation, type QueuedMutation } from '@/lib/offlineStorage';
+import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Popover,
   PopoverContent,
@@ -23,7 +27,45 @@ export const SyncStatusIndicator = () => {
     retryFailed,
   } = useSyncStatus();
   const { isOffline } = useNetworkStatus();
-  const { level, oldestMutationAge, alerts } = useOfflineHealth();
+  const { level, oldestMutationAge, alerts, refresh } = useOfflineHealth();
+  const queryClient = useQueryClient();
+  const [stuckMutations, setStuckMutations] = useState<QueuedMutation[]>([]);
+  const [discarding, setDiscarding] = useState(false);
+  const STUCK_THRESHOLD_MS = 30 * 60 * 1000;
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const all = await getAllMutations();
+      const now = Date.now();
+      const stuck = all.filter(
+        (m) => !m.synced && (m.failed || now - m.timestamp > STUCK_THRESHOLD_MS || m.retryCount >= 3),
+      );
+      if (!cancelled) setStuckMutations(stuck);
+    };
+    load();
+    const i = setInterval(load, 5000);
+    return () => { cancelled = true; clearInterval(i); };
+  }, [pendingCount, failedCount, isSyncing]);
+
+  const lastError = stuckMutations.find((m) => m.errorMessage)?.errorMessage;
+
+  const discardStuck = async () => {
+    if (!stuckMutations.length) return;
+    if (!window.confirm(`Abandonner ${stuckMutations.length} mutation(s) bloquée(s) ? Cette action est irréversible.`)) return;
+    setDiscarding(true);
+    try {
+      for (const m of stuckMutations) await deleteMutation(m.id);
+      toast({ title: 'File d\'attente vidée', description: `${stuckMutations.length} mutation(s) supprimée(s).` });
+      setStuckMutations([]);
+      await refresh();
+      queryClient.invalidateQueries();
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de vider la file.', variant: 'destructive' });
+    } finally {
+      setDiscarding(false);
+    }
+  };
 
   const formatAge = (ms: number | null) => {
     if (!ms) return '';
@@ -154,6 +196,12 @@ export const SyncStatusIndicator = () => {
             </div>
           )}
 
+          {lastError && (
+            <div className="text-[11px] px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive break-words">
+              <span className="font-semibold">Dernière erreur :</span> {lastError}
+            </div>
+          )}
+
           <div className="flex gap-2 pt-2">
             <Button
               size="sm"
@@ -177,6 +225,24 @@ export const SyncStatusIndicator = () => {
               </Button>
             )}
           </div>
+
+          {stuckMutations.length > 0 && (
+            <div className="space-y-1.5 pt-1 border-t border-border/50">
+              <p className="text-[11px] text-muted-foreground">
+                {stuckMutations.length} mutation(s) bloquée(s) depuis longtemps. Si vous savez qu'elles ne sont plus utiles, vous pouvez les abandonner.
+              </p>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="w-full"
+                onClick={discardStuck}
+                disabled={discarding}
+              >
+                <Trash2 className={`h-3.5 w-3.5 mr-1.5 ${discarding ? 'animate-pulse' : ''}`} />
+                Abandonner les mutations bloquées
+              </Button>
+            </div>
+          )}
 
           {isOffline && (
             <p className="text-xs text-muted-foreground text-center">
