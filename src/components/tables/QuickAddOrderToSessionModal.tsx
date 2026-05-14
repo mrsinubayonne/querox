@@ -21,7 +21,8 @@ import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
-import type { MenuItem } from "@/types/menu";
+import type { MenuItem, SelectedOption } from "@/types/menu";
+import { useMenuItemOptionsPicker } from "@/components/menu-management/useMenuItemOptionsPicker";
 
 interface Props {
   isOpen: boolean;
@@ -36,6 +37,8 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  selected_options?: SelectedOption[];
+  options_label?: string;
 }
 
 const QuickAddOrderToSessionModal: React.FC<Props> = ({
