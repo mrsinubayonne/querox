@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { QueuedMutation, getPendingMutations, getFailedMutations, updateMutation, storeIdMapping, isLocalId, getServerIdForLocalId, OfflineDataType, setLastSyncTime, getStorageStats, clearSyncedMutations, generateLocalId } from './offlineStorage';
+import { QueuedMutation, getPendingMutations, getFailedMutations, updateMutation, storeIdMapping, isLocalId, getServerIdForLocalId, OfflineDataType, setLastSyncTime, getStorageStats, clearSyncedMutations, generateLocalId, getAllMutations, deleteMutation } from './offlineStorage';
 import { resolveConflict, detectConflict } from './conflictResolution';
 
 export interface SyncResult { success: boolean; synced: number; failed: number; errors: string[]; }
@@ -234,6 +234,16 @@ class SyncEngine {
     const failedMutations = await getFailedMutations();
     for (const m of failedMutations) await updateMutation(m.id, { failed: false, retryCount: 0, errorMessage: undefined });
     return this.sync();
+  }
+
+  async discardBlockedMutations(): Promise<number> {
+    const now = Date.now();
+    const blockedAfterMs = 30 * 60 * 1000;
+    const all = await getAllMutations();
+    const blocked = all.filter((m) => m.failed || (!m.synced && (m.retryCount >= 3 || now - m.timestamp > blockedAfterMs)));
+    for (const m of blocked) await deleteMutation(m.id);
+    await this.notifyListeners();
+    return blocked.length;
   }
 }
 
