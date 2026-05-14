@@ -16,6 +16,9 @@ import { useMenuData } from "@/hooks/useMenuData";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { queueMutation, getData, storeData } from "@/lib/offlineStorage";
+import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from "@/lib/offlineIdentity";
 
 interface EditOrderModalProps {
   isOpen: boolean;
@@ -37,8 +40,9 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
   onSuccess,
   orderId,
 }) => {
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { toast } = useToast();
+  const { isOffline } = useNetworkStatus();
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,43 +52,59 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
   useEffect(() => {
     const fetchOrderAndMenu = async () => {
       if (!user || !orderId || !isOpen) return;
-      
+
       setInitialLoading(true);
       try {
-        // Charger la commande existante
-        const { data: order, error: orderError } = await supabase
-          .from("orders")
-          .select("*")
-          .eq("id", orderId)
-          .single();
+        const resolvedUserId = resolveOfflineUserId({
+          userId: user.id,
+          isTeamMember,
+          ownerId: teamMemberSession?.ownerId,
+        });
+        const outletId = getSelectedOutletIdFromStorage();
 
-        if (orderError) throw orderError;
+        if (isOffline) {
+          // Load order from IndexedDB
+          const cachedOrders = (await getData<any[]>('orders', resolvedUserId, outletId)) ??
+                               (resolvedUserId ? await getData<any[]>('orders', resolvedUserId) : undefined);
+          const order = (cachedOrders?.data || []).find((o: any) => o.id === orderId);
+          if (order && Array.isArray(order.items)) {
+            setCart(order.items as unknown as CartItem[]);
+          }
+          // Load active menu id from localStorage (set by useInternalMenuItems)
+          const cachedMenuId = localStorage.getItem('activeMenuId');
+          if (cachedMenuId) setActiveMenuId(cachedMenuId);
+        } else {
+          // Online path
+          const { data: order, error: orderError } = await supabase
+            .from("orders")
+            .select("*")
+            .eq("id", orderId)
+            .single();
 
-        // Charger le menu actif
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("selected_outlet_id")
-          .eq("id", user.id)
-          .maybeSingle();
+          if (orderError) throw orderError;
 
-        const outletId = profile?.selected_outlet_id;
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("selected_outlet_id")
+            .eq("id", user.id)
+            .maybeSingle();
 
-        const { data: menus } = await supabase
-          .from("menus")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("is_active", true)
-          .eq("outlet_id", outletId)
-          .limit(1)
-          .maybeSingle();
+          const profileOutletId = profile?.selected_outlet_id || outletId;
 
-        if (menus) {
-          setActiveMenuId(menus.id);
-        }
+          const { data: menus } = await supabase
+            .from("menus")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .eq("outlet_id", profileOutletId)
+            .limit(1)
+            .maybeSingle();
 
-        // Remplir le panier avec les articles de la commande
-        if (order && Array.isArray(order.items)) {
-          setCart(order.items as unknown as CartItem[]);
+          if (menus) setActiveMenuId(menus.id);
+
+          if (order && Array.isArray(order.items)) {
+            setCart(order.items as unknown as CartItem[]);
+          }
         }
       } catch (error) {
         console.error("Error loading order:", error);
@@ -104,7 +124,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
       setCart([]);
       setSearchTerm("");
     }
-  }, [user, isOpen, orderId]);
+  }, [user, isOpen, orderId, isOffline, isTeamMember, teamMemberSession?.ownerId]);
 
   const { menuItems } = useMenuData(activeMenuId);
 
@@ -175,42 +195,78 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
         quantity: item.quantity,
       }));
 
-      const { error: updateError } = await supabase
-        .from("orders")
-        .update({
-          items: orderItems,
-          total_amount: totalAmount,
-        })
-        .eq("id", orderId);
+      const updatePayload = { items: orderItems, total_amount: totalAmount };
 
-      if (updateError) throw updateError;
+      if (isOffline) {
+        const resolvedUserId = resolveOfflineUserId({
+          userId: user?.id,
+          isTeamMember,
+          ownerId: teamMemberSession?.ownerId,
+        });
+        const outletId = getSelectedOutletIdFromStorage();
+        if (!resolvedUserId) throw new Error("Session introuvable");
 
-      // Mettre à jour le total de la session si nécessaire
-      const { data: order } = await supabase
-        .from("orders")
-        .select("session_id")
-        .eq("id", orderId)
-        .single();
+        // Queue the update for sync when back online
+        await queueMutation({
+          table: 'orders',
+          operation: 'update',
+          data: { id: orderId, ...updatePayload },
+          localId: orderId,
+          userId: resolvedUserId,
+          outletId,
+          maxRetries: 3,
+          conflictResolution: 'client-wins',
+        });
 
-      if (order?.session_id) {
-        const { data: sessionOrders } = await supabase
-          .from("orders")
-          .select("total_amount")
-          .eq("session_id", order.session_id);
-
-        if (sessionOrders) {
-          const sessionTotal = sessionOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
-          await supabase
-            .from("table_sessions")
-            .update({ total_amount: sessionTotal })
-            .eq("id", order.session_id);
+        // Optimistically update local IndexedDB cache
+        const cached = (await getData<any[]>('orders', resolvedUserId, outletId)) ??
+                       (outletId ? await getData<any[]>('orders', resolvedUserId) : undefined);
+        if (cached?.data) {
+          const updated = cached.data.map((o: any) =>
+            o.id === orderId ? { ...o, ...updatePayload, updated_at: new Date().toISOString() } : o
+          );
+          await storeData('orders', updated, resolvedUserId, outletId);
         }
-      }
 
-      toast({
-        title: "Commande modifiée",
-        description: "La commande a été mise à jour avec succès.",
-      });
+        toast({
+          title: "Commande modifiée (hors-ligne)",
+          description: "Sera synchronisée à la reconnexion.",
+        });
+      } else {
+        const { error: updateError } = await supabase
+          .from("orders")
+          .update(updatePayload)
+          .eq("id", orderId);
+
+        if (updateError) throw updateError;
+
+        // Mettre à jour le total de la session si nécessaire
+        const { data: order } = await supabase
+          .from("orders")
+          .select("session_id")
+          .eq("id", orderId)
+          .single();
+
+        if (order?.session_id) {
+          const { data: sessionOrders } = await supabase
+            .from("orders")
+            .select("total_amount")
+            .eq("session_id", order.session_id);
+
+          if (sessionOrders) {
+            const sessionTotal = sessionOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+            await supabase
+              .from("table_sessions")
+              .update({ total_amount: sessionTotal })
+              .eq("id", order.session_id);
+          }
+        }
+
+        toast({
+          title: "Commande modifiée",
+          description: "La commande a été mise à jour avec succès.",
+        });
+      }
 
       window.dispatchEvent(new CustomEvent("session-updated"));
       onSuccess();
@@ -219,7 +275,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
       console.error("Error updating order:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de modifier la commande.",
+        description: error.message || "Impossible de modifier la commande.",
         variant: "destructive",
       });
     } finally {

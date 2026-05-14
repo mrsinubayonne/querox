@@ -69,6 +69,14 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
 
     setLoading(true);
 
+    // CRITICAL: Open the WhatsApp tab SYNCHRONOUSLY here, while we are still
+    // inside the user-gesture stack. Otherwise mobile browsers (Safari iOS,
+    // Chrome Android) silently block window.open() called after `await`.
+    // We'll update its URL once we have the WhatsApp number, or close it
+    // and fall back to current-tab navigation if popups are blocked.
+    let waWindow: Window | null = null;
+    try { waWindow = window.open('about:blank', '_blank'); } catch { waWindow = null; }
+
     try {
       // Vérifier que l'outlet_id est disponible depuis le menu
       if (!outletId) {
@@ -183,12 +191,19 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       if (whatsappNumber) {
         const cleanNumber = whatsappNumber.replace(/[^\d]/g, "");
         const waUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(lines)}`;
-        window.open(waUrl, "_blank");
+        // Use the window we pre-opened synchronously (mobile-safe).
+        // Fallback: navigate the current tab if popup was blocked.
+        if (waWindow && !waWindow.closed) {
+          try { waWindow.location.href = waUrl; } catch { window.location.href = waUrl; }
+        } else {
+          window.location.href = waUrl;
+        }
         toast({
           title: "Commande envoyée !",
           description: "WhatsApp s'ouvre pour confirmer la commande au restaurant.",
         });
       } else {
+        if (waWindow && !waWindow.closed) waWindow.close();
         toast({
           title: "Commande envoyée !",
           description: "Votre commande a été transmise au restaurant.",
@@ -207,6 +222,9 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       onClearCart();
     } catch (err: any) {
       console.error("Order submission error:", err);
+      if (waWindow && !waWindow.closed) {
+        try { waWindow.close(); } catch { /* ignore */ }
+      }
       toast({
         title: "Erreur de soumission",
         description: err.message || "Une erreur est survenue lors de l'envoi de votre commande.",
