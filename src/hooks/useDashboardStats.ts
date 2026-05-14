@@ -93,7 +93,7 @@ export const useDashboardStats = (period: Period = 'day') => {
     if (isOffline) {
       const cached = await getData('dashboard_stats' as any, effectiveUserId);
       if (cached?.data) {
-        setStats(cached.data);
+        setStats(cached.data as DashboardStats);
         setLoading(false);
         return;
       }
