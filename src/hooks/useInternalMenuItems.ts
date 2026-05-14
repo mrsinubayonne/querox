@@ -12,11 +12,15 @@ import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from '@/lib/offl
  * Uses IndexedDB-first strategy with Supabase background refresh.
  * NOT for public-facing menus (use useMenuData instead).
  */
+// Cache mémoire partagé : évite de recharger les plats à chaque ouverture du modal.
+const menuItemsMemoryCache = new Map<string, MenuItem[]>();
+
 export const useInternalMenuItems = (isActive: boolean) => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { outletId } = useRestaurant();
   const { isOffline } = useNetworkStatus();
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const cacheKey = `${user?.id || ''}|${outletId || ''}`;
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(() => menuItemsMemoryCache.get(cacheKey) || []);
   const [loading, setLoading] = useState(false);
   const loadingRef = useRef(false);
 
@@ -82,6 +86,7 @@ export const useInternalMenuItems = (isActive: boolean) => {
       const cachedItems = await buildItemsFromCache();
       if (cachedItems.length > 0) {
         setMenuItems(cachedItems);
+        menuItemsMemoryCache.set(cacheKey, cachedItems);
       }
 
       // --- Step 2: If online, refresh from Supabase ---
@@ -139,6 +144,7 @@ export const useInternalMenuItems = (isActive: boolean) => {
               is_custom_name: item.is_custom_name ?? false,
             }));
             setMenuItems(items);
+            menuItemsMemoryCache.set(cacheKey, items);
           }
         } catch (err) {
           console.warn('[useInternalMenuItems] Online refresh failed, keeping cached data:', err);

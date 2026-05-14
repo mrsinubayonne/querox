@@ -4,20 +4,13 @@ import ModernSidebar from '../components/ModernSidebar';
 import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { UserPlus, Users, Award, QrCode, CreditCard, Globe, ArrowRight } from 'lucide-react';
+import { Users, Award, QrCode, CreditCard, Globe, ArrowRight } from 'lucide-react';
 
 const Plus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
 
   const items = [
-    {
-      icon: UserPlus,
-      label: 'Clients (CRM)',
-      description: 'Gérez votre base clients et fidélisez-les',
-      path: '/clients',
-      color: 'from-blue-500 to-cyan-500',
-    },
     {
       icon: Users,
       label: 'Équipe',
