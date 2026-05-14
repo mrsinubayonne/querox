@@ -278,7 +278,7 @@ export const useDashboardStats = (period: Period = 'day') => {
       console.error('Error fetching dashboard stats:', error);
       const cached = await getData('dashboard_stats' as any, effectiveUserId);
       if (cached?.data) {
-        setStats(cached.data);
+        setStats(cached.data as DashboardStats);
       } else {
         setStats({
           revenue: 0,
