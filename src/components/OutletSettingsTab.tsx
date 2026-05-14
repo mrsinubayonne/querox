@@ -26,6 +26,7 @@ export const OutletSettingsTab: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState({ name: '', address: '', phone: '', whatsapp_number: '' });
   const [confirmName, setConfirmName] = useState('');
 
@@ -96,9 +97,20 @@ export const OutletSettingsTab: React.FC = () => {
       });
       return;
     }
-    await deleteOutlet(selectedOutletId);
-    setConfirmName('');
-    navigate('/select-outlet');
+    try {
+      setDeleting(true);
+      await deleteOutlet(selectedOutletId);
+      setConfirmName('');
+      navigate('/select-outlet');
+    } catch {
+      toast({
+        title: "Suppression impossible",
+        description: "Le point de vente n'a pas été supprimé. Réessayez après synchronisation.",
+        variant: "destructive"
+      });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -244,9 +256,10 @@ export const OutletSettingsTab: React.FC = () => {
                 <AlertDialogCancel onClick={() => setConfirmName('')}>Annuler</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleDelete}
-                  disabled={confirmName !== currentOutlet.name}
+                  disabled={confirmName !== currentOutlet.name || deleting}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
+                  {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Supprimer définitivement
                 </AlertDialogAction>
               </AlertDialogFooter>
