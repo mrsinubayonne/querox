@@ -251,6 +251,22 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
             /* Avoid page breaks in header and footer */
             .invoice-header { page-break-inside: avoid !important; }
             .invoice-footer { page-break-inside: avoid !important; }
+            /* Anti-blank-page rules: never force a break after the invoice
+               or any of its descendants, and collapse trailing whitespace. */
+            #invoice-print-portal,
+            #invoice-print-portal *,
+            .invoice-print-container,
+            .invoice-print-container * {
+              page-break-after: avoid !important;
+              break-after: avoid-page !important;
+            }
+            #invoice-print-portal > *:last-child,
+            .invoice-print-container > *:last-child {
+              margin-bottom: 0 !important;
+              padding-bottom: 0 !important;
+              page-break-after: avoid !important;
+              break-after: avoid-page !important;
+            }
             * {
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
