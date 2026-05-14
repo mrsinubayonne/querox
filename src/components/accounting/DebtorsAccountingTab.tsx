@@ -75,7 +75,8 @@ const DebtorsAccountingTab: React.FC = () => {
         .eq('user_id', user.id)
         .eq('invoice_type', 'b2b')
         .not('business_customer_id', 'is', null)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(10000);
 
       if (outletId) {
         query = query.eq('outlet_id', outletId);
