@@ -70,24 +70,6 @@ export const useInternalMenuItems = (isActive: boolean) => {
         }
         const allItems = (cachedItems?.data || []) as Record<string, unknown>[];
 
-        // Cached option groups (best-effort)
-        let cachedGroups = await getData<Record<string, unknown>[]>('menu_item_option_groups', resolvedUserId, outletKey);
-        if (!cachedGroups?.data || (cachedGroups.data as any[]).length === 0) {
-          cachedGroups = await getData<Record<string, unknown>[]>('menu_item_option_groups', resolvedUserId);
-        }
-        let cachedValues = await getData<Record<string, unknown>[]>('menu_item_option_values', resolvedUserId, outletKey);
-        if (!cachedValues?.data || (cachedValues.data as any[]).length === 0) {
-          cachedValues = await getData<Record<string, unknown>[]>('menu_item_option_values', resolvedUserId);
-        }
-        const groupsArr = (cachedGroups?.data || []) as any[];
-        const valuesArr = (cachedValues?.data || []) as any[];
-        const groupsByItem = new Map<string, any[]>();
-        for (const g of groupsArr) {
-          const arr = groupsByItem.get(g.menu_item_id) || [];
-          arr.push({ ...g, values: valuesArr.filter(v => v.group_id === g.id) });
-          groupsByItem.set(g.menu_item_id, arr);
-        }
-
         return allItems
           .filter(item => categoryIds.includes(item.category_id as string) && item.is_available !== false)
           .map(item => ({
@@ -98,7 +80,7 @@ export const useInternalMenuItems = (isActive: boolean) => {
             category_name: categoryMap.get(item.category_id as string) || 'Sans catégorie',
             image_url: item.image_url as string | undefined,
             is_available: true,
-            option_groups: groupsByItem.get(item.id as string) || [],
+            option_groups: [],
           }));
       };
 
