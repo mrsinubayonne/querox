@@ -536,6 +536,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
             </div>
           </DialogFooter>
         </form>
+        {pickerNode}
       </DialogContent>
     </Dialog>
   );
