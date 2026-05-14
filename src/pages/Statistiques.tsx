@@ -92,7 +92,7 @@ const Statistiques: React.FC = () => {
         color: "orange" as const,
       },
     ];
-  }, [orders, customers, transactions, invoices]);
+  }, [orders, customers, invoices]);
 
   const hasData = orders.length > 0 || customers.length > 0;
   const loading = ordersLoading || customersLoading || transactionsLoading || invoicesLoading;
