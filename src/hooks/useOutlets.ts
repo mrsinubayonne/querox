@@ -175,6 +175,15 @@ export const useOutlets = () => {
   };
 
   const loadSelectedOutlet = async (): Promise<void> => {
+    if (isTeamMember && teamMemberSession) {
+      const assignedOutletId = teamMemberSession.outletId || teamMemberSession.outletIds?.[0] || localStorage.getItem('selectedOutletId');
+      setSelectedOutletId(assignedOutletId ?? null);
+      if (assignedOutletId) {
+        localStorage.setItem('selectedOutletId', assignedOutletId);
+      }
+      return;
+    }
+
     if (!user?.id) return;
 
     const fallbackLocal = typeof window !== 'undefined' ? localStorage.getItem('selectedOutletId') : null;
@@ -356,6 +365,26 @@ export const useOutlets = () => {
   };
 
   const selectOutlet = async (outletId: string, silent = false): Promise<void> => {
+    if (isTeamMember && teamMemberSession) {
+      const allowedOutletIds = (teamMemberSession.outletIds || []).filter(Boolean);
+      const isAllowed = allowedOutletIds.length > 0
+        ? allowedOutletIds.includes(outletId)
+        : teamMemberSession.outletId === outletId;
+
+      if (!isAllowed) {
+        toast.error("Accès refusé: ce point de vente n'est pas assigné à ce membre équipe.");
+        return;
+      }
+
+      setSelectedOutletId(outletId);
+      localStorage.setItem('selectedOutletId', outletId);
+      localStorage.removeItem('outlet_cache');
+      if (!silent) {
+        toast.success('Point de vente sélectionné');
+      }
+      return;
+    }
+
     if (!user?.id) return;
 
     // Offline: keep it local only
