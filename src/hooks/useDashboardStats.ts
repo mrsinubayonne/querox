@@ -91,37 +91,42 @@ export const useDashboardStats = (period: Period = 'day') => {
       setLoading(true);
       const { start, previousStart, previousEnd } = getDateRange(period);
 
-      // Build queries
+      // Build queries (LIMIT 10000 to bypass Supabase's default 1000 cap)
       let ordersQuery = supabase
         .from('orders')
         .select('*')
         .eq('user_id', effectiveUserId)
-        .gte('created_at', start);
+        .gte('created_at', start)
+        .limit(10000);
 
       let previousOrdersQuery = supabase
         .from('orders')
         .select('*')
         .eq('user_id', effectiveUserId)
         .gte('created_at', previousStart)
-        .lte('created_at', previousEnd);
+        .lte('created_at', previousEnd)
+        .limit(10000);
 
       let invoicesQuery = supabase
         .from('invoices')
         .select('*')
         .eq('user_id', effectiveUserId)
-        .gte('created_at', start);
+        .gte('created_at', start)
+        .limit(10000);
 
       let previousInvoicesQuery = supabase
         .from('invoices')
         .select('*')
         .eq('user_id', effectiveUserId)
         .gte('created_at', previousStart)
-        .lte('created_at', previousEnd);
+        .lte('created_at', previousEnd)
+        .limit(10000);
 
       let inventoryQuery = supabase
         .from('inventory_items')
         .select('*')
-        .eq('user_id', effectiveUserId);
+        .eq('user_id', effectiveUserId)
+        .limit(10000);
 
       if (selectedOutletId) {
         ordersQuery = ordersQuery.eq('outlet_id', selectedOutletId);
@@ -159,10 +164,10 @@ export const useDashboardStats = (period: Period = 'day') => {
       }
       const uniquePaidInvoices = Array.from(invoiceMap.values());
 
-      const revenue = uniquePaidInvoices.reduce(
+      const revenue = Math.round(uniquePaidInvoices.reduce(
         (sum, inv: any) => sum + Number(inv.total_amount || 0),
         0
-      );
+      ));
 
       // Previous period revenue — same logic: only paid invoices
       const previousPaidInvoices =
@@ -177,10 +182,10 @@ export const useDashboardStats = (period: Period = 'day') => {
       }
       const uniquePreviousPaidInvoices = Array.from(prevInvoiceMap.values());
 
-      const previousRevenue = uniquePreviousPaidInvoices.reduce(
+      const previousRevenue = Math.round(uniquePreviousPaidInvoices.reduce(
         (sum, inv: any) => sum + Number(inv.total_amount || 0),
         0
-      );
+      ));
 
       const revenueChange =
         previousRevenue > 0
