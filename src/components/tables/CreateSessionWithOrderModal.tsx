@@ -344,19 +344,25 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           throw new Error("Point de vente non sélectionné");
         }
 
-        // Step 2: Create session + first order atomically on the server.
-        // This avoids team-member RLS race conditions between table_sessions and orders inserts.
-        const { data: session, error: sessionError } = await (supabase as any)
-          .rpc("create_table_session_with_order", {
+        // Step 2: Create session + first order atomically through the server audit wrapper.
+        const { data: sessionResponse, error: sessionError } = await supabase.functions.invoke(
+          "create-table-session-with-order",
+          { body: {
             _owner_id: resolvedUserId,
             _outlet_id: scopedOutletId,
             _table_number: tableNumber,
             _number_of_guests: guestCount,
             _items: orderItems,
             _total_amount: totalAmount,
-          });
+          } }
+        );
 
         if (sessionError) throw sessionError;
+        if (!sessionResponse?.success) {
+          throw new Error(sessionResponse?.error || "Session non créée");
+        }
+
+        const session = sessionResponse.session;
         if (!session?.id) throw new Error("Session non créée");
 
         // Step 3: Replace temp ID with real ID in cache
