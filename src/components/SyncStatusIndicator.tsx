@@ -27,7 +27,45 @@ export const SyncStatusIndicator = () => {
     retryFailed,
   } = useSyncStatus();
   const { isOffline } = useNetworkStatus();
-  const { level, oldestMutationAge, alerts } = useOfflineHealth();
+  const { level, oldestMutationAge, alerts, refresh } = useOfflineHealth();
+  const queryClient = useQueryClient();
+  const [stuckMutations, setStuckMutations] = useState<QueuedMutation[]>([]);
+  const [discarding, setDiscarding] = useState(false);
+  const STUCK_THRESHOLD_MS = 30 * 60 * 1000;
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const all = await getAllMutations();
+      const now = Date.now();
+      const stuck = all.filter(
+        (m) => !m.synced && (m.failed || now - m.timestamp > STUCK_THRESHOLD_MS || m.retryCount >= 3),
+      );
+      if (!cancelled) setStuckMutations(stuck);
+    };
+    load();
+    const i = setInterval(load, 5000);
+    return () => { cancelled = true; clearInterval(i); };
+  }, [pendingCount, failedCount, isSyncing]);
+
+  const lastError = stuckMutations.find((m) => m.errorMessage)?.errorMessage;
+
+  const discardStuck = async () => {
+    if (!stuckMutations.length) return;
+    if (!window.confirm(`Abandonner ${stuckMutations.length} mutation(s) bloquée(s) ? Cette action est irréversible.`)) return;
+    setDiscarding(true);
+    try {
+      for (const m of stuckMutations) await deleteMutation(m.id);
+      toast({ title: 'File d\'attente vidée', description: `${stuckMutations.length} mutation(s) supprimée(s).` });
+      setStuckMutations([]);
+      await refresh();
+      queryClient.invalidateQueries();
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de vider la file.', variant: 'destructive' });
+    } finally {
+      setDiscarding(false);
+    }
+  };
 
   const formatAge = (ms: number | null) => {
     if (!ms) return '';
