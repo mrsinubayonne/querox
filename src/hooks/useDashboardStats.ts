@@ -91,37 +91,42 @@ export const useDashboardStats = (period: Period = 'day') => {
       setLoading(true);
       const { start, previousStart, previousEnd } = getDateRange(period);
 
-      // Build queries
+      // Build queries (LIMIT 10000 to bypass Supabase's default 1000 cap)
       let ordersQuery = supabase
         .from('orders')
         .select('*')
         .eq('user_id', effectiveUserId)
-        .gte('created_at', start);
+        .gte('created_at', start)
+        .limit(10000);
 
       let previousOrdersQuery = supabase
         .from('orders')
         .select('*')
         .eq('user_id', effectiveUserId)
         .gte('created_at', previousStart)
-        .lte('created_at', previousEnd);
+        .lte('created_at', previousEnd)
+        .limit(10000);
 
       let invoicesQuery = supabase
         .from('invoices')
         .select('*')
         .eq('user_id', effectiveUserId)
-        .gte('created_at', start);
+        .gte('created_at', start)
+        .limit(10000);
 
       let previousInvoicesQuery = supabase
         .from('invoices')
         .select('*')
         .eq('user_id', effectiveUserId)
         .gte('created_at', previousStart)
-        .lte('created_at', previousEnd);
+        .lte('created_at', previousEnd)
+        .limit(10000);
 
       let inventoryQuery = supabase
         .from('inventory_items')
         .select('*')
-        .eq('user_id', effectiveUserId);
+        .eq('user_id', effectiveUserId)
+        .limit(10000);
 
       if (selectedOutletId) {
         ordersQuery = ordersQuery.eq('outlet_id', selectedOutletId);
