@@ -532,6 +532,9 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     },
   });
 
+  let snapshotSessions: TableSession[] = [];
+  let snapshotInvoices: Invoice[] = [];
+
   const markSessionAsPaidMutation = useMutation({
     mutationFn: ({ sessionId, paymentMethod }: { sessionId: string; paymentMethod?: string }) => withTimeout((async () => {
       // CRITICAL: Use raw cache to avoid stale closure over memoized `sessions`
