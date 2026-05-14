@@ -340,43 +340,32 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       queryClient.setQueryData(sessionsQueryKey, [optimisticSession, ...currentSessions]);
 
       try {
-        // Step 2: Insert session in DB
-        const { data: session, error: sessionError } = await supabase
-          .from("table_sessions")
-          .insert([{
-            user_id: resolvedUserId,
-            outlet_id: scopedOutletId,
-            table_number: tableNumber,
-            number_of_guests: guestCount,
-            status: "active",
-          }])
-          .select()
-          .single();
+        if (!resolvedUserId || !scopedOutletId) {
+          throw new Error("Point de vente non sélectionné");
+        }
+
+        // Step 2: Create session + first order atomically on the server.
+        // This avoids team-member RLS race conditions between table_sessions and orders inserts.
+        const { data: session, error: sessionError } = await (supabase as any)
+          .rpc("create_table_session_with_order", {
+            _owner_id: resolvedUserId,
+            _outlet_id: scopedOutletId,
+            _table_number: tableNumber,
+            _number_of_guests: guestCount,
+            _items: orderItems,
+            _total_amount: totalAmount,
+          });
 
         if (sessionError) throw sessionError;
+        if (!session?.id) throw new Error("Session non créée");
 
         // Step 3: Replace temp ID with real ID in cache
         const sessionsAfterInsert = ((queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) || [])
-          .map((s: any) => (s.id === tempSessionId ? { ...optimisticSession, id: session.id } : s));
+          .map((s: any) => (s.id === tempSessionId ? { ...optimisticSession, ...session } : s));
         queryClient.setQueryData(sessionsQueryKey, sessionsAfterInsert);
         await storeData('table_sessions', sessionsAfterInsert as any, resolvedUserId, scopedOutletId);
 
-        // Step 4: Insert order
-        const { error: orderError } = await supabase.from("orders").insert([{
-          user_id: resolvedUserId,
-          outlet_id: scopedOutletId,
-          session_id: session.id,
-          table_number: tableNumber,
-          order_type: "sur_place",
-          customer_name: `Table ${tableNumber}`,
-          items: orderItems,
-          total_amount: totalAmount,
-          status: "pending",
-        }]);
-
-        if (orderError) throw orderError;
-
-        // Step 5: Update orders cache
+        // Step 4: Update orders cache (DB insert was already done by the RPC)
         const orderObj = {
           id: `order-${Date.now()}`,
           user_id: resolvedUserId,

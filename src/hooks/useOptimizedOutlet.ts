@@ -12,7 +12,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const CACHE_KEY = 'outlet_cache';
 
 export const useOptimizedOutlet = () => {
-  const { user } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const [outletId, setOutletId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,6 +25,20 @@ export const useOptimizedOutlet = () => {
       }
 
       try {
+        if (isTeamMember && teamMemberSession) {
+          const teamOutletId = sanitizeStorageId(
+            teamMemberSession.outletId || teamMemberSession.outletIds?.[0]
+          );
+
+          if (teamOutletId) {
+            localStorage.setItem('selectedOutletId', teamOutletId);
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ outletId: teamOutletId, timestamp: Date.now() }));
+            setOutletId(teamOutletId);
+            setLoading(false);
+            return;
+          }
+        }
+
         const localOutletId = getSelectedOutletIdFromStorage();
         if (localOutletId) {
           setOutletId(localOutletId);
@@ -88,7 +102,7 @@ export const useOptimizedOutlet = () => {
     };
 
     getOutlet();
-  }, [user]);
+  }, [user, isTeamMember, teamMemberSession]);
 
   const clearCache = () => {
     localStorage.removeItem(CACHE_KEY);
