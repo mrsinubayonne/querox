@@ -10,7 +10,7 @@ interface TeamMemberSession {
   ownerId: string;
   memberEmail: string;
   role: string;
-  outletId: string;
+  outletId?: string | null;
   outletIds?: string[];
   expiresAt: string;
 }
@@ -29,6 +29,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const normalizeTeamMemberSession = (raw: TeamMemberSession): TeamMemberSession => {
+  const outletIds = Array.isArray(raw.outletIds) ? raw.outletIds.filter(Boolean) : [];
+  const outletId = raw.outletId || outletIds[0] || localStorage.getItem('selectedOutletId') || null;
+  const normalized = {
+    ...raw,
+    outletId,
+    outletIds: outletIds.length ? outletIds : (outletId ? [outletId] : []),
+  };
+
+  if (outletId) {
+    localStorage.setItem('selectedOutletId', outletId);
+  }
+
+  return normalized;
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -46,7 +62,7 @@ const getInitialTeamMemberState = () => {
       const expiresAt = new Date(parsed.expiresAt);
       if (expiresAt > new Date()) {
         console.log('✅ Team member session loaded synchronously on init');
-        return { isTeamMember: true, session: parsed };
+        return { isTeamMember: true, session: normalizeTeamMemberSession(parsed) };
       }
       localStorage.removeItem('teamMember');
     }
