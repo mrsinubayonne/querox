@@ -38,13 +38,14 @@ const Tables: React.FC = () => {
   const { isTeamMember } = useAuth();
   const { hasAnyPermission, loading: permissionsLoading } = useTeamPermissions();
   const canManageTables = !isTeamMember || hasAnyPermission(["manage_tables", "manage_orders"]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showAddOrderModal, setShowAddOrderModal] = useState(false);
-  const [showSessionModal, setShowSessionModal] = useState(false);
-  const [showRenameModal, setShowRenameModal] = useState(false);
-  const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [selectedSession, setSelectedSession] = useState<TableSession | null>(null);
-  const [sessionToRename, setSessionToRename] = useState<TableSession | null>(null);
+  type ModalState =
+    | { type: 'none' }
+    | { type: 'create'; tableNumber: string }
+    | { type: 'addOrder'; tableNumber: string }
+    | { type: 'session'; session: TableSession; tableNumber: string }
+    | { type: 'rename'; session: TableSession };
+
+  const [modalState, setModalState] = useState<ModalState>({ type: 'none' });
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Generate table numbers (default to 30 tables, expandable)
