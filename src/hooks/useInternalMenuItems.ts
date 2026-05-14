@@ -144,6 +144,7 @@ export const useInternalMenuItems = (isActive: boolean) => {
               is_custom_name: item.is_custom_name ?? false,
             }));
             setMenuItems(items);
+            menuItemsMemoryCache.set(cacheKey, items);
           }
         } catch (err) {
           console.warn('[useInternalMenuItems] Online refresh failed, keeping cached data:', err);
