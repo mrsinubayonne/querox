@@ -93,7 +93,7 @@ const Statistiques: React.FC = () => {
   }, [orders, customers, invoices]);
 
   const hasData = orders.length > 0 || customers.length > 0;
-  const loading = ordersLoading || customersLoading || transactionsLoading || invoicesLoading;
+  const loading = ordersLoading || customersLoading || invoicesLoading;
 
   if (loading) {
     return (
