@@ -37,12 +37,13 @@ const SafeImage: React.FC<SafeImageProps> = ({
   };
 
   return (
-    <img 
+    <img
       {...props}
       src={imgSrc}
       alt={alt}
       onError={handleError}
       loading="lazy"
+      decoding="async"
     />
   );
 };
