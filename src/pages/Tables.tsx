@@ -147,8 +147,7 @@ const Tables: React.FC = () => {
     } catch (e) {
       console.error('Error marking as paid:', e);
     } finally {
-      setShowSessionModal(false);
-      setSelectedSession(null);
+      setModalState({ type: 'none' });
     }
   };
 
