@@ -124,7 +124,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
       setCart([]);
       setSearchTerm("");
     }
-  }, [user, isOpen, orderId]);
+  }, [user, isOpen, orderId, isOffline, isTeamMember, teamMemberSession?.ownerId]);
 
   const { menuItems } = useMenuData(activeMenuId);
 
