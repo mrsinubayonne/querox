@@ -85,19 +85,26 @@ const DebtorsAccountingTab: React.FC = () => {
 
       if (invoicesError) throw invoicesError;
 
-      // Get payments for each invoice
-      const invoicesWithPayments: DebtorInvoice[] = [];
+      // Batch fetch ALL payments in a single query (avoids N+1)
+      const invoiceIds = (invoicesData || []).map((i: any) => i.id);
+      const paymentsByInvoice = new Map<string, number>();
 
-      for (const inv of invoicesData || []) {
-        const { data: payments } = await supabase
+      if (invoiceIds.length > 0) {
+        const { data: allPayments } = await supabase
           .from('debtor_payments' as any)
-          .select('amount')
-          .eq('invoice_id', inv.id);
+          .select('invoice_id, amount')
+          .in('invoice_id', invoiceIds)
+          .limit(10000);
 
-        const totalPaid = (payments || []).reduce((sum: number, p: any) => sum + p.amount, 0);
+        (allPayments || []).forEach((p: any) => {
+          const prev = paymentsByInvoice.get(p.invoice_id) || 0;
+          paymentsByInvoice.set(p.invoice_id, prev + Number(p.amount || 0));
+        });
+      }
+
+      const invoicesWithPayments: DebtorInvoice[] = (invoicesData || []).map((inv: any) => {
         const businessCustomer = inv.business_customers as any;
-
-        invoicesWithPayments.push({
+        return {
           id: inv.id,
           invoice_number: inv.invoice_number,
           total_amount: inv.total_amount,
@@ -107,9 +114,9 @@ const DebtorsAccountingTab: React.FC = () => {
           business_customer_id: inv.business_customer_id!,
           debtor_name: businessCustomer?.company_name || 'Inconnu',
           contact_person: businessCustomer?.contact_person,
-          total_paid: totalPaid,
-        });
-      }
+          total_paid: paymentsByInvoice.get(inv.id) || 0,
+        };
+      });
 
       setInvoices(invoicesWithPayments);
     } catch (error) {
