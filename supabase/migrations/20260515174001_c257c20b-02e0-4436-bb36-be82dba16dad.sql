@@ -1,0 +1,2 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'internal';
+CREATE INDEX IF NOT EXISTS idx_orders_user_source_created ON public.orders (user_id, source, created_at DESC);
