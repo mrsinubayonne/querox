@@ -279,6 +279,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     const exists = current.some((i) => i.id === invoice.id);
     const next = exists ? current.map((i) => (i.id === invoice.id ? { ...i, ...invoice } : i)) : [invoice, ...current];
     queryClient.setQueryData(invoicesQueryKey, next);
+    useInvoiceStore.getState().upsertInvoice(invoice);
     await storeData('invoices', next, resolvedUserId, scopedOutletId);
   }, [queryClient, invoicesQueryKey, resolvedUserId, scopedOutletId]);
 
@@ -295,6 +296,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     const current = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
     const next = current.filter((i) => i.id !== invoiceId);
     queryClient.setQueryData(invoicesQueryKey, next);
+    useInvoiceStore.getState().removeInvoice(invoiceId);
     await storeData('invoices', next, resolvedUserId, scopedOutletId);
   }, [queryClient, invoicesQueryKey, resolvedUserId, scopedOutletId]);
 
