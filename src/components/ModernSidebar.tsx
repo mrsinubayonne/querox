@@ -8,6 +8,7 @@ import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
 
 import { useButtonTracking, TRACKED_BUTTONS } from '@/hooks/useButtonTracking';
+import { useNotificationStore } from '@/store/notificationStore';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -112,6 +113,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const { outlets, selectedOutletId, selectOutlet, canAddMoreOutlets, getOutletLimit } = useOutlets();
   const { profileSession, hasPermission, isProfileAuthenticated, logout: profileLogout } = useOutletProfile();
   const { trackClick } = useButtonTracking();
+  const unreadOrders = useNotificationStore((s) => s.unreadOrders);
   
   const [marketingExpanded, setMarketingExpanded] = React.useState(false);
   const [adminExpanded, setAdminExpanded] = React.useState(false);
