@@ -8,6 +8,7 @@ import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
 
 import { useButtonTracking, TRACKED_BUTTONS } from '@/hooks/useButtonTracking';
+import { useNotificationStore } from '@/store/notificationStore';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -69,21 +70,34 @@ const TOUR_MAP: Record<string, string> = {
   Paramètres: 'settings',
 };
 
-const NavButton = React.memo(({ item, active, collapsed, onClick }: {
+const NavButton = React.memo(({ item, active, collapsed, onClick, badge }: {
   item: { icon: React.ElementType; label: string; path: string };
   active: boolean;
   collapsed: boolean;
   onClick: () => void;
+  badge?: number;
 }) => (
   <button
     onClick={onClick}
     data-tour={TOUR_MAP[item.label] || ''}
-    className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors duration-150 ${
+    className={`relative w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors duration-150 ${
       active ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-accent'
     }`}
   >
-    <item.icon size={20} className="flex-shrink-0" />
-    {!collapsed && <span className="ml-3">{item.label}</span>}
+    <div className="relative flex-shrink-0">
+      <item.icon size={20} />
+      {badge && badge > 0 && collapsed && (
+        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
+    </div>
+    {!collapsed && <span className="ml-3 flex-1">{item.label}</span>}
+    {!collapsed && badge && badge > 0 && (
+      <span className="ml-2 min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center animate-pulse">
+        {badge > 99 ? '99+' : badge}
+      </span>
+    )}
   </button>
 ));
 NavButton.displayName = 'NavButton';
@@ -99,6 +113,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const { outlets, selectedOutletId, selectOutlet, canAddMoreOutlets, getOutletLimit } = useOutlets();
   const { profileSession, hasPermission, isProfileAuthenticated, logout: profileLogout } = useOutletProfile();
   const { trackClick } = useButtonTracking();
+  const unreadOrders = useNotificationStore((s) => s.unreadOrders);
   
   const [marketingExpanded, setMarketingExpanded] = React.useState(false);
   const [adminExpanded, setAdminExpanded] = React.useState(false);
@@ -199,6 +214,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
                 active={isActive(item.path)}
                 collapsed={collapsed}
                 onClick={() => handleNavigation(item.path, item.label)}
+                badge={item.path === '/commandes' ? unreadOrders : undefined}
               />
             ))}
 

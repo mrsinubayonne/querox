@@ -7,6 +7,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
 import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvider";
+import { useGlobalNewOrderNotifier } from "@/hooks/useGlobalNewOrderNotifier";
+
+const GlobalOrderNotifier = () => {
+  useGlobalNewOrderNotifier();
+  return null;
+};
 
 // Lightweight page loading spinner
 const PageLoader = () => (
@@ -81,6 +87,7 @@ function App() {
   return (
     <RestaurantProvider restaurantUserId={null} outletId={null}>
       <Router>
+        <GlobalOrderNotifier />
         <div className="min-h-screen bg-background">
           <Suspense fallback={<PageLoader />}>
             <Routes>

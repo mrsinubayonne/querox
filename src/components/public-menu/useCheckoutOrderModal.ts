@@ -24,6 +24,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const [tableNumber, setTableNumber] = useState("");
   const [numberOfPeople, setNumberOfPeople] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingWhatsAppUrl, setPendingWhatsAppUrl] = useState<string | null>(null);
   const { toast } = useToast();
   const { restaurantUserId, outletId } = useRestaurant();
 
@@ -143,6 +144,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
         order_type: orderType,
         table_number: orderType === "sur_place" && tableNumber ? tableNumber : null,
         delivery_address: orderType === "livrer" && deliveryAddress ? deliveryAddress : null,
+        source: "public",
       };
       const { error } = await supabase.from("orders").insert([payload]);
 
@@ -191,16 +193,24 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       if (whatsappNumber) {
         const cleanNumber = whatsappNumber.replace(/[^\d]/g, "");
         const waUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(lines)}`;
-        // Use the window we pre-opened synchronously (mobile-safe).
-        // Fallback: navigate the current tab if popup was blocked.
+        // Try the pre-opened window first (mobile-safe). If blocked, expose
+        // a fallback button instead of hijacking the current tab.
+        let openedAuto = false;
         if (waWindow && !waWindow.closed) {
-          try { waWindow.location.href = waUrl; } catch { window.location.href = waUrl; }
-        } else {
-          window.location.href = waUrl;
+          try {
+            waWindow.location.href = waUrl;
+            openedAuto = true;
+          } catch {
+            try { waWindow.close(); } catch { /* ignore */ }
+          }
         }
+        // Always store the URL so the modal can show a fallback button
+        setPendingWhatsAppUrl(waUrl);
         toast({
           title: "Commande envoyée !",
-          description: "WhatsApp s'ouvre pour confirmer la commande au restaurant.",
+          description: openedAuto
+            ? "WhatsApp s'ouvre pour confirmer la commande."
+            : "Cliquez sur le bouton pour ouvrir WhatsApp et confirmer.",
         });
       } else {
         if (waWindow && !waWindow.closed) waWindow.close();
@@ -218,8 +228,11 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       setOrderType("sur_place");
       setTableNumber("");
       setNumberOfPeople("");
-      onOpenChange(false);
       onClearCart();
+      // Keep modal open if a fallback WhatsApp action is pending
+      if (!whatsappNumber) {
+        onOpenChange(false);
+      }
     } catch (err: any) {
       console.error("Order submission error:", err);
       if (waWindow && !waWindow.closed) {
@@ -253,5 +266,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     loading,
     handleSubmit,
     restaurantUserId,
+    pendingWhatsAppUrl,
+    clearPendingWhatsApp: () => setPendingWhatsAppUrl(null),
   };
 }

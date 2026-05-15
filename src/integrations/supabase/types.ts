@@ -1050,6 +1050,7 @@ export type Database = {
           order_type: string | null
           outlet_id: string | null
           session_id: string | null
+          source: string
           status: string
           table_number: string | null
           total_amount: number
@@ -1069,6 +1070,7 @@ export type Database = {
           order_type?: string | null
           outlet_id?: string | null
           session_id?: string | null
+          source?: string
           status?: string
           table_number?: string | null
           total_amount?: number
@@ -1088,6 +1090,7 @@ export type Database = {
           order_type?: string | null
           outlet_id?: string | null
           session_id?: string | null
+          source?: string
           status?: string
           table_number?: string | null
           total_amount?: number

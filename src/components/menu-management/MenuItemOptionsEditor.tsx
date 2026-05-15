@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
-import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import CopyOptionsFromItemModal from './CopyOptionsFromItemModal';
 
 interface OptionValue {
   id?: string;
@@ -39,6 +40,7 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
   const [groups, setGroups] = useState<OptionGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
   const { toast } = useToast();
 
   const load = async () => {
@@ -212,11 +214,22 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
 
   return (
     <div className="space-y-3 border rounded-lg p-3 bg-muted/30">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <Label className="text-base font-semibold">Variantes & suppléments</Label>
-        <Button type="button" variant="outline" size="sm" onClick={addGroup}>
-          <Plus className="h-4 w-4 mr-1" /> Groupe
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setCopyModalOpen(true)}
+            disabled={!menuItemId}
+          >
+            <Copy className="h-4 w-4 mr-1" /> Importer d'un plat
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={addGroup}>
+            <Plus className="h-4 w-4 mr-1" /> Groupe
+          </Button>
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">
         Ex: "Viande" (Bœuf / Poulet) en choix unique, ou "Suppléments" (Fromage +500, Bacon +700) en choix multiple.
@@ -318,6 +331,13 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
           {saving ? 'Enregistrement…' : 'Enregistrer les variantes'}
         </Button>
       )}
+
+      <CopyOptionsFromItemModal
+        open={copyModalOpen}
+        onOpenChange={setCopyModalOpen}
+        targetMenuItemId={menuItemId}
+        onImported={load}
+      />
     </div>
   );
 };
