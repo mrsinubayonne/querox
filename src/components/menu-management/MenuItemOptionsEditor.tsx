@@ -331,6 +331,13 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
           {saving ? 'Enregistrement…' : 'Enregistrer les variantes'}
         </Button>
       )}
+
+      <CopyOptionsFromItemModal
+        open={copyModalOpen}
+        onOpenChange={setCopyModalOpen}
+        targetMenuItemId={menuItemId}
+        onImported={load}
+      />
     </div>
   );
 };
