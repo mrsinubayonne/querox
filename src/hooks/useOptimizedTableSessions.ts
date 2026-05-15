@@ -11,6 +11,8 @@ import { ensurePeriodExistsOffline } from './useAutoStartPeriod';
 import { useNetworkStatus } from './useNetworkStatus';
 import type { Invoice } from '@/hooks/useInvoices';
 import type { Order } from '@/hooks/useOptimizedOrders';
+import { useTableStore } from '@/store/tableStore';
+import { useInvoiceStore } from '@/store/invoiceStore';
 
 export interface TableSession {
   id: string;
@@ -213,6 +215,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       s.id === updatedSession.id ? { ...s, ...updatedSession } : s
     );
     queryClient.setQueryData(sessionsQueryKey, updatedSessions);
+    useTableStore.getState().setSessions(updatedSessions);
 
     if (user) {
       await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
@@ -238,6 +241,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
     const filtered = baseSessions.filter((s) => s.id !== sessionId);
     queryClient.setQueryData(sessionsQueryKey, filtered);
+    useTableStore.getState().removeSession(sessionId);
     if (user) {
       await storeData('table_sessions', filtered, resolvedUserId, scopedOutletId);
 
@@ -256,6 +260,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     const withoutDuplicate = baseSessions.filter((s) => s.id !== newSession.id);
     const updatedSessions = [newSession, ...withoutDuplicate];
     queryClient.setQueryData(sessionsQueryKey, updatedSessions);
+    useTableStore.getState().addSession(newSession);
 
     if (user) {
       await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
@@ -274,6 +279,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     const exists = current.some((i) => i.id === invoice.id);
     const next = exists ? current.map((i) => (i.id === invoice.id ? { ...i, ...invoice } : i)) : [invoice, ...current];
     queryClient.setQueryData(invoicesQueryKey, next);
+    useInvoiceStore.getState().upsertInvoice(invoice);
     await storeData('invoices', next, resolvedUserId, scopedOutletId);
   }, [queryClient, invoicesQueryKey, resolvedUserId, scopedOutletId]);
 
@@ -290,6 +296,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     const current = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
     const next = current.filter((i) => i.id !== invoiceId);
     queryClient.setQueryData(invoicesQueryKey, next);
+    useInvoiceStore.getState().removeInvoice(invoiceId);
     await storeData('invoices', next, resolvedUserId, scopedOutletId);
   }, [queryClient, invoicesQueryKey, resolvedUserId, scopedOutletId]);
 
@@ -675,6 +682,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         // Remove session from cache entirely — table becomes free immediately
         await removeFromLocalCache(sessionId);
         markSessionPaidLocally(sessionId);
+        useTableStore.getState().markPaid(sessionId);
         return { isDebtorSession };
       }
 
@@ -682,6 +690,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       // If realtime fires during the DB update, the session is already removed from cache
       // and the suppress window prevents any refetch from re-adding it.
       markSessionPaidLocally(sessionId);
+      useTableStore.getState().markPaid(sessionId);
       await removeFromLocalCache(sessionId);
 
       // Online flow — align with Factures flow: pay invoice first so DB trigger frees table
@@ -789,6 +798,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       localPaidSessionIds.delete(variables.sessionId);
       localPaidTimestamps.delete(variables.sessionId);
       persistPaidSessionsToStorage();
+      useTableStore.getState().rollbackPaid(variables.sessionId);
 
       // Restore React Query cache to snapshot
       queryClient.setQueryData(sessionsQueryKey, snapshotSessions);
