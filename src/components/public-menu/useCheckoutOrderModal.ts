@@ -266,5 +266,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     loading,
     handleSubmit,
     restaurantUserId,
+    pendingWhatsAppUrl,
+    clearPendingWhatsApp: () => setPendingWhatsAppUrl(null),
   };
 }
