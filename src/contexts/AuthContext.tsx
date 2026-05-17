@@ -58,20 +58,13 @@ export const useAuth = () => {
 
 // Helper to initialize team member state synchronously from localStorage
 const getInitialTeamMemberState = () => {
-  try {
-    const teamMemberData = localStorage.getItem('teamMember');
-    if (teamMemberData) {
-      const parsed = JSON.parse(teamMemberData);
-      const expiresAt = new Date(parsed.expiresAt);
-      if (expiresAt > new Date()) {
-        console.log('✅ Team member session loaded synchronously on init');
-        return { isTeamMember: true, session: normalizeTeamMemberSession(parsed) };
-      }
-      localStorage.removeItem('teamMember');
-    }
-  } catch (error) {
-    console.error('Error loading team member session:', error);
-    localStorage.removeItem('teamMember');
+  const parsed = localStore.raw.getWithTTL<TeamMemberSession | null>('teamMember', null);
+  if (parsed && parsed.memberId) {
+    console.log('✅ Team member session loaded synchronously on init');
+    return { isTeamMember: true, session: normalizeTeamMemberSession(parsed) };
+  }
+  if (!parsed) {
+    localStore.raw.remove('teamMember');
   }
   return { isTeamMember: false, session: null };
 };
