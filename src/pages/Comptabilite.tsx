@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Download, Edit, Trash2 } from 'lucide-react';
-import * as XLSX from 'xlsx';
+
 import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
@@ -274,7 +274,8 @@ const Comptabilite = () => {
     ];
   }, [filteredByOutlet, paymentMethodFilter, startDate, endDate]);
 
-  const handleDownloadByOutlet = () => {
+  const handleDownloadByOutlet = async () => {
+    const XLSX = await import('xlsx');
     const dataByOutlet = outlets.map(outlet => {
       const outletTransactions = combinedTransactions.filter(t => t.outlet_id === outlet.id);
       const recettes = outletTransactions
@@ -311,7 +312,8 @@ const Comptabilite = () => {
     toast.success("Exportation réussie", { description: "Les données par PDV ont été exportées en Excel" });
   };
 
-  const handleExport = (format: string, period: string) => {
+  const handleExport = async (format: string, period: string) => {
+    const XLSX = format === 'excel' ? await import('xlsx') : null as any;
     const formatMap = {
       excel: 'Excel (.xlsx)',
       sheets: 'Google Sheets',

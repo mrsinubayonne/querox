@@ -6,7 +6,14 @@ import { Website } from "@/hooks/useWebsites";
 import { Textarea } from "./ui/textarea";
 import LogoUpload from "./LogoUpload";
 import SimpleImageUploader from "./SimpleImageUploader";
-import { debounce } from "lodash";
+// Inline debounce — no lodash dependency
+function debounce<T extends (...args: any[]) => any>(fn: T, wait: number) {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  return ((...args: Parameters<T>) => {
+    if (t) clearTimeout(t);
+    t = setTimeout(() => fn(...args), wait);
+  }) as T;
+}
 import { APP_CONFIG } from "@/config/app.config";
 
 interface WebsiteConfigPanelProps {

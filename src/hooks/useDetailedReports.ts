@@ -5,9 +5,6 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { getData } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
 import { format as formatDate } from 'date-fns';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 export interface DetailedTransaction {
   id: string;
@@ -215,6 +212,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
 
     try {
       if (format === 'excel') {
+        const XLSX = await import('xlsx');
         const worksheet = XLSX.utils.json_to_sheet(
           filteredTransactions.map((t) => ({
             Date: t.date,
@@ -234,6 +232,8 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         XLSX.writeFile(workbook, fileName);
         toast.success('Rapport Excel téléchargé avec succès');
       } else {
+        const { default: jsPDF } = await import('jspdf');
+        const { default: autoTable } = await import('jspdf-autotable');
         const doc = new jsPDF();
 
         const formatFCFA = (value: number) => {

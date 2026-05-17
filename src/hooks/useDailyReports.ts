@@ -6,9 +6,6 @@ import { getData, getPendingMutations } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
 import { DateRange } from 'react-day-picker';
 import { format, endOfDay, startOfDay, setHours, setMinutes } from 'date-fns';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 export interface DailyReport {
   date: string;
@@ -310,6 +307,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
 
     try {
       if (downloadFormat === 'excel') {
+        const XLSX = await import('xlsx');
         const worksheet = XLSX.utils.json_to_sheet(
           reports.map((report) => ({
             Date: report.date,
@@ -330,6 +328,8 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
         XLSX.writeFile(workbook, fileName);
         toast.success('Rapport Excel téléchargé avec succès');
       } else {
+        const { default: jsPDF } = await import('jspdf');
+        const { default: autoTable } = await import('jspdf-autotable');
         const doc = new jsPDF();
 
         const formatFCFA = (value: number) => {

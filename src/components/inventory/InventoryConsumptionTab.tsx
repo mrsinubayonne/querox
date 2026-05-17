@@ -12,8 +12,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 interface ConsumptionItem {
   item_id: string;
@@ -137,9 +135,11 @@ const InventoryConsumptionTab: React.FC = () => {
     return '';
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (filteredData.length === 0) return;
 
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text('Rapport de Consommation', 14, 20);
