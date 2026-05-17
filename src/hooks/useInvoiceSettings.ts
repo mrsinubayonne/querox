@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from './use-toast';
+import { toast } from 'sonner';
 
 export interface InvoiceSettings {
   id: string;
@@ -22,9 +22,7 @@ export interface InvoiceSettings {
 }
 
 export const useInvoiceSettings = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [settings, setSettings] = useState<InvoiceSettings | null>(null);
+  const { user } = useAuth();  const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
 
