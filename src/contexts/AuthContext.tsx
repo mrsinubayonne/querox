@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { storeAuthData, getAuthData, clearAuthData } from '@/lib/offlineStorage';
 import { getSelectedOutletIdFromStorage } from '@/lib/offlineIdentity';
 import { preloadCriticalData } from '@/hooks/useOfflineData';
+import { localStore } from '@/lib/localStore';
+
+const TEAM_MEMBER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface TeamMemberSession {
   memberId: string;
