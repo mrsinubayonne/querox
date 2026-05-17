@@ -1,3 +1,5 @@
+import { localStore } from '@/lib/localStore';
+
 export function sanitizeStorageId(value: string | null | undefined): string | undefined {
   if (!value) return undefined;
 
@@ -11,30 +13,24 @@ export function sanitizeStorageId(value: string | null | undefined): string | un
 }
 
 function getOutletIdFromCache(): string | undefined {
-  if (typeof window === 'undefined') return undefined;
-
-  const rawCache = localStorage.getItem('outlet_cache');
-  if (!rawCache) return undefined;
+  const parsed = localStore.raw.get<{ outletId?: string | null } | null>('outlet_cache', null);
+  if (!parsed) return undefined;
 
   try {
-    const parsed = JSON.parse(rawCache) as { outletId?: string | null };
-    const cachedOutletId = sanitizeStorageId(parsed?.outletId ?? undefined);
-
+    const cachedOutletId = sanitizeStorageId(parsed.outletId ?? undefined);
     if (cachedOutletId) {
-      localStorage.setItem('selectedOutletId', cachedOutletId);
+      localStore.raw.setString('selectedOutletId', cachedOutletId);
       return cachedOutletId;
     }
   } catch {
-    localStorage.removeItem('outlet_cache');
+    localStore.raw.remove('outlet_cache');
   }
 
   return undefined;
 }
 
 export function getSelectedOutletIdFromStorage(): string | undefined {
-  if (typeof window === 'undefined') return undefined;
-
-  const raw = localStorage.getItem('selectedOutletId');
+  const raw = localStore.raw.getString('selectedOutletId');
   const sanitized = sanitizeStorageId(raw);
 
   if (sanitized) {
@@ -42,7 +38,7 @@ export function getSelectedOutletIdFromStorage(): string | undefined {
   }
 
   if (raw) {
-    localStorage.removeItem('selectedOutletId');
+    localStore.raw.remove('selectedOutletId');
   }
 
   return getOutletIdFromCache();

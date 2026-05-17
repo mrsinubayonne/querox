@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
+import { localStore } from '@/lib/localStore';
 
 type NetworkStatus = 'online' | 'offline' | 'unstable';
 
+// Key is shared with AuthContext.tsx — keep it un-prefixed via localStore.raw
 const FORCE_OFFLINE_MODE_KEY = 'querox_force_offline_mode';
 
 const isForcedOfflineModeEnabled = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem(FORCE_OFFLINE_MODE_KEY) === '1';
+  return localStore.raw.getString(FORCE_OFFLINE_MODE_KEY) === '1';
 };
 
 interface UseNetworkStatusReturn {
@@ -66,7 +67,7 @@ export const useNetworkStatus = (): UseNetworkStatusReturn => {
   const retryConnection = useCallback(() => {
     failedRequestCount = 0;
     if (typeof navigator !== 'undefined' && navigator.onLine) {
-      localStorage.removeItem(FORCE_OFFLINE_MODE_KEY);
+      localStore.raw.remove(FORCE_OFFLINE_MODE_KEY);
       window.dispatchEvent(new CustomEvent('querox-force-offline-mode-changed'));
     }
     updateStatus();
@@ -74,7 +75,7 @@ export const useNetworkStatus = (): UseNetworkStatusReturn => {
 
   useEffect(() => {
     const handleOnline = () => {
-      localStorage.removeItem(FORCE_OFFLINE_MODE_KEY);
+      localStore.raw.remove(FORCE_OFFLINE_MODE_KEY);
       window.dispatchEvent(new CustomEvent('querox-force-offline-mode-changed'));
       failedRequestCount = 0;
       setStatus('online');
