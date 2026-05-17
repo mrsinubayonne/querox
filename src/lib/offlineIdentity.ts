@@ -19,7 +19,7 @@ function getOutletIdFromCache(): string | undefined {
   try {
     const cachedOutletId = sanitizeStorageId(parsed.outletId ?? undefined);
     if (cachedOutletId) {
-      localStore.raw.set('selectedOutletId', cachedOutletId);
+      localStore.raw.setString('selectedOutletId', cachedOutletId);
       return cachedOutletId;
     }
   } catch {
@@ -30,7 +30,7 @@ function getOutletIdFromCache(): string | undefined {
 }
 
 export function getSelectedOutletIdFromStorage(): string | undefined {
-  const raw = localStore.raw.get<string | null>('selectedOutletId', null);
+  const raw = localStore.raw.getString('selectedOutletId');
   const sanitized = sanitizeStorageId(raw);
 
   if (sanitized) {
