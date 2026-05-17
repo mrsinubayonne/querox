@@ -50,10 +50,9 @@ const localPaidTimestamps = new Map<string, number>();
 
 function loadPaidSessionsFromStorage() {
   if (typeof window === 'undefined') return;
+  const parsed = localStore.raw.get<Record<string, number> | null>(PAID_SESSIONS_STORAGE_KEY, null);
+  if (!parsed) return;
   try {
-    const raw = localStorage.getItem(PAID_SESSIONS_STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw) as Record<string, number>;
     const now = Date.now();
     for (const [id, ts] of Object.entries(parsed)) {
       if (now - ts < PAID_RETENTION_MS) {
@@ -68,13 +67,9 @@ function loadPaidSessionsFromStorage() {
 
 function persistPaidSessionsToStorage() {
   if (typeof window === 'undefined') return;
-  try {
-    const obj: Record<string, number> = {};
-    for (const [id, ts] of localPaidTimestamps.entries()) obj[id] = ts;
-    localStorage.setItem(PAID_SESSIONS_STORAGE_KEY, JSON.stringify(obj));
-  } catch (e) {
-    console.warn('[paid-sessions] Échec écriture localStorage:', e);
-  }
+  const obj: Record<string, number> = {};
+  for (const [id, ts] of localPaidTimestamps.entries()) obj[id] = ts;
+  localStore.raw.set(PAID_SESSIONS_STORAGE_KEY, obj);
 }
 
 // Initialiser au chargement du module
