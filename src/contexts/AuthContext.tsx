@@ -271,31 +271,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    // Check for team member session in localStorage
+    // Check for team member session in localStorage (TTL handled by localStore)
     const checkTeamMemberSession = () => {
-      const teamMemberData = localStorage.getItem('teamMember');
-      if (teamMemberData) {
-        try {
-          const parsed = JSON.parse(teamMemberData);
-          const expiresAt = new Date(parsed.expiresAt);
-          
-          // Check if session is expired
-          if (expiresAt > new Date()) {
-            console.log('✅ Team member session found and valid');
-            const normalizedSession = normalizeTeamMemberSession(parsed);
-            localStorage.setItem('teamMember', JSON.stringify(normalizedSession));
-            setIsTeamMember(true);
-            setTeamMemberSession(normalizedSession);
-            setLoading(false);
-            return true;
-          } else {
-            console.log('❌ Team member session expired');
-            localStorage.removeItem('teamMember');
-          }
-        } catch (error) {
-          console.error('Error parsing team member session:', error);
-          localStorage.removeItem('teamMember');
-        }
+      const parsed = localStore.raw.getWithTTL<TeamMemberSession | null>('teamMember', null);
+      if (parsed && parsed.memberId) {
+        console.log('✅ Team member session found and valid');
+        const normalizedSession = normalizeTeamMemberSession(parsed);
+        localStore.raw.setWithTTL('teamMember', normalizedSession, TEAM_MEMBER_TTL_MS);
+        setIsTeamMember(true);
+        setTeamMemberSession(normalizedSession);
+        setLoading(false);
+        return true;
+      }
+      if (!parsed) {
+        localStore.raw.remove('teamMember');
       }
       return false;
     };
