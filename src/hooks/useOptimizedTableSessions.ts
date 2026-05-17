@@ -13,6 +13,7 @@ import type { Order } from '@/hooks/useOptimizedOrders';
 import { useTableStore } from '@/store/tableStore';
 import { useInvoiceStore } from '@/store/invoiceStore';
 import { toast } from 'sonner';
+import { localStore } from '@/lib/localStore';
 
 export interface TableSession {
   id: string;
