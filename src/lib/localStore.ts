@@ -91,6 +91,27 @@ function makeStore(prefix: string) {
         console.warn('[localStore] Failed to write key with TTL:', key);
       }
     },
+
+    /** Read a plain string value (not JSON-encoded). */
+    getString(key: string, fallback: string | null = null): string | null {
+      if (!isBrowser()) return fallback;
+      try {
+        const v = localStorage.getItem(prefix + key);
+        return v ?? fallback;
+      } catch {
+        return fallback;
+      }
+    },
+
+    /** Write a plain string value (not JSON-encoded). */
+    setString(key: string, value: string): void {
+      if (!isBrowser()) return;
+      try {
+        localStorage.setItem(prefix + key, value);
+      } catch {
+        console.warn('[localStore] Failed to write string key:', key);
+      }
+    },
   };
 }
 
