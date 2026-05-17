@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { getAllMutations, type QueuedMutation } from '@/lib/offlineStorage';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-import { toast } from 'sonner';
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';

@@ -17,7 +17,6 @@ import InvoicePrintView, { InvoicePrintViewRef } from '@/components/invoices/Inv
 import InvoiceFormatSelector from '@/components/invoices/InvoiceFormatSelector';
 import { supabase } from '@/integrations/supabase/client';
 import {
-import { toast } from 'sonner';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -27,6 +26,7 @@ import { toast } from 'sonner';
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 const Factures: React.FC = () => {
   const navigate = useNavigate();

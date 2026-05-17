@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { 
-import { toast } from 'sonner';
   Menu, 
   Users, 
   DollarSign, 
@@ -23,6 +22,7 @@ import { toast } from 'sonner';
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
+import { toast } from 'sonner';
 import ModernSidebar from '@/components/ModernSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import ModernStatCard from '@/components/ModernStatCard';

@@ -15,7 +15,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { APP_CONFIG } from '@/config/app.config';
 import {
-import { toast } from 'sonner';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -25,6 +24,7 @@ import { toast } from 'sonner';
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from 'sonner';
 
 interface MenuType {
   id: string;

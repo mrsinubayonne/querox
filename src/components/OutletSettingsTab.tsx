@@ -8,7 +8,6 @@ import { useProfile } from '@/hooks/useProfile';
 import { Loader2, Store, Trash2, AlertTriangle, Link2, Copy, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
-import { toast } from 'sonner';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -19,6 +18,7 @@ import { toast } from 'sonner';
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 export const OutletSettingsTab: React.FC = () => {
   const { outlets, selectedOutletId, updateOutlet, deleteOutlet, loading } = useOutlets();
