@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import {
+import { toast } from 'sonner';
   Dialog,
   DialogContent,
   DialogDescription,
@@ -16,7 +17,6 @@ import { Plus, Minus, Search, X, WifiOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
 import { useQueryClient } from "@tanstack/react-query";
@@ -49,7 +49,6 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
   tableNumber,
 }) => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
-  const { toast } = useToast();
   const { outletId } = useRestaurant();
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
@@ -147,21 +146,13 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
 
   const addCustomItem = () => {
     if (!customItemName.trim() || !customItemPrice) {
-      toast({
-        title: "Champs requis",
-        description: "Veuillez renseigner le nom et le prix de l'article.",
-        variant: "destructive",
-      });
+      toast.error("Champs requis", { description: "Veuillez renseigner le nom et le prix de l'article." });
       return;
     }
 
     const price = Number(customItemPrice);
     if (isNaN(price) || price <= 0) {
-      toast({
-        title: "Prix invalide",
-        description: "Le prix doit être un nombre positif.",
-        variant: "destructive",
-      });
+      toast.error("Prix invalide", { description: "Le prix doit être un nombre positif." });
       return;
     }
 
@@ -177,10 +168,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
     setCustomItemPrice("");
     setShowCustomItem(false);
     
-    toast({
-      title: "Article ajouté",
-      description: `${customItemName} ajouté au panier.`,
-    });
+    toast.success("Article ajouté", { description: `${customItemName} ajouté au panier.` });
   };
 
   const totalAmount = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
@@ -189,11 +177,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
     e.preventDefault();
 
     if (cart.length === 0) {
-      toast({
-        title: "Panier vide",
-        description: "Veuillez ajouter au moins un plat à la commande.",
-        variant: "destructive",
-      });
+      toast.error("Panier vide", { description: "Veuillez ajouter au moins un plat à la commande." });
       return;
     }
 
@@ -214,11 +198,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
 
         const resolvedOutletId = scopedOutletId || localStorage.getItem("selectedOutletId");
         if (!resolvedOutletId) {
-          toast({
-            title: "Erreur",
-            description: "Aucun point de vente sélectionné.",
-            variant: "destructive",
-          });
+          toast.error("Erreur", { description: "Aucun point de vente sélectionné." });
           return;
         }
 
@@ -297,10 +277,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
           await storeData('table_sessions', nextSessions as any, resolvedUserId, outletKey);
         }
 
-        toast({
-          title: "Commande ajoutée (hors ligne)",
-          description: `${cart.length} plat(s) ajoutés. Sera synchronisée.`,
-        });
+        toast.success("Commande ajoutée (hors ligne)", { description: `${cart.length} plat(s) ajoutés. Sera synchronisée.` });
 
         window.dispatchEvent(new CustomEvent("session-updated"));
         setCart([]);
@@ -329,10 +306,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
 
       if (error) throw error;
 
-      toast({
-        title: "Commande ajoutée",
-        description: `${cart.length} plat(s) ajoutés à la session.`,
-      });
+      toast.success("Commande ajoutée", { description: `${cart.length} plat(s) ajoutés à la session.` });
 
       window.dispatchEvent(new CustomEvent("session-updated"));
       setCart([]);
@@ -341,7 +315,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       onClose();
     } catch (err: any) {
       console.error("Error adding order:", err);
-      toast({ title: "Erreur", description: "Impossible d'ajouter la commande.", variant: "destructive" });
+      toast.error("Erreur", { description: "Impossible d'ajouter la commande." });
     } finally {
       setLoading(false);
     }

@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { Check, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PricingPlan {
@@ -30,7 +30,6 @@ interface PricingCardProps {
 
 const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
 
@@ -61,11 +60,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
         throw new Error('Pas d\'URL de paiement reçue');
       }
     } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error?.message || "Une erreur est survenue lors de la redirection",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: error?.message || "Une erreur est survenue lors de la redirection" });
     } finally {
       setProcessing(false);
     }

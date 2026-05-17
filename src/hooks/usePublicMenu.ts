@@ -1,17 +1,16 @@
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useMenuData } from './useMenuData';
 import { useMenuFilter } from './useMenuFilter';
 import { useShoppingCart } from './useShoppingCart';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 export const usePublicMenu = () => {
   const location = useLocation();
   const { menuId: routeMenuId } = useParams();
-  const { toast } = useToast();
   const { user, signIn } = useAuth();
   
   const [menuId, setMenuId] = useState<string | null>(null);
@@ -36,25 +35,13 @@ export const usePublicMenu = () => {
           const now = new Date();
           
           if (expiresAt > now) {
-            toast({
-              title: "Accès autorisé",
-              description: "Menu accessible via QR Code",
-              variant: "default",
-            });
+            toast.success("Accès autorisé", { description: "Menu accessible via QR Code" });
             setAutoLoginProcessed(true);
           } else {
-            toast({
-              title: "QR Code expiré",
-              description: "Veuillez scanner un nouveau QR Code",
-              variant: "destructive",
-            });
+            toast.error("QR Code expiré", { description: "Veuillez scanner un nouveau QR Code" });
           }
         } catch (error) {
-          toast({
-            title: "QR Code invalide",
-            description: "Le QR Code semble corrompu",
-            variant: "destructive",
-          });
+          toast.error("QR Code invalide", { description: "Le QR Code semble corrompu" });
         }
       }
       
@@ -66,11 +53,7 @@ export const usePublicMenu = () => {
         setMenuError(errorMsg);
         
         if (!autoToken) {
-          toast({
-            title: "Menu non spécifié",
-            description: "Utilisez le chemin /menu/:menuId ou le paramètre ?menu_id=...",
-            variant: "destructive",
-          });
+          toast.error("Menu non spécifié", { description: "Utilisez le chemin /menu/:menuId ou le paramètre ?menu_id=..." });
         }
       }
     };

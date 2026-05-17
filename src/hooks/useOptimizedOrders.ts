@@ -1,10 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 import { useOfflineData } from './useOfflineData';
 import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from './useOfflineMutation';
+import { toast } from 'sonner';
 
 interface OrderItem {
   id: string;
@@ -56,7 +56,6 @@ const playNotificationSound = () => {
 
 export const useOptimizedOrders = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const outletId = localStorage.getItem('selectedOutletId') || undefined;
 
@@ -144,11 +143,7 @@ export const useOptimizedOrders = () => {
         }, ...old]);
 
         playNotificationSound();
-        toast({
-          title: "🔔 Nouvelle commande !",
-          description: `${newOrder.customer_name} - ${Number(newOrder.total_amount).toFixed(2)}€`,
-          duration: 5000,
-        });
+        toast.success("🔔 Nouvelle commande !", { description: `${newOrder.customer_name} - ${Number(newOrder.total_amount).toFixed(2)}€` });
       })
       .subscribe();
 

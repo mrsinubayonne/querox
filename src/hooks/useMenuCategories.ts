@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { MenuCategory } from './useMenus';
+import { toast } from 'sonner';
 
 export interface CategoryInput {
   name: string;
@@ -19,16 +19,11 @@ export interface CategoryUpdate {
 
 export const useMenuCategories = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const addCategory = useCallback(async (categoryData: CategoryInput): Promise<MenuCategory | null> => {
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour ajouter une catégorie",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour ajouter une catégorie" });
       return null;
     }
 
@@ -46,11 +41,7 @@ export const useMenuCategories = () => {
 
       if (menuError || !menu) {
         console.error('Menu validation error:', menuError);
-        toast({
-          title: "Erreur",
-          description: "Menu invalide ou non trouvé",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Menu invalide ou non trouvé" });
         return null;
       }
 
@@ -65,28 +56,17 @@ export const useMenuCategories = () => {
 
       if (error) {
         console.error('Error adding category:', error);
-        toast({
-          title: "Erreur",
-          description: error.message || "Impossible d'ajouter la catégorie",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: error.message || "Impossible d'ajouter la catégorie" });
         return null;
       }
 
       console.log('✅ Category added successfully:', data.id);
-      toast({
-        title: "Succès",
-        description: "Catégorie ajoutée avec succès",
-      });
+      toast.success("Succès", { description: "Catégorie ajoutée avec succès" });
       return data;
 
     } catch (error: any) {
       console.error('🚨 Error adding category:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur inattendue s'est produite",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur inattendue s'est produite" });
       return null;
     } finally {
       setLoading(false);
@@ -95,11 +75,7 @@ export const useMenuCategories = () => {
 
   const updateCategory = useCallback(async (id: string, updates: CategoryUpdate): Promise<boolean> => {
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour modifier une catégorie",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour modifier une catégorie" });
       return false;
     }
 
@@ -120,11 +96,7 @@ export const useMenuCategories = () => {
 
       if (checkError || !existingCategory) {
         console.error('Category ownership check failed:', checkError);
-        toast({
-          title: "Erreur",
-          description: "Catégorie non trouvée ou non autorisée",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Catégorie non trouvée ou non autorisée" });
         return false;
       }
 
@@ -137,28 +109,17 @@ export const useMenuCategories = () => {
 
       if (error) {
         console.error('Error updating category:', error);
-        toast({
-          title: "Erreur",
-          description: error.message || "Impossible de modifier la catégorie",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: error.message || "Impossible de modifier la catégorie" });
         return false;
       }
 
       console.log('✅ Category updated successfully:', data.id);
-      toast({
-        title: "Succès",
-        description: "Catégorie modifiée avec succès",
-      });
+      toast.success("Succès", { description: "Catégorie modifiée avec succès" });
       return true;
 
     } catch (error: any) {
       console.error('🚨 Error updating category:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur inattendue s'est produite",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur inattendue s'est produite" });
       return false;
     } finally {
       setLoading(false);
@@ -167,11 +128,7 @@ export const useMenuCategories = () => {
 
   const deleteCategory = useCallback(async (id: string): Promise<boolean> => {
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour supprimer une catégorie",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour supprimer une catégorie" });
       return false;
     }
 
@@ -192,11 +149,7 @@ export const useMenuCategories = () => {
 
       if (checkError || !existingCategory) {
         console.error('Category ownership check failed:', checkError);
-        toast({
-          title: "Erreur",
-          description: "Catégorie non trouvée ou non autorisée",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Catégorie non trouvée ou non autorisée" });
         return false;
       }
 
@@ -209,20 +162,12 @@ export const useMenuCategories = () => {
 
       if (itemsError) {
         console.error('Error checking items in category:', itemsError);
-        toast({
-          title: "Erreur",
-          description: "Impossible de vérifier les plats dans cette catégorie",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de vérifier les plats dans cette catégorie" });
         return false;
       }
 
       if (itemsInCategory && itemsInCategory.length > 0) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de supprimer une catégorie qui contient des plats",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de supprimer une catégorie qui contient des plats" });
         return false;
       }
 
@@ -233,28 +178,17 @@ export const useMenuCategories = () => {
 
       if (error) {
         console.error('Error deleting category:', error);
-        toast({
-          title: "Erreur",
-          description: error.message || "Impossible de supprimer la catégorie",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: error.message || "Impossible de supprimer la catégorie" });
         return false;
       }
 
       console.log('✅ Category deleted successfully');
-      toast({
-        title: "Succès",
-        description: "Catégorie supprimée avec succès",
-      });
+      toast.success("Succès", { description: "Catégorie supprimée avec succès" });
       return true;
 
     } catch (error: any) {
       console.error('🚨 Error deleting category:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur inattendue s'est produite",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur inattendue s'est produite" });
       return false;
     } finally {
       setLoading(false);

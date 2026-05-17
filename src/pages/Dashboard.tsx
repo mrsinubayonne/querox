@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { 
+import { toast } from 'sonner';
   Menu, 
   Users, 
   DollarSign, 
@@ -38,7 +38,6 @@ type Period = 'day' | 'week' | 'month';
 const Dashboard: React.FC = () => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const location = useLocation();
-  const { toast } = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [period, setPeriod] = useState<Period>('day');
   const { stats, loading } = useDashboardStats(period);
@@ -59,24 +58,12 @@ const Dashboard: React.FC = () => {
         const now = new Date();
         
         if (expiresAt > now) {
-          toast({
-            title: "Accès autorisé",
-            description: "Connexion via QR Code réussie",
-            variant: "default",
-          });
+          toast.success("Accès autorisé", { description: "Connexion via QR Code réussie" });
         } else {
-          toast({
-            title: "QR Code expiré",
-            description: "Veuillez générer un nouveau QR Code",
-            variant: "destructive",
-          });
+          toast.error("QR Code expiré", { description: "Veuillez générer un nouveau QR Code" });
         }
       } catch (error) {
-        toast({
-          title: "QR Code invalide",
-          description: "Le code QR semble corrompu",
-          variant: "destructive",
-        });
+        toast.error("QR Code invalide", { description: "Le code QR semble corrompu" });
       }
     }
   }, [location.search, user, toast]);

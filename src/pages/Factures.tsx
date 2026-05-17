@@ -15,9 +15,9 @@ import EditInvoiceModal from '@/components/invoices/EditInvoiceModal';
 import InvoiceFilters from '@/components/invoices/InvoiceFilters';
 import InvoicePrintView, { InvoicePrintViewRef } from '@/components/invoices/InvoicePrintView';
 import InvoiceFormatSelector from '@/components/invoices/InvoiceFormatSelector';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
+import { toast } from 'sonner';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -31,7 +31,6 @@ import {
 const Factures: React.FC = () => {
   const navigate = useNavigate();
   const { invoices, loading, updateInvoiceStatus, refetch } = useInvoices();
-  const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -142,21 +141,14 @@ const Factures: React.FC = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Succès',
-        description: 'Facture supprimée avec succès',
-      });
+      toast.success('Succès', { description: 'Facture supprimée avec succès' });
 
       refetch();
       setIsDeleteDialogOpen(false);
       setSelectedInvoice(null);
     } catch (error) {
       console.error('Error deleting invoice:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de supprimer la facture',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Impossible de supprimer la facture' });
     }
   };
 

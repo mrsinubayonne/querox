@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from 'sonner';
 
 export interface DebtorPayment {
   id: string;
@@ -18,7 +18,6 @@ export interface DebtorPayment {
 
 export function useDebtorPayments(outletId?: string) {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: payments, isLoading } = useQuery({
@@ -159,17 +158,10 @@ export function useDebtorPayments(outletId?: string) {
       queryClient.invalidateQueries({ queryKey: ["business-customers"] });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      toast({
-        title: "Paiement enregistré",
-        description: "Le paiement et la transaction comptable ont été enregistrés",
-      });
+      toast.success("Paiement enregistré", { description: "Le paiement et la transaction comptable ont été enregistrés" });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: error.message });
     },
   });
 

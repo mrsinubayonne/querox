@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface MenuItemInput {
   name: string;
@@ -27,16 +27,11 @@ export interface MenuItemUpdate {
 
 export const useMenuItems = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const addMenuItem = useCallback(async (itemData: MenuItemInput): Promise<boolean> => {
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour ajouter un plat",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour ajouter un plat" });
       return false;
     }
 
@@ -57,11 +52,7 @@ export const useMenuItems = () => {
 
       if (categoryError || !category) {
         console.error('Category validation error:', categoryError);
-        toast({
-          title: "Erreur",
-          description: "Catégorie invalide ou non trouvée",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Catégorie invalide ou non trouvée" });
         return false;
       }
 
@@ -77,28 +68,17 @@ export const useMenuItems = () => {
 
       if (error) {
         console.error('Error adding menu item:', error);
-        toast({
-          title: "Erreur",
-          description: error.message || "Impossible d'ajouter le plat",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: error.message || "Impossible d'ajouter le plat" });
         return false;
       }
 
       console.log('✅ Menu item added successfully:', data.id);
-      toast({
-        title: "Succès",
-        description: "Plat ajouté avec succès",
-      });
+      toast.success("Succès", { description: "Plat ajouté avec succès" });
       return true;
 
     } catch (error: any) {
       console.error('🚨 Error adding menu item:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur inattendue s'est produite",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur inattendue s'est produite" });
       return false;
     } finally {
       setLoading(false);
@@ -107,11 +87,7 @@ export const useMenuItems = () => {
 
   const updateMenuItem = useCallback(async (id: string, updates: MenuItemUpdate): Promise<boolean> => {
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour modifier un plat",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour modifier un plat" });
       return false;
     }
 
@@ -134,11 +110,7 @@ export const useMenuItems = () => {
 
       if (checkError || !existingItem) {
         console.error('Item ownership check failed:', checkError);
-        toast({
-          title: "Erreur",
-          description: "Plat non trouvé ou non autorisé",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Plat non trouvé ou non autorisé" });
         return false;
       }
 
@@ -154,28 +126,17 @@ export const useMenuItems = () => {
 
       if (error) {
         console.error('Error updating menu item:', error);
-        toast({
-          title: "Erreur",
-          description: error.message || "Impossible de modifier le plat",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: error.message || "Impossible de modifier le plat" });
         return false;
       }
 
       console.log('✅ Menu item updated successfully:', data.id);
-      toast({
-        title: "Succès",
-        description: "Plat modifié avec succès",
-      });
+      toast.success("Succès", { description: "Plat modifié avec succès" });
       return true;
 
     } catch (error: any) {
       console.error('🚨 Error updating menu item:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur inattendue s'est produite",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur inattendue s'est produite" });
       return false;
     } finally {
       setLoading(false);
@@ -184,11 +145,7 @@ export const useMenuItems = () => {
 
   const deleteMenuItem = useCallback(async (id: string): Promise<boolean> => {
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour supprimer un plat",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour supprimer un plat" });
       return false;
     }
 
@@ -211,11 +168,7 @@ export const useMenuItems = () => {
 
       if (checkError || !existingItem) {
         console.error('Item ownership check failed:', checkError);
-        toast({
-          title: "Erreur",
-          description: "Plat non trouvé ou non autorisé",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Plat non trouvé ou non autorisé" });
         return false;
       }
 
@@ -226,28 +179,17 @@ export const useMenuItems = () => {
 
       if (error) {
         console.error('Error deleting menu item:', error);
-        toast({
-          title: "Erreur",
-          description: error.message || "Impossible de supprimer le plat",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: error.message || "Impossible de supprimer le plat" });
         return false;
       }
 
       console.log('✅ Menu item deleted successfully');
-      toast({
-        title: "Succès",
-        description: "Plat supprimé avec succès",
-      });
+      toast.success("Succès", { description: "Plat supprimé avec succès" });
       return true;
 
     } catch (error: any) {
       console.error('🚨 Error deleting menu item:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur inattendue s'est produite",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur inattendue s'est produite" });
       return false;
     } finally {
       setLoading(false);
@@ -260,11 +202,7 @@ export const useMenuItems = () => {
 
   const shareMenuItems = useCallback(async (itemIds: string[], targetMenuIds: string[]): Promise<boolean> => {
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour partager des plats",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour partager des plats" });
       return false;
     }
 
@@ -290,11 +228,7 @@ export const useMenuItems = () => {
 
       if (itemsError || !items || items.length === 0) {
         console.error('Items fetch error:', itemsError);
-        toast({
-          title: "Erreur",
-          description: "Plats non trouvés ou non autorisés",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Plats non trouvés ou non autorisés" });
         return false;
       }
 
@@ -311,11 +245,7 @@ export const useMenuItems = () => {
 
       if (menusError || !targetMenus || targetMenus.length === 0) {
         console.error('Target menus fetch error:', menusError);
-        toast({
-          title: "Erreur",
-          description: "Menus de destination non trouvés",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Menus de destination non trouvés" });
         return false;
       }
 
@@ -370,10 +300,7 @@ export const useMenuItems = () => {
       }
 
       if (itemsToInsert.length === 0) {
-        toast({
-          title: "Information",
-          description: "Aucun plat à partager",
-        });
+        toast.success("Information", { description: "Aucun plat à partager" });
         return true;
       }
 
@@ -383,28 +310,17 @@ export const useMenuItems = () => {
 
       if (insertError) {
         console.error('Error sharing menu items:', insertError);
-        toast({
-          title: "Erreur",
-          description: "Impossible de partager les plats",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de partager les plats" });
         return false;
       }
 
       console.log('✅ Menu items shared successfully');
-      toast({
-        title: "Succès",
-        description: `${itemsToInsert.length} plat(s) partagé(s) avec succès`,
-      });
+      toast.success("Succès", { description: `${itemsToInsert.length} plat(s) partagé(s) avec succès` });
       return true;
 
     } catch (error: any) {
       console.error('🚨 Error sharing menu items:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur inattendue s'est produite",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur inattendue s'est produite" });
       return false;
     } finally {
       setLoading(false);

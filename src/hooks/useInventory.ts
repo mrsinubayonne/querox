@@ -1,10 +1,10 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useOfflineData } from './useOfflineData';
 import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from './useOfflineMutation';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 interface InventoryItem {
   id: string;
@@ -26,7 +26,6 @@ interface InventoryItem {
 
 export const useInventory = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const outletId = localStorage.getItem('selectedOutletId') || undefined;
 
@@ -54,10 +53,7 @@ export const useInventory = () => {
     table: 'inventory_items',
     queryKey: ['inventory', user?.id, outletId],
     onSuccess: () => {
-      toast({
-        title: "Succès",
-        description: "Produit créé avec succès"
-      });
+      toast.success("Succès", { description: "Produit créé avec succès" });
     },
   });
 
@@ -70,29 +66,18 @@ export const useInventory = () => {
     table: 'inventory_items',
     queryKey: ['inventory', user?.id, outletId],
     onSuccess: () => {
-      toast({
-        title: "Succès",
-        description: "Produit supprimé avec succès"
-      });
+      toast.success("Succès", { description: "Produit supprimé avec succès" });
     },
   });
 
   const createItem = useCallback(async (itemData: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour créer un produit",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour créer un produit" });
       return false;
     }
 
     if (!outletId) {
-      toast({
-        title: "Erreur",
-        description: "Aucun point de vente sélectionné",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Aucun point de vente sélectionné" });
       return false;
     }
 
@@ -118,11 +103,7 @@ export const useInventory = () => {
       await updateMutation.mutateAsync({ id, ...updates } as unknown as Record<string, unknown> & { id: string });
       return true;
     } catch {
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le produit",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de mettre à jour le produit" });
       return false;
     }
   }, [user, updateMutation, toast]);
@@ -134,11 +115,7 @@ export const useInventory = () => {
       await deleteMutation.mutateAsync(id);
       return true;
     } catch {
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le produit",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de supprimer le produit" });
       return false;
     }
   }, [user, deleteMutation, toast]);

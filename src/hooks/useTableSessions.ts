@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOptimizedOutlet } from "@/hooks/useOptimizedOutlet";
+import { toast } from 'sonner';
 
 export interface TableSession {
   id: string;
@@ -24,7 +24,6 @@ export interface TableSession {
 export function useTableSessions() {
   const [sessions, setSessions] = useState<TableSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
   const { user } = useAuth();
   const { outletId, loading: outletLoading } = useOptimizedOutlet();
 
@@ -55,11 +54,7 @@ export function useTableSessions() {
       setSessions((data as any) || []);
     } catch (error: any) {
       console.error("Error fetching table sessions:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les sessions de tables.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de charger les sessions de tables." });
     } finally {
       setLoading(false);
     }
@@ -68,11 +63,7 @@ export function useTableSessions() {
   const createSession = useCallback(
     async (tableNumber: string, numberOfGuests?: number, notes?: string, debtorId?: string) => {
       if (!user) {
-        toast({
-          title: "Erreur",
-          description: "Vous devez être connecté.",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Vous devez être connecté." });
         return null;
       }
 
@@ -95,20 +86,13 @@ export function useTableSessions() {
 
         if (error) throw error;
 
-        toast({
-          title: "Session ouverte",
-          description: `Table ${tableNumber} activée avec succès.`,
-        });
+        toast.success("Session ouverte", { description: `Table ${tableNumber} activée avec succès.` });
 
         await fetchSessions();
         return data;
       } catch (error: any) {
         console.error("Error creating session:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de créer la session.",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de créer la session." });
         return null;
       }
     },
@@ -140,21 +124,14 @@ export function useTableSessions() {
 
         if (updateError) throw updateError;
 
-        toast({
-          title: hasDebtor ? "Session fermée - Crédit accordé" : "Session fermée",
-          description: hasDebtor
+        toast.success(hasDebtor ? "Session fermée - Crédit accordé" : "Session fermée", { description: hasDebtor
             ? "La dette du client a été enregistrée. Aucun paiement immédiat requis."
-            : "La facture a été générée automatiquement.",
-        });
+            : "La facture a été générée automatiquement." });
 
         await fetchSessions();
       } catch (error: any) {
         console.error("Error closing session:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de fermer la session.",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de fermer la session." });
       }
     },
     [toast, fetchSessions]
@@ -196,21 +173,14 @@ export function useTableSessions() {
           }
         }
 
-        toast({
-          title: "Paiement enregistré",
-          description: isDebtorSession 
+        toast.success("Paiement enregistré", { description: isDebtorSession 
             ? "La session a été fermée. La facture reste impayée jusqu'au paiement du débiteur."
-            : "La session et la facture ont été marquées comme payées.",
-        });
+            : "La session et la facture ont été marquées comme payées." });
 
         await fetchSessions();
       } catch (error: any) {
         console.error("Error marking session as paid:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de marquer la session comme payée.",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de marquer la session comme payée." });
       }
     },
     [toast, fetchSessions]
@@ -263,19 +233,12 @@ export function useTableSessions() {
 
         if (updateError) throw updateError;
 
-        toast({
-          title: "Table réouverte",
-          description: "La table, la facture et la transaction comptable ont été annulées.",
-        });
+        toast.success("Table réouverte", { description: "La table, la facture et la transaction comptable ont été annulées." });
 
         await fetchSessions();
       } catch (error: any) {
         console.error("Error reopening session:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de réouvrir la table.",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de réouvrir la table." });
       }
     },
     [toast, fetchSessions]

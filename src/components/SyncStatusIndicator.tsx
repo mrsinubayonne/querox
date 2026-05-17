@@ -5,9 +5,9 @@ import { Cloud, CloudOff, RefreshCw, AlertCircle, Check, AlertTriangle, Trash2 }
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { getAllMutations, type QueuedMutation } from '@/lib/offlineStorage';
-import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+import { toast } from 'sonner';
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -58,13 +58,13 @@ export const SyncStatusIndicator = () => {
     setDiscarding(true);
     try {
       const removed = await discardBlocked();
-      toast({ title: 'File d\'attente vidée', description: `${removed} mutation(s) supprimée(s).` });
+      toast.success('File d\'attente vidée', { description: `${removed} mutation(s) supprimée(s).` });
       setStuckMutations([]);
       window.dispatchEvent(new CustomEvent('querox-sync-queue-changed'));
       await refresh();
       queryClient.invalidateQueries();
     } catch {
-      toast({ title: 'Erreur', description: 'Impossible de vider la file.', variant: 'destructive' });
+      toast.error('Erreur', { description: 'Impossible de vider la file.' });
     } finally {
       setDiscarding(false);
     }

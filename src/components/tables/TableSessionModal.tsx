@@ -10,7 +10,6 @@ import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import QuickAddOrderToSessionModal from "./QuickAddOrderToSessionModal";
 import { InvoicePreviewModal } from "./InvoicePreviewModal";
@@ -21,7 +20,7 @@ import {
   generateLocalId,
   storeData,
 } from "@/lib/offlineStorage";
-import { toast as sonnerToast } from "sonner";
+import { toast as sonnerToast, toast } from 'sonner';
 import {
   SessionHeader,
   SessionTotal,
@@ -75,7 +74,6 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user, isTeamMember, teamMemberSession } = useAuth();
-  const { toast } = useToast();
   const printRef = useRef<SessionPrintActionsRef>(null);
 
   const resolvedUserId = isTeamMember
@@ -287,10 +285,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           await storeData("table_sessions", nextSessions as any, resolvedUserId, outletKey);
         }
 
-        toast({
-          title: "Commande supprimée",
-          description: "Suppression enregistrée hors ligne.",
-        });
+        toast.success("Commande supprimée", { description: "Suppression enregistrée hors ligne." });
         window.dispatchEvent(new CustomEvent("session-updated"));
         return;
       }
@@ -298,19 +293,12 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
       const { error } = await supabase.from("orders").delete().eq("id", orderId);
       if (error) throw error;
 
-      toast({
-        title: "Commande supprimée",
-        description: "La commande a été supprimée avec succès.",
-      });
+      toast.success("Commande supprimée", { description: "La commande a été supprimée avec succès." });
       fetchOrdersStable();
       window.dispatchEvent(new CustomEvent("session-updated"));
     } catch (error: any) {
       console.error("Error deleting order:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer la commande.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de supprimer la commande." });
     } finally {
       setDeletingOrderId(null);
     }
@@ -406,7 +394,7 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
         }
 
         window.dispatchEvent(new CustomEvent("session-updated"));
-        toast({ title: "Plat supprimé", description: "Suppression enregistrée hors ligne." });
+        toast.success("Plat supprimé", { description: "Suppression enregistrée hors ligne." });
         return;
       }
 
@@ -417,16 +405,12 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
 
       if (error) throw error;
 
-      toast({ title: "Plat supprimé", description: "L'article a été retiré de la commande." });
+      toast.success("Plat supprimé", { description: "L'article a été retiré de la commande." });
       fetchOrdersStable();
       window.dispatchEvent(new CustomEvent("session-updated"));
     } catch (error: any) {
       console.error("Error deleting item:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer l'article.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de supprimer l'article." });
     }
   };
 

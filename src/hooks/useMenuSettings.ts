@@ -1,8 +1,8 @@
+import { toast } from 'sonner';
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMenus } from './useMenus';
-import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 
 interface MenuSettings {
@@ -15,8 +15,6 @@ interface MenuSettings {
 
 export const useMenuSettings = () => {
   const { menus: menuList, loading: loadingMenus } = useMenus();
-  const { toast } = useToast();
-  
   const [menu, setMenu] = useState<MenuSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -46,7 +44,7 @@ export const useMenuSettings = () => {
       }
     } catch (error: any) {
       console.error("Error fetching menu settings:", error);
-      toast({ title: "Erreur", description: "Impossible de charger les paramètres du menu.", variant: "destructive" });
+      toast.error("Erreur", { description: "Impossible de charger les paramètres du menu." });
     } finally {
       setLoading(false);
     }
@@ -83,11 +81,11 @@ export const useMenuSettings = () => {
 
       console.log('Menu settings updated successfully:', data);
       setMenu(data);
-      toast({ title: "Succès", description: "Paramètres du menu mis à jour." });
+      toast.success("Succès", { description: "Paramètres du menu mis à jour." });
 
     } catch (error: any) {
       console.error('Error updating menu settings:', error);
-      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      toast.error("Erreur", { description: error.message });
     } finally {
       setIsSaving(false);
     }

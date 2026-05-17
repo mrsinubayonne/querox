@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Invoice } from '@/hooks/useInvoices';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface EditInvoiceModalProps {
   invoice: Invoice | null;
@@ -27,8 +27,6 @@ const EditInvoiceModal: React.FC<EditInvoiceModalProps> = ({
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
   useEffect(() => {
     if (invoice) {
       setAmount(invoice.total_amount.toString());
@@ -44,11 +42,7 @@ const EditInvoiceModal: React.FC<EditInvoiceModalProps> = ({
     if (!invoice) return;
 
     if (!amount || parseFloat(amount) <= 0) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez entrer un montant valide",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Veuillez entrer un montant valide" });
       return;
     }
 
@@ -73,20 +67,13 @@ const EditInvoiceModal: React.FC<EditInvoiceModalProps> = ({
 
       if (error) throw error;
 
-      toast({
-        title: "Succès",
-        description: "Facture mise à jour avec succès"
-      });
+      toast.success("Succès", { description: "Facture mise à jour avec succès" });
       
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating invoice:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour la facture",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de mettre à jour la facture" });
     } finally {
       setLoading(false);
     }

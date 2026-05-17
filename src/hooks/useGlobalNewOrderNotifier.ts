@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
 import { useNotificationStore } from '@/store/notificationStore';
+import { toast } from 'sonner';
 
 const playOrderSound = () => {
   try {
@@ -79,11 +79,7 @@ export function useGlobalNewOrderNotifier() {
               ? 'À livrer'
               : 'Nouvelle commande';
 
-          toast({
-            title: '🔔 Nouvelle commande publique',
-            description: `${customer} — ${typeLabel} — ${total} XAF`,
-            duration: 3000,
-          });
+          toast.success('🔔 Nouvelle commande publique', { description: `${customer} — ${typeLabel} — ${total} XAF` });
         }
       )
       .subscribe();

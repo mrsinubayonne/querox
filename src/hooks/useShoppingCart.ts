@@ -1,6 +1,6 @@
+import { toast } from 'sonner';
 
 import { useState, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { MenuItem, CartItem, SelectedOption } from '@/types/menu';
 
 const buildCartKey = (itemId: string, selections?: SelectedOption[]) => {
@@ -11,8 +11,6 @@ const buildCartKey = (itemId: string, selections?: SelectedOption[]) => {
 
 export const useShoppingCart = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const { toast } = useToast();
-
   const addToCart = useCallback((item: MenuItem | CartItem, selections?: SelectedOption[]) => {
     const existingSelections = (item as CartItem).selected_options;
     const finalSelections = selections ?? existingSelections;
@@ -35,10 +33,7 @@ export const useShoppingCart = () => {
       return [...prev, newItem];
     });
 
-    toast({
-      title: "Ajouté au panier",
-      description: `${item.name} a été ajouté à votre panier`,
-    });
+    toast.success("Ajouté au panier", { description: `${item.name} a été ajouté à votre panier` });
   }, [toast]);
 
   const removeFromCart = useCallback((cartKey: string) => {

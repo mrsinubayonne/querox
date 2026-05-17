@@ -10,9 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, User, Mail, Building, Percent } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 const partnerSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
@@ -30,9 +30,6 @@ const PartnerSignup: React.FC = () => {
   const {
     signUp
   } = useAuth();
-  const {
-    toast
-  } = useToast();
   const navigate = useNavigate();
   const form = useForm<PartnerFormData>({
     resolver: zodResolver(partnerSchema),
@@ -79,17 +76,10 @@ const PartnerSignup: React.FC = () => {
           console.error('Error creating partner profile:', partnerError);
         }
       }
-      toast({
-        title: "Demande de partenariat envoyée !",
-        description: "Votre demande sera examinée et vous recevrez une réponse sous 48h."
-      });
+      toast.success("Demande de partenariat envoyée !", { description: "Votre demande sera examinée et vous recevrez une réponse sous 48h." });
       navigate('/partner-dashboard');
     } catch (error: any) {
-      toast({
-        title: "Erreur lors de l'inscription",
-        description: error.message || "Une erreur est survenue",
-        variant: "destructive"
-      });
+      toast.error("Erreur lors de l'inscription", { description: error.message || "Une erreur est survenue" });
     } finally {
       setLoading(false);
     }

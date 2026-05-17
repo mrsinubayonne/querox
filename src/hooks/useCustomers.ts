@@ -1,8 +1,8 @@
+import { toast } from 'sonner';
 
 import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from '@/hooks/useOfflineMutation';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -22,7 +22,6 @@ interface Customer {
 
 export const useCustomers = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const { isOffline } = useNetworkStatus();
   const outletId = localStorage.getItem('selectedOutletId') || undefined;
 
@@ -62,21 +61,13 @@ export const useCustomers = () => {
 
   const createCustomer = useCallback(async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour créer un client",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour créer un client" });
       return false;
     }
 
     try {
       if (!outletId) {
-        toast({
-          title: "Erreur",
-          description: "Aucun point de vente sélectionné",
-          variant: "destructive"
-        });
+        toast.error("Erreur", { description: "Aucun point de vente sélectionné" });
         return false;
       }
 
@@ -88,19 +79,12 @@ export const useCustomers = () => {
           total_spent: customerData.total_spent || 0
         } as unknown as Record<string, unknown>) as unknown as Customer;
 
-      toast({
-        title: "Succès",
-        description: isOffline ? "Client enregistré localement" : "Client créé avec succès"
-      });
+      toast.success("Succès", { description: isOffline ? "Client enregistré localement" : "Client créé avec succès" });
 
       return data;
     } catch (error: any) {
       console.error('Customer creation error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer le client",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de créer le client" });
       return false;
     }
   }, [user, toast, outletId, insertMutation, isOffline]);
@@ -113,11 +97,7 @@ export const useCustomers = () => {
       return data;
     } catch (error: any) {
       console.error('Update error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le client",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de mettre à jour le client" });
       return false;
     }
   }, [user, toast, updateMutation]);
@@ -127,18 +107,11 @@ export const useCustomers = () => {
 
     try {
       await deleteMutation.mutateAsync(id);
-      toast({
-        title: "Succès",
-        description: isOffline ? "Client supprimé localement" : "Client supprimé avec succès"
-      });
+      toast.success("Succès", { description: isOffline ? "Client supprimé localement" : "Client supprimé avec succès" });
       return true;
     } catch (error: any) {
       console.error('Delete error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le client",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de supprimer le client" });
       return false;
     }
   }, [user, toast, deleteMutation, isOffline]);

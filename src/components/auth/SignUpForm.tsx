@@ -10,8 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, User, Mail, Lock, Phone, Utensils } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import { toast } from 'sonner';
 const signUpSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
@@ -37,9 +37,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
   const {
     signUp
   } = useAuth();
-  const {
-    toast
-  } = useToast();
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -70,30 +67,15 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
       if (error) {
         // Si l'utilisateur existe déjà
         if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
-          toast({
-            title: "Compte existant",
-            description: "Un compte avec cet email existe déjà. Veuillez vous connecter.",
-            action: (
-              <ToastAction altText="Se connecter" onClick={onSwitchToLogin}>
-                Se connecter
-              </ToastAction>
-            ),
-          });
+          toast.success("Compte existant", { description: "Un compte avec cet email existe déjà. Veuillez vous connecter." });
           return;
         }
         throw error;
       }
       
-      toast({
-        title: "Inscription réussie !",
-        description: "Un email de confirmation vous a été envoyé. Veuillez vérifier votre boîte mail."
-      });
+      toast.success("Inscription réussie !", { description: "Un email de confirmation vous a été envoyé. Veuillez vérifier votre boîte mail." });
     } catch (error: any) {
-      toast({
-        title: "Erreur lors de l'inscription",
-        description: error.message || "Une erreur est survenue",
-        variant: "destructive"
-      });
+      toast.error("Erreur lors de l'inscription", { description: error.message || "Une erreur est survenue" });
     } finally {
       setLoading(false);
     }

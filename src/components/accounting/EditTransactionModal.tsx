@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from 'sonner';
 
 interface EditTransactionModalProps {
   open: boolean;
@@ -21,7 +21,6 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   transaction,
   onSuccess,
 }) => {
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -67,19 +66,12 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
       if (error) throw error;
 
-      toast({
-        title: "Transaction modifiée",
-        description: "La transaction a été modifiée avec succès",
-      });
+      toast.success("Transaction modifiée", { description: "La transaction a été modifiée avec succès" });
 
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: error.message });
     } finally {
       setLoading(false);
     }

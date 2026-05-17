@@ -1,10 +1,10 @@
+import { toast } from 'sonner';
 
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, Upload, Trash2, RefreshCw, Wrench } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,11 +32,7 @@ export const DataTab: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
-          title: "Erreur",
-          description: "Vous devez être connecté pour exporter les données",
-          variant: "destructive"
-        });
+        toast.error("Erreur", { description: "Vous devez être connecté pour exporter les données" });
         return;
       }
 
@@ -69,17 +65,10 @@ export const DataTab: React.FC = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast({
-        title: "Export réussi",
-        description: "Vos données ont été exportées avec succès"
-      });
+      toast.success("Export réussi", { description: "Vos données ont été exportées avec succès" });
     } catch (error) {
       console.error('Export error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'exporter les données",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible d'exporter les données" });
     }
   };
 
@@ -97,18 +86,11 @@ export const DataTab: React.FC = () => {
 
       // Valider la structure des données
       if (!data.orders && !data.customers && !data.inventory && !data.transactions && !data.invoices) {
-        toast({
-          title: "Fichier invalide",
-          description: "Le fichier ne contient pas de données valides",
-          variant: "destructive"
-        });
+        toast.error("Fichier invalide", { description: "Le fichier ne contient pas de données valides" });
         return;
       }
 
-      toast({
-        title: "Import en cours",
-        description: "Les données sont en cours d'importation..."
-      });
+      toast.success("Import en cours", { description: "Les données sont en cours d'importation..." });
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -129,17 +111,10 @@ export const DataTab: React.FC = () => {
         await supabase.from('transactions').insert(transactions);
       }
 
-      toast({
-        title: "Import réussi",
-        description: "Vos données ont été importées avec succès"
-      });
+      toast.success("Import réussi", { description: "Vos données ont été importées avec succès" });
     } catch (error) {
       console.error('Import error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'importer les données. Vérifiez le format du fichier.",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible d'importer les données. Vérifiez le format du fichier." });
     }
 
     // Reset input
@@ -252,17 +227,10 @@ export const DataTab: React.FC = () => {
     try {
       await clearAllMutations();
       await queryClient.invalidateQueries();
-      toast({
-        title: 'File vidée',
-        description: 'Toutes les données en attente de synchronisation ont été supprimées localement.',
-      });
+      toast.success('File vidée', { description: 'Toutes les données en attente de synchronisation ont été supprimées localement.' });
     } catch (error) {
       console.error('Clear pending queue error:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de vider la file de synchronisation locale.',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Impossible de vider la file de synchronisation locale.' });
     }
   };
 
@@ -290,19 +258,12 @@ export const DataTab: React.FC = () => {
         await Promise.all(names.map((n) => caches.delete(n)));
       }
 
-      toast({
-        title: 'Réparation terminée',
-        description: "L'application va redémarrer avec un cache propre.",
-      });
+      toast.success('Réparation terminée', { description: "L'application va redémarrer avec un cache propre." });
 
       setTimeout(() => window.location.reload(), 700);
     } catch (error) {
       console.error('Repair cache error:', error);
-      toast({
-        title: 'Erreur',
-        description: "Impossible de réparer l'application.",
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: "Impossible de réparer l'application." });
     }
   };
 
@@ -312,11 +273,7 @@ export const DataTab: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !user.email) {
-        toast({
-          title: "Erreur",
-          description: "Vous devez être connecté",
-          variant: "destructive"
-        });
+        toast.error("Erreur", { description: "Vous devez être connecté" });
         return;
       }
 
@@ -327,11 +284,7 @@ export const DataTab: React.FC = () => {
       });
 
       if (authError) {
-        toast({
-          title: "Erreur",
-          description: "Mot de passe incorrect",
-          variant: "destructive"
-        });
+        toast.error("Erreur", { description: "Mot de passe incorrect" });
         setPassword('');
         return;
       }
@@ -343,20 +296,13 @@ export const DataTab: React.FC = () => {
         queryClient.clear();
       }
 
-      toast({
-        title: "Suppression réussie",
-        description: `Toutes les données de la section ${getSectionLabel(sectionToDelete)} ont été supprimées`
-      });
+      toast.success("Suppression réussie", { description: `Toutes les données de la section ${getSectionLabel(sectionToDelete)} ont été supprimées` });
 
       setSectionToDelete(null);
       setPassword('');
     } catch (error) {
       console.error('Delete error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer les données",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de supprimer les données" });
     }
   };
 

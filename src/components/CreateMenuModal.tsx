@@ -1,8 +1,8 @@
+import { toast } from 'sonner';
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useOutlets } from '@/hooks/useOutlets';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -29,37 +29,23 @@ const CreateMenuModal: React.FC<CreateMenuModalProps> = ({
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { selectedOutletId } = useOutlets();
-  const { toast } = useToast();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour créer un menu",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour créer un menu" });
       return;
     }
 
     if (!name.trim()) {
-      toast({
-        title: "Erreur",
-        description: "Le nom du menu est requis",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Le nom du menu est requis" });
       return;
     }
 
     setLoading(true);
     try {
       if (!selectedOutletId) {
-        toast({
-          title: "Erreur",
-          description: "Aucun point de vente sélectionné",
-          variant: "destructive"
-        });
+        toast.error("Erreur", { description: "Aucun point de vente sélectionné" });
         setLoading(false);
         return;
       }
@@ -108,10 +94,7 @@ const CreateMenuModal: React.FC<CreateMenuModalProps> = ({
         console.log('🔥 Catégories par défaut créées');
       }
 
-      toast({
-        title: "Succès",
-        description: "Menu créé avec succès",
-      });
+      toast.success("Succès", { description: "Menu créé avec succès" });
 
       // Reset form
       setName('');
@@ -122,11 +105,7 @@ const CreateMenuModal: React.FC<CreateMenuModalProps> = ({
       onClose();
     } catch (error: any) {
       console.error('🔥 Erreur création menu:', error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible de créer le menu",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: error.message || "Impossible de créer le menu" });
     } finally {
       setLoading(false);
     }

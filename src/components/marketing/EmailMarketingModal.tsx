@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -20,7 +21,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Mail } from 'lucide-react';
@@ -42,7 +42,6 @@ interface EmailMarketingModalProps {
 }
 
 const EmailMarketingModal: React.FC<EmailMarketingModalProps> = ({ onClose }) => {
-  const { toast } = useToast();
   const { user } = useAuth();
   
   const form = useForm<EmailMarketingFormData>({
@@ -71,19 +70,12 @@ const EmailMarketingModal: React.FC<EmailMarketingModalProps> = ({ onClose }) =>
 
       if (error) throw error;
 
-      toast({
-        title: "Demande envoyée !",
-        description: "Nous avons reçu votre demande d'email marketing. Vous recevrez votre campagne sous 5 jours.",
-      });
+      toast.success("Demande envoyée !", { description: "Nous avons reçu votre demande d'email marketing. Vous recevrez votre campagne sous 5 jours." });
 
       onClose();
     } catch (error) {
       console.error('Erreur lors de l\'envoi:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer votre demande. Veuillez réessayer.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible d'envoyer votre demande. Veuillez réessayer." });
     }
   };
 

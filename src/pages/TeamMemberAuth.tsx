@@ -4,13 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Lock, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const TeamMemberAuth: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -32,11 +31,7 @@ const TeamMemberAuth: React.FC = () => {
       if (authError) throw authError;
 
       if (!authData?.success || !authData?.member) {
-        toast({
-          title: "Accès refusé",
-          description: "Email ou code d'accès incorrect",
-          variant: "destructive"
-        });
+        toast.error("Accès refusé", { description: "Email ou code d'accès incorrect" });
         setLoading(false);
         return;
       }
@@ -81,21 +76,14 @@ const TeamMemberAuth: React.FC = () => {
         _action_description: 'Connexion réussie'
       });
 
-      toast({
-        title: "Connexion réussie ✅",
-        description: `Bienvenue ! Vous êtes connecté en tant que ${member.member_role}`
-      });
+      toast.success("Connexion réussie ✅", { description: `Bienvenue ! Vous êtes connecté en tant que ${member.member_role}` });
 
       console.log('🔄 Redirecting to dashboard...');
       
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
       console.error('Error during team member login:', error);
-      toast({
-        title: "Erreur de connexion",
-        description: "Une erreur s'est produite. Veuillez réessayer.",
-        variant: "destructive"
-      });
+      toast.error("Erreur de connexion", { description: "Une erreur s'est produite. Veuillez réessayer." });
     } finally {
       setLoading(false);
     }

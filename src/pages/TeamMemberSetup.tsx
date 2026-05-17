@@ -4,14 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserCog, Lock, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 const TeamMemberSetup: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [memberData, setMemberData] = useState<any>(null);
@@ -26,11 +25,7 @@ const TeamMemberSetup: React.FC = () => {
   const verifyToken = async () => {
     const token = searchParams.get('token');
     if (!token) {
-      toast({
-        title: "Lien invalide",
-        description: "Le lien d'invitation est invalide",
-        variant: "destructive"
-      });
+      toast.error("Lien invalide", { description: "Le lien d'invitation est invalide" });
       navigate('/team-login');
       return;
     }
@@ -50,11 +45,7 @@ const TeamMemberSetup: React.FC = () => {
       setMemberData(data);
     } catch (error: any) {
       console.error('Error verifying token:', error);
-      toast({
-        title: "Erreur",
-        description: "Cette invitation n'est plus valide",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Cette invitation n'est plus valide" });
       navigate('/team-login');
     } finally {
       setVerifying(false);
@@ -65,31 +56,19 @@ const TeamMemberSetup: React.FC = () => {
     e.preventDefault();
 
     if (!accessCodeChoice) {
-      toast({
-        title: "Choix requis",
-        description: "Veuillez choisir si vous souhaitez garder ou changer votre code d'accès",
-        variant: "destructive"
-      });
+      toast.error("Choix requis", { description: "Veuillez choisir si vous souhaitez garder ou changer votre code d'accès" });
       return;
     }
 
     // Si l'utilisateur veut changer son code
     if (accessCodeChoice === 'change') {
       if (newAccessCode.length !== 6) {
-        toast({
-          title: "Code invalide",
-          description: "Le code d'accès doit contenir exactement 6 caractères",
-          variant: "destructive"
-        });
+        toast.error("Code invalide", { description: "Le code d'accès doit contenir exactement 6 caractères" });
         return;
       }
 
       if (newAccessCode !== confirmAccessCode) {
-        toast({
-          title: "Erreur",
-          description: "Les codes d'accès ne correspondent pas",
-          variant: "destructive"
-        });
+        toast.error("Erreur", { description: "Les codes d'accès ne correspondent pas" });
         return;
       }
     }
@@ -126,12 +105,9 @@ const TeamMemberSetup: React.FC = () => {
             : 'Configuration initiale - nouveau code défini'
         });
 
-      toast({
-        title: "Configuration réussie ! 🎉",
-        description: accessCodeChoice === 'keep' 
+      toast.success("Configuration réussie ! 🎉", { description: accessCodeChoice === 'keep' 
           ? "Votre compte est prêt. Utilisez votre code actuel pour vous connecter."
-          : "Votre nouveau code d'accès a été défini avec succès",
-      });
+          : "Votre nouveau code d'accès a été défini avec succès" });
 
       // Rediriger vers la page de connexion
       setTimeout(() => {
@@ -139,11 +115,7 @@ const TeamMemberSetup: React.FC = () => {
       }, 2000);
     } catch (error: any) {
       console.error('Error setting up access code:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de configurer votre compte",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de configurer votre compte" });
     } finally {
       setLoading(false);
     }

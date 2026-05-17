@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
+import { toast } from 'sonner';
 
 export type ProfileTitle = 'Admin' | 'Caissier(e)' | 'Comptable' | 'Serveur';
 
@@ -20,7 +20,6 @@ export interface UserProfile {
 
 export const useUserProfiles = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const { subscription } = useSubscription();
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,11 +78,7 @@ export const useUserProfiles = () => {
       const status = error?.status;
       const isBenign = status === 406 || code === 'PGRST116';
       if (!isBenign) {
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de charger les profils',
-          variant: 'destructive',
-        });
+        toast.error('Erreur', { description: 'Impossible de charger les profils' });
       }
     } finally {
       setLoading(false);
@@ -94,22 +89,14 @@ export const useUserProfiles = () => {
     if (!user) return null;
 
     if (!canAddMoreProfiles()) {
-      toast({
-        title: 'Limite atteinte',
-        description: `Vous avez atteint la limite de ${getProfileLimit()} profils pour votre plan`,
-        variant: 'destructive',
-      });
+      toast.error('Limite atteinte', { description: `Vous avez atteint la limite de ${getProfileLimit()} profils pour votre plan` });
       return null;
     }
 
     try {
       // Always use the provided access code
       if (!accessCode?.trim()) {
-        toast({
-          title: 'Code d\'accès requis',
-          description: 'Vous devez définir un code d\'accès pour ce profil',
-          variant: 'destructive',
-        });
+        toast.error('Code d\'accès requis', { description: 'Vous devez définir un code d\'accès pour ce profil' });
         return null;
       }
 
@@ -129,20 +116,13 @@ export const useUserProfiles = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Profil créé',
-        description: 'Le profil a été créé avec succès',
-      });
+      toast.success('Profil créé', { description: 'Le profil a été créé avec succès' });
 
       await fetchProfiles();
       return data as UserProfile;
     } catch (error: any) {
       console.error('Error creating profile:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de créer le profil',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Impossible de créer le profil' });
       return null;
     }
   };
@@ -159,20 +139,13 @@ export const useUserProfiles = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Profil mis à jour',
-        description: 'Le nom du profil a été modifié avec succès',
-      });
+      toast.success('Profil mis à jour', { description: 'Le nom du profil a été modifié avec succès' });
 
       await fetchProfiles();
       return true;
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de mettre à jour le profil',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Impossible de mettre à jour le profil' });
       return false;
     }
   };
@@ -182,11 +155,7 @@ export const useUserProfiles = () => {
 
     const profile = profiles.find(p => p.id === profileId);
     if (profile?.is_default) {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de supprimer le profil par défaut',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Impossible de supprimer le profil par défaut' });
       return false;
     }
 
@@ -199,20 +168,13 @@ export const useUserProfiles = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Profil supprimé',
-        description: 'Le profil a été supprimé avec succès',
-      });
+      toast.success('Profil supprimé', { description: 'Le profil a été supprimé avec succès' });
 
       await fetchProfiles();
       return true;
     } catch (error: any) {
       console.error('Error deleting profile:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de supprimer le profil',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Impossible de supprimer le profil' });
       return false;
     }
   };

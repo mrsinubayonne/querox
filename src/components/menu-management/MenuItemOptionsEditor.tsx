@@ -6,9 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical, Copy } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CopyOptionsFromItemModal from './CopyOptionsFromItemModal';
+import { toast } from 'sonner';
 
 interface OptionValue {
   id?: string;
@@ -41,8 +41,6 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copyModalOpen, setCopyModalOpen] = useState(false);
-  const { toast } = useToast();
-
   const load = async () => {
     if (!menuItemId) return;
     setLoading(true);
@@ -203,10 +201,10 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
           }
         }
       }
-      toast({ title: 'Variantes enregistrées' });
+      toast.success('Variantes enregistrées');
       await load();
     } catch (e: any) {
-      toast({ title: 'Erreur', description: e.message || 'Sauvegarde impossible', variant: 'destructive' });
+      toast.error('Erreur', { description: e.message || 'Sauvegarde impossible' });
     } finally {
       setSaving(false);
     }

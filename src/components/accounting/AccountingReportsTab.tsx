@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTransactions } from '@/hooks/useTransactions';
 import { Download, Calendar } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AccountingReportsTabProps {
   onGenerateReport: () => void;
@@ -11,7 +11,6 @@ interface AccountingReportsTabProps {
 
 const AccountingReportsTab: React.FC<AccountingReportsTabProps> = ({ onGenerateReport }) => {
   const { transactions, loading } = useTransactions();
-  const { toast } = useToast();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
@@ -99,10 +98,7 @@ Généré le ${new Date().toLocaleDateString('fr-FR')}
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
 
-    toast({
-      title: "Rapport téléchargé",
-      description: `Le rapport de ${months[selectedMonth]} ${selectedYear} a été téléchargé`
-    });
+    toast.success("Rapport téléchargé", { description: `Le rapport de ${months[selectedMonth]} ${selectedYear} a été téléchargé` });
   };
 
   return (

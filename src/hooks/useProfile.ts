@@ -1,8 +1,8 @@
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
 interface Profile {
@@ -17,7 +17,6 @@ interface Profile {
 
 export const useProfile = () => {
   const { user, signOut } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,11 +45,7 @@ export const useProfile = () => {
 
         // Si le JWT a expiré, déconnecter l'utilisateur
         if (error.code === 'PGRST301' || error.message?.includes('JWT expired')) {
-          toast({
-            title: "Session expirée",
-            description: "Votre session a expiré. Veuillez vous reconnecter.",
-            variant: "destructive",
-          });
+          toast.error("Session expirée", { description: "Votre session a expiré. Veuillez vous reconnecter." });
           await signOut();
           navigate('/auth');
           return;
@@ -60,11 +55,7 @@ export const useProfile = () => {
         const isNetworkError = error.message?.toLowerCase().includes('failed to fetch')
           || error.message?.toLowerCase().includes('network');
         if (!isNetworkError) {
-          toast({
-            title: "Erreur",
-            description: "Impossible de charger le profil",
-            variant: "destructive",
-          });
+          toast.error("Erreur", { description: "Impossible de charger le profil" });
         }
       } else if (data) {
         setProfile(data);
@@ -101,28 +92,17 @@ export const useProfile = () => {
 
       if (error) {
         console.error('Error updating profile:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de mettre à jour le profil",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de mettre à jour le profil" });
         return false;
       } else {
         // Update local state
         setProfile(prev => prev ? { ...prev, ...updates } : null);
-        toast({
-          title: "Succès",
-          description: "Profil mis à jour avec succès",
-        });
+        toast.success("Succès", { description: "Profil mis à jour avec succès" });
         return true;
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur est survenue" });
       return false;
     }
   };

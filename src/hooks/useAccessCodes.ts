@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AccessCodesMeta {
   id: string;
@@ -12,8 +12,6 @@ interface AccessCodesMeta {
 export const useAccessCodes = () => {
   const [codes, setCodes] = useState<AccessCodesMeta | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
   const fetchCodes = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -73,19 +71,12 @@ export const useAccessCodes = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Codes mis à jour",
-        description: "Vos codes d'accès ont été modifiés avec succès",
-      });
+      toast.success("Codes mis à jour", { description: "Vos codes d'accès ont été modifiés avec succès" });
 
       await fetchCodes();
       return true;
     } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour les codes",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de mettre à jour les codes" });
       return false;
     }
   };

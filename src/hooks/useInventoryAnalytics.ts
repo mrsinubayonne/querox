@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface ReorderSuggestion {
   item_id: string;
@@ -18,8 +18,6 @@ export const useInventoryAnalytics = () => {
   const [reorderSuggestions, setReorderSuggestions] = useState<ReorderSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
-  const { toast } = useToast();
-
   const fetchReorderSuggestions = useCallback(async () => {
     if (!user) {
       setReorderSuggestions([]);
@@ -74,11 +72,7 @@ export const useInventoryAnalytics = () => {
       setReorderSuggestions(suggestions);
     } catch (error: any) {
       console.error('Reorder suggestions fetch error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de calculer les suggestions de réapprovisionnement",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de calculer les suggestions de réapprovisionnement" });
       setReorderSuggestions([]);
     } finally {
       setLoading(false);

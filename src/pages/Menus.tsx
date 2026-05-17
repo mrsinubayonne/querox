@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { getData } from '@/lib/offlineStorage';
@@ -16,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { APP_CONFIG } from '@/config/app.config';
 import {
+import { toast } from 'sonner';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -42,7 +42,6 @@ const Menus: React.FC = () => {
   const { user } = useAuth();
   const { selectedOutletId } = useOutlets();
   const { isOffline } = useNetworkStatus();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const fetchMenus = async () => {
@@ -121,11 +120,7 @@ const Menus: React.FC = () => {
           setActiveMenu(null);
         }
       } catch {
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les menus",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de charger les menus" });
       }
     } finally {
       setLoading(false);
@@ -154,11 +149,7 @@ const Menus: React.FC = () => {
 
   const handleViewPublicMenu = () => {
     if (!activeMenu?.id) {
-      toast({
-        title: "Erreur",
-        description: "Aucun menu actif sélectionné",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Aucun menu actif sélectionné" });
       return;
     }
     // Ouvrir la version publique dans l'application pour éviter les blocages de pop-up en preview
@@ -200,20 +191,13 @@ const Menus: React.FC = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Menu supprimé",
-        description: "Le menu a été supprimé avec succès",
-      });
+      toast.success("Menu supprimé", { description: "Le menu a été supprimé avec succès" });
 
       setMenuToDelete(null);
       fetchMenus();
     } catch (error) {
       console.error('Error deleting menu:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le menu",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de supprimer le menu" });
     }
   };
 
@@ -281,10 +265,10 @@ const Menus: React.FC = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast({ title: 'Export réussi', description: 'Le menu a été exporté en JSON' });
+      toast.success('Export réussi', { description: 'Le menu a été exporté en JSON' });
     } catch (e) {
       console.error('Export menu failed', e);
-      toast({ title: 'Erreur', description: "Impossible d'exporter le menu", variant: 'destructive' });
+      toast.error('Erreur', { description: "Impossible d'exporter le menu" });
     }
   };
 
@@ -300,7 +284,7 @@ const Menus: React.FC = () => {
         const text = await file.text();
         const payload = JSON.parse(text);
         if (payload?.format !== 'querox-menu-v1' || !payload?.menu || !Array.isArray(payload?.categories)) {
-          toast({ title: 'Fichier invalide', description: 'Format de menu non reconnu (querox-menu-v1 attendu)', variant: 'destructive' });
+          toast.error('Fichier invalide', { description: 'Format de menu non reconnu (querox-menu-v1 attendu)' });
           return;
         }
 
@@ -350,11 +334,11 @@ const Menus: React.FC = () => {
           }
         }
 
-        toast({ title: 'Import réussi', description: 'Le menu a été importé avec succès' });
+        toast.success('Import réussi', { description: 'Le menu a été importé avec succès' });
         fetchMenus();
       } catch (err) {
         console.error('Import menu failed', err);
-        toast({ title: 'Erreur', description: "Impossible d'importer le menu", variant: 'destructive' });
+        toast.error('Erreur', { description: "Impossible d'importer le menu" });
       }
     };
     input.click();

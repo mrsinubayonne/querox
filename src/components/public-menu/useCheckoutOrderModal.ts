@@ -1,7 +1,7 @@
+import { toast } from 'sonner';
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import type { CartItem } from "@/types/menu";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 import { useLocation } from "react-router-dom";
@@ -25,7 +25,6 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
   const [numberOfPeople, setNumberOfPeople] = useState("");
   const [loading, setLoading] = useState(false);
   const [pendingWhatsAppUrl, setPendingWhatsAppUrl] = useState<string | null>(null);
-  const { toast } = useToast();
   const { restaurantUserId, outletId } = useRestaurant();
 
   // Pre-fill table number from URL parameter
@@ -42,29 +41,29 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     e.preventDefault();
 
     if (!orderType) {
-      toast({ title: "Type de commande requis", description: "Veuillez sélectionner un type de commande.", variant: "destructive" });
+      toast.error("Type de commande requis", { description: "Veuillez sélectionner un type de commande." });
       return;
     }
 
     if (orderType === "sur_place" && !tableNumber) {
-      toast({ title: "Numéro de table requis", description: "Veuillez sélectionner un numéro de table.", variant: "destructive" });
+      toast.error("Numéro de table requis", { description: "Veuillez sélectionner un numéro de table." });
       return;
     }
 
     if (orderType === "livrer" && !deliveryAddress.trim()) {
-      toast({ title: "Adresse requise", description: "Veuillez indiquer une adresse de livraison.", variant: "destructive" });
+      toast.error("Adresse requise", { description: "Veuillez indiquer une adresse de livraison." });
       return;
     }
 
     // Nom et téléphone optionnels (même pour livraison/emporter)
 
     if (!restaurantUserId) {
-      toast({ title: "Erreur", description: "Impossible d'identifier le restaurant. La commande ne peut être passée.", variant: "destructive" });
+      toast.error("Erreur", { description: "Impossible d'identifier le restaurant. La commande ne peut être passée." });
       return;
     }
 
     if (cart.length === 0) {
-      toast({ title: "Panier vide", description: "Ajoutez un plat avant de passer commande.", variant: "destructive" });
+      toast.error("Panier vide", { description: "Ajoutez un plat avant de passer commande." });
       return;
     }
 
@@ -81,11 +80,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
     try {
       // Vérifier que l'outlet_id est disponible depuis le menu
       if (!outletId) {
-        toast({ 
-          title: "Erreur", 
-          description: "Point de vente non configuré pour ce menu.", 
-          variant: "destructive" 
-        });
+        toast.error("Erreur", { description: "Point de vente non configuré pour ce menu." });
         setLoading(false);
         return;
       }
@@ -206,18 +201,12 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
         }
         // Always store the URL so the modal can show a fallback button
         setPendingWhatsAppUrl(waUrl);
-        toast({
-          title: "Commande envoyée !",
-          description: openedAuto
+        toast.success("Commande envoyée !", { description: openedAuto
             ? "WhatsApp s'ouvre pour confirmer la commande."
-            : "Cliquez sur le bouton pour ouvrir WhatsApp et confirmer.",
-        });
+            : "Cliquez sur le bouton pour ouvrir WhatsApp et confirmer." });
       } else {
         if (waWindow && !waWindow.closed) waWindow.close();
-        toast({
-          title: "Commande envoyée !",
-          description: "Votre commande a été transmise au restaurant.",
-        });
+        toast.success("Commande envoyée !", { description: "Votre commande a été transmise au restaurant." });
       }
 
       // Reset form
@@ -238,11 +227,7 @@ export function useCheckoutOrderModal(cart: CartItem[], totalPrice: number, onOp
       if (waWindow && !waWindow.closed) {
         try { waWindow.close(); } catch { /* ignore */ }
       }
-      toast({
-        title: "Erreur de soumission",
-        description: err.message || "Une erreur est survenue lors de l'envoi de votre commande.",
-        variant: "destructive",
-      });
+      toast.error("Erreur de soumission", { description: err.message || "Une erreur est survenue lors de l'envoi de votre commande." });
     } finally {
       setLoading(false);
     }

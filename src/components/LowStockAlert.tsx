@@ -1,15 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { useInventory } from '@/hooks/useInventory';
-import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const LowStockAlert: React.FC = () => {
   const { items, loading } = useInventory();
-  const { toast } = useToast();
   const hasShownToast = useRef(false);
 
   const lowStockItems = items.filter(
@@ -26,18 +25,9 @@ const LowStockAlert: React.FC = () => {
     hasShownToast.current = true;
 
     if (outOfStockItems.length > 0) {
-      toast({
-        title: `⚠️ ${outOfStockItems.length} article(s) en rupture de stock !`,
-        description: outOfStockItems.map((i) => i.name).join(', '),
-        variant: 'destructive',
-        duration: 10000,
-      });
+      toast.error(`⚠️ ${outOfStockItems.length} article(s) en rupture de stock !`, { description: outOfStockItems.map((i) => i.name).join(', ') });
     } else if (criticalItems.length > 0) {
-      toast({
-        title: `📦 ${criticalItems.length} article(s) en stock faible`,
-        description: criticalItems.map((i) => `${i.name} (${i.current_stock})`).join(', '),
-        duration: 8000,
-      });
+      toast.success(`📦 ${criticalItems.length} article(s) en stock faible`, { description: criticalItems.map((i) => `${i.name} (${i.current_stock})`).join(', ') });
     }
   }, [loading, lowStockItems.length]);
 

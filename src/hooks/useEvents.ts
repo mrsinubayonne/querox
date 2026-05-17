@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from '@/hooks/useOfflineMutation';
+import { toast } from 'sonner';
 
 interface Event {
   id: string;
@@ -22,8 +22,6 @@ interface Event {
 
 export const useEvents = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-
   const { data: events, isLoading: loading, refetch } = useOfflineData<Event>({
     table: 'events',
     queryKey: ['events'],
@@ -42,10 +40,7 @@ export const useEvents = () => {
     table: 'events',
     queryKey: ['events'],
     onSuccess: () => {
-      toast({
-        title: "Succès",
-        description: "Événement ajouté avec succès",
-      });
+      toast.success("Succès", { description: "Événement ajouté avec succès" });
     },
   });
 
@@ -53,10 +48,7 @@ export const useEvents = () => {
     table: 'events',
     queryKey: ['events'],
     onSuccess: () => {
-      toast({
-        title: "Succès",
-        description: "Événement modifié avec succès",
-      });
+      toast.success("Succès", { description: "Événement modifié avec succès" });
     },
   });
 
@@ -64,10 +56,7 @@ export const useEvents = () => {
     table: 'events',
     queryKey: ['events'],
     onSuccess: () => {
-      toast({
-        title: "Succès",
-        description: "Événement supprimé avec succès",
-      });
+      toast.success("Succès", { description: "Événement supprimé avec succès" });
     },
   });
 

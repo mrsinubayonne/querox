@@ -8,14 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Edit, Trash, PlusCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { MenuCategory } from '@/hooks/useMenus';
+import { toast } from 'sonner';
 
 const CategoryManager: React.FC = () => {
   const { menus, categories, loading, refetch } = useMenus();
   const { addCategory, updateCategory, deleteCategory, loading: actionLoading } = useMenuCategories();
-  const { toast } = useToast();
-
   const [editingCategory, setEditingCategory] = useState<MenuCategory | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -47,11 +45,7 @@ const CategoryManager: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.menu_id) {
-      toast({ 
-        title: "Champs requis", 
-        description: "Veuillez renseigner le nom et sélectionner un menu.", 
-        variant: "destructive" 
-      });
+      toast.error("Champs requis", { description: "Veuillez renseigner le nom et sélectionner un menu." });
       return;
     }
 

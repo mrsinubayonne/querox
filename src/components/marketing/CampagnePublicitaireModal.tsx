@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -20,7 +21,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Target } from 'lucide-react';
@@ -44,7 +44,6 @@ interface CampagnePublicitaireModalProps {
 }
 
 const CampagnePublicitaireModal: React.FC<CampagnePublicitaireModalProps> = ({ onClose }) => {
-  const { toast } = useToast();
   const { user } = useAuth();
   
   const form = useForm<CampagnePublicitaireFormData>({
@@ -75,19 +74,12 @@ const CampagnePublicitaireModal: React.FC<CampagnePublicitaireModalProps> = ({ o
 
       if (error) throw error;
 
-      toast({
-        title: "Demande envoyée !",
-        description: "Nous avons reçu votre demande de campagne publicitaire. Vous recevrez votre stratégie sous 10 jours.",
-      });
+      toast.success("Demande envoyée !", { description: "Nous avons reçu votre demande de campagne publicitaire. Vous recevrez votre stratégie sous 10 jours." });
 
       onClose();
     } catch (error) {
       console.error('Erreur lors de l\'envoi:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer votre demande. Veuillez réessayer.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible d'envoyer votre demande. Veuillez réessayer." });
     }
   };
 

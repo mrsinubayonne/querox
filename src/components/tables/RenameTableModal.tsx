@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+import { toast } from 'sonner';
   Dialog,
   DialogContent,
   DialogDescription,
@@ -10,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId } from "@/lib/offlineStorage";
@@ -33,7 +33,6 @@ export const RenameTableModal: React.FC<RenameTableModalProps> = ({
 }) => {
   const [newName, setNewName] = useState(currentName);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
   const { isOffline } = useNetworkStatus();
   const { user } = useAuth();
 
@@ -41,11 +40,7 @@ export const RenameTableModal: React.FC<RenameTableModalProps> = ({
     e.preventDefault();
     
     if (!newName.trim()) {
-      toast({
-        title: "Nom requis",
-        description: "Veuillez entrer un nom pour la table.",
-        variant: "destructive",
-      });
+      toast.error("Nom requis", { description: "Veuillez entrer un nom pour la table." });
       return;
     }
 
@@ -63,10 +58,7 @@ export const RenameTableModal: React.FC<RenameTableModalProps> = ({
           conflictResolution: 'client-wins',
         });
 
-        toast({
-          title: "Table renommée (hors ligne)",
-          description: `La table a été renommée en "${newName}". Sera synchronisé.`,
-        });
+        toast.success("Table renommée (hors ligne)", { description: `La table a été renommée en "${newName}". Sera synchronisé.` });
       } else {
         const { error } = await supabase
           .from("table_sessions")
@@ -75,21 +67,14 @@ export const RenameTableModal: React.FC<RenameTableModalProps> = ({
 
         if (error) throw error;
 
-        toast({
-          title: "Table renommée",
-          description: `La table a été renommée en "${newName}".`,
-        });
+        toast.success("Table renommée", { description: `La table a été renommée en "${newName}".` });
       }
 
       onSuccess();
       onClose();
     } catch (error: any) {
       console.error("Error renaming table:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de renommer la table.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de renommer la table." });
     } finally {
       setLoading(false);
     }

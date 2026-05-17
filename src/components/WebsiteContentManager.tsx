@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Plus, Save, Trash, Loader2 } from "lucide-react";
 import { useWebsitePages } from "@/hooks/useWebsitePages";
-import { useToast } from "@/hooks/use-toast";
 
 interface WebsiteContentManagerProps {
   websiteId: string;
@@ -24,8 +24,6 @@ const WebsiteContentManager: React.FC<WebsiteContentManagerProps> = ({ websiteId
   const [editId, setEditId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<any>({});
   const [adding, setAdding] = useState(false);
-  const { toast } = useToast();
-
   useEffect(() => {
     fetchPages();
   }, [websiteId]);
@@ -38,20 +36,20 @@ const WebsiteContentManager: React.FC<WebsiteContentManagerProps> = ({ websiteId
   const handleSave = async (id: string) => {
     await updatePage(id, editValue);
     setEditId(null);
-    toast({ title: "Modifié", description: "Contenu mis à jour." });
+    toast.success("Modifié", { description: "Contenu mis à jour." });
   };
 
   const handleAdd = async (type: string) => {
     setAdding(true);
     await addPage(type);
     setAdding(false);
-    toast({ title: "Page ajoutée" });
+    toast.success("Page ajoutée");
   };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Supprimer cette page ?")) return;
     await deletePage(id);
-    toast({ title: "Page supprimée" });
+    toast.success("Page supprimée");
   };
 
   return (

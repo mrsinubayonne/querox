@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export interface MenuItemIngredient {
   id: string;
@@ -22,7 +22,6 @@ export interface MenuItemIngredient {
 export const useMenuItemIngredients = (menuItemId?: string) => {
   const [ingredients, setIngredients] = useState<MenuItemIngredient[]>([]);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
   const { user } = useAuth();
 
   const fetchIngredients = useCallback(async () => {
@@ -45,11 +44,7 @@ export const useMenuItemIngredients = (menuItemId?: string) => {
       setIngredients(data || []);
     } catch (error: any) {
       console.error('Error fetching ingredients:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les ingrédients",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de charger les ingrédients" });
     } finally {
       setLoading(false);
     }
@@ -70,20 +65,13 @@ export const useMenuItemIngredients = (menuItemId?: string) => {
 
       if (error) throw error;
 
-      toast({
-        title: "Succès",
-        description: "Ingrédient ajouté au plat"
-      });
+      toast.success("Succès", { description: "Ingrédient ajouté au plat" });
 
       await fetchIngredients();
       return true;
     } catch (error: any) {
       console.error('Error adding ingredient:', error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible d'ajouter l'ingrédient",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: error.message || "Impossible d'ajouter l'ingrédient" });
       return false;
     }
   }, [menuItemId, user, toast, fetchIngredients]);
@@ -97,20 +85,13 @@ export const useMenuItemIngredients = (menuItemId?: string) => {
 
       if (error) throw error;
 
-      toast({
-        title: "Succès",
-        description: "Quantité mise à jour"
-      });
+      toast.success("Succès", { description: "Quantité mise à jour" });
 
       await fetchIngredients();
       return true;
     } catch (error: any) {
       console.error('Error updating ingredient:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour l'ingrédient",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de mettre à jour l'ingrédient" });
       return false;
     }
   }, [toast, fetchIngredients]);
@@ -124,20 +105,13 @@ export const useMenuItemIngredients = (menuItemId?: string) => {
 
       if (error) throw error;
 
-      toast({
-        title: "Succès",
-        description: "Ingrédient retiré"
-      });
+      toast.success("Succès", { description: "Ingrédient retiré" });
 
       await fetchIngredients();
       return true;
     } catch (error: any) {
       console.error('Error removing ingredient:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de retirer l'ingrédient",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de retirer l'ingrédient" });
       return false;
     }
   }, [toast, fetchIngredients]);

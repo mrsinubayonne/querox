@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useInvoices } from '@/hooks/useInvoices';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AddInvoiceModalProps {
   open: boolean;
@@ -20,27 +20,18 @@ const AddInvoiceModal: React.FC<AddInvoiceModalProps> = ({ open, onOpenChange })
   const [template, setTemplate] = useState('standard');
   const [loading, setLoading] = useState(false);
   const { createInvoice } = useInvoices();
-  const { toast } = useToast();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!amount || parseFloat(amount) <= 0) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez entrer un montant valide",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Veuillez entrer un montant valide" });
       return;
     }
 
     setLoading(true);
     try {
       await createInvoice(null, parseFloat(amount), notes || undefined);
-      toast({
-        title: "Succès",
-        description: "Facture créée avec succès"
-      });
+      toast.success("Succès", { description: "Facture créée avec succès" });
       onOpenChange(false);
       setAmount('');
       setDueDate('');

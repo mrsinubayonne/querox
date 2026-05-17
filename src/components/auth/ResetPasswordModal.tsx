@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
+import { toast } from 'sonner';
   Dialog,
   DialogContent,
   DialogDescription,
@@ -12,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, Lock } from 'lucide-react';
 
@@ -34,8 +34,6 @@ interface ResetPasswordModalProps {
 
 export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ open, onOpenChange }) => {
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
   const form = useForm<ResetFormData>({
     resolver: zodResolver(resetSchema),
     defaultValues: {
@@ -71,19 +69,12 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ open, on
         throw new Error(result.message);
       }
 
-      toast({
-        title: "Succès",
-        description: result.message,
-      });
+      toast.success("Succès", { description: result.message });
 
       form.reset();
       onOpenChange(false);
     } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error?.message || "Impossible de réinitialiser le mot de passe",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: error?.message || "Impossible de réinitialiser le mot de passe" });
     } finally {
       setLoading(false);
     }

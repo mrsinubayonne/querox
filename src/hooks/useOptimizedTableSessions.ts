@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
 import { useEffect, useCallback, useMemo } from 'react';
 import { useOfflineData } from './useOfflineData';
@@ -13,6 +12,7 @@ import type { Invoice } from '@/hooks/useInvoices';
 import type { Order } from '@/hooks/useOptimizedOrders';
 import { useTableStore } from '@/store/tableStore';
 import { useInvoiceStore } from '@/store/invoiceStore';
+import { toast } from 'sonner';
 
 export interface TableSession {
   id: string;
@@ -101,7 +101,6 @@ function cleanOldPaidMarkers() {
 
 export const useOptimizedTableSessions = () => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
-  const { toast } = useToast();
   const { outletId, loading: outletLoading } = useOptimizedOutlet();
   const queryClient = useQueryClient();
   const { isOffline } = useNetworkStatus();
@@ -397,13 +396,10 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     onSuccess: (data) => {
       // Force an immediate refetch so the grid updates without manual refresh
       refetch();
-      toast({
-        title: isOffline ? "Session créée (hors ligne)" : "Session ouverte",
-        description: `Table ${(data as any).table_number} activée`,
-      });
+      toast.success(isOffline ? "Session créée (hors ligne)" : "Session ouverte", { description: `Table ${(data as any).table_number} activée` });
     },
     onError: (error: Error) => {
-      toast({ title: "Erreur", description: error.message || "Impossible de créer la session.", variant: "destructive" });
+      toast.error("Erreur", { description: error.message || "Impossible de créer la session." });
     },
   });
 
@@ -529,13 +525,10 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.refetchQueries({ queryKey: ['invoices'] });
-      toast({
-        title: hasDebtor ? "Session fermée - Crédit accordé" : (isOffline ? "Session fermée (hors ligne)" : "Session fermée"),
-        description: hasDebtor ? "Dette enregistrée" : "Facture générée",
-      });
+      toast.success(hasDebtor ? "Session fermée - Crédit accordé" : (isOffline ? "Session fermée (hors ligne)" : "Session fermée"), { description: hasDebtor ? "Dette enregistrée" : "Facture générée" });
     },
     onError: (error: Error) => {
-      toast({ title: "Erreur", description: error.message || "Impossible de fermer la session.", variant: "destructive" });
+      toast.error("Erreur", { description: error.message || "Impossible de fermer la session." });
     },
   });
 
@@ -788,10 +781,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
-      toast({
-        title: isOffline ? "Paiement enregistré (hors ligne)" : "Paiement enregistré",
-        description: "La facture est marquée payée et la table est libérée.",
-      });
+      toast.success(isOffline ? "Paiement enregistré (hors ligne)" : "Paiement enregistré", { description: "La facture est marquée payée et la table est libérée." });
     },
     onError: (error: Error, variables: { sessionId: string; paymentMethod?: string }) => {
       // ROLLBACK: undo optimistic update
@@ -807,11 +797,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       // Force refetch to get server truth
       void queryClient.refetchQueries({ queryKey: ['table-sessions'] });
 
-      toast({
-        title: 'Erreur paiement',
-        description: error.message || 'Impossible de marquer comme payée. La table a été restaurée.',
-        variant: 'destructive',
-      });
+      toast.error('Erreur paiement', { description: error.message || 'Impossible de marquer comme payée. La table a été restaurée.' });
     },
   });
 
@@ -883,13 +869,10 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      toast({
-        title: isOffline ? "Table réouverte (hors ligne)" : "Table réouverte",
-        description: "La facture et transaction ont été annulées.",
-      });
+      toast.success(isOffline ? "Table réouverte (hors ligne)" : "Table réouverte", { description: "La facture et transaction ont été annulées." });
     },
     onError: (error: Error) => {
-      toast({ title: "Erreur", description: error.message || "Impossible de réouvrir la table.", variant: "destructive" });
+      toast.error("Erreur", { description: error.message || "Impossible de réouvrir la table." });
     },
   });
 

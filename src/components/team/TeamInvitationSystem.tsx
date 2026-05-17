@@ -7,10 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { UserPlus, Mail, Send, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
+import { toast } from 'sonner';
 
 const ROLES = [
   { value: 'manager', label: 'Manager', description: 'Gestion complète sauf équipe' },
@@ -33,7 +33,6 @@ interface TeamInvitation {
 export const TeamInvitationSystem: React.FC = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -46,11 +45,7 @@ export const TeamInvitationSystem: React.FC = () => {
     if (!user || !email) return;
 
     if (!profile?.selected_outlet_id) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner un point de vente avant d'inviter des membres",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Veuillez sélectionner un point de vente avant d'inviter des membres" });
       return;
     }
 
@@ -93,16 +88,9 @@ export const TeamInvitationSystem: React.FC = () => {
 
       if (emailError) {
         console.error('Email sending failed:', emailError);
-        toast({
-          title: "Invitation créée",
-          description: `Invitation créée mais l'email n'a pas pu être envoyé. Lien: ${invitationLink}`,
-          variant: "default"
-        });
+        toast.success("Invitation créée", { description: `Invitation créée mais l'email n'a pas pu être envoyé. Lien: ${invitationLink}` });
       } else {
-        toast({
-          title: "Invitation envoyée ! 📧",
-          description: `Un email d'invitation a été envoyé à ${email}`,
-        });
+        toast.success("Invitation envoyée ! 📧", { description: `Un email d'invitation a été envoyé à ${email}` });
       }
 
       // Réinitialiser le formulaire
@@ -116,11 +104,7 @@ export const TeamInvitationSystem: React.FC = () => {
       fetchInvitations();
     } catch (error: any) {
       console.error('Error sending invitation:', error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible d'envoyer l'invitation",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: error.message || "Impossible d'envoyer l'invitation" });
     } finally {
       setLoading(false);
     }
@@ -157,16 +141,9 @@ export const TeamInvitationSystem: React.FC = () => {
         }
       });
 
-      toast({
-        title: "Invitation renvoyée",
-        description: `Un nouvel email a été envoyé à ${invitation.member_email}`,
-      });
+      toast.success("Invitation renvoyée", { description: `Un nouvel email a été envoyé à ${invitation.member_email}` });
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de renvoyer l'invitation",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de renvoyer l'invitation" });
     }
   };
 
@@ -179,18 +156,11 @@ export const TeamInvitationSystem: React.FC = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Invitation annulée",
-        description: "L'invitation a été supprimée",
-      });
+      toast.success("Invitation annulée", { description: "L'invitation a été supprimée" });
 
       fetchInvitations();
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible d'annuler l'invitation",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible d'annuler l'invitation" });
     }
   };
 

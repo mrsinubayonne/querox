@@ -6,12 +6,12 @@ import { QueryClient, onlineManager } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { registerSW } from 'virtual:pwa-register'
-import { toast } from '@/hooks/use-toast'
 import { markRequestFailed, markRequestSuccess } from '@/hooks/useNetworkStatus'
 import { NetworkStatusBanner } from '@/components/NetworkStatusBanner'
 import { SyncStatusIndicator } from '@/components/SyncStatusIndicator'
 import { cleanupQueue } from '@/lib/offlineQueue'
 import { createIDBPersister } from '@/lib/idbPersister'
+import { toast } from 'sonner';
 
 // Helper to detect network errors
 const isNetworkError = (error: unknown): boolean => {
@@ -95,10 +95,7 @@ queryClient.getMutationCache().subscribe((event) => {
       markRequestSuccess();
     } else if (event.mutation?.state.status === 'error' && isNetworkError(event.mutation?.state.error)) {
       // Show toast for paused mutations
-      toast({
-        title: 'Action en attente',
-        description: 'Votre action sera exécutée dès que la connexion sera rétablie.',
-      });
+      toast.success('Action en attente', { description: 'Votre action sera exécutée dès que la connexion sera rétablie.' });
     }
   }
 });
@@ -164,10 +161,7 @@ try {
   const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
-      toast({
-        title: 'Mise à jour disponible',
-        description: "Rechargement automatique pour appliquer la dernière version.",
-      })
+      toast.success('Mise à jour disponible', { description: "Rechargement automatique pour appliquer la dernière version." })
       updateSW(true)
     },
   })

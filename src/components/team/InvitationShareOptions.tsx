@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Copy, Share2, Send } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface InvitationShareOptionsProps {
   accessCode: string;
@@ -16,16 +16,12 @@ export const InvitationShareOptions: React.FC<InvitationShareOptionsProps> = ({
   memberName,
   memberEmail
 }) => {
-  const { toast } = useToast();
   const baseUrl = 'https://querox.me';
   const invitationLink = `${baseUrl}/team-join?token=${invitationToken}`;
 
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
-    toast({
-      title: "Copié !",
-      description: `${type} copié dans le presse-papier`
-    });
+    toast.success("Copié !", { description: `${type} copié dans le presse-papier` });
   };
 
   const shareViaWhatsApp = () => {

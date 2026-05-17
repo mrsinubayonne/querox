@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface StaffRequestModalProps {
   isOpen: boolean;
@@ -15,8 +15,6 @@ interface StaffRequestModalProps {
 
 const StaffRequestModal: React.FC<StaffRequestModalProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-  
   const [formData, setFormData] = useState({
     restaurantName: '',
     contactName: '',
@@ -54,10 +52,7 @@ ${formData.description}`;
       const whatsappUrl = `https://wa.me/33768168430?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
 
-      toast({
-        title: "Demande envoyée !",
-        description: "Nous allons vous recontacter très prochainement.",
-      });
+      toast.success("Demande envoyée !", { description: "Nous allons vous recontacter très prochainement." });
 
       onClose();
       setFormData({
@@ -72,11 +67,7 @@ ${formData.description}`;
         description: ''
       });
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de l'envoi de la demande.",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Une erreur est survenue lors de l'envoi de la demande." });
     } finally {
       setLoading(false);
     }

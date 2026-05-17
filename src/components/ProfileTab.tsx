@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -9,12 +10,10 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, Mail, Calendar, Building, MapPin, Phone, Edit2, Save, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const ProfileTab: React.FC = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: user?.user_metadata?.full_name || '',
@@ -36,17 +35,10 @@ const ProfileTab: React.FC = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Profil mis à jour",
-        description: "Vos informations ont été sauvegardées avec succès.",
-      });
+      toast.success("Profil mis à jour", { description: "Vos informations ont été sauvegardées avec succès." });
       setIsEditing(false);
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le profil.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de mettre à jour le profil." });
     }
   };
 
