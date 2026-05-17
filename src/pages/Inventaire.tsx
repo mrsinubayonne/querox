@@ -15,8 +15,6 @@ import InventoryHeader from '@/components/inventory/InventoryHeader';
 import InventoryStats from '@/components/inventory/InventoryStats';
 import InventoryTabs from '@/components/inventory/InventoryTabs';
 import ManualAdjustmentModal from '@/components/inventory/ManualAdjustmentModal';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 
 const Inventaire: React.FC = () => {
   const { items, loading: itemsLoading, createItem, updateItem, deleteItem, getLowStockItems } = useInventory();
@@ -79,7 +77,9 @@ const Inventaire: React.FC = () => {
     }
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
     const doc = new jsPDF();
     
     // Header
