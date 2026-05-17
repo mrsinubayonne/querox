@@ -55,8 +55,9 @@ function loadPaidSessionsFromStorage() {
   if (!parsed) return;
   try {
     const now = Date.now();
-    for (const [id, ts] of Object.entries(parsed)) {
-      if (now - ts < PAID_RETENTION_MS) {
+    for (const [id, tsRaw] of Object.entries(parsed)) {
+      const ts = Number(tsRaw);
+      if (Number.isFinite(ts) && now - ts < PAID_RETENTION_MS) {
         localPaidSessionIds.add(id);
         localPaidTimestamps.set(id, ts);
       }
