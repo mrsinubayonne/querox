@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -22,7 +23,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -49,7 +49,6 @@ interface ConceptionGraphiqueModalProps {
 }
 
 const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onClose }) => {
-  const { toast } = useToast();
   const { user } = useAuth();
   const { subscription } = useSubscription();
   
@@ -93,11 +92,7 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
 
   const onSubmit = async (data: ConceptionGraphiqueFormData) => {
     if (!canUseService) {
-      toast({
-        title: "Plan insuffisant",
-        description: "Vous devez avoir un plan Professionnel ou supérieur pour accéder à ce service.",
-        variant: "destructive",
-      });
+      toast.error("Plan insuffisant", { description: "Vous devez avoir un plan Professionnel ou supérieur pour accéder à ce service." });
       return;
     }
 
@@ -113,19 +108,12 @@ const ConceptionGraphiqueModal: React.FC<ConceptionGraphiqueModalProps> = ({ onC
 
       if (error) throw error;
 
-      toast({
-        title: "Demande envoyée !",
-        description: `Votre demande a été envoyée. Livraison sous 48h.`,
-      });
+      toast.success("Demande envoyée !", { description: `Votre demande a été envoyée. Livraison sous 48h.` });
 
       onClose();
     } catch (error) {
       console.error('Erreur lors de l\'envoi:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer votre demande. Veuillez réessayer.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible d'envoyer votre demande. Veuillez réessayer." });
     }
   };
 

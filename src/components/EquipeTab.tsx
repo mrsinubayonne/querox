@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 const ROLES = [
   { value: 'manager', label: 'Manager', description: 'Gestion complète sauf équipe' },
@@ -24,7 +24,6 @@ const ROLES = [
 export const EquipeTab: React.FC = () => {
   const { teamMembers, loading, inviteMember, removeMember, toggleMemberStatus, canAddMoreMembers, getTeamLimit } = useTeamMembers();
   const { subscription } = useSubscription();
-  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -33,11 +32,7 @@ export const EquipeTab: React.FC = () => {
 
   const handleInvite = async () => {
     if (!email || !email.trim()) {
-      toast({
-        title: "Email requis",
-        description: "Veuillez entrer l'adresse email du membre",
-        variant: "destructive"
-      });
+      toast.error("Email requis", { description: "Veuillez entrer l'adresse email du membre" });
       return;
     }
     await inviteMember(email, selectedRole, fullName, phone);
@@ -50,10 +45,7 @@ export const EquipeTab: React.FC = () => {
 
   const copyAccessCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast({
-      title: "Code copié",
-      description: "Le code d'accès a été copié dans le presse-papier"
-    });
+    toast.success("Code copié", { description: "Le code d'accès a été copié dans le presse-papier" });
   };
 
   const getStatusBadge = (status: string) => {

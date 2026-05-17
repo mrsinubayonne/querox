@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { MenuItem } from '@/types/menu';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { toast } from 'sonner';
 
 // ---- Lightweight cache via localStorage (synchronous → instant display) ----
 const CACHE_PREFIX = 'publicMenu_v2_';
@@ -44,7 +44,6 @@ export const useMenuData = (menuId: string | null) => {
   const [error, setError] = useState<string | null>(null);
   const [restaurantUserId, setRestaurantUserId] = useState<string | null>(null);
   const [outletId, setOutletId] = useState<string | null>(null);
-  const { toast } = useToast();
   const { isOffline } = useNetworkStatus();
 
   const fetchMenu = useCallback(async (id: string) => {
@@ -197,11 +196,7 @@ export const useMenuData = (menuId: string | null) => {
         setMenuItems([]);
         setMenuData(null);
         setRestaurantUserId(null);
-        toast({
-          title: "Erreur de chargement",
-          description: errorMessage,
-          variant: "destructive",
-        });
+        toast.error("Erreur de chargement", { description: errorMessage });
       }
     } finally {
       setLoading(false);

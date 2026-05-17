@@ -3,7 +3,6 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { RestaurantProvider } from '@/contexts/RestaurantContext';
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
 import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvider";
@@ -171,7 +170,6 @@ function App() {
             </Routes>
           </Suspense>
         </div>
-        <Toaster />
         <Sonner />
         <InvoicePaidCelebration />
         <KeyboardShortcutsProvider />

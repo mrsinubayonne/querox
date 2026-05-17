@@ -1,7 +1,7 @@
+import { toast } from 'sonner';
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Mail, Database, AlertCircle } from 'lucide-react';
 import SubscriptionCard from './subscriptions/SubscriptionCard';
@@ -27,8 +27,6 @@ const SubscriptionsList: React.FC<SubscriptionsListProps> = ({
   subscriptions, 
   onSubscriptionUpdated 
 }) => {
-  const { toast } = useToast();
-
   console.log('📋 SubscriptionsList - Rendu avec', subscriptions.length, 'abonnements');
 
   const toggleSubscriptionStatus = async (id: string, currentStatus: boolean) => {
@@ -49,19 +47,12 @@ const SubscriptionsList: React.FC<SubscriptionsListProps> = ({
       }
 
       console.log('✅ Statut modifié avec succès');
-      toast({
-        title: "Succès",
-        description: `Abonnement ${!currentStatus ? 'activé' : 'désactivé'}`,
-      });
+      toast.success("Succès", { description: `Abonnement ${!currentStatus ? 'activé' : 'désactivé'}` });
 
       onSubscriptionUpdated();
     } catch (error: any) {
       console.error('💥 Erreur dans toggleSubscriptionStatus:', error);
-      toast({
-        title: "Erreur",
-        description: `Impossible de modifier le statut: ${error.message}`,
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: `Impossible de modifier le statut: ${error.message}` });
     }
   };
 
@@ -96,19 +87,12 @@ const SubscriptionsList: React.FC<SubscriptionsListProps> = ({
       }
 
       console.log('✅ Abonnement étendu avec succès');
-      toast({
-        title: "Succès",
-        description: `Abonnement prolongé de ${days} jours`,
-      });
+      toast.success("Succès", { description: `Abonnement prolongé de ${days} jours` });
 
       onSubscriptionUpdated();
     } catch (error: any) {
       console.error('💥 Erreur dans extendSubscription:', error);
-      toast({
-        title: "Erreur",
-        description: `Impossible de prolonger l'abonnement: ${error.message}`,
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: `Impossible de prolonger l'abonnement: ${error.message}` });
     }
   };
 
@@ -130,19 +114,12 @@ const SubscriptionsList: React.FC<SubscriptionsListProps> = ({
       }
 
       console.log('✅ Tier modifié avec succès');
-      toast({
-        title: "Succès",
-        description: `Tier modifié vers ${newTier}`,
-      });
+      toast.success("Succès", { description: `Tier modifié vers ${newTier}` });
 
       onSubscriptionUpdated();
     } catch (error: any) {
       console.error('💥 Erreur dans changeTier:', error);
-      toast({
-        title: "Erreur",
-        description: `Impossible de modifier le tier: ${error.message}`,
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: `Impossible de modifier le tier: ${error.message}` });
     }
   };
 

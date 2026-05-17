@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { QrCode as QrCodeIcon, Menu, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { APP_CONFIG } from '@/config/app.config';
 
 interface MenuType {
@@ -27,8 +26,6 @@ const QRCodes: React.FC = () => {
   const [restaurantSlug, setRestaurantSlug] = useState<string>('');
   const [outletSlug, setOutletSlug] = useState<string>('');
   const { user } = useAuth();
-  const { toast } = useToast();
-
   useEffect(() => {
     fetchMenus();
     fetchSlugs();

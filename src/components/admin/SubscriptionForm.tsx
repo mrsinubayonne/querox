@@ -1,10 +1,10 @@
+import { toast } from 'sonner';
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserPlus } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,15 +21,9 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
   const [isLifetime, setIsLifetime] = useState(false);
   const [isTrial, setIsTrial] = useState(false);
   const [quickEmail, setQuickEmail] = useState('');
-  const { toast } = useToast();
-
   const grantQuickSubscription = async (days: number) => {
     if (!quickEmail) {
-      toast({
-        title: "Email requis",
-        description: "Veuillez saisir l'email de l'utilisateur",
-        variant: "destructive",
-      });
+      toast.error("Email requis", { description: "Veuillez saisir l'email de l'utilisateur" });
       return;
     }
 
@@ -50,30 +44,19 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
 
       if (error) throw error;
 
-      toast({
-        title: "Succès",
-        description: `Essai gratuit Starter accordé pour ${days} jour${days > 1 ? 's' : ''}`,
-      });
+      toast.success("Succès", { description: `Essai gratuit Starter accordé pour ${days} jour${days > 1 ? 's' : ''}` });
 
       setQuickEmail('');
       onSubscriptionCreated();
     } catch (error) {
       console.error('Erreur:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'accorder l'essai gratuit",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible d'accorder l'essai gratuit" });
     }
   };
 
   const createOrUpdateSubscription = async () => {
     if (!searchEmail || !selectedTier) {
-      toast({
-        title: "Champs requis",
-        description: "Veuillez remplir l'email et le tier",
-        variant: "destructive",
-      });
+      toast.error("Champs requis", { description: "Veuillez remplir l'email et le tier" });
       return;
     }
 
@@ -109,14 +92,11 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
 
       if (error) throw error;
 
-      toast({
-        title: "Succès",
-        description: isLifetime 
+      toast.success("Succès", { description: isLifetime 
           ? `Abonnement ${selectedTier} à vie accordé`
           : isTrial
           ? `Essai gratuit ${selectedTier} accordé pour ${selectedDuration} jours`
-          : `Abonnement ${selectedTier} accordé pour ${selectedDuration} jours`,
-      });
+          : `Abonnement ${selectedTier} accordé pour ${selectedDuration} jours` });
 
       setSearchEmail('');
       setSelectedTier('');
@@ -125,11 +105,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
       onSubscriptionCreated();
     } catch (error) {
       console.error('Erreur:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer/modifier l'abonnement",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de créer/modifier l'abonnement" });
     }
   };
 

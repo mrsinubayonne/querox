@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRestaurantSettings } from "@/hooks/useRestaurantSettings";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Globe, CheckCircle2, AlertCircle, Copy } from "lucide-react";
 import { APP_CONFIG } from "@/config/app.config";
+import { toast } from 'sonner';
 
 const DomainTab: React.FC = () => {
   const { website, loading } = useRestaurantSettings();
-  const { toast } = useToast();
   const [slug, setSlug] = useState('');
   const [customDomain, setCustomDomain] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -66,16 +65,9 @@ const DomainTab: React.FC = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Site publié",
-        description: `Votre site est maintenant accessible sur ${APP_CONFIG.urls.getPublicWebsiteUrl(slug)}`,
-      });
+      toast.success("Site publié", { description: `Votre site est maintenant accessible sur ${APP_CONFIG.urls.getPublicWebsiteUrl(slug)}` });
     } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: error.message });
     } finally {
       setIsSaving(false);
     }
@@ -93,18 +85,11 @@ const DomainTab: React.FC = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Domaine personnalisé enregistré",
-        description: customDomain 
+      toast.success("Domaine personnalisé enregistré", { description: customDomain 
           ? "Suivez les instructions DNS ci-dessous pour finaliser la configuration" 
-          : "Domaine personnalisé retiré",
-      });
+          : "Domaine personnalisé retiré" });
     } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: error.message });
     } finally {
       setIsSaving(false);
     }
@@ -112,10 +97,7 @@ const DomainTab: React.FC = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast({
-      title: "Copié",
-      description: "L'information a été copiée dans le presse-papiers",
-    });
+    toast.success("Copié", { description: "L'information a été copiée dans le presse-papiers" });
   };
 
   if (loading) {

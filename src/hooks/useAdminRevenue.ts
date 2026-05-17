@@ -1,7 +1,7 @@
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface RevenueStats {
   month: string;
@@ -38,8 +38,6 @@ export const useAdminRevenue = () => {
   const [restaurantRevenue, setRestaurantRevenue] = useState<RestaurantRevenueData | null>(null);
   const [subscribersByPlan, setSubscribersByPlan] = useState<SubscribersByPlan>({ starter: 0, premium: 0, pro: 0 });
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
   const fetchRevenueStats = async () => {
     try {
       console.log('📊 Récupération des statistiques de revenus sécurisées...');
@@ -51,11 +49,7 @@ export const useAdminRevenue = () => {
       if (error) {
         console.error('❌ Erreur lors de la récupération des statistiques:', error);
         if (error.message.includes('permission denied') || error.message.includes('access denied')) {
-          toast({
-            title: "Accès refusé",
-            description: "Vous n'avez pas les permissions d'accéder aux statistiques de revenus",
-            variant: "destructive",
-          });
+          toast.error("Accès refusé", { description: "Vous n'avez pas les permissions d'accéder aux statistiques de revenus" });
           return;
         }
         throw error;
@@ -65,11 +59,7 @@ export const useAdminRevenue = () => {
       setRevenueStats(data || []);
     } catch (error: any) {
       console.error('💥 Erreur dans fetchRevenueStats:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les statistiques de revenus",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de charger les statistiques de revenus" });
     }
   };
 
@@ -83,11 +73,7 @@ export const useAdminRevenue = () => {
       if (error) {
         console.error('❌ Erreur lors du calcul du churn rate:', error);
         if (error.message.includes('permission denied') || error.message.includes('access denied')) {
-          toast({
-            title: "Accès refusé", 
-            description: "Vous n'avez pas les permissions d'accéder aux données d'attrition",
-            variant: "destructive",
-          });
+          toast.error("Accès refusé", { description: "Vous n'avez pas les permissions d'accéder aux données d'attrition" });
           return;
         }
         throw error;
@@ -97,11 +83,7 @@ export const useAdminRevenue = () => {
       setChurnData(data || []);
     } catch (error: any) {
       console.error('💥 Erreur dans fetchChurnRate:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de calculer le taux d'attrition",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de calculer le taux d'attrition" });
     }
   };
 
@@ -123,11 +105,7 @@ export const useAdminRevenue = () => {
       }
     } catch (error: any) {
       console.error('💥 Erreur dans fetchRestaurantRevenue:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger le CA des restaurants",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de charger le CA des restaurants" });
     }
   };
 
@@ -167,11 +145,7 @@ export const useAdminRevenue = () => {
       setSubscribersByPlan(counts);
     } catch (error: any) {
       console.error('💥 Erreur dans fetchSubscribersByPlan:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les abonnés par plan",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de charger les abonnés par plan" });
     }
   };
 

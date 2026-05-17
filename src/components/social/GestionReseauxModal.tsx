@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -21,7 +22,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Share2 } from 'lucide-react';
@@ -45,7 +45,6 @@ interface GestionReseauxModalProps {
 }
 
 const GestionReseauxModal: React.FC<GestionReseauxModalProps> = ({ onClose }) => {
-  const { toast } = useToast();
   const { user } = useAuth();
   
   const form = useForm<GestionReseauxFormData>({
@@ -76,19 +75,12 @@ const GestionReseauxModal: React.FC<GestionReseauxModalProps> = ({ onClose }) =>
 
       if (error) throw error;
 
-      toast({
-        title: "Demande envoyée !",
-        description: "Nous avons reçu votre demande de gestion des réseaux sociaux. Notre équipe vous contactera rapidement.",
-      });
+      toast.success("Demande envoyée !", { description: "Nous avons reçu votre demande de gestion des réseaux sociaux. Notre équipe vous contactera rapidement." });
 
       onClose();
     } catch (error) {
       console.error('Erreur lors de l\'envoi:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer votre demande. Veuillez réessayer.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible d'envoyer votre demande. Veuillez réessayer." });
     }
   };
 

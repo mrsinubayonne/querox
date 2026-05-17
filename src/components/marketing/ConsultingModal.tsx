@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { UserCheck, Phone, Mail, Clock, CheckCircle, Star } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface ConsultingModalProps {
   onClose: () => void;
@@ -25,7 +25,6 @@ const ConsultingModal: React.FC<ConsultingModalProps> = ({ onClose }) => {
     additionalInfo: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
   const { user } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -39,11 +38,7 @@ const ConsultingModal: React.FC<ConsultingModalProps> = ({ onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour soumettre une demande",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour soumettre une demande" });
       return;
     }
 
@@ -61,19 +56,12 @@ const ConsultingModal: React.FC<ConsultingModalProps> = ({ onClose }) => {
 
       if (error) throw error;
 
-      toast({
-        title: "Demande envoyée !",
-        description: "Votre demande de consulting a été envoyée avec succès. Nous vous contacterons sous 24h.",
-      });
+      toast.success("Demande envoyée !", { description: "Votre demande de consulting a été envoyée avec succès. Nous vous contacterons sous 24h." });
 
       onClose();
     } catch (error) {
       console.error('Error submitting consulting request:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer votre demande. Veuillez réessayer.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible d'envoyer votre demande. Veuillez réessayer." });
     } finally {
       setIsSubmitting(false);
     }

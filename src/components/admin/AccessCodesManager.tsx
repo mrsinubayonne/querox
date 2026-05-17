@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Key, Clock } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AccessCodeRecord {
   id: string;
@@ -19,8 +19,6 @@ interface AccessCodeRecord {
 const AccessCodesManager: React.FC = () => {
   const [codes, setCodes] = useState<AccessCodeRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
   useEffect(() => {
     fetchAccessCodes();
   }, []);
@@ -40,11 +38,7 @@ const AccessCodesManager: React.FC = () => {
         .maybeSingle();
 
       if (!roleData) {
-        toast({
-          title: "Accès refusé",
-          description: "Vous n'avez pas les permissions pour voir cette page",
-          variant: "destructive"
-        });
+        toast.error("Accès refusé", { description: "Vous n'avez pas les permissions pour voir cette page" });
         return;
       }
 
@@ -74,11 +68,7 @@ const AccessCodesManager: React.FC = () => {
       setCodes(formattedData);
     } catch (error: any) {
       console.error('Error fetching access codes:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les codes d'accès",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de charger les codes d'accès" });
     } finally {
       setLoading(false);
     }

@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Save, Store } from 'lucide-react';
@@ -19,7 +19,6 @@ interface RestaurantSettings {
 
 const OptimizedRestaurantSettings: React.FC = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   
@@ -81,17 +80,10 @@ const OptimizedRestaurantSettings: React.FC = () => {
         throw profileError;
       }
 
-      toast({
-        title: "Succès",
-        description: "Paramètres sauvegardés avec succès",
-      });
+      toast.success("Succès", { description: "Paramètres sauvegardés avec succès" });
     } catch (error: any) {
       console.error('Error saving settings:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder les paramètres",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de sauvegarder les paramètres" });
     } finally {
       setSaving(false);
     }

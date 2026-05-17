@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload, CheckCircle, X, Edit2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from 'sonner';
 
 interface ExtractedDish {
   name: string;
@@ -32,19 +32,13 @@ const ImportMenuFromImageModal: React.FC<ImportMenuFromImageModalProps> = ({
   const [extractedDishes, setExtractedDishes] = useState<ExtractedDish[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const { toast } = useToast();
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp", "application/pdf"];
     if (!validTypes.includes(file.type)) {
-      toast({
-        title: "Format invalide",
-        description: "Veuillez uploader une image (JPG, PNG, WEBP) ou un PDF",
-        variant: "destructive",
-      });
+      toast.error("Format invalide", { description: "Veuillez uploader une image (JPG, PNG, WEBP) ou un PDF" });
       return;
     }
 
@@ -76,26 +70,15 @@ const ImportMenuFromImageModal: React.FC<ImportMenuFromImageModalProps> = ({
       if (error) throw error;
 
       if (!data.dishes || data.dishes.length === 0) {
-        toast({
-          title: "Aucun plat détecté",
-          description: "L'IA n'a pas pu extraire de plats de cette image. Essayez avec une image plus claire.",
-          variant: "destructive",
-        });
+        toast.error("Aucun plat détecté", { description: "L'IA n'a pas pu extraire de plats de cette image. Essayez avec une image plus claire." });
         return;
       }
 
       setExtractedDishes(data.dishes);
-      toast({
-        title: "Analyse terminée",
-        description: `${data.dishes.length} plat(s) détecté(s). Vérifiez et modifiez si nécessaire avant d'importer.`,
-      });
+      toast.success("Analyse terminée", { description: `${data.dishes.length} plat(s) détecté(s). Vérifiez et modifiez si nécessaire avant d'importer.` });
     } catch (error: any) {
       console.error("Error analyzing image:", error);
-      toast({
-        title: "Erreur d'analyse",
-        description: error.message || "Impossible d'analyser l'image",
-        variant: "destructive",
-      });
+      toast.error("Erreur d'analyse", { description: error.message || "Impossible d'analyser l'image" });
     } finally {
       setLoading(false);
     }
@@ -167,10 +150,7 @@ const ImportMenuFromImageModal: React.FC<ImportMenuFromImageModalProps> = ({
         if (itemsError) throw itemsError;
       }
 
-      toast({
-        title: "Import réussi",
-        description: `${extractedDishes.length} plat(s) importé(s) avec succès`,
-      });
+      toast.success("Import réussi", { description: `${extractedDishes.length} plat(s) importé(s) avec succès` });
 
       onImportComplete();
       onOpenChange(false);
@@ -178,11 +158,7 @@ const ImportMenuFromImageModal: React.FC<ImportMenuFromImageModalProps> = ({
       setImageFile(null);
     } catch (error: any) {
       console.error("Error importing dishes:", error);
-      toast({
-        title: "Erreur d'import",
-        description: error.message || "Impossible d'importer les plats",
-        variant: "destructive",
-      });
+      toast.error("Erreur d'import", { description: error.message || "Impossible d'importer les plats" });
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from './use-toast';
+import { toast } from 'sonner';
 
 export interface InvoiceSettings {
   id: string;
@@ -22,9 +22,7 @@ export interface InvoiceSettings {
 }
 
 export const useInvoiceSettings = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [settings, setSettings] = useState<InvoiceSettings | null>(null);
+  const { user } = useAuth();  const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
 
@@ -63,11 +61,7 @@ export const useInvoiceSettings = () => {
       setSettings(data);
     } catch (error: any) {
       console.error('Error fetching invoice settings:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les paramètres de facturation',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Impossible de charger les paramètres de facturation' });
     } finally {
       setLoading(false);
     }
@@ -75,22 +69,14 @@ export const useInvoiceSettings = () => {
 
   const updateSettings = async (updates: Partial<InvoiceSettings>) => {
     if (!user) {
-      toast({
-        title: 'Erreur',
-        description: 'Vous devez être connecté',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Vous devez être connecté' });
       return false;
     }
 
     const outletId = selectedOutletId || getOutletId();
     
     if (!outletId) {
-      toast({
-        title: 'Erreur',
-        description: 'Aucun point de vente sélectionné',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Aucun point de vente sélectionné' });
       return false;
     }
 
@@ -139,19 +125,12 @@ export const useInvoiceSettings = () => {
         setSettings(data);
       }
 
-      toast({
-        title: 'Succès',
-        description: 'Paramètres de facturation mis à jour',
-      });
+      toast.success('Succès', { description: 'Paramètres de facturation mis à jour' });
 
       return true;
     } catch (error: any) {
       console.error('Error updating invoice settings:', error);
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Impossible de mettre à jour les paramètres',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: error.message || 'Impossible de mettre à jour les paramètres' });
       return false;
     }
   };

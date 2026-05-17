@@ -5,10 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOptimizedOutlet } from "@/hooks/useOptimizedOutlet";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { Debtor } from "@/hooks/useBusinessCustomers";
 import DebtorInvoiceItemsManager, { InvoiceItem } from "./DebtorInvoiceItemsManager";
+import { toast } from 'sonner';
 
 interface CreateDebtorInvoiceModalProps {
   open: boolean;
@@ -23,8 +23,6 @@ const CreateDebtorInvoiceModal: React.FC<CreateDebtorInvoiceModalProps> = ({
 }) => {
   const { user } = useAuth();
   const { outletId } = useOptimizedOutlet();
-  const { toast } = useToast();
-
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,29 +43,17 @@ const CreateDebtorInvoiceModal: React.FC<CreateDebtorInvoiceModalProps> = ({
     e.preventDefault();
 
     if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour créer une facture",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Vous devez être connecté pour créer une facture" });
       return;
     }
 
     if (!outletId) {
-      toast({
-        title: "Erreur",
-        description: "Aucun point de vente sélectionné",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Aucun point de vente sélectionné" });
       return;
     }
 
     if (items.length === 0) {
-      toast({
-        title: "Articles manquants",
-        description: "Veuillez ajouter au moins un article à la facture",
-        variant: "destructive",
-      });
+      toast.error("Articles manquants", { description: "Veuillez ajouter au moins un article à la facture" });
       return;
     }
 
@@ -118,19 +104,12 @@ const CreateDebtorInvoiceModal: React.FC<CreateDebtorInvoiceModalProps> = ({
         throw insertError;
       }
 
-      toast({
-        title: "Facture créée",
-        description: `Facture ${invoiceNumber} créée pour ${debtor.company_name}`,
-      });
+      toast.success("Facture créée", { description: `Facture ${invoiceNumber} créée pour ${debtor.company_name}` });
 
       handleClose();
     } catch (error: any) {
       console.error("Error creating debtor invoice:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer la facture pour ce débiteur",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de créer la facture pour ce débiteur" });
     } finally {
       setLoading(false);
     }

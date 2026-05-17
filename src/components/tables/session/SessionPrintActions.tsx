@@ -29,10 +29,9 @@ import KitchenTicketPrint, {
 import { Invoice } from "@/hooks/useInvoices";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { getData } from "@/lib/offlineStorage";
-import { toast as sonnerToast } from "sonner";
+import { toast as sonnerToast, toast } from 'sonner';
 import type { TableSession } from "@/hooks/useOptimizedTableSessions";
 
 interface Order {
@@ -55,7 +54,6 @@ interface Props {
 export const SessionPrintActions = forwardRef<SessionPrintActionsRef, Props>(
   ({ session, orders }, ref) => {
     const { user } = useAuth();
-    const { toast } = useToast();
     const { isOffline } = useNetworkStatus();
 
     const [showPrintDialog, setShowPrintDialog] = useState(false);
@@ -134,12 +132,7 @@ export const SessionPrintActions = forwardRef<SessionPrintActionsRef, Props>(
           const list = (cached?.data || []) as Invoice[];
           const inv = list.find((i) => (i as any).session_id === session.id);
           if (!inv) {
-            toast({
-              title: "Facture indisponible",
-              description:
-                "Fermez d'abord la table pour générer la facture (hors ligne).",
-              variant: "destructive",
-            });
+            toast.error("Facture indisponible", { description: "Fermez d'abord la table pour générer la facture (hors ligne)." });
             return;
           }
           setInvoiceToPrint(inv);
@@ -229,12 +222,7 @@ export const SessionPrintActions = forwardRef<SessionPrintActionsRef, Props>(
             invoice = insertedInvoice as any;
           } catch (genError) {
             console.error("Error generating invoice on-the-fly:", genError);
-            toast({
-              title: "Erreur facture",
-              description:
-                "Impossible de générer automatiquement la facture.",
-              variant: "destructive",
-            });
+            toast.error("Erreur facture", { description: "Impossible de générer automatiquement la facture." });
             return;
           }
         }
@@ -243,11 +231,7 @@ export const SessionPrintActions = forwardRef<SessionPrintActionsRef, Props>(
         setShowPrintDialog(true);
       } catch (error) {
         console.error("Error in printInvoice:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de récupérer la facture.",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de récupérer la facture." });
       }
     };
 

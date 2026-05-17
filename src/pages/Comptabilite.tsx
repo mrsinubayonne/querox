@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ModernSidebar from '@/components/ModernSidebar';
-import { useToast } from '@/hooks/use-toast';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useOutlets } from '@/hooks/useOutlets';
@@ -28,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from 'sonner';
 
 
 const Comptabilite = () => {
@@ -44,8 +44,6 @@ const Comptabilite = () => {
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
-  const { toast } = useToast();
-  
   const { transactions, loading, createTransaction, refetch: refetchTransactions } = useTransactions();
   const { invoices, loading: invoicesLoading, refetch: refetchInvoices } = useInvoices();
   const { outlets } = useOutlets();
@@ -310,10 +308,7 @@ const Comptabilite = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Totaux par PDV');
     XLSX.writeFile(workbook, `comptabilite-pdv-${new Date().toISOString().split('T')[0]}.xlsx`);
     
-    toast({
-      title: "Exportation réussie",
-      description: "Les données par PDV ont été exportées en Excel",
-    });
+    toast.success("Exportation réussie", { description: "Les données par PDV ont été exportées en Excel" });
   };
 
   const handleExport = (format: string, period: string) => {
@@ -373,35 +368,23 @@ const Comptabilite = () => {
       window.print();
     }
     
-    toast({
-      title: "Exportation réussie",
-      description: `Données exportées en ${formatMap[format as keyof typeof formatMap]} pour ${periodMap[period as keyof typeof periodMap]}`,
-    });
+    toast.success("Exportation réussie", { description: `Données exportées en ${formatMap[format as keyof typeof formatMap]} pour ${periodMap[period as keyof typeof periodMap]}` });
   };
 
   const handleCreateTransaction = async (transactionData: any) => {
     const success = await createTransaction(transactionData);
     if (success) {
       setShowNewTransactionModal(false);
-      toast({
-        title: "Transaction créée",
-        description: `${transactionData.title} a été ajoutée avec succès`,
-      });
+      toast.success("Transaction créée", { description: `${transactionData.title} a été ajoutée avec succès` });
     }
   };
 
   const handleSearch = () => {
-    toast({
-      title: "Recherche",
-      description: `Recherche pour: ${searchTerm}`,
-    });
+    toast.success("Recherche", { description: `Recherche pour: ${searchTerm}` });
   };
 
   const handleFilter = () => {
-    toast({
-      title: "Filtres",
-      description: "Options de filtrage ouvertes",
-    });
+    toast.success("Filtres", { description: "Options de filtrage ouvertes" });
   };
 
   const handleTabChange = (tabId: string) => {
@@ -411,10 +394,7 @@ const Comptabilite = () => {
       rapports: 'Rapports mensuels',
       budget: 'Budget prévisionnel'
     };
-    toast({
-      title: "Onglet changé",
-      description: `Affichage: ${tabLabels[tabId as keyof typeof tabLabels]}`,
-    });
+    toast.success("Onglet changé", { description: `Affichage: ${tabLabels[tabId as keyof typeof tabLabels]}` });
   };
 
   const handleEditTransaction = (transaction: any) => {
@@ -438,18 +418,11 @@ const Comptabilite = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Transaction supprimée",
-        description: "La transaction a été supprimée avec succès",
-      });
+      toast.success("Transaction supprimée", { description: "La transaction a été supprimée avec succès" });
 
       refetchTransactions();
     } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer la transaction",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de supprimer la transaction" });
     } finally {
       setDeleteDialogOpen(false);
       setTransactionToDelete(null);
@@ -457,24 +430,15 @@ const Comptabilite = () => {
   };
 
   const handleGenerateReport = () => {
-    toast({
-      title: "Rapport généré",
-      description: "Rapport mensuel en cours de génération...",
-    });
+    toast.success("Rapport généré", { description: "Rapport mensuel en cours de génération..." });
   };
 
   const handleConfigureBudget = () => {
-    toast({
-      title: "Budget",
-      description: "Configuration du budget prévisionnel...",
-    });
+    toast.success("Budget", { description: "Configuration du budget prévisionnel..." });
   };
 
   const handleStatClick = (stat: any) => {
-    toast({
-      title: stat.title,
-      description: `Détails: ${stat.value} ${stat.currency}`,
-    });
+    toast.success(stat.title, { description: `Détails: ${stat.value} ${stat.currency}` });
   };
 
   const tabs = [
@@ -621,10 +585,7 @@ const Comptabilite = () => {
           <AccountingStats
             stats={stats}
             onStatClick={(stat) => {
-              toast({
-                title: stat.title,
-                description: `Détails: ${stat.value} ${stat.currency}`,
-              });
+              toast.success(stat.title, { description: `Détails: ${stat.value} ${stat.currency}` });
             }}
           />
 
@@ -651,10 +612,7 @@ const Comptabilite = () => {
               formatCurrency={formatCurrency}
               onTabChange={setActiveTab}
               onTransactionDetails={(transaction) => {
-                toast({
-                  title: "Détails transaction",
-                  description: `${transaction.title} - ${formatCurrency(transaction.amount)}`,
-                });
+                toast.success("Détails transaction", { description: `${transaction.title} - ${formatCurrency(transaction.amount)}` });
               }}
               onEditTransaction={(transaction) => {
                 const original = filteredTransactions.find(t => t.id === transaction.id);
@@ -664,16 +622,10 @@ const Comptabilite = () => {
                 handleDeleteTransaction(transactionId);
               }}
               onGenerateReport={() => {
-                toast({
-                  title: "Rapport généré",
-                  description: "Rapport mensuel en cours de génération...",
-                });
+                toast.success("Rapport généré", { description: "Rapport mensuel en cours de génération..." });
               }}
               onConfigureBudget={() => {
-                toast({
-                  title: "Budget",
-                  description: "Configuration du budget prévisionnel...",
-                });
+                toast.success("Budget", { description: "Configuration du budget prévisionnel..." });
               }}
             />
           )}

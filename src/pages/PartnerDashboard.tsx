@@ -3,14 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Euro, TrendingUp, Share2, Copy, Check, Loader2 } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
 import { usePartnerData } from "@/hooks/usePartnerData";
 import { usePartnerReferrals } from "@/hooks/usePartnerReferrals";
+import { toast } from 'sonner';
 
 const PartnerDashboard: React.FC = () => {
   const [copied, setCopied] = useState(false);
-  const { toast } = useToast();
-  
   const { data: partnerData, isLoading: isLoadingPartner } = usePartnerData();
   const { data: referralsData, isLoading: isLoadingReferrals } = usePartnerReferrals();
 
@@ -33,10 +31,7 @@ const PartnerDashboard: React.FC = () => {
     navigator.clipboard.writeText(stats.promoCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast({
-      title: "Code copié !",
-      description: "Votre code promo a été copié dans le presse-papier.",
-    });
+    toast.success("Code copié !", { description: "Votre code promo a été copié dans le presse-papier." });
   };
 
   const getStatusBadge = (status: string) => {

@@ -1,8 +1,8 @@
+import { toast } from 'sonner';
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 
 interface Website {
   id: string;
@@ -76,7 +76,6 @@ interface WebsiteFormData {
 
 export const useWebsites = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [websites, setWebsites] = useState<Website[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -125,18 +124,11 @@ export const useWebsites = () => {
 
       if (error) {
         console.error('Error creating website:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de créer le site web",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de créer le site web" });
         return false;
       } else {
         setWebsites(prev => [data, ...prev]);
-        toast({
-          title: "Succès",
-          description: "Site web créé avec succès",
-        });
+        toast.success("Succès", { description: "Site web créé avec succès" });
         return data;
       }
     } catch (error) {
@@ -162,20 +154,13 @@ export const useWebsites = () => {
 
       if (error) {
         console.error('Error updating website:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de modifier le site web",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de modifier le site web" });
         return false;
       } else {
         setWebsites(prev => prev.map(website => 
           website.id === id ? data : website
         ));
-        toast({
-          title: "Succès",
-          description: "Site web modifié avec succès",
-        });
+        toast.success("Succès", { description: "Site web modifié avec succès" });
         return data;
       }
     } catch (error) {
@@ -196,18 +181,11 @@ export const useWebsites = () => {
 
       if (error) {
         console.error('Error deleting website:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de supprimer le site web",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de supprimer le site web" });
         return false;
       } else {
         setWebsites(prev => prev.filter(website => website.id !== id));
-        toast({
-          title: "Succès",
-          description: "Site web supprimé avec succès",
-        });
+        toast.success("Succès", { description: "Site web supprimé avec succès" });
         return true;
       }
     } catch (error) {

@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNetworkStatus } from './useNetworkStatus';
-import { toast } from './use-toast';
+import { toast } from 'sonner';
 import { OfflineDataType, queueMutation, generateLocalId, storeData, getData } from '@/lib/offlineStorage';
 import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from '@/lib/offlineIdentity';
 import { syncEngine } from '@/lib/syncEngine';
@@ -38,7 +38,7 @@ export function useOfflineInsert<T extends Record<string, unknown>>(options: Use
         const userId = resolvedUserId;
         const cached = (await getData<T[]>(table, userId, outletId)) ?? (outletId ? await getData<T[]>(table, userId) : undefined);
         await storeData(table, [...(cached?.data || []), dataWithId as T], userId, outletId);
-        toast({ title: 'Enregistré localement', description: 'Sera synchronisé à la reconnexion' });
+        toast.success('Enregistré localement', { description: 'Sera synchronisé à la reconnexion' });
         return dataWithId as T;
       }
 
@@ -47,7 +47,7 @@ export function useOfflineInsert<T extends Record<string, unknown>>(options: Use
       return data as unknown as T;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey }); onSuccess?.(); },
-    onError: (error: Error) => { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); onError?.(error); },
+    onError: (error: Error) => { toast.error('Erreur', { description: error.message }); onError?.(error); },
   });
 }
 
@@ -78,7 +78,7 @@ export function useOfflineUpdate<T extends Record<string, unknown>>(options: Use
             outletId
           );
         }
-        toast({ title: 'Modifié localement' });
+        toast.success('Modifié localement');
         return variables as T;
       }
       const { data, error } = await supabase.from(table).update(variables as never).eq('id', variables.id).select().single();
@@ -86,7 +86,7 @@ export function useOfflineUpdate<T extends Record<string, unknown>>(options: Use
       return data as unknown as T;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey }); onSuccess?.(); },
-    onError: (error: Error) => { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); onError?.(error); },
+    onError: (error: Error) => { toast.error('Erreur', { description: error.message }); onError?.(error); },
   });
 }
 
@@ -110,7 +110,7 @@ export function useOfflineDelete(options: UseOfflineMutationOptions) {
         const userId = resolvedUserId;
         const cached = (await getData<{ id: string }[]>(table, userId, outletId)) ?? (outletId ? await getData<{ id: string }[]>(table, userId) : undefined);
         if (cached?.data) await storeData(table, cached.data.filter(item => item.id !== id), userId, outletId);
-        toast({ title: 'Supprimé localement' });
+        toast.success('Supprimé localement');
         return { id };
       }
       const { error } = await supabase.from(table).delete().eq('id', id);
@@ -118,7 +118,7 @@ export function useOfflineDelete(options: UseOfflineMutationOptions) {
       return { id };
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey }); onSuccess?.(); },
-    onError: (error: Error) => { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); onError?.(error); },
+    onError: (error: Error) => { toast.error('Erreur', { description: error.message }); onError?.(error); },
   });
 }
 
@@ -126,8 +126,8 @@ export function useSync() {
   const queryClient = useQueryClient();
   const sync = useCallback(async () => {
     const result = await syncEngine.forceSync();
-    if (result.synced > 0) { queryClient.invalidateQueries(); toast({ title: 'Synchronisation terminée', description: `${result.synced} élément(s)` }); }
-    if (result.failed > 0) toast({ title: 'Erreurs', description: `${result.failed} erreur(s)`, variant: 'destructive' });
+    if (result.synced > 0) { queryClient.invalidateQueries(); toast.success('Synchronisation terminée', { description: `${result.synced} élément(s)` }); }
+    if (result.failed > 0) toast.error('Erreurs', { description: `${result.failed} erreur(s)` });
     return result;
   }, [queryClient]);
   return { sync, retryFailed: useCallback(() => syncEngine.retryFailed(), []) };

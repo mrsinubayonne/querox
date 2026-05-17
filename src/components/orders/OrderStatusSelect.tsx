@@ -1,8 +1,8 @@
+import { toast } from 'sonner';
 
 import React from 'react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface OrderStatusSelectProps {
   orderId: string;
@@ -24,8 +24,6 @@ export const OrderStatusSelect: React.FC<OrderStatusSelectProps> = ({
   currentStatus,
   onStatusChange
 }) => {
-  const { toast } = useToast();
-
   const handleStatusChange = async (newStatus: string) => {
     try {
       // Update order status
@@ -55,19 +53,12 @@ export const OrderStatusSelect: React.FC<OrderStatusSelectProps> = ({
           .eq('order_id', orderId);
       }
 
-      toast({
-        title: "Statut mis à jour",
-        description: `Le statut de la commande a été changé vers "${ORDER_STATUSES.find(s => s.value === newStatus)?.label}"${newStatus === 'delivered' ? ' et la transaction a été enregistrée' : ''}`,
-      });
+      toast.success("Statut mis à jour", { description: `Le statut de la commande a été changé vers "${ORDER_STATUSES.find(s => s.value === newStatus)?.label}"${newStatus === 'delivered' ? ' et la transaction a été enregistrée' : ''}` });
 
       onStatusChange();
     } catch (error: any) {
       console.error('Error updating order status:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le statut de la commande",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de mettre à jour le statut de la commande" });
     }
   };
 

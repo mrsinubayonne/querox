@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +17,6 @@ import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId } from "@/lib/offlineStorage";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +41,6 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
   onSuccess,
 }) => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
-  const { toast } = useToast();
   const { outletId } = useRestaurant();
   const { isOffline } = useNetworkStatus();
   const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || user?.id || '') : (user?.id || '');
@@ -107,11 +106,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
     e.preventDefault();
     
     if (cart.length === 0) {
-      toast({
-        title: "Panier vide",
-        description: "Veuillez ajouter au moins un plat à la commande.",
-        variant: "destructive",
-      });
+      toast.error("Panier vide", { description: "Veuillez ajouter au moins un plat à la commande." });
       return;
     }
 
@@ -150,10 +145,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
           conflictResolution: 'client-wins',
         });
 
-        toast({
-          title: "Commande créée (hors ligne)",
-          description: `Commande de ${cart.length} plat(s) enregistrée. Sera synchronisée.`,
-        });
+        toast.success("Commande créée (hors ligne)", { description: `Commande de ${cart.length} plat(s) enregistrée. Sera synchronisée.` });
       } else {
         const { error: orderError } = await supabase.from("orders").insert([
           {
@@ -169,10 +161,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
 
         if (orderError) throw orderError;
 
-        toast({
-          title: "Commande créée",
-          description: `Commande de ${cart.length} plat(s) créée avec succès.`,
-        });
+        toast.success("Commande créée", { description: `Commande de ${cart.length} plat(s) créée avec succès.` });
       }
 
       setCart([]);
@@ -181,11 +170,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
       onClose();
     } catch (error: any) {
       console.error("Error creating order:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer la commande.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de créer la commande." });
     } finally {
       setLoading(false);
     }

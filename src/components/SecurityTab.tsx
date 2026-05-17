@@ -1,30 +1,21 @@
+import { toast } from 'sonner';
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { LogOut, Key } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 
 export const SecurityTab: React.FC = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-
   const handleLogout = async () => {
     try {
       await signOut();
-      toast({
-        title: "Déconnexion réussie",
-        description: "Vous avez été déconnecté avec succès",
-      });
+      toast.success("Déconnexion réussie", { description: "Vous avez été déconnecté avec succès" });
       navigate('/');
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de vous déconnecter",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de vous déconnecter" });
     }
   };
 

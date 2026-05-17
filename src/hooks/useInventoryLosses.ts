@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface InventoryLoss {
   id: string;
@@ -27,8 +27,6 @@ export const useInventoryLosses = () => {
   const [losses, setLosses] = useState<InventoryLoss[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { toast } = useToast();
-
   const fetchLosses = useCallback(async () => {
     if (!user) {
       setLosses([]);
@@ -73,11 +71,7 @@ export const useInventoryLosses = () => {
       setLosses((data || []) as InventoryLoss[]);
     } catch (error: any) {
       console.error('Losses fetch error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les pertes",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de charger les pertes" });
       setLosses([]);
     } finally {
       setLoading(false);
@@ -118,18 +112,11 @@ export const useInventoryLosses = () => {
       if (error) throw error;
 
       await fetchLosses();
-      toast({
-        title: "Succès",
-        description: "Perte enregistrée"
-      });
+      toast.success("Succès", { description: "Perte enregistrée" });
       return data;
     } catch (error: any) {
       console.error('Create loss error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'enregistrer la perte",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible d'enregistrer la perte" });
       return false;
     }
   };
@@ -146,18 +133,11 @@ export const useInventoryLosses = () => {
       if (error) throw error;
 
       await fetchLosses();
-      toast({
-        title: "Succès",
-        description: "Perte supprimée"
-      });
+      toast.success("Succès", { description: "Perte supprimée" });
       return true;
     } catch (error: any) {
       console.error('Delete loss error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer la perte",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de supprimer la perte" });
       return false;
     }
   };

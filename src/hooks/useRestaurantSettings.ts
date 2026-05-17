@@ -1,7 +1,7 @@
+import { toast } from 'sonner';
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface WebsiteSettings {
@@ -19,8 +19,6 @@ export function useRestaurantSettings() {
   const [website, setWebsite] = useState<WebsiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
-
   const fetchWebsite = useCallback(async () => {
     if (!user) {
       setLoading(false);
@@ -76,16 +74,9 @@ export function useRestaurantSettings() {
         .single();
       if (error) throw error;
       setWebsite(data);
-      toast({
-        title: "Enregistré",
-        description: "Les informations du restaurant ont été mises à jour.",
-      });
+      toast.success("Enregistré", { description: "Les informations du restaurant ont été mises à jour." });
     } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error?.message ?? "Une erreur est survenue",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: error?.message ?? "Une erreur est survenue" });
     } finally {
       setIsSaving(false);
     }

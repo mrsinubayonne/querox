@@ -2,9 +2,9 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOfflineHealth } from '@/hooks/useOfflineHealth';
 import { WifiOff, Wifi, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { syncEngine } from '@/lib/syncEngine';
+import { toast } from 'sonner';
 
 export const NetworkStatusBanner = () => {
   const { status, isOffline, isUnstable, retryConnection } = useNetworkStatus();
@@ -15,10 +15,7 @@ export const NetworkStatusBanner = () => {
 
   useEffect(() => {
     if (wasOffline && status === 'online') {
-      toast({
-        title: 'Connexion rétablie',
-        description: 'Synchronisation des données en cours...',
-      });
+      toast.success('Connexion rétablie', { description: 'Synchronisation des données en cours...' });
       syncEngine.forceSync();
       queryClient.resumePausedMutations().then(() => {
         queryClient.invalidateQueries();

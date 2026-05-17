@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -7,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useWebsites } from "@/hooks/useWebsites";
 import LogoUpload from "./LogoUpload";
-import { useToast } from "@/hooks/use-toast";
 
 interface Website {
   id: string;
@@ -40,8 +40,6 @@ const EditWebsiteModal: React.FC<EditWebsiteModalProps> = ({ open, onOpenChange,
   });
   const [loading, setLoading] = useState(false);
   const { updateWebsite } = useWebsites();
-  const { toast } = useToast();
-
   useEffect(() => {
     if (website) {
       setFormData({
@@ -66,18 +64,11 @@ const EditWebsiteModal: React.FC<EditWebsiteModalProps> = ({ open, onOpenChange,
       const success = await updateWebsite(website.id, formData);
       if (success) {
         onOpenChange(false);
-        toast({
-          title: "Succès",
-          description: "Site web mis à jour avec succès",
-        });
+        toast.success("Succès", { description: "Site web mis à jour avec succès" });
       }
     } catch (error) {
       console.error('Error updating website:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le site web",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de mettre à jour le site web" });
     } finally {
       setLoading(false);
     }

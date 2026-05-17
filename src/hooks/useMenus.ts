@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useOfflineData } from './useOfflineData';
+import { toast } from 'sonner';
 
 export interface Menu {
   id: string;
@@ -50,7 +50,6 @@ export const useMenus = () => {
   const [error, setError] = useState<string | null>(null);
   
   const { user, signOut } = useAuth();
-  const { toast } = useToast();
   const { selectedOutletId } = useOutlets();
   const fetchingRef = useRef(false);
 
@@ -194,11 +193,7 @@ export const useMenus = () => {
       
       if ((code === 'PGRST301' || message.includes('JWT expired')) && !tokenExpiredHandledRef.current) {
         tokenExpiredHandledRef.current = true;
-        toast({
-          title: "Session expirée",
-          description: "Votre session a expiré. Veuillez vous reconnecter.",
-          variant: "destructive",
-        });
+        toast.error("Session expirée", { description: "Votre session a expiré. Veuillez vous reconnecter." });
         try {
           await signOut();
         } finally {
@@ -229,11 +224,7 @@ export const useMenus = () => {
 
     try {
       if (!selectedOutletId) {
-        toast({
-          title: "Erreur",
-          description: "Aucun point de vente sélectionné",
-          variant: "destructive"
-        });
+        toast.error("Erreur", { description: "Aucun point de vente sélectionné" });
         return null;
       }
 
@@ -269,21 +260,14 @@ export const useMenus = () => {
 
       if (categoriesError) throw categoriesError;
 
-      toast({
-        title: "Menu créé",
-        description: "Votre menu par défaut a été créé avec succès",
-      });
+      toast.success("Menu créé", { description: "Votre menu par défaut a été créé avec succès" });
 
       await refetchMenus();
       return menu.id;
 
     } catch (error: any) {
       console.error('Error creating default menu:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer le menu par défaut",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de créer le menu par défaut" });
       return null;
     }
   }, [user?.id, selectedOutletId, toast, refetchMenus]);
@@ -301,27 +285,16 @@ export const useMenus = () => {
         .eq('user_id', user?.id);
 
       if (error) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de transférer le menu",
-          variant: "destructive"
-        });
+        toast.error("Erreur", { description: "Impossible de transférer le menu" });
         return false;
       }
 
-      toast({
-        title: "Succès",
-        description: "Menu transféré avec succès"
-      });
+      toast.success("Succès", { description: "Menu transféré avec succès" });
       await refetchMenus();
       return true;
     } catch (error) {
       console.error('Error transferring menu:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors du transfert",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Une erreur est survenue lors du transfert" });
       return false;
     }
   }, [user?.id, toast, refetchMenus]);

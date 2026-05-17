@@ -1,9 +1,9 @@
+import { toast } from 'sonner';
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useAdminRevenue } from '@/hooks/useAdminRevenue';
 import { useSubscription } from '@/hooks/useSubscription';
 import ModernSidebar from '@/components/ModernSidebar';
@@ -41,8 +41,6 @@ const AdminDashboard: React.FC = () => {
     totalDishes: 0,
     totalOrders: 0
   });
-  const { toast } = useToast();
-
   const {
     revenueStats,
     churnData,
@@ -87,11 +85,7 @@ const AdminDashboard: React.FC = () => {
       });
 
     } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les statistiques",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de charger les statistiques" });
     }
   };
 

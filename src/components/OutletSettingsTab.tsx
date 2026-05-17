@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useProfile } from '@/hooks/useProfile';
 import { Loader2, Store, Trash2, AlertTriangle, Link2, Copy, MessageCircle } from 'lucide-react';
@@ -19,11 +18,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 export const OutletSettingsTab: React.FC = () => {
   const { outlets, selectedOutletId, updateOutlet, deleteOutlet, loading } = useOutlets();
   const { profile } = useProfile();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -53,9 +52,9 @@ export const OutletSettingsTab: React.FC = () => {
     if (!publicUrl) return;
     try {
       await navigator.clipboard.writeText(publicUrl);
-      toast({ title: 'Lien copié', description: publicUrl });
+      toast.success('Lien copié', { description: publicUrl });
     } catch {
-      toast({ title: 'Erreur', description: 'Impossible de copier', variant: 'destructive' });
+      toast.error('Erreur', { description: 'Impossible de copier' });
     }
   };
 
@@ -71,9 +70,9 @@ export const OutletSettingsTab: React.FC = () => {
         phone: formData.phone,
         whatsapp_number: formData.whatsapp_number,
       } as any);
-      toast({ title: "Succès", description: "Point de vente mis à jour" });
+      toast.success("Succès", { description: "Point de vente mis à jour" });
     } catch {
-      toast({ title: "Erreur", description: "Impossible de mettre à jour", variant: "destructive" });
+      toast.error("Erreur", { description: "Impossible de mettre à jour" });
     } finally {
       setSaving(false);
     }
@@ -82,19 +81,11 @@ export const OutletSettingsTab: React.FC = () => {
   const handleDelete = async () => {
     if (!selectedOutletId || !currentOutlet) return;
     if (outlets.length <= 1) {
-      toast({
-        title: "Impossible",
-        description: "Vous devez garder au moins un point de vente",
-        variant: "destructive"
-      });
+      toast.error("Impossible", { description: "Vous devez garder au moins un point de vente" });
       return;
     }
     if (confirmName !== currentOutlet.name) {
-      toast({
-        title: "Erreur",
-        description: "Le nom saisi ne correspond pas au point de vente",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Le nom saisi ne correspond pas au point de vente" });
       return;
     }
     try {
@@ -103,11 +94,7 @@ export const OutletSettingsTab: React.FC = () => {
       setConfirmName('');
       navigate('/select-outlet');
     } catch {
-      toast({
-        title: "Suppression impossible",
-        description: "Le point de vente n'a pas été supprimé. Réessayez après synchronisation.",
-        variant: "destructive"
-      });
+      toast.error("Suppression impossible", { description: "Le point de vente n'a pas été supprimé. Réessayez après synchronisation." });
     } finally {
       setDeleting(false);
     }

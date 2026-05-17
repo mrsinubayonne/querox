@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +11,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from "@/components/ui/switch";
@@ -33,7 +33,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
   const [showResetModal, setShowResetModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const form = useForm<LoginFormData>({
@@ -53,11 +52,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
       if (useAccessCode) {
         const code = data.password.trim().toUpperCase();
         if (!/^[A-Z0-9]{6}$/.test(code)) {
-          toast({
-            title: "Code invalide",
-            description: "Le code d'accès doit contenir 6 caractères alphanumériques",
-            variant: "destructive",
-          });
+          toast.error("Code invalide", { description: "Le code d'accès doit contenir 6 caractères alphanumériques" });
           return;
         }
         // Team member login with access code
@@ -68,20 +63,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
           });
 
         if (verifyError) {
-          toast({
-            title: "Erreur de connexion",
-            description: "Une erreur est survenue lors de la vérification",
-            variant: "destructive"
-          });
+          toast.error("Erreur de connexion", { description: "Une erreur est survenue lors de la vérification" });
           return;
         }
 
         if (!memberData || memberData.length === 0) {
-          toast({
-            title: "Accès refusé",
-            description: "Email ou code d'accès incorrect",
-            variant: "destructive"
-          });
+          toast.error("Accès refusé", { description: "Email ou code d'accès incorrect" });
           return;
         }
 
@@ -89,10 +76,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
 
         // Check if this is a first-time login (status = pending) - redirect to setup
         if (member.status === 'pending') {
-          toast({
-            title: "Configuration requise",
-            description: "Veuillez configurer votre compte avant de continuer"
-          });
+          toast.success("Configuration requise", { description: "Veuillez configurer votre compte avant de continuer" });
           setTimeout(() => {
             navigate(`/team-setup?token=${code}`);
           }, 100);
@@ -109,10 +93,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
         // Clean up legacy key if it exists
         try { localStorage.removeItem('team_member_session'); } catch { /* ignore */ }
 
-        toast({
-          title: "Connexion réussie",
-          description: `Bienvenue ! Vous êtes connecté en tant que ${member.role}`
-        });
+        toast.success("Connexion réussie", { description: `Bienvenue ! Vous êtes connecté en tant que ${member.role}` });
 
         // Redirect to dashboard after successful team member login
         setTimeout(() => {
@@ -139,60 +120,32 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
             message.toLowerCase().includes('too many requests');
 
           if (isEmailNotConfirmed) {
-            toast({
-              title: "Email non confirmé",
-              description: "Confirmez votre email (vérifiez vos spams), puis réessayez.",
-              variant: "destructive",
-            });
+            toast.error("Email non confirmé", { description: "Confirmez votre email (vérifiez vos spams), puis réessayez." });
             return;
           }
 
           if (isRateLimited) {
-            toast({
-              title: "Trop de tentatives",
-              description: "Patientez quelques minutes puis réessayez.",
-              variant: "destructive",
-            });
+            toast.error("Trop de tentatives", { description: "Patientez quelques minutes puis réessayez." });
             return;
           }
 
           if (isInvalidCreds) {
-            toast({
-              title: "Identifiants incorrects",
-              description: "Email ou mot de passe incorrect. Vous pouvez réinitialiser votre mot de passe.",
-              variant: "destructive",
-              action: (
-                <ToastAction altText="Mot de passe oublié" onClick={() => setShowResetModal(true)}>
-                  Mot de passe oublié
-                </ToastAction>
-              ),
-            });
+            toast.error("Identifiants incorrects", { description: "Email ou mot de passe incorrect. Vous pouvez réinitialiser votre mot de passe." });
             return;
           }
 
-          toast({
-            title: "Erreur de connexion",
-            description: message || "Une erreur est survenue",
-            variant: "destructive",
-          });
+          toast.error("Erreur de connexion", { description: message || "Une erreur est survenue" });
           return;
         }
 
-        toast({
-          title: "Connexion réussie !",
-          description: "Bienvenue sur QUEROX",
-        });
+        toast.success("Connexion réussie !", { description: "Bienvenue sur QUEROX" });
 
         setTimeout(() => {
           navigate('/dashboard');
         }, 100);
       }
     } catch (error: any) {
-      toast({
-        title: "Erreur de connexion",
-        description: error?.message || "Une erreur est survenue",
-        variant: "destructive",
-      });
+      toast.error("Erreur de connexion", { description: error?.message || "Une erreur est survenue" });
     } finally {
       setLoading(false);
     }

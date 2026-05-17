@@ -4,8 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 import { Search, Loader2, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Props {
   open: boolean;
@@ -22,7 +22,6 @@ interface Candidate {
 
 const CopyOptionsFromItemModal: React.FC<Props> = ({ open, onOpenChange, targetMenuItemId, onImported }) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState<string | null>(null);
   const [items, setItems] = useState<Candidate[]>([]);
@@ -133,11 +132,11 @@ const CopyOptionsFromItemModal: React.FC<Props> = ({ open, onOpenChange, targetM
         }
       }
 
-      toast({ title: 'Suppléments copiés', description: 'Les groupes ont été importés.' });
+      toast.success('Suppléments copiés', { description: 'Les groupes ont été importés.' });
       onImported();
       onOpenChange(false);
     } catch (e: any) {
-      toast({ title: 'Erreur', description: e.message || 'Import impossible', variant: 'destructive' });
+      toast.error('Erreur', { description: e.message || 'Import impossible' });
     } finally {
       setImporting(null);
     }

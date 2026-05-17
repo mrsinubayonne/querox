@@ -5,6 +5,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +16,6 @@ import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +46,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   tableNumber,
 }) => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
-  const { toast } = useToast();
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const [numberOfGuests, setNumberOfGuests] = useState("");
@@ -149,21 +148,13 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
   const addCustomItem = () => {
     if (!customItemName.trim() || !customItemPrice) {
-      toast({
-        title: "Champs requis",
-        description: "Veuillez renseigner le nom et le prix de l'article.",
-        variant: "destructive",
-      });
+      toast.error("Champs requis", { description: "Veuillez renseigner le nom et le prix de l'article." });
       return;
     }
 
     const price = Number(customItemPrice);
     if (isNaN(price) || price <= 0) {
-      toast({
-        title: "Prix invalide",
-        description: "Le prix doit être un nombre positif.",
-        variant: "destructive",
-      });
+      toast.error("Prix invalide", { description: "Le prix doit être un nombre positif." });
       return;
     }
 
@@ -179,10 +170,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
     setCustomItemPrice("");
     setShowCustomItem(false);
     
-    toast({
-      title: "Article ajouté",
-      description: `${customItemName} ajouté au panier.`,
-    });
+    toast.success("Article ajouté", { description: `${customItemName} ajouté au panier.` });
   };
 
   const totalAmount = useMemo(() => {
@@ -193,11 +181,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
     e.preventDefault();
     
     if (cart.length === 0) {
-      toast({
-        title: "Panier vide",
-        description: "Veuillez ajouter au moins un plat à la commande.",
-        variant: "destructive",
-      });
+      toast.error("Panier vide", { description: "Veuillez ajouter au moins un plat à la commande." });
       return;
     }
 
@@ -316,10 +300,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         queryClient.setQueryData(ordersQueryKey, [newOrder, ...currentOrders]);
         await storeData('orders', [newOrder, ...currentOrders] as any, resolvedUserId, scopedOutletId);
 
-        toast({
-          title: "Session créée (hors ligne)",
-          description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s). Sera synchronisée.`,
-        });
+        toast.success("Session créée (hors ligne)", { description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s). Sera synchronisée.` });
 
         setNumberOfGuests("");
         setCart([]);
@@ -431,10 +412,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         const currentOrders = (queryClient.getQueryData(ordersQueryKey) as any[] | undefined) || [];
         queryClient.setQueryData(ordersQueryKey, [orderObj, ...currentOrders]);
 
-        toast({
-          title: "Session créée",
-          description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s).`,
-        });
+        toast.success("Session créée", { description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s).` });
 
         setNumberOfGuests("");
         setCart([]);
@@ -449,11 +427,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       }
     } catch (error: any) {
       console.error("Error creating session with order:", error);
-      toast({
-        title: "Erreur",
-        description: error?.message || "Impossible de créer la session.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: error?.message || "Impossible de créer la session." });
     } finally {
       setLoading(false);
     }

@@ -1,12 +1,10 @@
+import { toast } from 'sonner';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 export const useDefaultMenu = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-
   const createDefaultMenu = async () => {
     if (!user) {
       console.error('Pas d\'utilisateur connecté pour créer le menu par défaut');
@@ -59,18 +57,11 @@ export const useDefaultMenu = () => {
 
       console.log('🔥 Catégories par défaut créées');
 
-      toast({
-        title: "Menu créé",
-        description: "Votre menu par défaut a été créé avec succès",
-      });
+      toast.success("Menu créé", { description: "Votre menu par défaut a été créé avec succès" });
 
     } catch (error: any) {
       console.error('🔥 Erreur création menu par défaut:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer le menu par défaut",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de créer le menu par défaut" });
     }
   };
 

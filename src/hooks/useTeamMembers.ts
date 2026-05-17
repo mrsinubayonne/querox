@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from './useSubscription';
+import { toast } from 'sonner';
 
 export interface TeamMemberOutlet {
   outlet_id: string;
@@ -38,7 +38,6 @@ export const useTeamMembers = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { toast } = useToast();
   const { subscription } = useSubscription();
 
   const getTeamLimit = () => {
@@ -100,11 +99,7 @@ export const useTeamMembers = () => {
     permissionIds?: string[]
   ) => {
     if (!canAddMoreMembers()) {
-      toast({
-        title: "Limite atteinte",
-        description: `Votre plan ${subscription?.subscription_tier || 'starter'} permet jusqu'à ${getTeamLimit()} membres. Passez à un plan supérieur pour ajouter plus de membres.`,
-        variant: "destructive"
-      });
+      toast.error("Limite atteinte", { description: `Votre plan ${subscription?.subscription_tier || 'starter'} permet jusqu'à ${getTeamLimit()} membres. Passez à un plan supérieur pour ajouter plus de membres.` });
       return;
     }
 
@@ -168,19 +163,12 @@ export const useTeamMembers = () => {
         }
       }
 
-      toast({
-        title: "Membre invité ✅",
-        description: `${fullName || email || 'Le membre'} a été ajouté à votre équipe`,
-      });
+      toast.success("Membre invité ✅", { description: `${fullName || email || 'Le membre'} a été ajouté à votre équipe` });
 
       await fetchTeamMembers();
     } catch (error: any) {
       console.error('Error inviting member:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'inviter le membre",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible d'inviter le membre" });
     }
   };
 
@@ -194,19 +182,12 @@ export const useTeamMembers = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Membre supprimé",
-        description: "Le membre a été retiré de l'équipe",
-      });
+      toast.success("Membre supprimé", { description: "Le membre a été retiré de l'équipe" });
 
       await fetchTeamMembers();
     } catch (error: any) {
       console.error('Error removing member:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de retirer le membre",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de retirer le membre" });
     }
   };
 
@@ -219,19 +200,12 @@ export const useTeamMembers = () => {
 
       if (error) throw error;
 
-      toast({
-        title: currentStatus ? "Membre désactivé" : "Membre activé",
-        description: currentStatus ? "Le membre ne peut plus se connecter" : "Le membre peut maintenant se connecter",
-      });
+      toast.success(currentStatus ? "Membre désactivé" : "Membre activé", { description: currentStatus ? "Le membre ne peut plus se connecter" : "Le membre peut maintenant se connecter" });
 
       await fetchTeamMembers();
     } catch (error: any) {
       console.error('Error toggling member status:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de modifier le statut du membre",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de modifier le statut du membre" });
     }
   };
 
@@ -257,19 +231,12 @@ export const useTeamMembers = () => {
         if (error) throw error;
       }
 
-      toast({
-        title: "PDV mis à jour",
-        description: "Les points de vente assignés ont été modifiés",
-      });
+      toast.success("PDV mis à jour", { description: "Les points de vente assignés ont été modifiés" });
 
       await fetchTeamMembers();
     } catch (error: any) {
       console.error('Error updating member outlets:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour les PDV",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de mettre à jour les PDV" });
     }
   };
 

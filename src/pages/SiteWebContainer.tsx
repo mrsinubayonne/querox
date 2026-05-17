@@ -1,8 +1,8 @@
+import { toast } from 'sonner';
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
 import SiteWebBenefits from "./SiteWebBenefits";
 import {
   Dialog,
@@ -43,11 +43,7 @@ const SiteWebContainer: React.FC = () => {
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
     setTimeout(() => {
       window.open(url, "_blank");
-      toast({
-        title: "Demande envoyée 👌",
-        description:
-          "Vos infos ont bien été transmises. Envoyez le message WhatsApp à notre équipe Lovable pour recevoir votre offre personnalisée 😊.",
-      });
+      toast.success("Demande envoyée 👌", { description: "Vos infos ont bien été transmises. Envoyez le message WhatsApp à notre équipe Lovable pour recevoir votre offre personnalisée 😊." });
       setSubmitting(false);
       setOpen(false);
     }, 750);

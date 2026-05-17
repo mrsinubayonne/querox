@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from '@/hooks/useOfflineMutation';
+import { toast } from 'sonner';
 
 export interface Reservation {
   id: string;
@@ -23,7 +23,6 @@ export interface Reservation {
 
 export const useReservations = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [outletId, setOutletId] = useState<string | null>(null);
 
   // Fetch outlet on mount
@@ -61,10 +60,7 @@ export const useReservations = () => {
     table: 'reservations',
     queryKey: ['reservations'],
     onSuccess: () => {
-      toast({
-        title: "Succès",
-        description: "Réservation créée avec succès"
-      });
+      toast.success("Succès", { description: "Réservation créée avec succès" });
     },
   });
 
@@ -72,10 +68,7 @@ export const useReservations = () => {
     table: 'reservations',
     queryKey: ['reservations'],
     onSuccess: () => {
-      toast({
-        title: "Succès",
-        description: "Réservation mise à jour"
-      });
+      toast.success("Succès", { description: "Réservation mise à jour" });
     },
   });
 
@@ -83,10 +76,7 @@ export const useReservations = () => {
     table: 'reservations',
     queryKey: ['reservations'],
     onSuccess: () => {
-      toast({
-        title: "Succès",
-        description: "Réservation supprimée avec succès"
-      });
+      toast.success("Succès", { description: "Réservation supprimée avec succès" });
     },
   });
 
@@ -94,11 +84,7 @@ export const useReservations = () => {
     if (!user) return false;
 
     if (!outletId) {
-      toast({
-        title: "Erreur",
-        description: "Aucun point de vente sélectionné",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Aucun point de vente sélectionné" });
       return false;
     }
     

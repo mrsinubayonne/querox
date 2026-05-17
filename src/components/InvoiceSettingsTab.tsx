@@ -11,12 +11,11 @@ import InvoiceDisplayToggles from './invoices/InvoiceDisplayToggles';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { InvoiceDisplayOptions, DEFAULT_DISPLAY_OPTIONS } from '@/types/invoiceDisplayOptions';
+import { toast } from 'sonner';
 
 export const InvoiceSettingsTab: React.FC = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
@@ -100,11 +99,7 @@ export const InvoiceSettingsTab: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error fetching invoice settings:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les paramètres de facturation',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Impossible de charger les paramètres de facturation' });
     } finally {
       setLoading(false);
     }
@@ -117,11 +112,7 @@ export const InvoiceSettingsTab: React.FC = () => {
     const outletId = selectedOutletId || getOutletId();
     
     if (!outletId) {
-      toast({
-        title: 'Erreur',
-        description: 'Aucun point de vente sélectionné',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Aucun point de vente sélectionné' });
       return;
     }
 
@@ -162,19 +153,12 @@ export const InvoiceSettingsTab: React.FC = () => {
         if (data) setSettingsId(data.id);
       }
 
-      toast({
-        title: 'Succès',
-        description: 'Paramètres de facturation enregistrés pour ce point de vente',
-      });
+      toast.success('Succès', { description: 'Paramètres de facturation enregistrés pour ce point de vente' });
       
       await fetchSettings();
     } catch (error: any) {
       console.error('Error saving invoice settings:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'enregistrer les paramètres',
-        variant: 'destructive',
-      });
+      toast.error('Erreur', { description: 'Impossible d\'enregistrer les paramètres' });
     } finally {
       setSaving(false);
     }

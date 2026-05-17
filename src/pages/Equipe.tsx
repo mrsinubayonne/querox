@@ -14,7 +14,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const Equipe: React.FC = () => {
@@ -22,7 +21,6 @@ const Equipe: React.FC = () => {
   const { subscription } = useSubscription();
   const { outlets, loading: outletsLoading } = useOutlets();
   const { permissions, loading: permissionsLoading } = usePermissions();
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState<{show: boolean, member: any} | null>(null);
 

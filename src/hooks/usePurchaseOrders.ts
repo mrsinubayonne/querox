@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface PurchaseOrder {
   id: string;
@@ -29,8 +29,6 @@ export const usePurchaseOrders = () => {
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { toast } = useToast();
-
   const fetchOrders = useCallback(async () => {
     if (!user) {
       setOrders([]);
@@ -74,11 +72,7 @@ export const usePurchaseOrders = () => {
       setOrders((data || []) as PurchaseOrder[]);
     } catch (error: any) {
       console.error('Purchase orders fetch error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les commandes",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de charger les commandes" });
       setOrders([]);
     } finally {
       setLoading(false);
@@ -122,18 +116,11 @@ export const usePurchaseOrders = () => {
       if (error) throw error;
 
       await fetchOrders();
-      toast({
-        title: "Succès",
-        description: "Commande créée avec succès"
-      });
+      toast.success("Succès", { description: "Commande créée avec succès" });
       return data;
     } catch (error: any) {
       console.error('Create order error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer la commande",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de créer la commande" });
       return false;
     }
   };
@@ -152,18 +139,11 @@ export const usePurchaseOrders = () => {
       if (error) throw error;
 
       await fetchOrders();
-      toast({
-        title: "Succès",
-        description: "Commande mise à jour"
-      });
+      toast.success("Succès", { description: "Commande mise à jour" });
       return data;
     } catch (error: any) {
       console.error('Update order error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour la commande",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de mettre à jour la commande" });
       return false;
     }
   };
@@ -180,18 +160,11 @@ export const usePurchaseOrders = () => {
       if (error) throw error;
 
       await fetchOrders();
-      toast({
-        title: "Succès",
-        description: "Commande supprimée"
-      });
+      toast.success("Succès", { description: "Commande supprimée" });
       return true;
     } catch (error: any) {
       console.error('Delete order error:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer la commande",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de supprimer la commande" });
       return false;
     }
   };

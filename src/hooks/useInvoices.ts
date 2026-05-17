@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 // useOptimizedOutlet removed - no longer blocking invoice loading
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { useOfflineInsert, useOfflineUpdate } from '@/hooks/useOfflineMutation';
@@ -37,7 +37,6 @@ function generateOfflineInvoiceNumber(): string {
 
 export const useInvoices = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const outletId = localStorage.getItem('selectedOutletId') || undefined;
   const { isOffline } = useNetworkStatus();
 
@@ -67,10 +66,7 @@ export const useInvoices = () => {
     table: 'invoices',
     queryKey: ['invoices'],
     onSuccess: () => {
-      toast({
-        title: isOffline ? "Facture créée (hors ligne)" : "Facture créée",
-        description: isOffline ? "Sera synchronisée au retour en ligne" : "Facture générée avec succès",
-      });
+      toast.success(isOffline ? "Facture créée (hors ligne)" : "Facture créée", { description: isOffline ? "Sera synchronisée au retour en ligne" : "Facture générée avec succès" });
     },
   });
 
@@ -78,10 +74,7 @@ export const useInvoices = () => {
     table: 'invoices',
     queryKey: ['invoices'],
     onSuccess: () => {
-      toast({
-        title: isOffline ? "Statut mis à jour (hors ligne)" : "Statut mis à jour",
-        description: isOffline ? "Sera synchronisé au retour en ligne" : "Le statut de la facture a été mis à jour",
-      });
+      toast.success(isOffline ? "Statut mis à jour (hors ligne)" : "Statut mis à jour", { description: isOffline ? "Sera synchronisé au retour en ligne" : "Le statut de la facture a été mis à jour" });
     },
   });
 
@@ -104,11 +97,7 @@ export const useInvoices = () => {
     if (!user) return;
 
     if (!outletId) {
-      toast({
-        title: "Erreur",
-        description: "Aucun point de vente sélectionné",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Aucun point de vente sélectionné" });
       return;
     }
     

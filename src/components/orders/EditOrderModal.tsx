@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +16,6 @@ import { Plus, Minus, Search, X } from "lucide-react";
 import { useMenuData } from "@/hooks/useMenuData";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, getData, storeData } from "@/lib/offlineStorage";
 import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from "@/lib/offlineIdentity";
@@ -41,7 +41,6 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
   orderId,
 }) => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
-  const { toast } = useToast();
   const { isOffline } = useNetworkStatus();
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -108,11 +107,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
         }
       } catch (error) {
         console.error("Error loading order:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger la commande.",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de charger la commande." });
       } finally {
         setInitialLoading(false);
       }
@@ -176,11 +171,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
     e.preventDefault();
     
     if (cart.length === 0) {
-      toast({
-        title: "Panier vide",
-        description: "La commande doit contenir au moins un plat.",
-        variant: "destructive",
-      });
+      toast.error("Panier vide", { description: "La commande doit contenir au moins un plat." });
       return;
     }
 
@@ -228,10 +219,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
           await storeData('orders', updated, resolvedUserId, outletId);
         }
 
-        toast({
-          title: "Commande modifiée (hors-ligne)",
-          description: "Sera synchronisée à la reconnexion.",
-        });
+        toast.success("Commande modifiée (hors-ligne)", { description: "Sera synchronisée à la reconnexion." });
       } else {
         const { error: updateError } = await supabase
           .from("orders")
@@ -262,10 +250,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
           }
         }
 
-        toast({
-          title: "Commande modifiée",
-          description: "La commande a été mise à jour avec succès.",
-        });
+        toast.success("Commande modifiée", { description: "La commande a été mise à jour avec succès." });
       }
 
       window.dispatchEvent(new CustomEvent("session-updated"));
@@ -273,11 +258,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({
       onClose();
     } catch (error: any) {
       console.error("Error updating order:", error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible de modifier la commande.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: error.message || "Impossible de modifier la commande." });
     } finally {
       setLoading(false);
     }

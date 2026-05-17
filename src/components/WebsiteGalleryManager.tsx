@@ -1,10 +1,10 @@
+import { toast } from 'sonner';
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ImagePlus, Trash, Loader2 } from "lucide-react";
 import { useWebsiteGallery } from "@/hooks/useWebsiteGallery";
-import { useToast } from "@/hooks/use-toast";
 
 interface WebsiteGalleryManagerProps {
   websiteId: string;
@@ -13,8 +13,6 @@ interface WebsiteGalleryManagerProps {
 const WebsiteGalleryManager: React.FC<WebsiteGalleryManagerProps> = ({ websiteId }) => {
   const { images, loading, fetchImages, addImage, deleteImage } = useWebsiteGallery(websiteId);
   const [file, setFile] = useState<File | null>(null);
-  const { toast } = useToast();
-
   useEffect(() => {
     fetchImages();
   }, [websiteId]);
@@ -24,7 +22,7 @@ const WebsiteGalleryManager: React.FC<WebsiteGalleryManagerProps> = ({ websiteId
     if (file) {
       await addImage(file);
       setFile(null);
-      toast({ title: "Image ajoutée" });
+      toast.success("Image ajoutée");
     }
   };
 

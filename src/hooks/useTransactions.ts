@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { useOfflineData } from './useOfflineData';
 import { useOfflineInsert } from './useOfflineMutation';
+import { toast } from 'sonner';
 
 interface Transaction {
   id: string;
@@ -23,7 +23,6 @@ interface Transaction {
 
 export const useTransactions = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const outletId = localStorage.getItem('selectedOutletId') || undefined;
 
   const { data: transactions, isLoading: loading, refetch: fetchTransactions, isOffline } = useOfflineData<Transaction>({
@@ -68,10 +67,7 @@ export const useTransactions = () => {
     table: 'transactions',
     queryKey: ['transactions', user?.id, outletId],
     onSuccess: () => {
-      toast({
-        title: "Succès",
-        description: "Transaction ajoutée avec succès",
-      });
+      toast.success("Succès", { description: "Transaction ajoutée avec succès" });
     },
   });
 
@@ -79,11 +75,7 @@ export const useTransactions = () => {
     if (!user) return false;
 
     if (!outletId) {
-      toast({
-        title: "Erreur",
-        description: "Aucun point de vente sélectionné",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Aucun point de vente sélectionné" });
       return false;
     }
 
@@ -96,11 +88,7 @@ export const useTransactions = () => {
       return true;
     } catch (error) {
       console.error('Error adding transaction:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter la transaction",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible d'ajouter la transaction" });
       return false;
     }
   }, [user, outletId, insertMutation, toast]);

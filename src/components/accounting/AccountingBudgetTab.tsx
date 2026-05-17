@@ -3,8 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface BudgetItem {
   id: string;
@@ -18,7 +18,6 @@ interface AccountingBudgetTabProps {
 }
 
 const AccountingBudgetTab: React.FC<AccountingBudgetTabProps> = ({ onConfigureBudget }) => {
-  const { toast } = useToast();
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [newAmount, setNewAmount] = useState('');
@@ -26,11 +25,7 @@ const AccountingBudgetTab: React.FC<AccountingBudgetTabProps> = ({ onConfigureBu
 
   const addBudgetItem = () => {
     if (!newCategory || !newAmount) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Veuillez remplir tous les champs" });
       return;
     }
 
@@ -44,18 +39,12 @@ const AccountingBudgetTab: React.FC<AccountingBudgetTabProps> = ({ onConfigureBu
     setBudgetItems([...budgetItems, item]);
     setNewCategory('');
     setNewAmount('');
-    toast({
-      title: "Budget ajouté",
-      description: `${newCategory} a été ajouté au budget prévisionnel`
-    });
+    toast.success("Budget ajouté", { description: `${newCategory} a été ajouté au budget prévisionnel` });
   };
 
   const removeBudgetItem = (id: string) => {
     setBudgetItems(budgetItems.filter(item => item.id !== id));
-    toast({
-      title: "Budget supprimé",
-      description: "L'élément a été retiré du budget"
-    });
+    toast.success("Budget supprimé", { description: "L'élément a été retiré du budget" });
   };
 
   const totalBudget = budgetItems.reduce((sum, item) => {

@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +19,6 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useMenuItemOptionsPicker } from "@/components/menu-management/useMenuItemOptionsPicker";
 import type { SelectedOption } from "@/types/menu";
@@ -46,7 +46,6 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
   tableNumber,
 }) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const { outletId } = useRestaurant();
   const { isOffline } = useNetworkStatus();
   const { customers } = useCustomers();
@@ -142,20 +141,12 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
     e.preventDefault();
     
     if (!selectedCustomer) {
-      toast({
-        title: "Client non sélectionné",
-        description: "Veuillez sélectionner un client.",
-        variant: "destructive",
-      });
+      toast.error("Client non sélectionné", { description: "Veuillez sélectionner un client." });
       return;
     }
 
     if (cart.length === 0) {
-      toast({
-        title: "Panier vide",
-        description: "Veuillez ajouter au moins un plat à la commande.",
-        variant: "destructive",
-      });
+      toast.error("Panier vide", { description: "Veuillez ajouter au moins un plat à la commande." });
       return;
     }
 
@@ -232,10 +223,7 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
         })
         .eq("id", selectedCustomer.id);
 
-      toast({
-        title: "Commande créée",
-        description: `Commande pour ${selectedCustomer.name} ajoutée à la Table ${tableNumber}.`,
-      });
+      toast.success("Commande créée", { description: `Commande pour ${selectedCustomer.name} ajoutée à la Table ${tableNumber}.` });
 
       setSelectedCustomer(null);
       setCart([]);
@@ -245,11 +233,7 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
       onClose();
     } catch (error: any) {
       console.error("Error creating order:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer la commande.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Impossible de créer la commande." });
     } finally {
       setLoading(false);
     }

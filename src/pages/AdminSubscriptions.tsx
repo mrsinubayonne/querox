@@ -1,8 +1,8 @@
+import { toast } from 'sonner';
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import ModernSidebar from '@/components/ModernSidebar';
@@ -31,8 +31,6 @@ const AdminSubscriptions: React.FC = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [fetchingSubscriptions, setFetchingSubscriptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-
   useEffect(() => {
     if (isAdmin) {
       fetchSubscriptions();
@@ -57,11 +55,7 @@ const AdminSubscriptions: React.FC = () => {
       
     } catch (error: any) {
       setError(error.message || 'Erreur inconnue');
-      toast({
-        title: "Erreur",
-        description: `Impossible de charger les abonnements: ${error.message}`,
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: `Impossible de charger les abonnements: ${error.message}` });
     } finally {
       setFetchingSubscriptions(false);
     }

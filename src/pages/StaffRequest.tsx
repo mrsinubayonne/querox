@@ -7,10 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, Send } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 const StaffRequest: React.FC = () => {
-  const { toast } = useToast();
   const [formData, setFormData] = useState({
     restaurantName: '',
     contactPerson: '',
@@ -40,10 +39,7 @@ const StaffRequest: React.FC = () => {
     
     window.open(whatsappUrl, '_blank');
     
-    toast({
-      title: "Redirection vers WhatsApp",
-      description: "Votre demande va être envoyée via WhatsApp"
-    });
+    toast.success("Redirection vers WhatsApp", { description: "Votre demande va être envoyée via WhatsApp" });
   };
 
   return (

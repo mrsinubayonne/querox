@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 
 import React, { useState } from "react";
 import {
@@ -11,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 
@@ -31,19 +31,13 @@ const AddOrderModal: React.FC<AddOrderModalProps> = ({
   const [customerEmail, setCustomerEmail] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const user = supabase.auth.getUser && (await supabase.auth.getUser()).data?.user;
       if (!user) {
-        toast({
-          title: "Erreur",
-          description: "Utilisateur non authentifié.",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Utilisateur non authentifié." });
         return;
       }
 
@@ -56,11 +50,7 @@ const AddOrderModal: React.FC<AddOrderModalProps> = ({
       
       const outletId = profile?.selected_outlet_id;
       if (!outletId) {
-        toast({
-          title: "Erreur",
-          description: "Aucun point de vente sélectionné",
-          variant: "destructive"
-        });
+        toast.error("Erreur", { description: "Aucun point de vente sélectionné" });
         return;
       }
 
@@ -118,10 +108,7 @@ const AddOrderModal: React.FC<AddOrderModalProps> = ({
         ]);
       }
 
-      toast({
-        title: "Commande ajoutée",
-        description: "La commande a bien été créée et le client a été enregistré !",
-      });
+      toast.success("Commande ajoutée", { description: "La commande a bien été créée et le client a été enregistré !" });
 
       setCustomerName("");
       setCustomerPhone("");
@@ -130,11 +117,7 @@ const AddOrderModal: React.FC<AddOrderModalProps> = ({
       onOpenChange(false);
       await onOrderCreated();
     } catch (err: any) {
-      toast({
-        title: "Erreur",
-        description: err?.message || "Impossible d'ajouter la commande.",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: err?.message || "Impossible d'ajouter la commande." });
     } finally {
       setLoading(false);
     }

@@ -4,9 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Loader2, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MemberData {
   id: string;
@@ -20,7 +20,6 @@ interface MemberData {
 
 const TeamJoin: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [memberData, setMemberData] = useState<MemberData | null>(null);
@@ -30,11 +29,7 @@ const TeamJoin: React.FC = () => {
   useEffect(() => {
     const inviteToken = searchParams.get('token');
     if (!inviteToken) {
-      toast({
-        title: "Lien invalide",
-        description: "Ce lien d'invitation n'est pas valide",
-        variant: "destructive"
-      });
+      toast.error("Lien invalide", { description: "Ce lien d'invitation n'est pas valide" });
       navigate('/team-login');
       return;
     }
@@ -53,11 +48,7 @@ const TeamJoin: React.FC = () => {
         }
 
         if (!data || data.length === 0) {
-          toast({
-            title: "Invitation invalide",
-            description: "Cette invitation n'existe pas ou a expiré",
-            variant: "destructive"
-          });
+          toast.error("Invitation invalide", { description: "Cette invitation n'existe pas ou a expiré" });
           navigate('/team-login');
           return;
         }
@@ -69,11 +60,7 @@ const TeamJoin: React.FC = () => {
         }
       } catch (error) {
         console.error('Error verifying token:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de vérifier l'invitation",
-          variant: "destructive"
-        });
+        toast.error("Erreur", { description: "Impossible de vérifier l'invitation" });
         navigate('/team-login');
       } finally {
         setLoading(false);
@@ -132,10 +119,7 @@ const TeamJoin: React.FC = () => {
         _action_description: 'Connexion via lien d\'invitation'
       });
 
-      toast({
-        title: "Bienvenue ! 🎉",
-        description: `Vous êtes connecté en tant que ${acceptedMember.member_role}`
-      });
+      toast.success("Bienvenue ! 🎉", { description: `Vous êtes connecté en tant que ${acceptedMember.member_role}` });
 
       // Force navigation to dashboard with outlet
       setTimeout(() => {
@@ -145,11 +129,7 @@ const TeamJoin: React.FC = () => {
 
     } catch (error: any) {
       console.error('Error joining team:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de rejoindre l'équipe",
-        variant: "destructive"
-      });
+      toast.error("Erreur", { description: "Impossible de rejoindre l'équipe" });
     } finally {
       setLoading(false);
     }

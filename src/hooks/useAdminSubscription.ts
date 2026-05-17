@@ -1,8 +1,8 @@
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 
 interface AdminSubscription {
   id: string;
@@ -18,7 +18,6 @@ interface AdminSubscription {
 
 export const useAdminSubscription = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [subscriptions, setSubscriptions] = useState<AdminSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -71,22 +70,14 @@ export const useAdminSubscription = () => {
 
       if (error) {
         console.error('Error fetching subscriptions:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les abonnements",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de charger les abonnements" });
         return;
       }
 
       setSubscriptions(data || []);
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors du chargement",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur est survenue lors du chargement" });
     } finally {
       setLoading(false);
     }
@@ -94,11 +85,7 @@ export const useAdminSubscription = () => {
 
   const updateSubscription = async (id: string, updates: Partial<AdminSubscription>) => {
     if (!isAdmin) {
-      toast({
-        title: "Erreur",
-        description: "Accès non autorisé",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Accès non autorisé" });
       return false;
     }
 
@@ -113,11 +100,7 @@ export const useAdminSubscription = () => {
 
       if (error) {
         console.error('Error updating subscription:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de mettre à jour l'abonnement",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de mettre à jour l'abonnement" });
         return false;
       }
 
@@ -128,30 +111,19 @@ export const useAdminSubscription = () => {
         )
       );
 
-      toast({
-        title: "Succès",
-        description: "Abonnement mis à jour avec succès",
-      });
+      toast.success("Succès", { description: "Abonnement mis à jour avec succès" });
 
       return true;
     } catch (error) {
       console.error('Error updating subscription:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur est survenue" });
       return false;
     }
   };
 
   const createSubscription = async (subscriptionData: Omit<AdminSubscription, 'id' | 'created_at' | 'updated_at'>) => {
     if (!isAdmin) {
-      toast({
-        title: "Erreur",
-        description: "Accès non autorisé",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Accès non autorisé" });
       return false;
     }
 
@@ -164,39 +136,24 @@ export const useAdminSubscription = () => {
 
       if (error) {
         console.error('Error creating subscription:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de créer l'abonnement",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de créer l'abonnement" });
         return false;
       }
 
       setSubscriptions(prev => [data, ...prev]);
-      toast({
-        title: "Succès",
-        description: "Abonnement créé avec succès",
-      });
+      toast.success("Succès", { description: "Abonnement créé avec succès" });
 
       return true;
     } catch (error) {
       console.error('Error creating subscription:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur est survenue" });
       return false;
     }
   };
 
   const deleteSubscription = async (id: string) => {
     if (!isAdmin) {
-      toast({
-        title: "Erreur",
-        description: "Accès non autorisé",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Accès non autorisé" });
       return false;
     }
 
@@ -208,28 +165,17 @@ export const useAdminSubscription = () => {
 
       if (error) {
         console.error('Error deleting subscription:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de supprimer l'abonnement",
-          variant: "destructive",
-        });
+        toast.error("Erreur", { description: "Impossible de supprimer l'abonnement" });
         return false;
       }
 
       setSubscriptions(prev => prev.filter(sub => sub.id !== id));
-      toast({
-        title: "Succès",
-        description: "Abonnement supprimé avec succès",
-      });
+      toast.success("Succès", { description: "Abonnement supprimé avec succès" });
 
       return true;
     } catch (error) {
       console.error('Error deleting subscription:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue",
-        variant: "destructive",
-      });
+      toast.error("Erreur", { description: "Une erreur est survenue" });
       return false;
     }
   };
