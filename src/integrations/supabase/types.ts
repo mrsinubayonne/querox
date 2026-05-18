@@ -378,6 +378,75 @@ export type Database = {
           },
         ]
       }
+      employees: {
+        Row: {
+          base_salary: number
+          created_at: string
+          email: string | null
+          full_name: string
+          hire_date: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          outlet_id: string
+          payment_frequency: string
+          phone: string | null
+          position: string | null
+          team_member_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_salary?: number
+          created_at?: string
+          email?: string | null
+          full_name: string
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          outlet_id: string
+          payment_frequency?: string
+          phone?: string | null
+          position?: string | null
+          team_member_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_salary?: number
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          outlet_id?: string
+          payment_frequency?: string
+          phone?: string | null
+          position?: string | null
+          team_member_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           capacity: number
@@ -1618,6 +1687,87 @@ export type Database = {
         }
         Relationships: []
       }
+      salary_payments: {
+        Row: {
+          advance_amount: number
+          base_amount: number
+          bonus_amount: number
+          created_at: string
+          deductions_amount: number
+          employee_id: string
+          id: string
+          net_amount: number
+          notes: string | null
+          outlet_id: string
+          paid_date: string | null
+          payment_method: string
+          payslip_number: string
+          period_end: string
+          period_start: string
+          status: string
+          transaction_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          advance_amount?: number
+          base_amount?: number
+          bonus_amount?: number
+          created_at?: string
+          deductions_amount?: number
+          employee_id: string
+          id?: string
+          net_amount?: number
+          notes?: string | null
+          outlet_id: string
+          paid_date?: string | null
+          payment_method?: string
+          payslip_number: string
+          period_end: string
+          period_start: string
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          advance_amount?: number
+          base_amount?: number
+          bonus_amount?: number
+          created_at?: string
+          deductions_amount?: number
+          employee_id?: string
+          id?: string
+          net_amount?: number
+          notes?: string | null
+          outlet_id?: string
+          paid_date?: string | null
+          payment_method?: string
+          payslip_number?: string
+          period_end?: string
+          period_start?: string
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_payments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_payments_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_requests: {
         Row: {
           created_at: string
@@ -2714,6 +2864,7 @@ export type Database = {
         }
         Returns: string
       }
+      generate_payslip_number: { Args: never; Returns: string }
       generate_purchase_order_number: { Args: never; Returns: string }
       generate_team_access_code: { Args: never; Returns: string }
       get_admin_revenue_stats: {

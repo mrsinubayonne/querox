@@ -1,6 +1,6 @@
 
 import React, { useMemo, useCallback } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, Utensils, UserPlus, Award, User, FlaskConical } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, Utensils, UserPlus, Award, User, FlaskConical, Wallet } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -33,6 +33,7 @@ const NAV_ITEMS = [
   { icon: Package, label: 'Inventaire', path: '/inventaire', permission: 'inventory' },
   { icon: Calendar, label: 'Réservations', path: '/reservations', permission: 'reservations' },
   { icon: Calculator, label: 'Comptabilité', path: '/comptabilite', permission: 'accounting' },
+  { icon: Wallet, label: 'Salaires', path: '/salaires', permission: 'accounting' },
   { icon: BarChart3, label: 'Statistiques', path: '/statistiques', permission: 'statistics' },
   { icon: FileText, label: 'Rapports', path: '/rapports', permission: 'statistics' },
   { icon: LifeBuoy, label: 'Support', path: '/support', permission: 'support' },
