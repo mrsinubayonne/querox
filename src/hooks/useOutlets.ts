@@ -29,6 +29,7 @@ type CreateOutletData = Pick<Outlet, 'name' | 'address' | 'phone'>;
 type UpdateOutletData = Partial<Pick<Outlet, 'name' | 'address' | 'phone'>>;
 
 export const useOutlets = () => {
+  const { setSelectedOutletId: setContextOutletId } = useOutletContext();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { subscription, refetch: refetchSubscription } = useSubscription();
   const { isOffline } = useNetworkStatus();
