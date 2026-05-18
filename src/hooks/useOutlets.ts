@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useSubscription } from './useSubscription';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { getData, storeData } from '@/lib/offlineStorage';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 const OUTLET_LIMITS = {
   'starter': 1,
@@ -28,6 +29,7 @@ type CreateOutletData = Pick<Outlet, 'name' | 'address' | 'phone'>;
 type UpdateOutletData = Partial<Pick<Outlet, 'name' | 'address' | 'phone'>>;
 
 export const useOutlets = () => {
+  const { setSelectedOutletId: setContextOutletId } = useOutletContext();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { subscription, refetch: refetchSubscription } = useSubscription();
   const { isOffline } = useNetworkStatus();
@@ -180,6 +182,7 @@ export const useOutlets = () => {
       setSelectedOutletId(assignedOutletId ?? null);
       if (assignedOutletId) {
         localStorage.setItem('selectedOutletId', assignedOutletId);
+        setContextOutletId(assignedOutletId);
       }
       return;
     }
@@ -220,6 +223,7 @@ export const useOutlets = () => {
       // Keep localStorage in sync
       if (resolved) {
         localStorage.setItem('selectedOutletId', resolved);
+        setContextOutletId(resolved);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -295,6 +299,7 @@ export const useOutlets = () => {
       setSelectedOutletId(data.id);
       if (typeof window !== 'undefined') {
         localStorage.setItem('selectedOutletId', data.id);
+        setContextOutletId(data.id);
         localStorage.removeItem('outlet_cache');
       }
       // Ajout optimiste à la liste avant rechargement
@@ -394,6 +399,7 @@ export const useOutlets = () => {
 
       setSelectedOutletId(outletId);
       localStorage.setItem('selectedOutletId', outletId);
+      setContextOutletId(outletId);
       localStorage.removeItem('outlet_cache');
       if (!silent) {
         toast.success('Point de vente sélectionné');
@@ -407,6 +413,7 @@ export const useOutlets = () => {
     if (isOffline) {
       setSelectedOutletId(outletId);
       localStorage.setItem('selectedOutletId', outletId);
+      setContextOutletId(outletId);
       localStorage.removeItem('outlet_cache');
       if (!silent) {
         toast.success('Point de vente sélectionné (hors ligne)');
@@ -421,6 +428,7 @@ export const useOutlets = () => {
         // Si pas de profil sélectionné, juste stocker l'outlet ID localement
         setSelectedOutletId(outletId);
         localStorage.setItem('selectedOutletId', outletId);
+        setContextOutletId(outletId);
         localStorage.removeItem('outlet_cache');
         if (!silent) {
           toast.success('Point de vente sélectionné');
@@ -441,6 +449,7 @@ export const useOutlets = () => {
       
       setSelectedOutletId(outletId);
       localStorage.setItem('selectedOutletId', outletId);
+      setContextOutletId(outletId);
       // Invalidate optimized outlet cache
       localStorage.removeItem('outlet_cache');
       if (!silent) {

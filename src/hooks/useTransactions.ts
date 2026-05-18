@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOfflineData } from './useOfflineData';
 import { useOfflineInsert } from './useOfflineMutation';
 import { toast } from 'sonner';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 interface Transaction {
   id: string;
@@ -23,11 +24,12 @@ interface Transaction {
 
 export const useTransactions = () => {
   const { user } = useAuth();
-  const outletId = localStorage.getItem('selectedOutletId') || undefined;
+  const { selectedOutletId } = useOutletContext();
+  const outletId = selectedOutletId || undefined;
 
   const { data: transactions, isLoading: loading, refetch: fetchTransactions, isOffline } = useOfflineData<Transaction>({
     table: 'transactions',
-    queryKey: ['transactions'],
+    queryKey: ['transactions', outletId ?? 'no-outlet'],
     buildQuery: async (userId) => {
       const { data, error } = await supabase
         .from('transactions')
@@ -65,7 +67,7 @@ export const useTransactions = () => {
 
   const insertMutation = useOfflineInsert({
     table: 'transactions',
-    queryKey: ['transactions', user?.id, outletId],
+    queryKey: ['transactions', outletId ?? 'no-outlet'],
     onSuccess: () => {
       toast.success("Succès", { description: "Transaction ajoutée avec succès" });
     },

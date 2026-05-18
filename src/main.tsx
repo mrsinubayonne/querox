@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { OutletProvider } from '@/contexts/OutletContext'
 import { QueryClient, onlineManager } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import ErrorBoundary from '@/components/ErrorBoundary'
@@ -180,9 +181,11 @@ createRoot(document.getElementById("root")!).render(
       }}
     >
       <AuthProvider>
-        <NetworkStatusBanner />
-        <SyncStatusIndicator />
-        <App />
+        <OutletProvider>
+          <NetworkStatusBanner />
+          <SyncStatusIndicator />
+          <App />
+        </OutletProvider>
       </AuthProvider>
     </PersistQueryClientProvider>
   </ErrorBoundary>

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useOfflineData } from './useOfflineData';
 import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from './useOfflineMutation';
 import { toast } from 'sonner';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 interface OrderItem {
   id: string;
@@ -57,11 +58,12 @@ const playNotificationSound = () => {
 export const useOptimizedOrders = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const outletId = localStorage.getItem('selectedOutletId') || undefined;
+  const { selectedOutletId } = useOutletContext();
+  const outletId = selectedOutletId || undefined;
 
   const { data: orders, isLoading, refetch, isOffline } = useOfflineData<Order>({
     table: 'orders',
-    queryKey: ['orders'],
+    queryKey: ['orders', outletId ?? 'no-outlet'],
     buildQuery: async (userId, outletId) => {
       if (!outletId) return { data: [], error: null };
       
@@ -101,17 +103,17 @@ export const useOptimizedOrders = () => {
   // Offline mutations
   const insertMutation = useOfflineInsert({
     table: 'orders',
-    queryKey: ['orders', user?.id, outletId],
+    queryKey: ['orders', outletId ?? 'no-outlet'],
   });
 
   const updateMutation = useOfflineUpdate({
     table: 'orders',
-    queryKey: ['orders', user?.id, outletId],
+    queryKey: ['orders', outletId ?? 'no-outlet'],
   });
 
   const deleteMutation = useOfflineDelete({
     table: 'orders',
-    queryKey: ['orders', user?.id, outletId],
+    queryKey: ['orders', outletId ?? 'no-outlet'],
   });
 
   useEffect(() => {
