@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useSubscription } from './useSubscription';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { getData, storeData } from '@/lib/offlineStorage';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 const OUTLET_LIMITS = {
   'starter': 1,
