@@ -44,6 +44,7 @@ const NotFound = lazy(() => import('@/pages/NotFound'));
 const PaymentSuccess = lazy(() => import('@/pages/PaymentSuccess'));
 const PaymentFailure = lazy(() => import('@/pages/PaymentFailure'));
 const Comptabilite = lazy(() => import('@/pages/Comptabilite'));
+const Salaires = lazy(() => import('@/pages/Salaires'));
 const MarketingHub = lazy(() => import('@/pages/MarketingHub'));
 const Marketing = lazy(() => import('@/pages/Marketing'));
 const ConceptionGraphique = lazy(() => import('@/pages/ConceptionGraphique'));
@@ -121,6 +122,7 @@ function App() {
               <Route path="/parametres" element={<ProtectedRoute><Parametres /></ProtectedRoute>} />
               <Route path="/abonnement" element={<ProtectedRoute><Abonnement /></ProtectedRoute>} />
               <Route path="/comptabilite" element={<ProtectedRoute><Comptabilite /></ProtectedRoute>} />
+              <Route path="/salaires" element={<ProtectedRoute><Salaires /></ProtectedRoute>} />
 
               {/* Routes Marketing */}
               <Route path="/marketing-hub" element={<ProtectedRoute><MarketingHub /></ProtectedRoute>} />

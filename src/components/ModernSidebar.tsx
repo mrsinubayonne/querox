@@ -33,6 +33,7 @@ const NAV_ITEMS = [
   { icon: Package, label: 'Inventaire', path: '/inventaire', permission: 'inventory' },
   { icon: Calendar, label: 'Réservations', path: '/reservations', permission: 'reservations' },
   { icon: Calculator, label: 'Comptabilité', path: '/comptabilite', permission: 'accounting' },
+  { icon: Wallet, label: 'Salaires', path: '/salaires', permission: 'accounting' },
   { icon: BarChart3, label: 'Statistiques', path: '/statistiques', permission: 'statistics' },
   { icon: FileText, label: 'Rapports', path: '/rapports', permission: 'statistics' },
   { icon: LifeBuoy, label: 'Support', path: '/support', permission: 'support' },
