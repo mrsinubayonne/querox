@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from '@/hooks/useOfflineMutation';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 interface Customer {
   id: string;
@@ -23,11 +24,12 @@ interface Customer {
 export const useCustomers = () => {
   const { user } = useAuth();
   const { isOffline } = useNetworkStatus();
-  const outletId = localStorage.getItem('selectedOutletId') || undefined;
+  const { selectedOutletId } = useOutletContext();
+  const outletId = selectedOutletId || undefined;
 
   const { data: customers, isLoading: loading, refetch: fetchCustomers } = useOfflineData<Customer>({
     table: 'customers',
-    queryKey: ['customers'],
+    queryKey: ['customers', outletId ?? 'no-outlet'],
     enabled: !!user,
     buildQuery: async (userId, selectedOutletId) => {
       if (!selectedOutletId) return { data: [], error: null };
@@ -46,17 +48,17 @@ export const useCustomers = () => {
 
   const insertMutation = useOfflineInsert({
     table: 'customers',
-    queryKey: ['customers', user?.id, outletId],
+    queryKey: ['customers', outletId ?? 'no-outlet'],
   });
 
   const updateMutation = useOfflineUpdate({
     table: 'customers',
-    queryKey: ['customers', user?.id, outletId],
+    queryKey: ['customers', outletId ?? 'no-outlet'],
   });
 
   const deleteMutation = useOfflineDelete({
     table: 'customers',
-    queryKey: ['customers', user?.id, outletId],
+    queryKey: ['customers', outletId ?? 'no-outlet'],
   });
 
   const createCustomer = useCallback(async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {

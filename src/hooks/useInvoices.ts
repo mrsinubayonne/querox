@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { useOfflineInsert, useOfflineUpdate } from '@/hooks/useOfflineMutation';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 export interface Invoice {
   id: string;
@@ -37,12 +38,13 @@ function generateOfflineInvoiceNumber(): string {
 
 export const useInvoices = () => {
   const { user } = useAuth();
-  const outletId = localStorage.getItem('selectedOutletId') || undefined;
+  const { selectedOutletId } = useOutletContext();
+  const outletId = selectedOutletId || undefined;
   const { isOffline } = useNetworkStatus();
 
   const { data: invoices, isLoading: loading, refetch } = useOfflineData<Invoice>({
     table: 'invoices',
-    queryKey: ['invoices'],
+    queryKey: ['invoices', outletId ?? 'no-outlet'],
     enabled: !!user,
     buildQuery: async (userId, outlet) => {
       let query = supabase
@@ -64,7 +66,7 @@ export const useInvoices = () => {
 
   const insertMutation = useOfflineInsert({
     table: 'invoices',
-    queryKey: ['invoices'],
+    queryKey: ['invoices', outletId ?? 'no-outlet'],
     onSuccess: () => {
       toast.success(isOffline ? "Facture créée (hors ligne)" : "Facture créée", { description: isOffline ? "Sera synchronisée au retour en ligne" : "Facture générée avec succès" });
     },
@@ -72,7 +74,7 @@ export const useInvoices = () => {
 
   const updateMutation = useOfflineUpdate({
     table: 'invoices',
-    queryKey: ['invoices'],
+    queryKey: ['invoices', outletId ?? 'no-outlet'],
     onSuccess: () => {
       toast.success(isOffline ? "Statut mis à jour (hors ligne)" : "Statut mis à jour", { description: isOffline ? "Sera synchronisé au retour en ligne" : "Le statut de la facture a été mis à jour" });
     },

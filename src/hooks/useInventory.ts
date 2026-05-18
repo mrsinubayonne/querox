@@ -5,6 +5,7 @@ import { useOfflineData } from './useOfflineData';
 import { useOfflineInsert, useOfflineUpdate, useOfflineDelete } from './useOfflineMutation';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 interface InventoryItem {
   id: string;
@@ -27,11 +28,12 @@ interface InventoryItem {
 export const useInventory = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const outletId = localStorage.getItem('selectedOutletId') || undefined;
+  const { selectedOutletId } = useOutletContext();
+  const outletId = selectedOutletId || undefined;
 
   const { data: items, isLoading: loading, refetch: fetchItems, isOffline } = useOfflineData<InventoryItem>({
     table: 'inventory_items',
-    queryKey: ['inventory'],
+    queryKey: ['inventory', outletId ?? 'no-outlet'],
     buildQuery: async (userId, outletId) => {
       if (!outletId) return { data: [], error: null };
       
@@ -51,7 +53,7 @@ export const useInventory = () => {
   // Offline mutations
   const insertMutation = useOfflineInsert({
     table: 'inventory_items',
-    queryKey: ['inventory', user?.id, outletId],
+    queryKey: ['inventory', outletId ?? 'no-outlet'],
     onSuccess: () => {
       toast.success("Succès", { description: "Produit créé avec succès" });
     },
@@ -59,12 +61,12 @@ export const useInventory = () => {
 
   const updateMutation = useOfflineUpdate({
     table: 'inventory_items',
-    queryKey: ['inventory', user?.id, outletId],
+    queryKey: ['inventory', outletId ?? 'no-outlet'],
   });
 
   const deleteMutation = useOfflineDelete({
     table: 'inventory_items',
-    queryKey: ['inventory', user?.id, outletId],
+    queryKey: ['inventory', outletId ?? 'no-outlet'],
     onSuccess: () => {
       toast.success("Succès", { description: "Produit supprimé avec succès" });
     },
