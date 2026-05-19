@@ -277,6 +277,7 @@ export const useDashboardStats = (period: Period = 'day') => {
       }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      toast.error("Erreur dashboard", { description: "Impossible de charger les statistiques." });
       const cached = await getData('dashboard_stats' as any, effectiveUserId);
       if (cached?.data) {
         setStats(cached.data as DashboardStats);
@@ -301,7 +302,8 @@ export const useDashboardStats = (period: Period = 'day') => {
   };
 
   useEffect(() => {
-    fetchStats();
+    const safetyTimeout = setTimeout(() => setLoading(false), 15000);
+    fetchStats().finally(() => clearTimeout(safetyTimeout));
 
     const effectiveUserId = isTeamMember && teamMemberSession 
       ? teamMemberSession.ownerId 
