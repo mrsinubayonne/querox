@@ -128,7 +128,7 @@ export const useOptimizedOrders = () => {
         filter: `user_id=eq.${user.id}`
       }, async (payload) => {
         const newOrder = payload.new as any;
-        queryClient.setQueryData(['orders', user.id, outletId], (old: Order[] = []) => [{
+        queryClient.setQueryData(['orders', outletId ?? 'no-outlet'], (old: Order[] = []) => [{
           id: newOrder.id,
           customer_name: newOrder.customer_name,
           customer_email: newOrder.customer_email,
