@@ -61,12 +61,13 @@ const TeamMemberAuth: React.FC = () => {
         expiresAt: expiresAt.toISOString()
       }));
 
-      // Set outlet if assigned
-      if (member.outlet_id) {
-        localStorage.setItem('selectedOutletId', member.outlet_id);
-        console.log('✅ Outlet set in localStorage:', member.outlet_id);
+      const assignedOutletId = member.outlet_id || member.outlet_ids?.[0] || null;
+      if (assignedOutletId) {
+        setSelectedOutletId(assignedOutletId);
       } else {
-        console.warn('⚠️ No outlet_id assigned to this team member');
+        toast.warning("Aucun point de vente assigné", {
+          description: "Contactez votre responsable pour vous assigner à un outlet."
+        });
       }
 
       window.dispatchEvent(new CustomEvent('team-member-session-updated'));
