@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOutlets } from './useOutlets';
 import { getData, storeData } from '@/lib/offlineStorage';
 import { useNetworkStatus } from './useNetworkStatus';
+import { toast } from 'sonner';
 
 type Period = 'day' | 'week' | 'month';
 
