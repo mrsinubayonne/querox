@@ -363,6 +363,7 @@ export const useDashboardStats = (period: Period = 'day') => {
       .subscribe();
 
     return () => {
+      clearTimeout(safetyTimeout);
       if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(invoicesChannel);
