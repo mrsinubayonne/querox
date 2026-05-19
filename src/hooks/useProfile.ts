@@ -73,6 +73,7 @@ export const useProfile = () => {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast.error("Erreur de chargement", { description: "Impossible de charger le profil." });
     } finally {
       setLoading(false);
     }

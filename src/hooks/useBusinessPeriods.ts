@@ -248,6 +248,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
       setCurrentPeriod(data && data.length > 0 ? data[0] : null);
     } catch (error) {
       console.error('Error fetching current period:', error);
+      toast.error("Erreur de chargement", { description: "Impossible de charger la période active." });
     }
   };
 
