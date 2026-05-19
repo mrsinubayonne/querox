@@ -11,6 +11,7 @@ import { useOutletContext } from '@/contexts/OutletContext';
 
 const TeamMemberAuth: React.FC = () => {
   const navigate = useNavigate();
+  const { setSelectedOutletId } = useOutletContext();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
