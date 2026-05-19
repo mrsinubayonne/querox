@@ -60,21 +60,20 @@ Deno.serve(async (req) => {
       : [];
     const primaryOutletId = member.outlet_id || outletIds[0] || null;
 
-    // 2) Ensure auth user exists with password = accessCode so client can signInWithPassword
+    // Find existing auth user by email (perPage 1000 to cover scale)
     let authUserId: string | null = null;
 
-    // Try to find existing user by email
-    // listUsers does not filter by email server-side reliably; use getUserByEmail via admin
     try {
-      const { data: existingUser } = await (admin.auth.admin as any).getUserByEmail?.(normalizedEmail) ?? { data: null };
-      if (existingUser?.user?.id) authUserId = existingUser.user.id;
-    } catch (_) { /* ignore */ }
-
-    if (!authUserId) {
-      // Fallback: paginate listUsers
-      const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
-      const found = list?.users?.find((u: any) => (u.email || "").toLowerCase() === normalizedEmail);
-      if (found?.id) authUserId = found.id;
+      const { data: list, error: listError } = await admin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
+      if (!listError && list?.users) {
+        const found = list.users.find((u: any) => (u.email || "").toLowerCase() === normalizedEmail);
+        if (found?.id) authUserId = found.id;
+      }
+    } catch (_) {
+      // continue to createUser fallback
     }
 
     if (!authUserId) {
@@ -84,6 +83,13 @@ Deno.serve(async (req) => {
         email_confirm: true,
         user_metadata: { is_team_member: true, role: member.role, owner_id: member.owner_id },
       });
+      if (createErr && createErr.message?.includes("already been registered")) {
+        console.error("User exists but not found in list:", createErr);
+        return new Response(
+          JSON.stringify({ success: false, error: "Compte existant non trouvé. Contactez l'administrateur." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       if (createErr) {
         console.error("createUser error:", createErr);
         return new Response(
@@ -93,7 +99,6 @@ Deno.serve(async (req) => {
       }
       authUserId = created.user?.id ?? null;
     } else {
-      // Always sync password to current accessCode so signInWithPassword works
       const { error: updErr } = await admin.auth.admin.updateUserById(authUserId, {
         password: normalizedCode,
         email_confirm: true,

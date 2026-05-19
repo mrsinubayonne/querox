@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOutlets } from './useOutlets';
 import { getData, storeData } from '@/lib/offlineStorage';
 import { useNetworkStatus } from './useNetworkStatus';
+import { toast } from 'sonner';
 
 type Period = 'day' | 'week' | 'month';
 
@@ -276,6 +277,7 @@ export const useDashboardStats = (period: Period = 'day') => {
       }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      toast.error("Erreur dashboard", { description: "Impossible de charger les statistiques." });
       const cached = await getData('dashboard_stats' as any, effectiveUserId);
       if (cached?.data) {
         setStats(cached.data as DashboardStats);
@@ -300,7 +302,8 @@ export const useDashboardStats = (period: Period = 'day') => {
   };
 
   useEffect(() => {
-    fetchStats();
+    const safetyTimeout = setTimeout(() => setLoading(false), 15000);
+    fetchStats().finally(() => clearTimeout(safetyTimeout));
 
     const effectiveUserId = isTeamMember && teamMemberSession 
       ? teamMemberSession.ownerId 
@@ -360,6 +363,7 @@ export const useDashboardStats = (period: Period = 'day') => {
       .subscribe();
 
     return () => {
+      clearTimeout(safetyTimeout);
       if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(invoicesChannel);

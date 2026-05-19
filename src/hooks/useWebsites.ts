@@ -98,6 +98,7 @@ export const useWebsites = () => {
       setWebsites(data || []);
     } catch (error: any) {
       console.error('Error fetching websites:', error);
+      toast.error("Erreur de chargement", { description: "Impossible de charger les sites web." });
     } finally {
       setLoading(false);
     }

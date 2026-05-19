@@ -85,6 +85,7 @@ export const useTeamMembers = () => {
       setTeamMembers(membersWithOutlets);
     } catch (error: any) {
       console.error('Error fetching team members:', error);
+      toast.error("Erreur de chargement", { description: "Impossible de charger l'équipe." });
     } finally {
       setLoading(false);
     }

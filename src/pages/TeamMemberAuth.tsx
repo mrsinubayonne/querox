@@ -7,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 const TeamMemberAuth: React.FC = () => {
   const navigate = useNavigate();
+  const { setSelectedOutletId } = useOutletContext();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -59,12 +61,13 @@ const TeamMemberAuth: React.FC = () => {
         expiresAt: expiresAt.toISOString()
       }));
 
-      // Set outlet if assigned
-      if (member.outlet_id) {
-        localStorage.setItem('selectedOutletId', member.outlet_id);
-        console.log('✅ Outlet set in localStorage:', member.outlet_id);
+      const assignedOutletId = member.outlet_id || member.outlet_ids?.[0] || null;
+      if (assignedOutletId) {
+        setSelectedOutletId(assignedOutletId);
       } else {
-        console.warn('⚠️ No outlet_id assigned to this team member');
+        toast.warning("Aucun point de vente assigné", {
+          description: "Contactez votre responsable pour vous assigner à un outlet."
+        });
       }
 
       window.dispatchEvent(new CustomEvent('team-member-session-updated'));

@@ -54,6 +54,7 @@ export const useAccessCodes = () => {
       }
     } catch (error: any) {
       console.error('Error fetching access codes:', error);
+      toast.error("Erreur de chargement", { description: "Impossible de charger les codes d'accès." });
     } finally {
       setLoading(false);
     }

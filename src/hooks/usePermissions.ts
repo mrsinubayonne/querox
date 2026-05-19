@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface Permission {
   id: string;
@@ -25,6 +26,7 @@ export const usePermissions = () => {
       setPermissions(data || []);
     } catch (error) {
       console.error('Error fetching permissions:', error);
+      toast.error("Erreur de chargement", { description: "Impossible de charger les permissions." });
     } finally {
       setLoading(false);
     }
