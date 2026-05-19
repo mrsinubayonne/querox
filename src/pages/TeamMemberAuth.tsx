@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 const TeamMemberAuth: React.FC = () => {
   const navigate = useNavigate();
