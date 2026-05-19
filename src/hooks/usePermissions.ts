@@ -26,6 +26,7 @@ export const usePermissions = () => {
       setPermissions(data || []);
     } catch (error) {
       console.error('Error fetching permissions:', error);
+      toast.error("Erreur de chargement", { description: "Impossible de charger les permissions." });
     } finally {
       setLoading(false);
     }
