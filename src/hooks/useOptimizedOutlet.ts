@@ -26,7 +26,7 @@ export const useOptimizedOutlet = () => {
         return;
       }
 
-      if (selectedOutletId) {
+      if (!isTeamMember && selectedOutletId) {
         setOutletId(selectedOutletId);
         setLoading(false);
         return;
