@@ -304,7 +304,7 @@ export const useMenuItems = () => {
         return false;
       }
 
-      const itemsToInsert = [];
+      const itemsToCopy: Array<{ sourceItemId: string; row: any }> = [];
       
       for (const item of items) {
         const sourceCategory = item.menu_categories;
@@ -341,50 +341,45 @@ export const useMenuItems = () => {
           }
 
           // Ajouter le plat à copier
-          itemsToInsert.push({
-            name: item.name,
-            description: item.description,
-            price: item.price,
-            category_id: targetCategory.id,
-            image_url: item.image_url,
-            is_available: item.is_available,
-            allergens: item.allergens,
-            order_index: item.order_index || 0,
+          itemsToCopy.push({
+            sourceItemId: item.id,
+            row: {
+              name: item.name,
+              description: item.description,
+              price: item.price,
+              category_id: targetCategory.id,
+              image_url: item.image_url,
+              is_available: item.is_available,
+              allergens: item.allergens,
+              order_index: item.order_index || 0,
+            }
           });
         }
       }
 
-      if (itemsToInsert.length === 0) {
+      if (itemsToCopy.length === 0) {
         toast.success("Information", { description: "Aucun plat à partager" });
         return true;
       }
 
-      const { data: insertedItems, error: insertError } = await supabase
-        .from('menu_items')
-        .insert(itemsToInsert)
-        .select('id, name');
+      for (const copy of itemsToCopy) {
+        const { data: insertedItem, error: insertError } = await supabase
+          .from('menu_items')
+          .insert(copy.row)
+          .select('id')
+          .single();
 
-      if (insertError) {
-        console.error('Error sharing menu items:', insertError);
-        toast.error("Erreur", { description: "Impossible de partager les plats" });
-        return false;
-      }
-
-      const itemNameQueues = new Map<string, any[]>();
-      for (const item of items) {
-        itemNameQueues.set(item.name, [...(itemNameQueues.get(item.name) || []), item]);
-      }
-
-      for (const insertedItem of insertedItems || []) {
-        const sourceQueue = itemNameQueues.get(insertedItem.name) || [];
-        const sourceItem = sourceQueue.shift();
-        if (sourceItem) {
-          await copyMenuItemOptions(sourceItem.id, insertedItem.id);
+        if (insertError || !insertedItem) {
+          console.error('Error sharing menu item:', insertError);
+          toast.error("Erreur", { description: "Impossible de partager les plats" });
+          return false;
         }
+
+        await copyMenuItemOptions(copy.sourceItemId, insertedItem.id);
       }
 
       console.log('✅ Menu items shared successfully');
-      toast.success("Succès", { description: `${itemsToInsert.length} plat(s) partagé(s) avec succès` });
+      toast.success("Succès", { description: `${itemsToCopy.length} plat(s) partagé(s) avec suppléments` });
       return true;
 
     } catch (error: any) {
