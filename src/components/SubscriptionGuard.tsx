@@ -169,8 +169,8 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children, feature
   // Expired → paywall immediately
   if (isExpired) { /* fall through to paywall */ }
 
-  // Short grace period spinner (max 2s) — only when no cache at all
-  if (!isExpired && (!gracePeriodExpired || loading)) {
+  // Short grace period spinner (max 2s) — never block beyond grace, even if loading hangs
+  if (!isExpired && !gracePeriodExpired) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
