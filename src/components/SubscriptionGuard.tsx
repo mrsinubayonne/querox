@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, Crown, RefreshCw, Shield, Wrench, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import { localStore } from '@/lib/localStore';
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
@@ -16,8 +15,9 @@ interface SubscriptionGuardProps {
 
 const getTeamMemberFromStorage = (): boolean => {
   try {
-    const m = localStore.raw.getWithTTL<any | null>('teamMember', null)
-      || localStore.raw.getWithTTL<any | null>('team_member_session', null);
+    const s = localStorage.getItem('teamMember') || localStorage.getItem('team_member_session');
+    if (!s) return false;
+    const m = JSON.parse(s);
     return !!(m?.memberId && m?.ownerId);
   } catch { return false; }
 };

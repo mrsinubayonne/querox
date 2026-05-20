@@ -65,7 +65,6 @@ const TeamMemberAuth: React.FC = () => {
       if (assignedOutletId) {
         setSelectedOutletId(assignedOutletId);
       } else {
-        setSelectedOutletId(null);
         toast.warning("Aucun point de vente assigné", {
           description: "Contactez votre responsable pour vous assigner à un outlet."
         });

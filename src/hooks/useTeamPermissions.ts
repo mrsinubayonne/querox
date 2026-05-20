@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { localStore } from '@/lib/localStore';
 
 interface TeamMemberSession {
   memberId: string;
   ownerId: string;
   role: string;
-  memberEmail?: string;
-  email?: string;
+  email: string;
 }
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -58,14 +56,14 @@ export const useTeamPermissions = () => {
 
   const loadPermissions = async () => {
     try {
-      const member = localStore.raw.getWithTTL<TeamMemberSession | null>('teamMember', null)
-        || localStore.raw.getWithTTL<TeamMemberSession | null>('team_member_session', null);
-      if (!member?.memberId) {
+      const teamMemberStr = localStorage.getItem('teamMember') || localStorage.getItem('team_member_session');
+      if (!teamMemberStr) {
         setPermissions([]);
         setLoading(false);
         return;
       }
 
+      const member: TeamMemberSession = JSON.parse(teamMemberStr);
       setTeamMember(member);
 
       // Get permissions using the new RPC function that handles direct permissions with role fallback
@@ -86,9 +84,9 @@ export const useTeamPermissions = () => {
     } catch (error) {
       console.error('Error loading permissions:', error);
       // Fallback to predefined permissions
-      const member = localStore.raw.getWithTTL<TeamMemberSession | null>('teamMember', null)
-        || localStore.raw.getWithTTL<TeamMemberSession | null>('team_member_session', null);
-      if (member?.memberId) {
+      const teamMemberStr = localStorage.getItem('teamMember') || localStorage.getItem('team_member_session');
+      if (teamMemberStr) {
+        const member: TeamMemberSession = JSON.parse(teamMemberStr);
         setPermissions(ROLE_PERMISSIONS[member.role] || []);
       }
     } finally {

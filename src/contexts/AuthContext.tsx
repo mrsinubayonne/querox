@@ -34,7 +34,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const normalizeTeamMemberSession = (raw: TeamMemberSession): TeamMemberSession => {
   const outletIds = Array.isArray(raw.outletIds) ? raw.outletIds.filter(Boolean) : [];
-  const outletId = raw.outletId || outletIds[0] || null;
+  const outletId = raw.outletId || outletIds[0] || localStorage.getItem('selectedOutletId') || null;
   const normalized = {
     ...raw,
     outletId,
@@ -43,10 +43,6 @@ const normalizeTeamMemberSession = (raw: TeamMemberSession): TeamMemberSession =
 
   if (outletId) {
     localStorage.setItem('selectedOutletId', outletId);
-    window.dispatchEvent(new CustomEvent('selected-outlet-changed', { detail: outletId }));
-  } else {
-    localStorage.removeItem('selectedOutletId');
-    window.dispatchEvent(new CustomEvent('selected-outlet-changed', { detail: null }));
   }
 
   return normalized;

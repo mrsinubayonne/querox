@@ -15,7 +15,6 @@ import { ToastAction } from "@/components/ui/toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from "@/components/ui/switch";
 import { ResetPasswordModal } from './ResetPasswordModal';
-import { useOutletContext } from '@/contexts/OutletContext';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -34,7 +33,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
   const [showResetModal, setShowResetModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
-  const { setSelectedOutletId } = useOutletContext();
   const navigate = useNavigate();
 
   const form = useForm<LoginFormData>({
@@ -58,58 +56,44 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
           return;
         }
         // Team member login with access code
-        const { data: authData, error: verifyError } = await supabase.functions.invoke('team-member-auth', {
-          body: { email, accessCode: code }
-        });
+        const { data: memberData, error: verifyError } = await supabase
+          .rpc('verify_team_access', {
+            _email: email,
+            _access_code: code
+          });
 
         if (verifyError) {
           toast.error("Erreur de connexion", { description: "Une erreur est survenue lors de la vérification" });
           return;
         }
 
-        if (!authData?.success || !authData?.member) {
+        if (!memberData || memberData.length === 0) {
           toast.error("Accès refusé", { description: "Email ou code d'accès incorrect" });
           return;
         }
 
-        const member = authData.member;
+        const member = memberData[0];
 
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password: code,
-        });
-
-        if (signInError) throw signInError;
-
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 8);
+        // Check if this is a first-time login (status = pending) - redirect to setup
+        if (member.status === 'pending') {
+          toast.success("Configuration requise", { description: "Veuillez configurer votre compte avant de continuer" });
+          setTimeout(() => {
+            navigate(`/team-setup?token=${code}`);
+          }, 100);
+          return;
+        }
 
         // Store team member session (normalized key)
         localStorage.setItem('teamMember', JSON.stringify({
           memberId: member.member_id,
           ownerId: member.owner_id,
-          memberEmail: email,
-          role: member.member_role,
-          outletId: member.outlet_id,
-          outletIds: member.outlet_ids || (member.outlet_id ? [member.outlet_id] : []),
-          expiresAt: expiresAt.toISOString()
+          role: member.role,
+          email
         }));
         // Clean up legacy key if it exists
         try { localStorage.removeItem('team_member_session'); } catch { /* ignore */ }
 
-        const assignedOutletId = member.outlet_id || member.outlet_ids?.[0] || null;
-        if (assignedOutletId) {
-          setSelectedOutletId(assignedOutletId);
-        } else {
-          setSelectedOutletId(null);
-          toast.warning("Aucun point de vente assigné", {
-            description: "Contactez votre responsable pour vous assigner à un outlet."
-          });
-        }
-
-        window.dispatchEvent(new CustomEvent('team-member-session-updated'));
-
-        toast.success("Connexion réussie", { description: `Bienvenue ! Vous êtes connecté en tant que ${member.member_role}` });
+        toast.success("Connexion réussie", { description: `Bienvenue ! Vous êtes connecté en tant que ${member.role}` });
 
         // Redirect to dashboard after successful team member login
         setTimeout(() => {

@@ -29,61 +29,6 @@ export const useMenuItems = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  const copyMenuItemOptions = useCallback(async (sourceItemId: string, targetItemId: string) => {
-    const { data: groups, error: groupsError } = await (supabase as any)
-      .from('menu_item_option_groups')
-      .select('*')
-      .eq('menu_item_id', sourceItemId)
-      .order('order_index');
-
-    if (groupsError) throw groupsError;
-    const groupIds = (groups || []).map((group: any) => group.id);
-    let values: any[] = [];
-
-    if (groupIds.length > 0) {
-      const { data: valuesData, error: valuesError } = await (supabase as any)
-        .from('menu_item_option_values')
-        .select('*')
-        .in('group_id', groupIds)
-        .order('order_index');
-
-      if (valuesError) throw valuesError;
-      values = valuesData || [];
-    }
-
-    for (const group of groups || []) {
-      const { data: newGroup, error: groupInsertError } = await (supabase as any)
-        .from('menu_item_option_groups')
-        .insert({
-          menu_item_id: targetItemId,
-          name: group.name,
-          selection_type: group.selection_type,
-          is_required: group.is_required,
-          order_index: group.order_index || 0,
-        })
-        .select('id')
-        .single();
-
-      if (groupInsertError) throw groupInsertError;
-
-      const groupValues = values.filter((value) => value.group_id === group.id);
-      if (groupValues.length > 0) {
-        const rows = groupValues.map((value: any) => ({
-          group_id: newGroup.id,
-          name: value.name,
-          extra_price: Number(value.extra_price) || 0,
-          is_available: value.is_available,
-          order_index: value.order_index || 0,
-        }));
-        const { error: valuesInsertError } = await (supabase as any)
-          .from('menu_item_option_values')
-          .insert(rows);
-
-        if (valuesInsertError) throw valuesInsertError;
-      }
-    }
-  }, []);
-
   const addMenuItem = useCallback(async (itemData: MenuItemInput): Promise<boolean> => {
     if (!user) {
       toast.error("Erreur", { description: "Vous devez être connecté pour ajouter un plat" });
@@ -139,42 +84,6 @@ export const useMenuItems = () => {
       setLoading(false);
     }
   }, [user, toast]);
-
-  const duplicateMenuItem = useCallback(async (sourceItemId: string, itemData: MenuItemInput): Promise<boolean> => {
-    if (!user) {
-      toast.error("Erreur", { description: "Vous devez être connecté pour dupliquer un plat" });
-      return false;
-    }
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('menu_items')
-        .insert({
-          ...itemData,
-          is_available: itemData.is_available ?? true,
-          order_index: itemData.order_index ?? 0,
-        })
-        .select('id')
-        .single();
-
-      if (error || !data) {
-        console.error('Error duplicating menu item:', error);
-        toast.error("Erreur", { description: error?.message || "Impossible de dupliquer le plat" });
-        return false;
-      }
-
-      await copyMenuItemOptions(sourceItemId, data.id);
-      toast.success("Succès", { description: "Plat dupliqué avec ses suppléments" });
-      return true;
-    } catch (error: any) {
-      console.error('🚨 Error duplicating menu item:', error);
-      toast.error("Erreur", { description: "Une erreur inattendue s'est produite" });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [user, toast, copyMenuItemOptions]);
 
   const updateMenuItem = useCallback(async (id: string, updates: MenuItemUpdate): Promise<boolean> => {
     if (!user) {
@@ -340,7 +249,7 @@ export const useMenuItems = () => {
         return false;
       }
 
-      const itemsToCopy: Array<{ sourceItemId: string; row: any }> = [];
+      const itemsToInsert = [];
       
       for (const item of items) {
         const sourceCategory = item.menu_categories;
@@ -377,45 +286,36 @@ export const useMenuItems = () => {
           }
 
           // Ajouter le plat à copier
-          itemsToCopy.push({
-            sourceItemId: item.id,
-            row: {
-              name: item.name,
-              description: item.description,
-              price: item.price,
-              category_id: targetCategory.id,
-              image_url: item.image_url,
-              is_available: item.is_available,
-              allergens: item.allergens,
-              order_index: item.order_index || 0,
-            }
+          itemsToInsert.push({
+            name: item.name,
+            description: item.description,
+            price: item.price,
+            category_id: targetCategory.id,
+            image_url: item.image_url,
+            is_available: item.is_available,
+            allergens: item.allergens,
+            order_index: item.order_index || 0,
           });
         }
       }
 
-      if (itemsToCopy.length === 0) {
+      if (itemsToInsert.length === 0) {
         toast.success("Information", { description: "Aucun plat à partager" });
         return true;
       }
 
-      for (const copy of itemsToCopy) {
-        const { data: insertedItem, error: insertError } = await supabase
-          .from('menu_items')
-          .insert(copy.row)
-          .select('id')
-          .single();
+      const { error: insertError } = await supabase
+        .from('menu_items')
+        .insert(itemsToInsert);
 
-        if (insertError || !insertedItem) {
-          console.error('Error sharing menu item:', insertError);
-          toast.error("Erreur", { description: "Impossible de partager les plats" });
-          return false;
-        }
-
-        await copyMenuItemOptions(copy.sourceItemId, insertedItem.id);
+      if (insertError) {
+        console.error('Error sharing menu items:', insertError);
+        toast.error("Erreur", { description: "Impossible de partager les plats" });
+        return false;
       }
 
       console.log('✅ Menu items shared successfully');
-      toast.success("Succès", { description: `${itemsToCopy.length} plat(s) partagé(s) avec suppléments` });
+      toast.success("Succès", { description: `${itemsToInsert.length} plat(s) partagé(s) avec succès` });
       return true;
 
     } catch (error: any) {
@@ -429,7 +329,6 @@ export const useMenuItems = () => {
 
   return {
     addMenuItem,
-    duplicateMenuItem,
     updateMenuItem,
     deleteMenuItem,
     toggleAvailability,

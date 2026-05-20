@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { useOutletContext } from '@/contexts/OutletContext';
 
 interface MemberData {
   id: string;
@@ -26,7 +25,6 @@ const TeamJoin: React.FC = () => {
   const [memberData, setMemberData] = useState<MemberData | null>(null);
   const [email, setEmail] = useState('');
   const [token, setToken] = useState<string | null>(null);
-  const { setSelectedOutletId } = useOutletContext();
 
   useEffect(() => {
     const inviteToken = searchParams.get('token');
@@ -111,12 +109,8 @@ const TeamJoin: React.FC = () => {
 
       // Set outlet if assigned
       if (acceptedMember.outlet_id) {
-        setSelectedOutletId(acceptedMember.outlet_id);
-      } else {
-        setSelectedOutletId(null);
+        localStorage.setItem('selectedOutletId', acceptedMember.outlet_id);
       }
-
-      window.dispatchEvent(new CustomEvent('team-member-session-updated'));
 
       // Log activity using RPC function
       await supabase.rpc('log_team_activity', {
