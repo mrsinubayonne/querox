@@ -8,11 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOutletContext } from '@/contexts/OutletContext';
 import { toast } from 'sonner';
 
 const SelectOutlet: React.FC = () => {
   const navigate = useNavigate();
   const { user, isTeamMember, teamMemberSession } = useAuth();
+  const { setSelectedOutletId } = useOutletContext();
   const { outlets, loading, createOutlet, selectOutlet, selectedOutletId, canAddMoreOutlets, getOutletLimit } = useOutlets();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,9 +26,11 @@ const SelectOutlet: React.FC = () => {
   useEffect(() => {
     // Les membres d'équipe ne créent jamais de PDV : ils utilisent uniquement un PDV assigné.
     if (isTeamMember && teamMemberSession) {
-      const assignedOutletId = teamMemberSession.outletId || teamMemberSession.outletIds?.[0] || localStorage.getItem('selectedOutletId');
+      const assignedOutletId = teamMemberSession.outletId || teamMemberSession.outletIds?.[0] || null;
       if (assignedOutletId) {
-        localStorage.setItem('selectedOutletId', assignedOutletId);
+        setSelectedOutletId(assignedOutletId);
+      } else {
+        setSelectedOutletId(null);
       }
       console.log('⚠️ Team member redirected from SelectOutlet to dashboard');
       navigate('/dashboard', { replace: true });
@@ -37,7 +41,7 @@ const SelectOutlet: React.FC = () => {
     if (!user && !isTeamMember) {
       navigate('/auth', { replace: true });
     }
-  }, [user, isTeamMember, teamMemberSession, navigate]);
+  }, [user, isTeamMember, teamMemberSession, navigate, setSelectedOutletId]);
 
   if (isTeamMember) {
     return (

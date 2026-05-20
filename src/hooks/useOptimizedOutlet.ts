@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSelectedOutletIdFromStorage, sanitizeStorageId } from '@/lib/offlineIdentity';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 interface OutletCache {
   outletId: string | null;
@@ -13,6 +14,7 @@ const CACHE_KEY = 'outlet_cache';
 
 export const useOptimizedOutlet = () => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
+  const { selectedOutletId, setSelectedOutletId: setContextOutletId } = useOutletContext();
   const [outletId, setOutletId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -24,6 +26,12 @@ export const useOptimizedOutlet = () => {
         return;
       }
 
+      if (!isTeamMember && selectedOutletId) {
+        setOutletId(selectedOutletId);
+        setLoading(false);
+        return;
+      }
+
       try {
         if (isTeamMember && teamMemberSession) {
           const teamOutletId = sanitizeStorageId(
@@ -31,7 +39,7 @@ export const useOptimizedOutlet = () => {
           );
 
           if (teamOutletId) {
-            localStorage.setItem('selectedOutletId', teamOutletId);
+            setContextOutletId(teamOutletId);
             localStorage.setItem(CACHE_KEY, JSON.stringify({ outletId: teamOutletId, timestamp: Date.now() }));
             setOutletId(teamOutletId);
             setLoading(false);
@@ -53,7 +61,7 @@ export const useOptimizedOutlet = () => {
             const cachedOutletId = sanitizeStorageId(parsedCache.outletId);
 
             if (Date.now() - parsedCache.timestamp < CACHE_DURATION && cachedOutletId) {
-              localStorage.setItem('selectedOutletId', cachedOutletId);
+              setContextOutletId(cachedOutletId);
               setOutletId(cachedOutletId);
               setLoading(false);
               return;
@@ -89,7 +97,7 @@ export const useOptimizedOutlet = () => {
         };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
         if (sanitizedOutlet) {
-          localStorage.setItem('selectedOutletId', sanitizedOutlet);
+          setContextOutletId(sanitizedOutlet);
         }
 
         setOutletId(sanitizedOutlet ?? null);
@@ -102,7 +110,7 @@ export const useOptimizedOutlet = () => {
     };
 
     getOutlet();
-  }, [user, isTeamMember, teamMemberSession]);
+  }, [user, isTeamMember, teamMemberSession, selectedOutletId, setContextOutletId]);
 
   const clearCache = () => {
     localStorage.removeItem(CACHE_KEY);
