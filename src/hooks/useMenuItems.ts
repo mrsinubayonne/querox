@@ -138,6 +138,42 @@ export const useMenuItems = () => {
     } finally {
       setLoading(false);
     }
+  }, [user, toast]);
+
+  const duplicateMenuItem = useCallback(async (sourceItemId: string, itemData: MenuItemInput): Promise<boolean> => {
+    if (!user) {
+      toast.error("Erreur", { description: "Vous devez être connecté pour dupliquer un plat" });
+      return false;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .insert({
+          ...itemData,
+          is_available: itemData.is_available ?? true,
+          order_index: itemData.order_index ?? 0,
+        })
+        .select('id')
+        .single();
+
+      if (error || !data) {
+        console.error('Error duplicating menu item:', error);
+        toast.error("Erreur", { description: error?.message || "Impossible de dupliquer le plat" });
+        return false;
+      }
+
+      await copyMenuItemOptions(sourceItemId, data.id);
+      toast.success("Succès", { description: "Plat dupliqué avec ses suppléments" });
+      return true;
+    } catch (error: any) {
+      console.error('🚨 Error duplicating menu item:', error);
+      toast.error("Erreur", { description: "Une erreur inattendue s'est produite" });
+      return false;
+    } finally {
+      setLoading(false);
+    }
   }, [user, toast, copyMenuItemOptions]);
 
   const updateMenuItem = useCallback(async (id: string, updates: MenuItemUpdate): Promise<boolean> => {
