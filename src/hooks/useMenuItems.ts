@@ -429,6 +429,7 @@ export const useMenuItems = () => {
 
   return {
     addMenuItem,
+    duplicateMenuItem,
     updateMenuItem,
     deleteMenuItem,
     toggleAvailability,
