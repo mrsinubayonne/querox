@@ -29,7 +29,7 @@ export const useMenuItems = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  const copyMenuItemOptions = async (sourceItemId: string, targetItemId: string) => {
+  const copyMenuItemOptions = useCallback(async (sourceItemId: string, targetItemId: string) => {
     const { data: groups, error: groupsError } = await (supabase as any)
       .from('menu_item_option_groups')
       .select('*')
@@ -82,7 +82,7 @@ export const useMenuItems = () => {
         if (valuesInsertError) throw valuesInsertError;
       }
     }
-  };
+  }, []);
 
   const addMenuItem = useCallback(async (itemData: MenuItemInput): Promise<boolean> => {
     if (!user) {
@@ -138,7 +138,7 @@ export const useMenuItems = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, copyMenuItemOptions]);
 
   const updateMenuItem = useCallback(async (id: string, updates: MenuItemUpdate): Promise<boolean> => {
     if (!user) {
