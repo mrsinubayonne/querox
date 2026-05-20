@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 interface OutletContextType {
   selectedOutletId: string | null;
@@ -12,7 +12,7 @@ export const OutletProvider = ({ children }: { children: ReactNode }) => {
     () => localStorage.getItem('selectedOutletId')
   );
 
-  const setSelectedOutletId = (id: string | null) => {
+  const setSelectedOutletId = useCallback((id: string | null) => {
     setSelectedOutletIdState(id);
     if (id) {
       localStorage.setItem('selectedOutletId', id);
@@ -20,7 +20,7 @@ export const OutletProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('selectedOutletId');
     }
     window.dispatchEvent(new CustomEvent('selected-outlet-changed', { detail: id }));
-  };
+  }, []);
 
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
