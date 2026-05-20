@@ -19,6 +19,7 @@ export const OutletProvider = ({ children }: { children: ReactNode }) => {
     } else {
       localStorage.removeItem('selectedOutletId');
     }
+    window.dispatchEvent(new CustomEvent('selected-outlet-changed', { detail: id }));
   };
 
   useEffect(() => {
@@ -27,8 +28,15 @@ export const OutletProvider = ({ children }: { children: ReactNode }) => {
         setSelectedOutletIdState(e.newValue);
       }
     };
+    const handleOutletChange = (e: Event) => {
+      setSelectedOutletIdState((e as CustomEvent<string | null>).detail ?? localStorage.getItem('selectedOutletId'));
+    };
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    window.addEventListener('selected-outlet-changed', handleOutletChange);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('selected-outlet-changed', handleOutletChange);
+    };
   }, []);
 
   return (
