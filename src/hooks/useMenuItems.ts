@@ -359,14 +359,28 @@ export const useMenuItems = () => {
         return true;
       }
 
-      const { error: insertError } = await supabase
+      const { data: insertedItems, error: insertError } = await supabase
         .from('menu_items')
-        .insert(itemsToInsert);
+        .insert(itemsToInsert)
+        .select('id, name');
 
       if (insertError) {
         console.error('Error sharing menu items:', insertError);
         toast.error("Erreur", { description: "Impossible de partager les plats" });
         return false;
+      }
+
+      const itemNameQueues = new Map<string, any[]>();
+      for (const item of items) {
+        itemNameQueues.set(item.name, [...(itemNameQueues.get(item.name) || []), item]);
+      }
+
+      for (const insertedItem of insertedItems || []) {
+        const sourceQueue = itemNameQueues.get(insertedItem.name) || [];
+        const sourceItem = sourceQueue.shift();
+        if (sourceItem) {
+          await copyMenuItemOptions(sourceItem.id, insertedItem.id);
+        }
       }
 
       console.log('✅ Menu items shared successfully');
