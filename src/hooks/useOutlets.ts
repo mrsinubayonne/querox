@@ -178,11 +178,12 @@ export const useOutlets = () => {
 
   const loadSelectedOutlet = async (): Promise<void> => {
     if (isTeamMember && teamMemberSession) {
-      const assignedOutletId = teamMemberSession.outletId || teamMemberSession.outletIds?.[0] || localStorage.getItem('selectedOutletId');
+      const assignedOutletId = teamMemberSession.outletId || teamMemberSession.outletIds?.[0] || null;
       setSelectedOutletId(assignedOutletId ?? null);
       if (assignedOutletId) {
-        localStorage.setItem('selectedOutletId', assignedOutletId);
         setContextOutletId(assignedOutletId);
+      } else {
+        setContextOutletId(null);
       }
       return;
     }
@@ -234,9 +235,13 @@ export const useOutlets = () => {
   useEffect(() => {
     if (isTeamMember && teamMemberSession) {
       // Pour les membres d'équipe, utiliser l'outlet de leur session
-      const outletId = teamMemberSession.outletId || localStorage.getItem('selectedOutletId');
+      const outletId = teamMemberSession.outletId || teamMemberSession.outletIds?.[0] || null;
       if (outletId) {
         setSelectedOutletId(outletId);
+        setContextOutletId(outletId);
+      } else {
+        setSelectedOutletId(null);
+        setContextOutletId(null);
       }
       // Charger les outlets du propriétaire
       loadOutlets();
