@@ -46,7 +46,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const [ingredientsModalItem, setIngredientsModalItem] = useState<{ id: string; name: string } | null>(null);
   
   const { items, categories, menus, loading, refetch, fetchAllMenus } = useMenus();
-  const { toggleAvailability, deleteMenuItem, shareMenuItems, addMenuItem } = useMenuItems();
+  const { toggleAvailability, deleteMenuItem, shareMenuItems, duplicateMenuItem } = useMenuItems();
   const { outlets } = useOutlets();
   
   const [allMenus, setAllMenus] = useState<Menu[]>([]);
@@ -179,7 +179,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   }, [selectedItems, shareMenuItems, refetch]);
 
   const handleDuplicateItem = useCallback(async (item: MenuItem) => {
-    const success = await addMenuItem({
+    const success = await duplicateMenuItem(item.id, {
       name: `${item.name} (copie)`,
       description: item.description,
       price: item.price,
@@ -192,7 +192,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
     if (success) {
       await refetch();
     }
-  }, [addMenuItem, refetch]);
+  }, [duplicateMenuItem, refetch]);
 
   // Handler pour le changement de recherche
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
