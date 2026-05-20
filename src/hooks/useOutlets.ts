@@ -373,7 +373,7 @@ export const useOutlets = () => {
       setOutlets((prev) => prev.filter((outlet) => outlet.id !== id));
       if (selectedOutletId === id) {
         setSelectedOutletId(null);
-        localStorage.removeItem('selectedOutletId');
+        setContextOutletId(null);
         localStorage.removeItem('outlet_cache');
       }
       const cached = await getData<Outlet[]>('outlets', userId);
