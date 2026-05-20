@@ -29,6 +29,61 @@ export const useMenuItems = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
+  const copyMenuItemOptions = async (sourceItemId: string, targetItemId: string) => {
+    const { data: groups, error: groupsError } = await (supabase as any)
+      .from('menu_item_option_groups')
+      .select('*')
+      .eq('menu_item_id', sourceItemId)
+      .order('order_index');
+
+    if (groupsError) throw groupsError;
+    const groupIds = (groups || []).map((group: any) => group.id);
+    let values: any[] = [];
+
+    if (groupIds.length > 0) {
+      const { data: valuesData, error: valuesError } = await (supabase as any)
+        .from('menu_item_option_values')
+        .select('*')
+        .in('group_id', groupIds)
+        .order('order_index');
+
+      if (valuesError) throw valuesError;
+      values = valuesData || [];
+    }
+
+    for (const group of groups || []) {
+      const { data: newGroup, error: groupInsertError } = await (supabase as any)
+        .from('menu_item_option_groups')
+        .insert({
+          menu_item_id: targetItemId,
+          name: group.name,
+          selection_type: group.selection_type,
+          is_required: group.is_required,
+          order_index: group.order_index || 0,
+        })
+        .select('id')
+        .single();
+
+      if (groupInsertError) throw groupInsertError;
+
+      const groupValues = values.filter((value) => value.group_id === group.id);
+      if (groupValues.length > 0) {
+        const rows = groupValues.map((value: any) => ({
+          group_id: newGroup.id,
+          name: value.name,
+          extra_price: Number(value.extra_price) || 0,
+          is_available: value.is_available,
+          order_index: value.order_index || 0,
+        }));
+        const { error: valuesInsertError } = await (supabase as any)
+          .from('menu_item_option_values')
+          .insert(rows);
+
+        if (valuesInsertError) throw valuesInsertError;
+      }
+    }
+  };
+
   const addMenuItem = useCallback(async (itemData: MenuItemInput): Promise<boolean> => {
     if (!user) {
       toast.error("Erreur", { description: "Vous devez être connecté pour ajouter un plat" });
