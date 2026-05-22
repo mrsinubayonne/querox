@@ -212,20 +212,9 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
     <div className="space-y-3 border rounded-lg p-3 bg-muted/30">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <Label className="text-base font-semibold">Variantes & suppléments</Label>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setCopyModalOpen(true)}
-            disabled={!menuItemId}
-          >
-            <Copy className="h-4 w-4 mr-1" /> Importer d'un plat
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={addGroup}>
-            <Plus className="h-4 w-4 mr-1" /> Groupe
-          </Button>
-        </div>
+        <Button type="button" variant="outline" size="sm" onClick={addGroup}>
+          <Plus className="h-4 w-4 mr-1" /> Groupe
+        </Button>
       </div>
       <p className="text-xs text-muted-foreground">
         Ex: "Viande" (Bœuf / Poulet) en choix unique, ou "Suppléments" (Fromage +500, Bacon +700) en choix multiple.
