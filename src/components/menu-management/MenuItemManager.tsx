@@ -436,7 +436,9 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
 
   return (
     <>
-      <MenuItemsContent />
+      {MenuItemsContent()}
+
+
 
       <AddMenuItemModal
         isOpen={showAddModal}
