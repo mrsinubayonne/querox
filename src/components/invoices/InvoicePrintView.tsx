@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { InvoiceSettings } from '@/hooks/useInvoiceSettings';
 import { getData } from '@/lib/offlineStorage';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { InvoiceDisplayOptions, DEFAULT_DISPLAY_OPTIONS } from '@/types/invoiceDisplayOptions';
+import { InvoiceDisplayOptions, DEFAULT_DISPLAY_OPTIONS, DEFAULT_STYLE_OPTIONS, formatInvoiceDate } from '@/types/invoiceDisplayOptions';
 
 interface InvoicePrintViewProps {
   invoice: Invoice;
@@ -150,16 +150,12 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
       }
     }, [dataLoaded, autoPrint]);
 
-    const formatDate = (dateString: string | null) => {
-      if (!dateString) return '-';
-      return new Date(dateString).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      });
-    };
-
     const opts: InvoiceDisplayOptions = { ...DEFAULT_DISPLAY_OPTIONS, ...((settings as any)?.display_options || {}) };
+    const style = { ...DEFAULT_STYLE_OPTIONS, ...(opts.style || {}) };
+    const formatDate = (dateString: string | null) => formatInvoiceDate(dateString, style.date_format);
+    const titleText = style.uppercase_title
+      ? (settings?.invoice_title || 'FACTURE').toUpperCase()
+      : (settings?.invoice_title || 'FACTURE');
 
     // Create a portal that attaches directly to the body for printing
     return createPortal(
@@ -318,12 +314,12 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
             )}
           </div>
           <div className="text-right">
-            <h2 className="text-2xl font-bold mb-0 text-black">{settings?.invoice_title || 'FACTURE'}</h2>
+            <h2 className="font-bold mb-0" style={{ color: style.text_color, fontSize: `${Math.max(14, Math.round(style.font_size_title * 0.75))}pt`, fontStyle: style.title_italic ? 'italic' : 'normal' }}>{titleText}</h2>
             {opts.show_invoice_number && (
-              <p className="text-base text-black font-semibold">{invoice.invoice_number}</p>
+              <p className="font-semibold" style={{ color: style.text_color, fontSize: `${Math.max(9, Math.round(style.font_size_body * 0.7))}pt` }}>{invoice.invoice_number}</p>
             )}
             {opts.show_date && (
-              <p className="text-xs text-black">Date: {formatDate(invoice.created_at)}</p>
+              <p style={{ color: style.text_color, fontSize: `${Math.max(8, Math.round(style.font_size_small * 0.7))}pt` }}>Date: {formatDate(invoice.created_at)}</p>
             )}
           </div>
         </div>
