@@ -8,7 +8,8 @@ import ImportMenuFromImageModal from './ImportMenuFromImageModal';
 import { useMenus, Menu, MenuCategory } from '@/hooks/useMenus';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useOutlets } from '@/hooks/useOutlets';
-import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft, Search, Copy, Package, Image } from 'lucide-react';
+import { Menu as MenuIcon, Edit, Trash2, Eye, EyeOff, ArrowRightLeft, Copy, Package, Image } from 'lucide-react';
+import { MenuSearchBar } from './MenuSearchBar';
 import MenuItemIngredientsModal from './MenuItemIngredientsModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -230,25 +231,13 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
     return (
       <>
         <div className="space-y-6">
-          {/* Barre de recherche proéminente */}
-          <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 rounded-lg border border-primary/20">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
-              <Input
-                type="search"
-                placeholder="🔍 Rechercher un plat par nom, description ou catégorie..."
-                className="pl-12 h-12 text-base bg-white shadow-sm border-primary/30 focus:border-primary"
-                value={searchTerm}
-                onChange={handleSearchChange}
-                autoComplete="off"
-              />
-            </div>
-            {searchTerm.trim() !== '' && (
-              <p className="text-sm text-muted-foreground mt-2 ml-1">
-                {filteredItems.length} résultat{filteredItems.length > 1 ? 's' : ''} trouvé{filteredItems.length > 1 ? 's' : ''}
-              </p>
-            )}
-          </div>
+          {/* Nouvelle barre de recherche isolée (focus stable, debounce intégré) */}
+          <MenuSearchBar onChange={setSearchTerm} />
+          {searchTerm.trim() !== '' && (
+            <p className="text-sm text-muted-foreground -mt-2 ml-1">
+              {filteredItems.length} résultat{filteredItems.length > 1 ? 's' : ''} trouvé{filteredItems.length > 1 ? 's' : ''}
+            </p>
+          )}
 
           <div className="flex justify-between items-center gap-4">
             <div className="flex items-center gap-4">
