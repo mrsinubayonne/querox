@@ -42,7 +42,7 @@ const InvoiceDisplayToggles: React.FC<InvoiceDisplayTogglesProps> = ({ displayOp
 
   const groups = ['En-tête', 'Détails', 'Pied de page'];
 
-  const enabledCount = Object.values(options).filter(Boolean).length;
+  const enabledCount = TOGGLE_ITEMS.filter((it) => options[it.key]).length;
 
   return (
     <Card>
