@@ -4,14 +4,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Save, Loader2, Eye } from 'lucide-react';
+import { FileText, Save, Loader2, Eye, Palette } from 'lucide-react';
 import LogoUpload from './LogoUpload';
 import InvoicePreview from './invoices/InvoicePreview';
 import InvoiceDisplayToggles from './invoices/InvoiceDisplayToggles';
+import InvoiceStyleEditor from './invoices/InvoiceStyleEditor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { InvoiceDisplayOptions, DEFAULT_DISPLAY_OPTIONS } from '@/types/invoiceDisplayOptions';
+import { InvoiceDisplayOptions, DEFAULT_DISPLAY_OPTIONS, DEFAULT_STYLE_OPTIONS, InvoiceStyleOptions } from '@/types/invoiceDisplayOptions';
 import { toast } from 'sonner';
 
 export const InvoiceSettingsTab: React.FC = () => {
@@ -179,7 +180,7 @@ export const InvoiceSettingsTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="edit" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="edit">
             <FileText className="w-4 h-4 mr-2" />
             Modifier
@@ -187,6 +188,10 @@ export const InvoiceSettingsTab: React.FC = () => {
           <TabsTrigger value="display">
             <Eye className="w-4 h-4 mr-2" />
             Affichage
+          </TabsTrigger>
+          <TabsTrigger value="style">
+            <Palette className="w-4 h-4 mr-2" />
+            Style
           </TabsTrigger>
           <TabsTrigger value="preview">
             <Eye className="w-4 h-4 mr-2" />
@@ -405,6 +410,32 @@ export const InvoiceSettingsTab: React.FC = () => {
                   <>
                     <Save className="w-4 h-4" />
                     Enregistrer les options d'affichage
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="style">
+          <div className="space-y-6">
+            <InvoiceStyleEditor
+              style={displayOptions.style || DEFAULT_STYLE_OPTIONS}
+              onChange={(style: InvoiceStyleOptions) =>
+                setDisplayOptions({ ...displayOptions, style })
+              }
+            />
+            <div className="flex justify-end">
+              <Button onClick={handleSubmit} disabled={saving} className="gap-2">
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Enregistrer le style
                   </>
                 )}
               </Button>
