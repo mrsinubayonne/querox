@@ -10,7 +10,11 @@ interface InvoiceDisplayTogglesProps {
   onChange: (options: InvoiceDisplayOptions) => void;
 }
 
-const TOGGLE_ITEMS: { key: keyof InvoiceDisplayOptions; label: string; group: string }[] = [
+type BoolKey = {
+  [K in keyof InvoiceDisplayOptions]: InvoiceDisplayOptions[K] extends boolean ? K : never;
+}[keyof InvoiceDisplayOptions];
+
+const TOGGLE_ITEMS: { key: BoolKey; label: string; group: string }[] = [
   { key: 'show_logo', label: 'Logo de l\'entreprise', group: 'En-tête' },
   { key: 'show_company_address', label: 'Adresse de l\'entreprise', group: 'En-tête' },
   { key: 'show_company_phone', label: 'Téléphone', group: 'En-tête' },
@@ -32,7 +36,7 @@ const TOGGLE_ITEMS: { key: keyof InvoiceDisplayOptions; label: string; group: st
 const InvoiceDisplayToggles: React.FC<InvoiceDisplayTogglesProps> = ({ displayOptions, onChange }) => {
   const options = { ...DEFAULT_DISPLAY_OPTIONS, ...displayOptions };
 
-  const handleToggle = (key: keyof InvoiceDisplayOptions) => {
+  const handleToggle = (key: BoolKey) => {
     onChange({ ...options, [key]: !options[key] });
   };
 
