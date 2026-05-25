@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Minus, Search, X, WifiOff } from "lucide-react";
+import { Plus, Minus, Search, X, WifiOff, ShoppingCart, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurant } from "@/contexts/RestaurantContext";
@@ -50,13 +51,14 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const queryClient = useQueryClient();
   const [numberOfGuests, setNumberOfGuests] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("__all__");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [showCustomItem, setShowCustomItem] = useState(false);
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState("");
 
-  const { menuItems } = useInternalMenuItems(isOpen);
+  const { menuItems, loading: menuLoading } = useInternalMenuItems(isOpen);
 
   // CRITICAL: Use the EXACT same userId/outletId logic as useOptimizedTableSessions
   // to ensure cache keys match perfectly
@@ -71,18 +73,31 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       setCart([]);
       setSearchTerm("");
       setNumberOfGuests("");
+      setActiveCategory("__all__");
     }
   }, [isOpen]);
 
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    menuItems.forEach((it: any) => set.add(it.category_name || "Autres"));
+    return Array.from(set).sort();
+  }, [menuItems]);
+
   const filteredItems = useMemo(() => {
-    if (!searchTerm.trim()) return menuItems;
-    const term = searchTerm.toLowerCase();
-    return menuItems.filter(
-      (item) =>
+    const term = searchTerm.trim().toLowerCase();
+    return menuItems.filter((item: any) => {
+      const matchCat = activeCategory === "__all__" || (item.category_name || "Autres") === activeCategory;
+      if (!matchCat) return false;
+      if (!term) return true;
+      return (
         item.name.toLowerCase().includes(term) ||
         (item.description && item.description.toLowerCase().includes(term))
-    );
-  }, [menuItems, searchTerm]);
+      );
+    });
+  }, [menuItems, searchTerm, activeCategory]);
+
+  const totalQty = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
+
 
   const addToCart = (item: typeof menuItems[0]) => {
     const itemData = menuItems.find(m => m.id === item.id);
@@ -435,216 +450,221 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 flex flex-col gap-0 overflow-hidden">
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b bg-background">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <DialogTitle className="text-lg font-semibold">Ouvrir la Table {tableNumber}</DialogTitle>
-                {isOffline && (
-                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
-                    <WifiOff className="h-3 w-3 mr-1" />
-                    Hors ligne
-                  </Badge>
-                )}
-              </div>
-              <DialogDescription className="text-sm mt-1">
-                Ajoutez les plats commandés
-              </DialogDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={loading}>
-                Annuler
-              </Button>
-              <Button 
-                type="submit" 
-                size="lg"
-                disabled={loading || cart.length === 0}
-                onClick={handleSubmit}
-                className="min-w-[180px] text-base font-semibold animate-pulse hover:animate-none shadow-lg"
-              >
-                {loading ? "Ouverture..." : `Ouvrir & Commander${cart.length > 0 ? ` (${totalAmount.toLocaleString()})` : ""}`}
-              </Button>
-            </div>
+        <div className="px-4 py-3 border-b shrink-0 flex items-center justify-between gap-3">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <ShoppingCart className="h-5 w-5 text-primary" />
+            Ouvrir la Table {tableNumber}
+            {isOffline && (
+              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                <WifiOff className="h-3 w-3 mr-1" />
+                Hors ligne
+              </Badge>
+            )}
+          </DialogTitle>
+          <DialogDescription className="sr-only">Ajoutez les plats commandés</DialogDescription>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min="1"
+              placeholder="Couverts"
+              value={numberOfGuests}
+              onChange={(e) => setNumberOfGuests(e.target.value)}
+              className="w-24 h-9"
+            />
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 md:gap-6 flex-1 overflow-hidden px-6">
-          {/* LEFT - Search */}
-          <div className="flex-1 space-y-4 overflow-y-auto pr-2 md:pr-4 min-h-0">
-            <div className="space-y-2">
-              <Label htmlFor="guests">Nombre de personnes (optionnel)</Label>
-              <Input
-                id="guests"
-                type="number"
-                min="1"
-                placeholder="Ex: 4"
-                value={numberOfGuests}
-                onChange={(e) => setNumberOfGuests(e.target.value)}
-              />
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-[180px_1fr_340px] overflow-hidden">
+          {/* === Col 1: Catégories === */}
+          <aside className="border-r bg-muted/30 overflow-hidden flex-col hidden md:flex">
+            <div className="p-3 border-b">
+              <h3 className="text-xs font-semibold uppercase text-muted-foreground">Catégories</h3>
             </div>
+            <ScrollArea className="flex-1">
+              <div className="p-2 space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory("__all__")}
+                  className={cn(
+                    "w-full text-left px-3 py-2.5 rounded-md text-sm font-medium transition-all active:scale-[0.97]",
+                    activeCategory === "__all__"
+                      ? "bg-primary text-primary-foreground shadow"
+                      : "hover:bg-accent"
+                  )}
+                >
+                  Toutes ({menuItems.length})
+                </button>
+                {categories.map((cat) => {
+                  const count = menuItems.filter((i: any) => (i.category_name || "Autres") === cat).length;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setActiveCategory(cat)}
+                      className={cn(
+                        "w-full text-left px-3 py-2.5 rounded-md text-sm font-medium transition-all active:scale-[0.97]",
+                        activeCategory === cat
+                          ? "bg-primary text-primary-foreground shadow"
+                          : "hover:bg-accent"
+                      )}
+                    >
+                      {cat} <span className="opacity-70">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </aside>
 
-            <Separator />
-
-            <div className="space-y-2">
-              <Label htmlFor="search">Rechercher un plat</Label>
+          {/* === Col 2: Plats === */}
+          <section className="flex flex-col overflow-hidden">
+            <div className="p-3 border-b">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="search"
-                  placeholder="Nom du plat..."
+                  placeholder="Rechercher un plat..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-10"
+                  autoComplete="off"
                 />
               </div>
-              {filteredItems.length > 0 && (
-                <ScrollArea className="h-36 md:h-48 border rounded-md">
-                  <div className="p-2 space-y-1">
-                    {filteredItems.slice(0, 10).map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => addToCart(item)}
-                        className="w-full text-left p-2 hover:bg-accent rounded-md text-sm flex justify-between items-center"
-                      >
-                        <span>{item.name}</span>
-                        <span className="text-muted-foreground">
-                          {item.price.toLocaleString()} XAF
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-              {filteredItems.length === 0 && menuItems.length > 0 && searchTerm.trim() && (
-                <p className="text-sm text-muted-foreground">Aucun plat trouvé</p>
-              )}
             </div>
-          </div>
+            <ScrollArea className="flex-1 p-3">
+              {menuLoading && menuItems.length === 0 ? (
+                <div className="flex items-center justify-center py-12 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" /> Chargement...
+                </div>
+              ) : filteredItems.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground text-sm">Aucun plat trouvé</div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {filteredItems.map((item: any) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => addToCart(item)}
+                      className="group relative text-left p-3 rounded-lg border-2 border-transparent bg-card hover:border-primary hover:shadow-md transition-all active:scale-[0.97] flex flex-col"
+                    >
+                      {item.image_url && (
+                        <div className="aspect-square mb-2 rounded-md overflow-hidden bg-muted">
+                          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
+                        </div>
+                      )}
+                      <p className="text-sm font-medium line-clamp-2 mb-1 leading-tight">{item.name}</p>
+                      <p className="text-sm font-bold text-primary mt-auto">{item.price.toLocaleString()} XAF</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </section>
 
-          {/* RIGHT - Cart */}
-          <div className="w-full md:w-[400px] flex flex-col border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-6 min-h-0">
-            <div className="flex items-center justify-between mb-3">
-              <Label className="text-base font-semibold">Panier ({cart.length})</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCustomItem(!showCustomItem)}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Article libre
-              </Button>
+          {/* === Col 3: Ticket === */}
+          <aside className="border-l flex flex-col overflow-hidden bg-card">
+            <div className="px-3 py-2 border-b flex items-center justify-between">
+              <h3 className="text-xs font-semibold uppercase text-muted-foreground">Ticket ({totalQty})</h3>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowCustomItem(!showCustomItem)}
+                  className="h-7 text-xs"
+                >
+                  <Plus className="h-3 w-3 mr-1" /> Libre
+                </Button>
+                {cart.length > 0 && (
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setCart([])} className="h-7 text-xs">
+                    Vider
+                  </Button>
+                )}
+              </div>
             </div>
 
             {showCustomItem && (
-              <div className="space-y-3 p-3 mb-3 border rounded-md bg-accent/10">
-                <div className="space-y-2">
-                  <Label htmlFor="custom-name">Nom de l'article *</Label>
-                  <Input
-                    id="custom-name"
-                    placeholder="Ex: Plat du jour"
-                    value={customItemName}
-                    onChange={(e) => setCustomItemName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="custom-price">Prix (XAF) *</Label>
-                  <Input
-                    id="custom-price"
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="Ex: 5000"
-                    value={customItemPrice}
-                    onChange={(e) => setCustomItemPrice(e.target.value)}
-                  />
-                </div>
+              <div className="space-y-2 p-3 border-b bg-accent/10">
+                <Input
+                  placeholder="Nom de l'article"
+                  value={customItemName}
+                  onChange={(e) => setCustomItemName(e.target.value)}
+                  className="h-8"
+                />
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="Prix (XAF)"
+                  value={customItemPrice}
+                  onChange={(e) => setCustomItemPrice(e.target.value)}
+                  className="h-8"
+                />
                 <div className="flex gap-2">
-                  <Button type="button" size="sm" onClick={addCustomItem} className="flex-1">
-                    Ajouter
-                  </Button>
-                  <Button type="button" size="sm" variant="outline" onClick={() => {
-                    setShowCustomItem(false);
-                    setCustomItemName("");
-                    setCustomItemPrice("");
-                  }}>
+                  <Button type="button" size="sm" onClick={addCustomItem} className="flex-1 h-8">Ajouter</Button>
+                  <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => { setShowCustomItem(false); setCustomItemName(""); setCustomItemPrice(""); }}>
                     Annuler
                   </Button>
                 </div>
               </div>
             )}
-            
-            <ScrollArea className="h-32 md:h-[300px] border rounded-md bg-muted/20 mb-4 flex-1 min-h-0">
+
+            <ScrollArea className="flex-1">
               {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-8 px-4">
-                  <p className="text-center">Aucun plat ajouté</p>
-                  <p className="text-sm text-center mt-2">Recherchez et ajoutez des plats</p>
+                <div className="text-center py-10 text-sm text-muted-foreground px-4">
+                  Cliquez sur un plat pour l'ajouter
                 </div>
               ) : (
-                <div className="space-y-2 p-3">
+                <div className="p-2 space-y-1.5">
                   {cart.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-2 md:p-3 bg-background border rounded-md shadow-sm"
-                    >
-                      <div className="flex-1 min-w-0 pr-2 md:pr-3">
-                        <p className="font-medium truncate text-sm md:text-base">{item.name}</p>
-                        <p className="text-xs md:text-sm text-muted-foreground">
-                          {item.price.toLocaleString()} × {item.quantity} ={" "}
-                          <span className="font-semibold text-foreground">
-                            {(item.price * item.quantity).toLocaleString()}
-                          </span>
-                        </p>
+                    <div key={item.id} className="bg-muted/40 rounded-md p-2">
+                      <div className="flex justify-between items-start gap-2 mb-1.5">
+                        <p className="text-sm font-medium leading-tight flex-1 min-w-0">{item.name}</p>
+                        <Button type="button" size="icon" variant="ghost" onClick={() => removeFromCart(item.id)} className="h-6 w-6 shrink-0">
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          onClick={() => updateQuantity(item.id, -1)}
-                          className="h-7 w-7"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          onClick={() => updateQuantity(item.id, 1)}
-                          className="h-7 w-7"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => removeFromCart(item.id)}
-                          className="h-7 w-7 text-destructive hover:text-destructive ml-1"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Button type="button" size="icon" variant="outline" onClick={() => updateQuantity(item.id, -1)} className="h-7 w-7">
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-6 text-center text-sm font-semibold">{item.quantity}</span>
+                          <Button type="button" size="icon" variant="outline" onClick={() => updateQuantity(item.id, 1)} className="h-7 w-7">
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <span className="text-sm font-bold text-primary">
+                          {(item.price * item.quantity).toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </ScrollArea>
-            
-            {cart.length > 0 && (
-              <div className="mb-4 p-3 md:p-4 bg-primary/10 border border-primary/20 rounded-md flex-shrink-0">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-base md:text-lg">Total</span>
-                  <span className="font-bold text-lg md:text-xl text-primary">{totalAmount.toLocaleString()} XAF</span>
-                </div>
+
+            <div className="p-3 border-t bg-muted/30 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Total</span>
+                <span className="text-xl font-bold text-primary">{totalAmount.toLocaleString()} XAF</span>
               </div>
-            )}
-          </div>
-        </form>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="active:scale-[0.97]">
+                  Annuler
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={loading || cart.length === 0}
+                  className="active:scale-[0.97]"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ouvrir & Commander"}
+                </Button>
+              </div>
+            </div>
+          </aside>
+        </div>
         {pickerNode}
       </DialogContent>
     </Dialog>

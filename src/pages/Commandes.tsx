@@ -36,7 +36,7 @@ const Commandes: React.FC = () => {
     <SubscriptionGuard feature="la gestion des commandes">
       <PageWithSidebar>
         <div className="space-y-6">
-          <OrdersHeader onOrderCreated={refetch} />
+          <OrdersHeader onOrderCreated={refetch} ordersCount={orders?.length ?? 0} />
           <OrdersList orders={orders} loading={loading} refetch={refetch} />
         </div>
         <EditOrderModal

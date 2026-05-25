@@ -128,29 +128,56 @@ export const useOptimizedOrders = () => {
         filter: `user_id=eq.${user.id}`
       }, async (payload) => {
         const newOrder = payload.new as any;
-        queryClient.setQueryData(['orders', outletId ?? 'no-outlet'], (old: Order[] = []) => [{
-          id: newOrder.id,
-          customer_name: newOrder.customer_name,
-          customer_email: newOrder.customer_email,
-          customer_phone: newOrder.customer_phone,
-          items: Array.isArray(newOrder.items) ? newOrder.items : [],
-          total_amount: Number(newOrder.total_amount),
-          status: newOrder.status,
-          notes: newOrder.notes,
-          delivery_address: newOrder.delivery_address,
-          delivery_time: newOrder.delivery_time,
-          created_at: newOrder.created_at,
-          table_number: newOrder.table_number,
-          order_type: newOrder.order_type,
-        }, ...old]);
+        queryClient.setQueryData(['orders', outletId ?? 'no-outlet'], (old: Order[] = []) => {
+          if (old.some((o) => o.id === newOrder.id)) return old;
+          return [{
+            id: newOrder.id,
+            customer_name: newOrder.customer_name,
+            customer_email: newOrder.customer_email,
+            customer_phone: newOrder.customer_phone,
+            items: Array.isArray(newOrder.items) ? newOrder.items : [],
+            total_amount: Number(newOrder.total_amount),
+            status: newOrder.status,
+            notes: newOrder.notes,
+            delivery_address: newOrder.delivery_address,
+            delivery_time: newOrder.delivery_time,
+            created_at: newOrder.created_at,
+            table_number: newOrder.table_number,
+            order_type: newOrder.order_type,
+            user_id: newOrder.user_id,
+            outlet_id: newOrder.outlet_id,
+          }, ...old];
+        });
 
         playNotificationSound();
-        toast.success("🔔 Nouvelle commande !", { description: `${newOrder.customer_name} - ${Number(newOrder.total_amount).toFixed(2)}€` });
+        toast.success("🔔 Nouvelle commande !", { description: `${newOrder.customer_name} - ${Number(newOrder.total_amount).toLocaleString('fr-FR')} XAF` });
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'orders',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        const updated = payload.new as any;
+        queryClient.setQueryData(['orders', outletId ?? 'no-outlet'], (old: Order[] = []) =>
+          old.map((o) => o.id === updated.id ? { ...o, ...updated, items: Array.isArray(updated.items) ? updated.items : o.items, total_amount: Number(updated.total_amount) } : o)
+        );
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'orders',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        const removed = payload.old as any;
+        queryClient.setQueryData(['orders', outletId ?? 'no-outlet'], (old: Order[] = []) =>
+          old.filter((o) => o.id !== removed.id)
+        );
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, queryClient, toast, outletId, isOffline]);
+  }, [user, queryClient, outletId, isOffline]);
 
   return {
     orders,
