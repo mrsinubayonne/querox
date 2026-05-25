@@ -157,15 +157,25 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
       ? (settings?.invoice_title || 'FACTURE').toUpperCase()
       : (settings?.invoice_title || 'FACTURE');
 
-    // Create a portal that attaches directly to the body for printing
+    // Helpers: convert px (editor) -> pt (print) — 1pt ≈ 1.333px
+    const pxToPt = (px: number) => Math.max(6, Math.round(px * 0.75));
+    const fsTitle = pxToPt(style.font_size_title);
+    const fsBody = pxToPt(style.font_size_body);
+    const fsSmall = pxToPt(style.font_size_small);
+    const fsTotal = pxToPt(style.font_size_total);
+    const fsCompany = pxToPt(style.font_size_company);
+    const accent = style.accent_color || settings?.primary_color || '#000000';
+    const textColor = style.text_color || '#000000';
+    const fontFamily = (style as any).font_family || 'Arial, sans-serif';
+    const fontWeight = (style as any).body_bold ? 700 : 500;
+
     return createPortal(
       <div
         id="invoice-print-portal"
         className="invoice-print-container"
-        style={{ fontFamily: 'Arial, sans-serif', fontWeight: '600' }}
+        style={{ fontFamily, fontWeight, color: textColor, fontSize: `${style.font_size_body}px` }}
       >
         <style>{`
-          /* Hide everything except the invoice during print */
           @media print {
             html, body {
               margin: 0 !important;
@@ -173,20 +183,13 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
               width: ${format === 'a4' ? '210mm' : '80mm'} !important;
               min-width: ${format === 'a4' ? '210mm' : '80mm'} !important;
               max-width: ${format === 'a4' ? '210mm' : '80mm'} !important;
-              height: auto !important;
-              min-height: 0 !important;
               background: white !important;
-              -webkit-text-size-adjust: 100% !important;
-              text-size-adjust: 100% !important;
             }
-            /* Remove every other root element from the page flow so only
-               the invoice is measured for pagination (avoids extra blank pages) */
-            body > *:not(#invoice-print-portal) {
-              display: none !important;
-            }
-            #invoice-print-portal,
-            #invoice-print-portal * {
+            body > *:not(#invoice-print-portal) { display: none !important; }
+            #invoice-print-portal, #invoice-print-portal * {
               visibility: visible !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
             #invoice-print-portal {
               position: static !important;
@@ -198,77 +201,24 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
               background: white !important;
               margin: 0 !important;
               padding: 0 !important;
-              page-break-after: avoid !important;
+              font-family: ${fontFamily} !important;
+              color: ${textColor} !important;
             }
             .invoice-print-container {
               padding: ${format === 'a4' ? '15mm' : '2mm'} !important;
               width: ${format === 'a4' ? '210mm' : '76mm'} !important;
               max-width: ${format === 'a4' ? '210mm' : '76mm'} !important;
-              height: auto !important;
-              overflow: visible !important;
-              margin: 0 !important;
-              page-break-after: avoid !important;
+              font-size: ${fsBody}pt !important;
+              line-height: 1.3 !important;
             }
             @page {
               size: ${format === 'a4' ? 'A4 portrait' : '80mm auto'};
               margin: ${format === 'a4' ? '10mm' : '0mm'};
             }
-            /* Font sizes for thermal receipt */
-            .invoice-print-container {
-              font-size: ${format === 'a4' ? '11pt' : '12pt'} !important;
-              -webkit-text-size-adjust: 100% !important;
-              text-size-adjust: 100% !important;
-              line-height: 1.3 !important;
-            }
-            .invoice-print-container table {
-              font-size: inherit !important;
-              width: 100% !important;
-            }
-            .invoice-print-container td,
-            .invoice-print-container th {
-              font-size: ${format === 'a4' ? '10pt' : '11pt'} !important;
-              padding: ${format === 'a4' ? '4px' : '2px 1px'} !important;
-            }
-            .invoice-print-container h1 {
-              font-size: ${format === 'a4' ? '18pt' : '14pt'} !important;
-            }
-            .invoice-print-container h2 {
-              font-size: ${format === 'a4' ? '16pt' : '13pt'} !important;
-            }
-            .invoice-print-container p,
-            .invoice-print-container span {
-              font-size: ${format === 'a4' ? '10pt' : '11pt'} !important;
-            }
-            /* Allow page breaks in the table */
-            table { page-break-inside: auto !important; }
-            tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+            table { page-break-inside: auto !important; width: 100% !important; }
+            tr { page-break-inside: avoid !important; }
             thead { display: table-header-group !important; }
-            tfoot { display: table-footer-group !important; }
-            /* Avoid page breaks in header and footer */
-            .invoice-header { page-break-inside: avoid !important; }
-            .invoice-footer { page-break-inside: avoid !important; }
-            /* Anti-blank-page rules: never force a break after the invoice
-               or any of its descendants, and collapse trailing whitespace. */
-            #invoice-print-portal,
-            #invoice-print-portal *,
-            .invoice-print-container,
-            .invoice-print-container * {
-              page-break-after: avoid !important;
-              break-after: avoid-page !important;
-            }
-            #invoice-print-portal > *:last-child,
-            .invoice-print-container > *:last-child {
-              margin-bottom: 0 !important;
-              padding-bottom: 0 !important;
-              page-break-after: avoid !important;
-              break-after: avoid-page !important;
-            }
-            * {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              font-family: 'Arial', sans-serif !important;
-              font-weight: 600 !important;
-            }
+            .invoice-header, .invoice-footer { page-break-inside: avoid !important; }
           }
           @media screen {
             #invoice-print-portal {
@@ -284,89 +234,113 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
           }
         `}</style>
 
-        {/* Header */}
-        <div className="invoice-header flex justify-between items-start mb-2 pb-1 border-b border-gray-300">
-          <div>
-            {opts.show_logo && settings?.logo_url && <img src={settings.logo_url} alt="Logo" className="h-12 mb-1" />}
-            <h1 className="text-xl font-bold text-black mb-0">
+        <div
+          className="invoice-header"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: style.section_spacing,
+            paddingBottom: 6,
+            borderBottom: `2px solid ${accent}`,
+            gap: 12,
+          }}
+        >
+          <div style={{ textAlign: style.company_align, flex: 1 }}>
+            {opts.show_logo && settings?.logo_url && <img src={settings.logo_url} alt="Logo" style={{ height: 40, marginBottom: 4 }} />}
+            <h1 style={{ fontSize: `${fsCompany}pt`, fontWeight: style.company_bold ? 700 : 400, margin: 0, color: textColor }}>
               {settings?.company_name || outlet?.name || 'Mon Restaurant'}
             </h1>
-            {opts.show_company_address && settings?.company_address && (
-              <p className="text-xs text-black whitespace-pre-line">{settings.company_address}</p>
+            {opts.show_company_address && (settings?.company_address || outlet?.address) && (
+              <p style={{ fontSize: `${fsSmall}pt`, whiteSpace: 'pre-line', margin: '2px 0' }}>
+                {settings?.company_address || outlet?.address}
+              </p>
             )}
-            {opts.show_company_address && !settings?.company_address && outlet?.address && (
-              <p className="text-xs text-black whitespace-pre-line">{outlet.address}</p>
+            {opts.show_company_phone && (settings?.company_phone || outlet?.phone) && (
+              <p style={{ fontSize: `${fsSmall}pt`, margin: '2px 0' }}>Tél: {settings?.company_phone || outlet?.phone}</p>
             )}
-            {opts.show_company_phone && settings?.company_phone && <p className="text-xs text-black">Tél: {settings.company_phone}</p>}
-            {opts.show_company_phone && !settings?.company_phone && outlet?.phone && (
-              <p className="text-xs text-black">Tél: {outlet.phone}</p>
+            {opts.show_company_email && settings?.company_email && (
+              <p style={{ fontSize: `${fsSmall}pt`, margin: '2px 0' }}>{settings.company_email}</p>
             )}
-            {opts.show_company_email && settings?.company_email && <p className="text-xs text-black">{settings.company_email}</p>}
-            {opts.show_tax_id && settings?.tax_id && <p className="text-xs text-black">SIRET/TVA: {settings.tax_id}</p>}
+            {opts.show_tax_id && settings?.tax_id && (
+              <p style={{ fontSize: `${fsSmall}pt`, margin: '2px 0' }}>SIRET/TVA: {settings.tax_id}</p>
+            )}
             {opts.show_nif && (settings as any)?.nif_number && (
-              <p className="text-xs text-black">NIU: {(settings as any).nif_number}</p>
+              <p style={{ fontSize: `${fsSmall}pt`, margin: '2px 0' }}>NIU: {(settings as any).nif_number}</p>
             )}
             {opts.show_rccm && (settings as any)?.rccm_number && (
-              <p className="text-xs text-black">RCCM: {(settings as any).rccm_number}</p>
+              <p style={{ fontSize: `${fsSmall}pt`, margin: '2px 0' }}>RCCM: {(settings as any).rccm_number}</p>
             )}
             {opts.show_other_registration && (settings as any)?.other_registration && (
-              <p className="text-xs text-black">{(settings as any).other_registration}</p>
+              <p style={{ fontSize: `${fsSmall}pt`, margin: '2px 0' }}>{(settings as any).other_registration}</p>
             )}
           </div>
-          <div className="text-right">
-            <h2 className="font-bold mb-0" style={{ color: style.text_color, fontSize: `${Math.max(14, Math.round(style.font_size_title * 0.75))}pt`, fontStyle: style.title_italic ? 'italic' : 'normal' }}>{titleText}</h2>
+          <div style={{ textAlign: style.header_align, flex: 1 }}>
+            <h2
+              style={{
+                margin: 0,
+                color: textColor,
+                fontSize: `${fsTitle}pt`,
+                fontWeight: style.title_bold ? 700 : 400,
+                fontStyle: style.title_italic ? 'italic' : 'normal',
+              }}
+            >
+              {titleText}
+            </h2>
             {opts.show_invoice_number && (
-              <p className="font-semibold" style={{ color: style.text_color, fontSize: `${Math.max(9, Math.round(style.font_size_body * 0.7))}pt` }}>{invoice.invoice_number}</p>
+              <p style={{ color: textColor, fontSize: `${fsBody}pt`, fontWeight: 600, margin: '2px 0' }}>
+                {invoice.invoice_number}
+              </p>
             )}
             {opts.show_date && (
-              <p style={{ color: style.text_color, fontSize: `${Math.max(8, Math.round(style.font_size_small * 0.7))}pt` }}>Date: {formatDate(invoice.created_at)}</p>
+              <p style={{ color: textColor, fontSize: `${fsSmall}pt`, margin: '2px 0' }}>
+                Date: {formatDate(invoice.created_at)}
+              </p>
             )}
           </div>
         </div>
 
-        {/* Customer info */}
         {opts.show_customer_info && (
-          <div className="mb-2">
-            <h3 className="text-sm font-bold text-black mb-0">Facturé à:</h3>
-            <p className="text-xs text-black font-semibold">{invoice.customer_name || 'Client'}</p>
-            {invoice.customer_email && <p className="text-xs text-black">{invoice.customer_email}</p>}
-            {invoice.customer_phone && <p className="text-xs text-black">{invoice.customer_phone}</p>}
+          <div style={{ marginBottom: style.section_spacing }}>
+            <h3 style={{ fontSize: `${fsBody}pt`, fontWeight: 700, margin: 0 }}>Facturé à:</h3>
+            <p style={{ fontSize: `${fsBody}pt`, fontWeight: 600, margin: '2px 0' }}>{invoice.customer_name || 'Client'}</p>
+            {invoice.customer_email && <p style={{ fontSize: `${fsSmall}pt`, margin: '2px 0' }}>{invoice.customer_email}</p>}
+            {invoice.customer_phone && <p style={{ fontSize: `${fsSmall}pt`, margin: '2px 0' }}>{invoice.customer_phone}</p>}
           </div>
         )}
-        {opts.show_served_by && servedBy && <p className="text-xs text-black mb-2">Servi par: {servedBy}</p>}
+        {opts.show_served_by && servedBy && (
+          <p style={{ fontSize: `${fsSmall}pt`, marginBottom: style.section_spacing }}>Servi par: {servedBy}</p>
+        )}
 
-        {/* Invoice items */}
-        <div className="mb-2">
-          <table className="w-full border-collapse">
+        <div style={{ marginBottom: style.section_spacing }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-300 px-1 py-1 text-left text-xs font-semibold">Article</th>
-                <th className="border border-gray-300 px-1 py-1 text-center text-xs font-semibold">Qté</th>
-                <th className="border border-gray-300 px-1 py-1 text-right text-xs font-semibold">P.U.</th>
-                <th className="border border-gray-300 px-1 py-1 text-right text-xs font-semibold">Total</th>
+              <tr style={{ background: '#f3f4f6' }}>
+                <th style={{ border: '1px solid #d1d5db', padding: '4px', textAlign: 'left', fontSize: `${fsSmall}pt`, fontWeight: 700 }}>Article</th>
+                <th style={{ border: '1px solid #d1d5db', padding: '4px', textAlign: 'center', fontSize: `${fsSmall}pt`, fontWeight: 700 }}>Qté</th>
+                <th style={{ border: '1px solid #d1d5db', padding: '4px', textAlign: 'right', fontSize: `${fsSmall}pt`, fontWeight: 700 }}>P.U.</th>
+                <th style={{ border: '1px solid #d1d5db', padding: '4px', textAlign: 'right', fontSize: `${fsSmall}pt`, fontWeight: 700 }}>Total</th>
               </tr>
             </thead>
             <tbody>
               {invoice.items && Array.isArray(invoice.items) && invoice.items.length > 0 ? (
                 invoice.items.map((item: any, index: number) => (
                   <tr key={index}>
-                    <td className="border border-gray-300 px-1 py-1">
-                      <p className="text-xs">{item.name}</p>
-                    </td>
-                    <td className="border border-gray-300 px-1 py-1 text-center text-xs">{item.quantity}</td>
-                    <td className="border border-gray-300 px-1 py-1 text-right text-xs">
+                    <td style={{ border: '1px solid #d1d5db', padding: '4px', fontSize: `${fsSmall}pt` }}>{item.name}</td>
+                    <td style={{ border: '1px solid #d1d5db', padding: '4px', textAlign: 'center', fontSize: `${fsSmall}pt` }}>{item.quantity}</td>
+                    <td style={{ border: '1px solid #d1d5db', padding: '4px', textAlign: 'right', fontSize: `${fsSmall}pt` }}>
                       {item.price?.toLocaleString('fr-FR')} XAF
                     </td>
-                    <td className="border border-gray-300 px-1 py-1 text-right text-xs font-semibold">
+                    <td style={{ border: '1px solid #d1d5db', padding: '4px', textAlign: 'right', fontSize: `${fsSmall}pt`, fontWeight: 700 }}>
                       {((item.price || 0) * (item.quantity || 0)).toLocaleString('fr-FR')} XAF
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="border border-gray-300 px-1 py-1">
-                    <p className="text-xs text-black">Services et produits</p>
-                    {invoice.notes && <p className="text-xs text-black">{invoice.notes}</p>}
+                  <td colSpan={4} style={{ border: '1px solid #d1d5db', padding: '4px', fontSize: `${fsSmall}pt` }}>
+                    Services et produits
+                    {invoice.notes && <div>{invoice.notes}</div>}
                   </td>
                 </tr>
               )}
@@ -374,25 +348,29 @@ const InvoicePrintView = forwardRef<InvoicePrintViewRef, InvoicePrintViewProps>(
           </table>
         </div>
 
-        {/* Total */}
-        <div className="flex justify-end mb-2">
-          <div className="w-48">
-            <div className="flex justify-between py-1 border-t-2 border-gray-300">
-              <span className="text-base text-black font-bold">TOTAL:</span>
-              <span className="text-base text-black font-bold">
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: style.total_align === 'left' ? 'flex-start' : style.total_align === 'center' ? 'center' : 'flex-end',
+            marginBottom: style.section_spacing,
+          }}
+        >
+          <div style={{ minWidth: 200 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 4, borderTop: `2px solid ${accent}` }}>
+              <span style={{ fontSize: `${fsTotal}pt`, fontWeight: 700 }}>TOTAL:</span>
+              <span style={{ fontSize: `${fsTotal}pt`, fontWeight: style.total_bold ? 900 : 700 }}>
                 {invoice.total_amount.toLocaleString('fr-FR')} XAF
               </span>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="invoice-footer border-t border-gray-300 pt-2 mt-2">
+        <div className="invoice-footer" style={{ borderTop: `1px solid ${accent}`, paddingTop: 6, marginTop: 6 }}>
           {opts.show_footer_note && settings?.footer_note && (
-            <p className="text-xs text-black mb-1 whitespace-pre-line">{settings.footer_note}</p>
+            <p style={{ fontSize: `${fsSmall}pt`, whiteSpace: 'pre-line', margin: '2px 0' }}>{settings.footer_note}</p>
           )}
           {opts.show_querox_branding && (
-            <p className="text-xs text-black text-center" style={{ fontFamily: 'Arial, sans-serif', fontStyle: 'italic' }}>
+            <p style={{ fontSize: `${fsSmall}pt`, textAlign: 'center', fontStyle: 'italic', margin: '4px 0 0 0' }}>
               Généré par QUEROX.me - Logiciel de gestion, automatisation et optimisation
             </p>
           )}
