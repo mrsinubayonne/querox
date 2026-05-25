@@ -7,9 +7,10 @@ import { useNavigate } from 'react-router-dom';
 
 interface OrdersHeaderProps {
   onOrderCreated: () => Promise<void>;
+  ordersCount?: number;
 }
 
-export const OrdersHeader: React.FC<OrdersHeaderProps> = ({ onOrderCreated }) => {
+export const OrdersHeader: React.FC<OrdersHeaderProps> = ({ onOrderCreated, ordersCount }) => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -20,7 +21,14 @@ export const OrdersHeader: React.FC<OrdersHeaderProps> = ({ onOrderCreated }) =>
           <Package className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Commandes</h1>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            Commandes
+            {typeof ordersCount === 'number' && (
+              <span className="inline-flex items-center justify-center min-w-[2rem] h-7 px-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold">
+                {ordersCount}
+              </span>
+            )}
+          </h1>
           <p className="text-gray-600">Gérez toutes vos commandes</p>
         </div>
       </div>
