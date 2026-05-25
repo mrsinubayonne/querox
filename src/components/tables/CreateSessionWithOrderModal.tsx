@@ -73,8 +73,30 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       setCart([]);
       setSearchTerm("");
       setNumberOfGuests("");
+      setActiveCategory("__all__");
     }
   }, [isOpen]);
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    menuItems.forEach((it: any) => set.add(it.category_name || "Autres"));
+    return Array.from(set).sort();
+  }, [menuItems]);
+
+  const filteredItems = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return menuItems.filter((item: any) => {
+      const matchCat = activeCategory === "__all__" || (item.category_name || "Autres") === activeCategory;
+      if (!matchCat) return false;
+      if (!term) return true;
+      return (
+        item.name.toLowerCase().includes(term) ||
+        (item.description && item.description.toLowerCase().includes(term))
+      );
+    });
+  }, [menuItems, searchTerm, activeCategory]);
+
+  const totalQty = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return menuItems;
