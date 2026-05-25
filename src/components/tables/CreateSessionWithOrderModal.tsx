@@ -51,13 +51,14 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const queryClient = useQueryClient();
   const [numberOfGuests, setNumberOfGuests] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("__all__");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [showCustomItem, setShowCustomItem] = useState(false);
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState("");
 
-  const { menuItems } = useInternalMenuItems(isOpen);
+  const { menuItems, loading: menuLoading } = useInternalMenuItems(isOpen);
 
   // CRITICAL: Use the EXACT same userId/outletId logic as useOptimizedTableSessions
   // to ensure cache keys match perfectly
