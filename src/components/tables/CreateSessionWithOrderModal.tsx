@@ -98,15 +98,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
   const totalQty = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
 
-  const filteredItems = useMemo(() => {
-    if (!searchTerm.trim()) return menuItems;
-    const term = searchTerm.toLowerCase();
-    return menuItems.filter(
-      (item) =>
-        item.name.toLowerCase().includes(term) ||
-        (item.description && item.description.toLowerCase().includes(term))
-    );
-  }, [menuItems, searchTerm]);
 
   const addToCart = (item: typeof menuItems[0]) => {
     const itemData = menuItems.find(m => m.id === item.id);
