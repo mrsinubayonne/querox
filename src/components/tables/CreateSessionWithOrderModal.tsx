@@ -33,8 +33,9 @@ interface CreateSessionWithOrderModalProps {
 interface CartItem {
   id: string;
   name: string;
-  price: number;
+  price: number; // unit price after manual override
   quantity: number;
+  discount?: number; // %
   selected_options?: SelectedOption[];
   options_label?: string;
 }
@@ -50,6 +51,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const queryClient = useQueryClient();
   const [numberOfGuests, setNumberOfGuests] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const deferredSearch = useDeferredValue(searchTerm);
   const [activeCategory, setActiveCategory] = useState<string>("__all__");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,22 +59,29 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState("");
 
-  const { menuItems, loading: menuLoading } = useInternalMenuItems(isOpen);
+  // POS numpad state
+  const [activeLineId, setActiveLineId] = useState<string | null>(null);
+  const [numpadMode, setNumpadMode] = useState<NumpadMode>('qty');
+  const [numpadBuffer, setNumpadBuffer] = useState<string>('');
 
-  // CRITICAL: Use the EXACT same userId/outletId logic as useOptimizedTableSessions
-  // to ensure cache keys match perfectly
+  const { menuItems, loading: menuLoading } = useInternalMenuItems(true);
+
   const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
   const scopedOutletId = (localStorage.getItem('selectedOutletId') || undefined) as string | undefined;
   const sessionsQueryKey = ['table-sessions', resolvedUserId, scopedOutletId] as const;
   const ordersQueryKey = ['orders', resolvedUserId, scopedOutletId] as const;
 
-  // Reset cart when modal opens
+  // Reset state on close (not on open) -> opening is instant
   React.useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) {
       setCart([]);
       setSearchTerm("");
       setNumberOfGuests("");
       setActiveCategory("__all__");
+      setActiveLineId(null);
+      setNumpadBuffer('');
+      setNumpadMode('qty');
+      setShowCustomItem(false);
     }
   }, [isOpen]);
 
@@ -83,19 +92,43 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   }, [menuItems]);
 
   const filteredItems = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const term = deferredSearch.trim().toLowerCase();
     return menuItems.filter((item: any) => {
       const matchCat = activeCategory === "__all__" || (item.category_name || "Autres") === activeCategory;
       if (!matchCat) return false;
       if (!term) return true;
-      return (
-        item.name.toLowerCase().includes(term) ||
-        (item.description && item.description.toLowerCase().includes(term))
-      );
+      return item.name.toLowerCase().includes(term);
     });
-  }, [menuItems, searchTerm, activeCategory]);
+  }, [menuItems, deferredSearch, activeCategory]);
 
   const totalQty = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
+
+  // Apply numpad buffer to active line whenever it changes meaningfully
+  const applyBufferToLine = useCallback((lineId: string, mode: NumpadMode, raw: string) => {
+    const num = Number(raw);
+    if (isNaN(num)) return;
+    setCart(prev => prev.map(it => {
+      if (it.id !== lineId) return it;
+      if (mode === 'qty') return { ...it, quantity: Math.max(1, Math.floor(num)) };
+      if (mode === 'price') return { ...it, price: Math.max(0, num) };
+      if (mode === 'discount') return { ...it, discount: Math.max(0, Math.min(100, num)) };
+      return it;
+    }));
+  }, []);
+
+  React.useEffect(() => {
+    if (!activeLineId || numpadBuffer === '') return;
+    applyBufferToLine(activeLineId, numpadMode, numpadBuffer);
+  }, [numpadBuffer, numpadMode, activeLineId, applyBufferToLine]);
+
+  const removeActiveLine = useCallback(() => {
+    if (!activeLineId) return;
+    setCart(prev => prev.filter(i => i.id !== activeLineId));
+    setActiveLineId(null);
+    setNumpadBuffer('');
+  }, [activeLineId]);
+
+
 
 
   const addToCart = (item: typeof menuItems[0]) => {
