@@ -117,53 +117,55 @@ export const useInternalMenuItems = (isActive: boolean) => {
           const menuId = (menu as any).id;
           localStorage.setItem('activeMenuId', menuId);
 
-          const { data: categories } = await supabase
-            .from('menu_categories')
-            .select('id, name')
-            .eq('menu_id', menuId);
+          // Parallel: categories + items
+          const [{ data: categories }, ] = await Promise.all([
+            supabase.from('menu_categories').select('id, name').eq('menu_id', menuId),
+          ]);
 
           if (!categories || categories.length === 0) return;
           const catIds = categories.map(c => c.id);
           const catMap = new Map(categories.map(c => [c.id, c.name]));
 
-          const { data: freshItems } = await supabase
+          // Lighter select: drop description (not used in POS). image_url kept but unused in Tables modals now.
+          const itemsPromise = supabase
             .from('menu_items')
-            .select('id, name, description, price, image_url, is_available, category_id, is_custom_price, is_custom_name')
+            .select('id, name, price, image_url, is_available, category_id, is_custom_price, is_custom_name')
             .in('category_id', catIds)
             .neq('is_available', false);
 
+          const groupsPromise = (supabase as any)
+            .from('menu_item_option_groups')
+            .select('id, menu_item_id, name, selection_type, is_required, order_index')
+            .order('order_index');
+
+          const [itemsRes, groupsRes] = await Promise.all([itemsPromise, groupsPromise]);
+          const freshItems = itemsRes.data;
+          const groupsData = groupsRes.data;
+
           if (freshItems && freshItems.length > 0) {
-            const itemIds = freshItems.map(i => i.id);
-            const groupsByItem = new Map<string, any[]>();
-            try {
-              const { data: groupsData } = await (supabase as any)
-                .from('menu_item_option_groups')
-                .select('id, menu_item_id, name, selection_type, is_required, order_index')
-                .in('menu_item_id', itemIds)
+            const itemIds = new Set(freshItems.map(i => i.id));
+            const relevantGroups = (groupsData || []).filter((g: any) => itemIds.has(g.menu_item_id));
+            const groupIds = relevantGroups.map((g: any) => g.id);
+            let valuesData: any[] = [];
+            if (groupIds.length > 0) {
+              const { data: vals } = await (supabase as any)
+                .from('menu_item_option_values')
+                .select('id, group_id, name, extra_price, is_available, order_index')
+                .in('group_id', groupIds)
                 .order('order_index');
-              const groupIds = (groupsData || []).map((g: any) => g.id);
-              let valuesData: any[] = [];
-              if (groupIds.length > 0) {
-                const { data: vals } = await (supabase as any)
-                  .from('menu_item_option_values')
-                  .select('id, group_id, name, extra_price, is_available, order_index')
-                  .in('group_id', groupIds)
-                  .order('order_index');
-                valuesData = vals || [];
-              }
-              for (const g of groupsData || []) {
-                const arr = groupsByItem.get(g.menu_item_id) || [];
-                arr.push({ ...g, values: valuesData.filter((v: any) => v.group_id === g.id && v.is_available !== false) });
-                groupsByItem.set(g.menu_item_id, arr);
-              }
-            } catch (err) {
-              console.warn('[useInternalMenuItems] Option groups load failed:', err);
+              valuesData = vals || [];
+            }
+            const groupsByItem = new Map<string, any[]>();
+            for (const g of relevantGroups) {
+              const arr = groupsByItem.get(g.menu_item_id) || [];
+              arr.push({ ...g, values: valuesData.filter((v: any) => v.group_id === g.id && v.is_available !== false) });
+              groupsByItem.set(g.menu_item_id, arr);
             }
 
             const items: MenuItem[] = freshItems.map(item => ({
               id: item.id,
               name: item.name,
-              description: item.description || '',
+              description: '',
               price: Number(item.price),
               category_name: catMap.get(item.category_id) || 'Autres',
               image_url: item.image_url || undefined,
