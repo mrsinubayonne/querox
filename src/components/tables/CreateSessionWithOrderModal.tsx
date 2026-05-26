@@ -131,98 +131,81 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
 
 
-  const addToCart = (item: typeof menuItems[0]) => {
-    const itemData = menuItems.find(m => m.id === item.id);
-    
-    if (itemData && (itemData as any).is_custom_price) {
-      const customPrice = prompt("Entrez le prix pour ce plat:");
-      const customName = (itemData as any).is_custom_name 
-        ? prompt("Entrez le nom du plat:", item.name) 
-        : item.name;
-      
-      if (!customPrice || isNaN(Number(customPrice))) return;
-      
-      setCart((prev) => [
-        ...prev, 
-        { 
-          id: item.id + Date.now(),
-          name: customName || item.name, 
-          price: Number(customPrice), 
-          quantity: 1 
-        }
-      ]);
-      setSearchTerm("");
-      return;
-    }
-    requestAdd(item as any);
-    setSearchTerm("");
-  };
-
   const { requestAdd, pickerNode } = useMenuItemOptionsPicker((item, result) => {
     setCart((prev) => {
       const existing = prev.find(i => i.id === result.cartKey);
+      let next;
       if (existing) {
-        return prev.map(i => i.id === result.cartKey ? { ...i, quantity: i.quantity + 1 } : i);
+        next = prev.map(i => i.id === result.cartKey ? { ...i, quantity: i.quantity + 1 } : i);
+      } else {
+        const displayName = result.optionsLabel ? `${item.name} (${result.optionsLabel})` : item.name;
+        next = [...prev, {
+          id: result.cartKey,
+          name: displayName,
+          price: result.unitPrice,
+          quantity: 1,
+          selected_options: result.selectedOptions,
+          options_label: result.optionsLabel,
+        }];
       }
-      const displayName = result.optionsLabel ? `${item.name} (${result.optionsLabel})` : item.name;
-      return [...prev, {
-        id: result.cartKey,
-        name: displayName,
-        price: result.unitPrice,
-        quantity: 1,
-        selected_options: result.selectedOptions,
-        options_label: result.optionsLabel,
-      }];
+      return next;
     });
+    setActiveLineId(result.cartKey);
+    setNumpadBuffer('');
+    setNumpadMode('qty');
   });
 
-  const updateQuantity = (id: string, delta: number) => {
-    setCart((prev) => {
-      const updated = prev.map((item) => {
-        if (item.id === id) {
-          const newQty = item.quantity + delta;
-          return newQty > 0 ? { ...item, quantity: newQty } : item;
-        }
-        return item;
-      });
-      return updated.filter((item) => item.quantity > 0);
-    });
-  };
+  const addToCart = useCallback((id: string) => {
+    const item = menuItems.find(m => m.id === id);
+    if (!item) return;
+    if ((item as any).is_custom_price) {
+      // Open as custom-price line, numpad auto-switches to Prix mode
+      const lineId = `custom-${Date.now()}`;
+      setCart(prev => [...prev, { id: lineId, name: item.name, price: 0, quantity: 1 }]);
+      setActiveLineId(lineId);
+      setNumpadMode('price');
+      setNumpadBuffer('');
+      return;
+    }
+    requestAdd(item as any);
+  }, [menuItems, requestAdd]);
 
-  const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
-  };
+  const selectLine = useCallback((id: string) => {
+    setActiveLineId(id);
+    setNumpadBuffer('');
+  }, []);
 
   const addCustomItem = () => {
     if (!customItemName.trim() || !customItemPrice) {
       toast.error("Champs requis", { description: "Veuillez renseigner le nom et le prix de l'article." });
       return;
     }
-
     const price = Number(customItemPrice);
     if (isNaN(price) || price <= 0) {
       toast.error("Prix invalide", { description: "Le prix doit être un nombre positif." });
       return;
     }
-
     const newItem: CartItem = {
       id: `custom-${Date.now()}`,
       name: customItemName,
-      price: price,
+      price,
       quantity: 1,
     };
-
     setCart((prev) => [...prev, newItem]);
+    setActiveLineId(newItem.id);
     setCustomItemName("");
     setCustomItemPrice("");
     setShowCustomItem(false);
-    
-    toast.success("Article ajouté", { description: `${customItemName} ajouté au panier.` });
   };
 
-  const totalAmount = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [cart]);
+  const lineTotal = (item: CartItem) => {
+    const gross = item.price * item.quantity;
+    return gross * (1 - (item.discount || 0) / 100);
+  };
+
+  const totalAmount = useMemo(() => cart.reduce((s, i) => s + lineTotal(i), 0), [cart]);
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
