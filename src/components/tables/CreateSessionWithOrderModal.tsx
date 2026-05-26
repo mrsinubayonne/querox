@@ -491,63 +491,59 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           </div>
         </div>
 
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-[180px_1fr_340px] overflow-hidden">
-          {/* === Col 1: Catégories === */}
-          <aside className="border-r bg-muted/30 overflow-hidden flex-col hidden md:flex">
-            <div className="p-3 border-b">
-              <h3 className="text-xs font-semibold uppercase text-muted-foreground">Catégories</h3>
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="p-2 space-y-1">
+        {/* === Onglets catégories horizontaux === */}
+        <div className="border-b shrink-0 overflow-x-auto">
+          <div className="flex gap-1 px-3 py-2 min-w-max">
+            <button
+              type="button"
+              onClick={() => setActiveCategory("__all__")}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition active:scale-[0.97]",
+                activeCategory === "__all__"
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "bg-muted hover:bg-accent",
+              )}
+            >
+              Toutes <span className="opacity-70">({menuItems.length})</span>
+            </button>
+            {categories.map((cat) => {
+              const count = menuItems.filter((i: any) => (i.category_name || "Autres") === cat).length;
+              return (
                 <button
+                  key={cat}
                   type="button"
-                  onClick={() => setActiveCategory("__all__")}
+                  onClick={() => setActiveCategory(cat)}
                   className={cn(
-                    "w-full text-left px-3 py-2.5 rounded-md text-sm font-medium transition-all active:scale-[0.97]",
-                    activeCategory === "__all__"
+                    "px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition active:scale-[0.97]",
+                    activeCategory === cat
                       ? "bg-primary text-primary-foreground shadow"
-                      : "hover:bg-accent"
+                      : "bg-muted hover:bg-accent",
                   )}
                 >
-                  Toutes ({menuItems.length})
+                  {cat} <span className="opacity-70">({count})</span>
                 </button>
-                {categories.map((cat) => {
-                  const count = menuItems.filter((i: any) => (i.category_name || "Autres") === cat).length;
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setActiveCategory(cat)}
-                      className={cn(
-                        "w-full text-left px-3 py-2.5 rounded-md text-sm font-medium transition-all active:scale-[0.97]",
-                        activeCategory === cat
-                          ? "bg-primary text-primary-foreground shadow"
-                          : "hover:bg-accent"
-                      )}
-                    >
-                      {cat} <span className="opacity-70">({count})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </aside>
+              );
+            })}
+          </div>
+        </div>
 
-          {/* === Col 2: Plats === */}
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_360px] overflow-hidden">
+          {/* === Plats (sans images, tuiles denses) === */}
           <section className="flex flex-col overflow-hidden">
-            <div className="p-3 border-b">
+            <div className="p-2 border-b">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher un plat..."
+                  placeholder="Rechercher un plat... (Échap pour vider)"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-10"
+                  onKeyDown={(e) => { if (e.key === 'Escape') setSearchTerm(''); }}
+                  className="pl-10 h-9"
                   autoComplete="off"
                 />
               </div>
             </div>
-            <ScrollArea className="flex-1 p-3">
+            <ScrollArea className="flex-1 p-2">
               {menuLoading && menuItems.length === 0 ? (
                 <div className="flex items-center justify-center py-12 text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin mr-2" /> Chargement...
@@ -555,44 +551,40 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
               ) : filteredItems.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground text-sm">Aucun plat trouvé</div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5">
                   {filteredItems.map((item: any) => (
-                    <button
+                    <PosProductTile
                       key={item.id}
-                      type="button"
-                      onClick={() => addToCart(item)}
-                      className="group relative text-left p-3 rounded-lg border-2 border-transparent bg-card hover:border-primary hover:shadow-md transition-all active:scale-[0.97] flex flex-col"
-                    >
-                      {item.image_url && (
-                        <div className="aspect-square mb-2 rounded-md overflow-hidden bg-muted">
-                          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
-                        </div>
-                      )}
-                      <p className="text-sm font-medium line-clamp-2 mb-1 leading-tight">{item.name}</p>
-                      <p className="text-sm font-bold text-primary mt-auto">{item.price.toLocaleString()} XAF</p>
-                    </button>
+                      id={item.id}
+                      name={item.name}
+                      price={Number(item.price) || 0}
+                      accent={colorForCategory(item.category_name || 'Autres')}
+                      onClick={addToCart}
+                    />
                   ))}
                 </div>
               )}
             </ScrollArea>
           </section>
 
-          {/* === Col 3: Ticket === */}
+          {/* === Ticket + Numpad === */}
           <aside className="border-l flex flex-col overflow-hidden bg-card">
-            <div className="px-3 py-2 border-b flex items-center justify-between">
+            <div className="px-3 py-2 border-b flex items-center justify-between gap-2">
               <h3 className="text-xs font-semibold uppercase text-muted-foreground">Ticket ({totalQty})</h3>
               <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowCustomItem(!showCustomItem)}
-                  className="h-7 text-xs"
-                >
-                  <Plus className="h-3 w-3 mr-1" /> Libre
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="Couv."
+                  value={numberOfGuests}
+                  onChange={(e) => setNumberOfGuests(e.target.value)}
+                  className="w-16 h-7 text-xs"
+                />
+                <Button type="button" size="sm" variant="ghost" onClick={() => setShowCustomItem(!showCustomItem)} className="h-7 text-xs px-2">
+                  <Plus className="h-3 w-3 mr-0.5" /> Libre
                 </Button>
                 {cart.length > 0 && (
-                  <Button type="button" size="sm" variant="ghost" onClick={() => setCart([])} className="h-7 text-xs">
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { setCart([]); setActiveLineId(null); }} className="h-7 text-xs px-2">
                     Vider
                   </Button>
                 )}
@@ -600,7 +592,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             </div>
 
             {showCustomItem && (
-              <div className="space-y-2 p-3 border-b bg-accent/10">
+              <div className="space-y-1.5 p-2 border-b bg-accent/10">
                 <Input
                   placeholder="Nom de l'article"
                   value={customItemName}
@@ -627,42 +619,67 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             <ScrollArea className="flex-1">
               {cart.length === 0 ? (
                 <div className="text-center py-10 text-sm text-muted-foreground px-4">
-                  Cliquez sur un plat pour l'ajouter
+                  Cliquez sur un plat → puis utilisez le pavé numérique
                 </div>
               ) : (
-                <div className="p-2 space-y-1.5">
-                  {cart.map((item) => (
-                    <div key={item.id} className="bg-muted/40 rounded-md p-2">
-                      <div className="flex justify-between items-start gap-2 mb-1.5">
-                        <p className="text-sm font-medium leading-tight flex-1 min-w-0">{item.name}</p>
-                        <Button type="button" size="icon" variant="ghost" onClick={() => removeFromCart(item.id)} className="h-6 w-6 shrink-0">
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <Button type="button" size="icon" variant="outline" onClick={() => updateQuantity(item.id, -1)} className="h-7 w-7">
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-6 text-center text-sm font-semibold">{item.quantity}</span>
-                          <Button type="button" size="icon" variant="outline" onClick={() => updateQuantity(item.id, 1)} className="h-7 w-7">
-                            <Plus className="h-3 w-3" />
-                          </Button>
+                <div className="p-1.5 space-y-1">
+                  {cart.map((item) => {
+                    const isActive = item.id === activeLineId;
+                    const showBuffer = isActive && numpadBuffer !== '';
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => selectLine(item.id)}
+                        className={cn(
+                          "w-full text-left rounded-md p-2 transition active:scale-[0.99] border",
+                          isActive
+                            ? "bg-primary/10 border-primary shadow-sm"
+                            : "bg-muted/30 border-transparent hover:bg-muted/50",
+                        )}
+                      >
+                        <div className="flex justify-between items-start gap-2 mb-0.5">
+                          <p className="text-sm font-medium leading-tight flex-1 min-w-0 line-clamp-1">{item.name}</p>
+                          <span className="text-sm font-bold text-primary shrink-0">
+                            {Math.round(lineTotal(item)).toLocaleString()}
+                          </span>
                         </div>
-                        <span className="text-sm font-bold text-primary">
-                          {(item.price * item.quantity).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>
+                            <span className={cn(numpadMode === 'qty' && isActive && "text-primary font-bold")}>
+                              {showBuffer && numpadMode === 'qty' ? numpadBuffer : item.quantity}
+                            </span>
+                            {' × '}
+                            <span className={cn(numpadMode === 'price' && isActive && "text-primary font-bold")}>
+                              {(showBuffer && numpadMode === 'price' ? Number(numpadBuffer) : item.price).toLocaleString()}
+                            </span>
+                            {(item.discount || (showBuffer && numpadMode === 'discount')) ? (
+                              <span className={cn("ml-1", numpadMode === 'discount' && isActive && "text-primary font-bold")}>
+                                {' '}-{showBuffer && numpadMode === 'discount' ? numpadBuffer : item.discount}%
+                              </span>
+                            ) : null}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </ScrollArea>
 
-            <div className="p-3 border-t bg-muted/30 space-y-2">
+            <PosNumpad
+              mode={numpadMode}
+              onModeChange={(m) => { setNumpadMode(m); setNumpadBuffer(''); }}
+              buffer={numpadBuffer}
+              onBufferChange={setNumpadBuffer}
+              onDeleteLine={removeActiveLine}
+              disabled={!activeLineId}
+            />
+
+            <div className="p-2 border-t bg-muted/30 space-y-1.5">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Total</span>
-                <span className="text-xl font-bold text-primary">{totalAmount.toLocaleString()} XAF</span>
+                <span className="text-xl font-bold text-primary">{Math.round(totalAmount).toLocaleString()} XAF</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="active:scale-[0.97]">
