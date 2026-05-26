@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useDeferredValue, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,14 +8,11 @@ import {
 import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Plus, Minus, Search, X, WifiOff, ShoppingCart, Loader2 } from "lucide-react";
+import { Search, WifiOff, ShoppingCart, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
@@ -23,6 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMenuItemOptionsPicker } from "@/components/menu-management/useMenuItemOptionsPicker";
 import type { SelectedOption } from "@/types/menu";
+import { PosNumpad, type NumpadMode } from "@/components/tables/pos/PosNumpad";
+import { PosProductTile, colorForCategory } from "@/components/tables/pos/PosProductTile";
 
 interface CreateSessionWithOrderModalProps {
   isOpen: boolean;
