@@ -307,26 +307,16 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
                   Aucun plat trouvé
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1.5">
                   {filteredMenuItems.map((item) => (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => requestAdd(item as any)}
-                      className="group relative text-left p-3 rounded-lg border-2 border-transparent bg-card hover:border-primary hover:shadow-md transition-all active:scale-[0.97] flex flex-col"
+                      className="h-[76px] rounded-lg border bg-card text-left p-2 flex flex-col justify-between transition active:scale-[0.96] hover:border-primary hover:shadow-sm"
                     >
-                      {item.image_url && (
-                        <div className="aspect-square mb-2 rounded-md overflow-hidden bg-muted">
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        </div>
-                      )}
-                      <p className="text-sm font-medium line-clamp-2 mb-1 leading-tight">{item.name}</p>
-                      <p className="text-sm font-bold text-primary mt-auto">
+                      <p className="text-[13px] font-semibold leading-tight line-clamp-2">{item.name}</p>
+                      <p className="text-xs font-bold text-primary">
                         {item.price.toLocaleString()} XAF
                       </p>
                     </button>

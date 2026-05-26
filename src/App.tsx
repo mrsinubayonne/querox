@@ -7,9 +7,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
 import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvider";
 import { useGlobalNewOrderNotifier } from "@/hooks/useGlobalNewOrderNotifier";
+import { useMenuPrefetch } from "@/hooks/useMenuPrefetch";
 
 const GlobalOrderNotifier = () => {
   useGlobalNewOrderNotifier();
+  useMenuPrefetch();
   return null;
 };
 
