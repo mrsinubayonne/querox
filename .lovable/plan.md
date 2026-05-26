@@ -1,69 +1,64 @@
+## 1. Refonte POS "vraie" façon Odoo (CreateSessionWithOrderModal + AddOrderFromCustomerModal)
 
-# Plan — 5 corrections chirurgicales
+Objectif : se démarquer nettement de l'ancienne modale. Layout 3 colonnes conservé, mais l'interaction change.
 
-## Bug 1 — Réactivité `outletId` (déjà partiellement fait)
+### Colonne centrale — Plats (sans images)
+- Grille dense de **tuiles compactes** (text-only) : nom en haut, prix en bas, couleur de fond dérivée de la catégorie (pastille teintée). 5–6 colonnes sur desktop au lieu de 2–4. Pas d'`<img>`, pas d'`aspect-square` — disparition complète des images.
+- Hauteur fixe par tuile (~76px) → scroll instantané, zéro layout shift.
+- Catégories en **onglets horizontaux** au-dessus de la grille (façon caisse Odoo), avec compteur. La colonne gauche "Catégories" verticale est supprimée → plus de place pour les plats.
 
-`OutletContext.tsx` et l'enveloppe dans `main.tsx` existent déjà. Il reste à :
-- Vérifier que `useOptimizedOrders`, `useInvoices`, `useInventory`, `useTransactions`, `useCustomers` consomment bien `useOutletContext()` (certains sont déjà migrés, à confirmer fichier par fichier).
-- Normaliser toutes les `queryKey` au format `[name, outletId ?? 'no-outlet']` (supprimer les variantes `[name, user?.id, outletId]`).
-- Dans `useOutlets.ts` : injecter `setContextOutletId(outletId)` après chacun des 7 `localStorage.setItem('selectedOutletId', ...)` pour propager immédiatement le changement au contexte (sans attendre l'événement `storage` qui ne se déclenche pas dans le même onglet).
+### Colonne droite — Ticket + Pavé numérique (la grosse différence)
+- Le ticket devient une **liste sélectionnable** : on clique sur une ligne, elle devient active (surlignée).
+- En dessous : un **pavé numérique Odoo-like** (0–9, `.`, `←`) + 4 boutons modificateurs : `Qté`, `Prix`, `Remise %`, `×` (suppr).
+  - Sélectionner `Qté` puis taper `3` → met la quantité de la ligne active à 3.
+  - Sélectionner `Prix` puis taper `1500` → change le prix unitaire.
+  - Sélectionner `Remise` puis `10` → applique 10 % sur la ligne.
+- Boutons d'action en bas : `+ Article libre`, `Vider`, `Ouvrir & Commander`.
+- Le champ "Couverts" passe dans le header au-dessus du ticket (toujours visible).
 
-## Bug 2 — Erreurs silencieuses dans les hooks
+### Comportements
+- Cliquer un plat → ajout direct quantité 1, ligne auto-sélectionnée → on peut taper `2` `Qté` pour ajuster.
+- Recherche menu : raccourci `/` pour focus, `Échap` pour vider.
+- Suppression du `prompt()` natif pour les plats à prix libre → ouverture inline dans le pavé numérique (mode `Prix` auto-activé).
 
-Parcourir `src/hooks/*.ts` et remplacer les `catch` vides ou réduits à `console.error` (sans feedback UI) par :
-```ts
-} catch (error: any) {
-  console.error('Erreur hook:', error);
-  toast.error("Erreur de chargement", { description: "Impossible de charger les données. Veuillez réessayer." });
-}
+Mêmes changements appliqués à `AddOrderFromCustomerModal.tsx` (variante avec sélection client en haut du panneau droit, pavé numérique en bas).
+
+## 2. Suppression définitive des images dans la prise de commande
+
+- Retrait du bloc `{item.image_url && ...}` dans les deux modales.
+- Le champ `image_url` n'est plus sélectionné ni chargé par `useInternalMenuItems` (économie réseau + IndexedDB plus léger).
+
+## 3. Chargement ultra-rapide
+
+### Préchargement global du menu
+- Nouveau hook `useMenuPrefetch()` monté dans `App.tsx` (après login) : déclenche `useInternalMenuItems(true)` une seule fois en arrière-plan dès l'arrivée sur l'app → quand l'utilisateur clique sur une table, **le cache mémoire est déjà chaud**, ouverture instantanée.
+- Garde le `menuItemsMemoryCache` existant comme source de vérité ; la modale lit synchroneusement et n'affiche jamais le spinner si le cache est peuplé.
+
+### Allègement du fetch Supabase
+- Retirer `image_url`, `description`, `is_custom_name` du `select` initial (non utilisés dans le POS sans images).
+- **Différer** le chargement des `menu_item_option_groups` / `option_values` : ne les charger qu'au premier clic sur un plat avec options (lazy via `useMenuItemOptionsPicker`). Aujourd'hui c'est fait pour tous les items à chaque refresh → gros gain.
+- Paralléliser categories + items avec `Promise.all` au lieu de séquentiel.
+
+### Ouverture de modale instantanée
+- `CreateSessionWithOrderModal` : ne plus reset `cart`/`searchTerm` dans un `useEffect` (provoque un re-render après ouverture) — faire le reset dans le `onClose` à la place.
+- Memoïser les composants tuiles (`React.memo`) pour éviter de re-render 200 boutons à chaque frappe de recherche.
+- Debounce de la recherche (150 ms) sur la valeur utilisée pour le filtre (l'input reste contrôlé instantanément).
+
+### Détails techniques
 ```
-Ajouter `import { toast } from 'sonner';` si absent. Ne pas toucher aux `catch` qui ont déjà un toast ou qui sont volontairement silencieux (ex. sync queue offline, retries).
-
-## Bug 3 — `useDashboardStats` loading infini
-
-Dans le `useEffect` principal :
-- `let cancelled = false;` au début.
-- `const timeoutId = setTimeout(() => { if (!cancelled) setLoading(false); }, 15000);`
-- Gating `if (!cancelled)` autour des `setLoading(false)`.
-- Cleanup : `return () => { cancelled = true; clearTimeout(timeoutId); };`
-- Ajouter un toast d'erreur dans le `catch`.
-
-## Bug 4 — `team-member-auth` au-delà de 200 utilisateurs
-
-Dans `supabase/functions/team-member-auth/index.ts`, remplacer le bloc de recherche utilisateur (depuis `// Try to find existing user by email` jusqu'à la fin du `else { updateUserById ... }`) par une version qui :
-- Utilise `listUsers({ page: 1, perPage: 1000 })` au lieu de 200.
-- Gère explicitement le cas "already been registered" depuis `createUser` avec un message clair.
-- Conserve la synchro du mot de passe via `updateUserById` quand l'utilisateur existe.
-
-## Bug 5 — Membre équipe sans outlet
-
-Dans `src/pages/TeamMemberAuth.tsx` :
-- Importer `useOutletContext`.
-- Récupérer `setSelectedOutletId` du contexte.
-- Remplacer le bloc `localStorage.setItem('selectedOutletId', ...)` par :
-```ts
-const assignedOutletId = member.outlet_id || member.outlet_ids?.[0] || null;
-if (assignedOutletId) {
-  setSelectedOutletId(assignedOutletId);
-} else {
-  toast.warning("Aucun point de vente assigné", {
-    description: "Contactez votre responsable pour vous assigner à un outlet."
-  });
-}
+src/
+  components/tables/
+    CreateSessionWithOrderModal.tsx    ← refonte UI + pavé numérique
+    AddOrderFromCustomerModal.tsx      ← idem
+    pos/
+      PosNumpad.tsx                    ← nouveau
+      PosProductTile.tsx               ← nouveau (memo)
+      PosCategoryTabs.tsx              ← nouveau
+      PosTicketLine.tsx                ← nouveau (memo)
+  hooks/
+    useInternalMenuItems.ts            ← select allégé, parallélisation, option_groups lazy
+    useMenuPrefetch.ts                 ← nouveau
+  App.tsx                              ← branche useMenuPrefetch()
 ```
 
-## Détails techniques
-
-- Aucune modif de schéma DB.
-- Aucune dépendance ajoutée.
-- `OutletProvider` déjà monté → pas de risque de régression sur l'arbre React.
-- L'événement `storage` ne se déclenche pas dans l'onglet émetteur : c'est pourquoi `useOutlets.ts` doit appeler explicitement `setContextOutletId` après chaque écriture localStorage.
-- Pour Bug 2, je passerai en revue chaque hook avant édition pour éviter d'écraser des `catch` légitimes (offline queue, conflict resolution, sync engine).
-- Pour Bug 4, la limite `perPage: 1000` est le maximum supporté par l'API admin Supabase ; au-delà il faudrait paginer, mais cela couvre le besoin actuel.
-
-## Fichiers touchés
-
-- `src/hooks/useOptimizedOrders.ts`, `useInvoices.ts`, `useInventory.ts`, `useTransactions.ts`, `useCustomers.ts`, `useOutlets.ts`, `useDashboardStats.ts`
-- Hooks divers (Bug 2, à identifier après audit)
-- `src/pages/TeamMemberAuth.tsx`
-- `supabase/functions/team-member-auth/index.ts`
+Aucune modification de schéma DB, aucune migration. Pas de changement de logique de paiement, factures ou triggers SQL.
