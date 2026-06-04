@@ -6,32 +6,21 @@ interface PosProductTileProps {
   name: string;
   price: number;
   accent: string; // tailwind color class like "bg-orange-100"
-  imageUrl?: string;
   onClick: (id: string) => void;
 }
 
-const PosProductTileImpl: React.FC<PosProductTileProps> = ({ id, name, price, accent, imageUrl, onClick }) => {
-  const hasImage = !!imageUrl;
+const PosProductTileImpl: React.FC<PosProductTileProps> = ({ id, name, price, accent, onClick }) => {
   return (
     <button
       type="button"
       onClick={() => onClick(id)}
-      style={
-        hasImage
-          ? {
-              backgroundImage: `linear-gradient(to top, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.78) 38%, rgba(255,255,255,0.25) 100%), url(${imageUrl})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }
-          : undefined
-      }
       className={cn(
-        'h-[88px] rounded-lg border text-left p-2 flex flex-col justify-end transition active:scale-[0.96] hover:border-primary hover:shadow-sm relative overflow-hidden',
-        !hasImage && accent,
+        'h-[76px] rounded-lg border text-left p-2 flex flex-col justify-between transition active:scale-[0.96] hover:border-primary hover:shadow-sm',
+        accent,
       )}
     >
-      <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-foreground drop-shadow-sm">{name}</p>
-      <p className="text-xs font-bold text-foreground/90">{price.toLocaleString()} XAF</p>
+      <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-foreground">{name}</p>
+      <p className="text-xs font-bold text-foreground/80">{price.toLocaleString()} XAF</p>
     </button>
   );
 };
