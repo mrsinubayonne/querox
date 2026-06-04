@@ -308,19 +308,31 @@ export const AddOrderFromCustomerModal: React.FC<AddOrderFromCustomerModalProps>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1.5">
-                  {filteredMenuItems.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => requestAdd(item as any)}
-                      className="h-[76px] rounded-lg border bg-card text-left p-2 flex flex-col justify-between transition active:scale-[0.96] hover:border-primary hover:shadow-sm"
-                    >
-                      <p className="text-[13px] font-semibold leading-tight line-clamp-2">{item.name}</p>
-                      <p className="text-xs font-bold text-primary">
-                        {item.price.toLocaleString()} XAF
-                      </p>
-                    </button>
-                  ))}
+                  {filteredMenuItems.map((item) => {
+                    const hasImage = !!(item as any).image_url;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => requestAdd(item as any)}
+                        style={
+                          hasImage
+                            ? {
+                                backgroundImage: `linear-gradient(to top, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.78) 38%, rgba(255,255,255,0.25) 100%), url(${(item as any).image_url})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                              }
+                            : undefined
+                        }
+                        className="h-[88px] rounded-lg border bg-card text-left p-2 flex flex-col justify-end transition active:scale-[0.96] hover:border-primary hover:shadow-sm overflow-hidden"
+                      >
+                        <p className="text-[13px] font-semibold leading-tight line-clamp-2 drop-shadow-sm">{item.name}</p>
+                        <p className="text-xs font-bold text-primary">
+                          {item.price.toLocaleString()} XAF
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </ScrollArea>
