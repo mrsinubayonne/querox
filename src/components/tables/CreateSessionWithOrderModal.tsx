@@ -46,6 +46,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   onClose,
   onSuccess,
   tableNumber,
+  onQuickInvoice,
 }) => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
