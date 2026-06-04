@@ -337,6 +337,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         setNumberOfGuests("");
         setCart([]);
         setSearchTerm("");
+        if (quickInvoice && onQuickInvoice) {
+          try { await onQuickInvoice(sessionId); } catch (err) { console.warn('quick invoice failed', err); }
+        }
         onSuccess();
         onClose();
         return;
