@@ -209,8 +209,8 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
 
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent | null, quickInvoice = false) => {
+    if (e) e.preventDefault();
     
     if (cart.length === 0) {
       toast.error("Panier vide", { description: "Veuillez ajouter au moins un plat à la commande." });
