@@ -690,18 +690,28 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                 <span className="text-sm font-medium">Total</span>
                 <span className="text-xl font-bold text-primary">{Math.round(totalAmount).toLocaleString()} XAF</span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="active:scale-[0.97]">
                   Annuler
                 </Button>
                 <Button
                   type="button"
-                  onClick={handleSubmit}
+                  onClick={() => handleSubmit(null, false)}
                   disabled={loading || cart.length === 0}
                   className="active:scale-[0.97]"
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ouvrir & Commander"}
                 </Button>
+                {onQuickInvoice && (
+                  <Button
+                    type="button"
+                    onClick={() => handleSubmit(null, true)}
+                    disabled={loading || cart.length === 0}
+                    className="active:scale-[0.97] bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Facture rapide"}
+                  </Button>
+                )}
               </div>
             </div>
           </aside>
