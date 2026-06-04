@@ -567,6 +567,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                       name={item.name}
                       price={Number(item.price) || 0}
                       accent={colorForCategory(item.category_name || 'Autres')}
+                      imageUrl={item.image_url}
                       onClick={addToCart}
                     />
                   ))}
