@@ -28,6 +28,7 @@ interface CreateSessionWithOrderModalProps {
   onClose: () => void;
   onSuccess: () => void;
   tableNumber: string;
+  onQuickInvoice?: (sessionId: string) => Promise<void> | void;
 }
 
 interface CartItem {
@@ -45,6 +46,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   onClose,
   onSuccess,
   tableNumber,
+  onQuickInvoice,
 }) => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
@@ -207,8 +209,8 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
 
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent | null, quickInvoice = false) => {
+    if (e) e.preventDefault();
     
     if (cart.length === 0) {
       toast.error("Panier vide", { description: "Veuillez ajouter au moins un plat à la commande." });
@@ -335,6 +337,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         setNumberOfGuests("");
         setCart([]);
         setSearchTerm("");
+        if (quickInvoice && onQuickInvoice) {
+          try { await onQuickInvoice(sessionId); } catch (err) { console.warn('quick invoice failed', err); }
+        }
         onSuccess();
         onClose();
         return;
@@ -447,6 +452,9 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         setNumberOfGuests("");
         setCart([]);
         setSearchTerm("");
+        if (quickInvoice && onQuickInvoice && session?.id) {
+          try { await onQuickInvoice(session.id); } catch (err) { console.warn('quick invoice failed', err); }
+        }
         onSuccess();
         onClose();
       } catch (onlineError) {
@@ -559,6 +567,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                       name={item.name}
                       price={Number(item.price) || 0}
                       accent={colorForCategory(item.category_name || 'Autres')}
+                      imageUrl={item.image_url}
                       onClick={addToCart}
                     />
                   ))}
@@ -681,18 +690,28 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                 <span className="text-sm font-medium">Total</span>
                 <span className="text-xl font-bold text-primary">{Math.round(totalAmount).toLocaleString()} XAF</span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="active:scale-[0.97]">
                   Annuler
                 </Button>
                 <Button
                   type="button"
-                  onClick={handleSubmit}
+                  onClick={() => handleSubmit(null, false)}
                   disabled={loading || cart.length === 0}
                   className="active:scale-[0.97]"
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ouvrir & Commander"}
                 </Button>
+                {onQuickInvoice && (
+                  <Button
+                    type="button"
+                    onClick={() => handleSubmit(null, true)}
+                    disabled={loading || cart.length === 0}
+                    className="active:scale-[0.97] bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Facture rapide"}
+                  </Button>
+                )}
               </div>
             </div>
           </aside>

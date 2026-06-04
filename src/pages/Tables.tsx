@@ -324,6 +324,9 @@ const Tables: React.FC = () => {
               onClose={() => setModalState({ type: 'none' })}
               onSuccess={() => { refetch(); setModalState({ type: 'none' }); }}
               tableNumber={modalState.tableNumber}
+              onQuickInvoice={async (sessionId) => {
+                await markSessionAsPaid(sessionId, "Espèces");
+              }}
             />
           )}
 
