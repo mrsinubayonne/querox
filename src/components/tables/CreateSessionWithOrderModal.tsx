@@ -28,6 +28,7 @@ interface CreateSessionWithOrderModalProps {
   onClose: () => void;
   onSuccess: () => void;
   tableNumber: string;
+  onQuickInvoice?: (sessionId: string) => Promise<void> | void;
 }
 
 interface CartItem {
