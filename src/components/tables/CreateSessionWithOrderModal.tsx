@@ -22,6 +22,7 @@ import { useMenuItemOptionsPicker } from "@/components/menu-management/useMenuIt
 import type { SelectedOption } from "@/types/menu";
 import { PosNumpad, type NumpadMode } from "@/components/tables/pos/PosNumpad";
 import { PosProductTile, colorForCategory } from "@/components/tables/pos/PosProductTile";
+import { useOutletContext } from "@/contexts/OutletContext";
 
 interface CreateSessionWithOrderModalProps {
   isOpen: boolean;
