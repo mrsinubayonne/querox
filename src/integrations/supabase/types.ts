@@ -2172,12 +2172,15 @@ export type Database = {
           invited_at: string
           is_active: boolean | null
           last_login_at: string | null
+          login_mode: string
           member_email: string
           member_user_id: string | null
           needs_password_setup: boolean | null
           outlet_id: string | null
           owner_id: string
           phone: string | null
+          pin_code: string | null
+          pseudo: string | null
           role: string
           status: string
         }
@@ -2191,12 +2194,15 @@ export type Database = {
           invited_at?: string
           is_active?: boolean | null
           last_login_at?: string | null
+          login_mode?: string
           member_email: string
           member_user_id?: string | null
           needs_password_setup?: boolean | null
           outlet_id?: string | null
           owner_id: string
           phone?: string | null
+          pin_code?: string | null
+          pseudo?: string | null
           role?: string
           status?: string
         }
@@ -2210,12 +2216,15 @@ export type Database = {
           invited_at?: string
           is_active?: boolean | null
           last_login_at?: string | null
+          login_mode?: string
           member_email?: string
           member_user_id?: string | null
           needs_password_setup?: boolean | null
           outlet_id?: string | null
           owner_id?: string
           phone?: string | null
+          pin_code?: string | null
+          pseudo?: string | null
           role?: string
           status?: string
         }
@@ -3164,6 +3173,17 @@ export type Database = {
       verify_team_access: {
         Args: { _access_code: string; _email: string }
         Returns: {
+          member_id: string
+          outlet_id: string
+          owner_id: string
+          role: string
+          status: string
+        }[]
+      }
+      verify_team_access_pin: {
+        Args: { _owner_id: string; _pin: string; _pseudo: string }
+        Returns: {
+          full_name: string
           member_id: string
           outlet_id: string
           owner_id: string
