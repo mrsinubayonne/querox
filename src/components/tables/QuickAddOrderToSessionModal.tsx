@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Minus, Search, X, WifiOff } from "lucide-react";
+import { useOutletContext } from "@/contexts/OutletContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +54,8 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || user?.id || '') : (user?.id || '');
-  const scopedOutletId = (localStorage.getItem('selectedOutletId') || outletId || undefined) as string | undefined;
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
+  const scopedOutletId = (ctxOutletId || outletId || undefined) as string | undefined;
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -288,7 +290,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       }
 
       // Online mode
-      const resolvedOutletId = scopedOutletId || localStorage.getItem('selectedOutletId');
+      const resolvedOutletId = scopedOutletId || ctxOutletId;
 
       const { error } = await supabase.from("orders").insert([
         {

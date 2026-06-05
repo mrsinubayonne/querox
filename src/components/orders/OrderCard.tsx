@@ -85,7 +85,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) =
 
   const handlePrintKitchen = async () => {
     try {
-      const selectedOutletId = localStorage.getItem('selectedOutletId');
+      const { selectedOutletId } = useOutletContext();
       if (selectedOutletId && !outletName) {
         const { data } = await supabase.from('outlets').select('name').eq('id', selectedOutletId).maybeSingle();
         if (data) setOutletName((data as any).name);

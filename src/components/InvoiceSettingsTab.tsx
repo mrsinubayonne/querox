@@ -1,3 +1,4 @@
+import { useOutletContext } from '@/contexts/OutletContext';
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +46,8 @@ export const InvoiceSettingsTab: React.FC = () => {
   }, [user]);
 
   const getOutletId = (): string | null => {
-    const stored = localStorage.getItem('selectedOutletId');
+    const { selectedOutletId: ctxOutletId } = useOutletContext();
+  const stored = ctxOutletId;
     if (stored && stored !== 'null' && stored !== 'undefined') return stored;
     return null;
   };

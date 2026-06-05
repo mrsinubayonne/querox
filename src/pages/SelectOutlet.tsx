@@ -1,3 +1,4 @@
+import { useOutletContext } from '@/contexts/OutletContext';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Building2, Plus, MapPin, Phone } from 'lucide-react';
@@ -24,7 +25,7 @@ const SelectOutlet: React.FC = () => {
   useEffect(() => {
     // Les membres d'équipe ne créent jamais de PDV : ils utilisent uniquement un PDV assigné.
     if (isTeamMember && teamMemberSession) {
-      const assignedOutletId = teamMemberSession.outletId || teamMemberSession.outletIds?.[0] || localStorage.getItem('selectedOutletId');
+      const assignedOutletId = teamMemberSession.outletId || teamMemberSession.outletIds?.[0] || ctxOutletId;
       if (assignedOutletId) {
         localStorage.setItem('selectedOutletId', assignedOutletId);
       }
