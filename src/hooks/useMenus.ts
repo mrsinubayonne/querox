@@ -45,6 +45,7 @@ export interface MenuItem {
 }
 
 export const useMenus = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
