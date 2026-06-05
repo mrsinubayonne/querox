@@ -17,6 +17,7 @@ import { InvoiceDisplayOptions, DEFAULT_DISPLAY_OPTIONS, DEFAULT_STYLE_OPTIONS, 
 import { toast } from 'sonner';
 
 export const InvoiceSettingsTab: React.FC = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -46,8 +47,7 @@ export const InvoiceSettingsTab: React.FC = () => {
   }, [user]);
 
   const getOutletId = (): string | null => {
-    const { selectedOutletId: ctxOutletId } = useOutletContext();
-  const stored = ctxOutletId;
+    const stored = ctxOutletId;
     if (stored && stored !== 'null' && stored !== 'undefined') return stored;
     return null;
   };
