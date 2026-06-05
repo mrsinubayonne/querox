@@ -5,6 +5,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { getData } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
 import { format as formatDate } from 'date-fns';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 export interface DetailedTransaction {
   id: string;
@@ -26,6 +27,7 @@ interface UseDetailedReportsProps {
 }
 
 export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsProps) => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
   const [transactions, setTransactions] = useState<DetailedTransaction[]>([]);
@@ -89,7 +91,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         ((cachedOutlets?.data as any[]) || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
         // Factures payées dans la période — UN SEUL cache (pas de fusion)
-        const selectedOutlet = scopedOutletId || localStorage.getItem('selectedOutletId') || undefined;
+        const selectedOutlet = scopedOutletId || ctxOutletId || undefined;
         const cachedInvoices = selectedOutlet
           ? await getData<any[]>('invoices', effectiveUserId, selectedOutlet)
           : await getData<any[]>('invoices', effectiveUserId);

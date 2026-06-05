@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 export interface InvoiceSettings {
   id: string;
@@ -22,12 +23,13 @@ export interface InvoiceSettings {
 }
 
 export const useInvoiceSettings = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const { user } = useAuth();  const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
 
   const getOutletId = (): string | null => {
-    const stored = localStorage.getItem('selectedOutletId');
+    const stored = ctxOutletId;
     if (stored && stored !== 'null' && stored !== 'undefined') return stored;
     return null;
   };

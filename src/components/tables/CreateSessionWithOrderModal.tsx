@@ -22,6 +22,7 @@ import { useMenuItemOptionsPicker } from "@/components/menu-management/useMenuIt
 import type { SelectedOption } from "@/types/menu";
 import { PosNumpad, type NumpadMode } from "@/components/tables/pos/PosNumpad";
 import { PosProductTile, colorForCategory } from "@/components/tables/pos/PosProductTile";
+import { useOutletContext } from "@/contexts/OutletContext";
 
 interface CreateSessionWithOrderModalProps {
   isOpen: boolean;
@@ -67,7 +68,8 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const { menuItems, loading: menuLoading } = useInternalMenuItems(true);
 
   const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
-  const scopedOutletId = (localStorage.getItem('selectedOutletId') || undefined) as string | undefined;
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
+  const scopedOutletId = (ctxOutletId || undefined) as string | undefined;
   const sessionsQueryKey = ['table-sessions', resolvedUserId, scopedOutletId] as const;
   const ordersQueryKey = ['orders', resolvedUserId, scopedOutletId] as const;
 

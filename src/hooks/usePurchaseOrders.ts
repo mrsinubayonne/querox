@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 interface PurchaseOrder {
   id: string;
@@ -26,6 +27,7 @@ interface PurchaseOrder {
 }
 
 export const usePurchaseOrders = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -52,7 +54,7 @@ export const usePurchaseOrders = () => {
       }
       
       if (!outletId) {
-        outletId = localStorage.getItem('selectedOutletId');
+        outletId = ctxOutletId ?? null;
       }
 
       let query = supabase
@@ -96,7 +98,7 @@ export const usePurchaseOrders = () => {
       }
       
       if (!outletId) {
-        outletId = localStorage.getItem('selectedOutletId');
+        outletId = ctxOutletId ?? null;
       }
 
       // Générer le numéro de commande

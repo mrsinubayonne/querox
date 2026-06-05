@@ -9,6 +9,7 @@ import { OrderStatusSelect } from './OrderStatusSelect';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import KitchenTicketPrint, { KitchenTicketPrintRef } from './KitchenTicketPrint';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 interface OrderItem {
   id: string;
@@ -68,6 +69,7 @@ const getOrderTypeDisplay = (orderType?: string, tableNumber?: string) => {
 };
 
 export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) => {
+  const { selectedOutletId } = useOutletContext();
   const navigate = useNavigate();
   const ticketRef = useRef<KitchenTicketPrintRef>(null);
   const [showTicket, setShowTicket] = useState(false);
@@ -85,7 +87,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) =
 
   const handlePrintKitchen = async () => {
     try {
-      const selectedOutletId = localStorage.getItem('selectedOutletId');
+      const { selectedOutletId } = useOutletContext();
       if (selectedOutletId && !outletName) {
         const { data } = await supabase.from('outlets').select('name').eq('id', selectedOutletId).maybeSingle();
         if (data) setOutletName((data as any).name);

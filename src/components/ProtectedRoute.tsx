@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOutletContext } from '@/contexts/OutletContext';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
 
@@ -61,7 +62,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <>{children}</>;
   }
 
-  const localOutletId = typeof window !== 'undefined' ? localStorage.getItem('selectedOutletId') : null;
+  const { selectedOutletId: localOutletId } = useOutletContext();
   const effectiveOutletId = selectedOutletId || localOutletId;
 
   if (!effectiveOutletId) {

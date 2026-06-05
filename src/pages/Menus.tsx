@@ -1,3 +1,4 @@
+import { useOutletContext } from '@/contexts/OutletContext';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +35,7 @@ interface MenuType {
 }
 
 const Menus: React.FC = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const [menus, setMenus] = useState<MenuType[]>([]);
   const [activeMenu, setActiveMenu] = useState<MenuType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,7 +59,7 @@ const Menus: React.FC = () => {
     // En mode hors-ligne, lire directement depuis IndexedDB
     if (isOffline) {
       try {
-        const resolvedOutletId = selectedOutletId || localStorage.getItem('selectedOutletId') || undefined;
+        const resolvedOutletId = selectedOutletId || ctxOutletId || undefined;
         let cached = await getData<MenuType[]>('menus', user.id, resolvedOutletId);
         if (!cached?.data || (cached.data as any[]).length === 0) {
           cached = await getData<MenuType[]>('menus', user.id);
@@ -81,7 +83,7 @@ const Menus: React.FC = () => {
     }
 
     // En ligne : appel Supabase avec fallback IndexedDB
-    const resolvedOutletId = selectedOutletId || localStorage.getItem('selectedOutletId') || undefined;
+    const resolvedOutletId = selectedOutletId || ctxOutletId || undefined;
 
     try {
       const query = supabase
@@ -288,7 +290,7 @@ const Menus: React.FC = () => {
           return;
         }
 
-        const resolvedOutletId = selectedOutletId || localStorage.getItem('selectedOutletId') || null;
+        const resolvedOutletId = selectedOutletId || ctxOutletId || null;
 
         const { data: createdMenu, error: menuErr } = await supabase
           .from('menus')

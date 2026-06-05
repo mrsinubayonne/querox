@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Minus, Search, X } from "lucide-react";
 import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
+import { useOutletContext } from "@/contexts/OutletContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,7 +45,8 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
   const { outletId } = useRestaurant();
   const { isOffline } = useNetworkStatus();
   const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || user?.id || '') : (user?.id || '');
-  const scopedOutletId = localStorage.getItem('selectedOutletId') || outletId || undefined;
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
+  const scopedOutletId = ctxOutletId || outletId || undefined;
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);

@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useOutlets } from '@/hooks/useOutlets';
+import { useOutletContext } from '@/contexts/OutletContext';
 import { useOfflineData } from './useOfflineData';
 import { toast } from 'sonner';
 
@@ -44,6 +45,7 @@ export interface MenuItem {
 }
 
 export const useMenus = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +59,7 @@ export const useMenus = () => {
   const tokenExpiredHandledRef = useRef(false);
 
   // Resolve outletId — also read from localStorage as offline fallback
-  const resolvedOutletId = selectedOutletId || localStorage.getItem('selectedOutletId') || undefined;
+  const resolvedOutletId = selectedOutletId || ctxOutletId || undefined;
 
   // Use offline data for menus
   const { data: menus, isLoading: menusLoading, refetch: refetchMenus, isOffline } = useOfflineData<Menu>({

@@ -14,6 +14,7 @@ import { useTableStore } from '@/store/tableStore';
 import { useInvoiceStore } from '@/store/invoiceStore';
 import { toast } from 'sonner';
 import { localStore } from '@/lib/localStore';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 export interface TableSession {
   id: string;
@@ -97,6 +98,8 @@ function cleanOldPaidMarkers() {
 }
 
 export const useOptimizedTableSessions = () => {
+  const { selectedOutletId: ctxSelectedOutletId } = useOutletContext();
+  const outletIdKey = ctxSelectedOutletId ?? 'no-outlet';
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { outletId, loading: outletLoading } = useOptimizedOutlet();
   const queryClient = useQueryClient();
@@ -120,7 +123,7 @@ export const useOptimizedTableSessions = () => {
 
   const { data: rawSessions, isLoading, refetch, isOffline: dataOffline } = useOfflineData<TableSession>({
     table: 'table_sessions',
-    queryKey: ['table-sessions'],
+    queryKey: ['table-sessions', outletIdKey],
     buildQuery: async (userId, outletId) => {
       // CRITICAL: table sessions MUST be scoped to an outlet to prevent cross-outlet leaks
       if (!outletId) {
@@ -519,9 +522,9 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       return { hasDebtor: hasDebtorDb };
     })()),
     onSuccess: ({ hasDebtor }) => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.refetchQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['table-sessions', outletIdKey] });
+      queryClient.invalidateQueries({ queryKey: ['invoices', outletIdKey] });
+      queryClient.refetchQueries({ queryKey: ['invoices', outletIdKey] });
       toast.success(hasDebtor ? "Session fermée - Crédit accordé" : (isOffline ? "Session fermée (hors ligne)" : "Session fermée"), { description: hasDebtor ? "Dette enregistrée" : "Facture générée" });
     },
     onError: (error: Error) => {
@@ -772,12 +775,12 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       return { isDebtorSession: isDebtorDb };
     })()),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      queryClient.refetchQueries({ queryKey: ['table-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+      queryClient.invalidateQueries({ queryKey: ['table-sessions', outletIdKey] });
+      queryClient.refetchQueries({ queryKey: ['table-sessions', outletIdKey] });
+      queryClient.invalidateQueries({ queryKey: ['invoices', outletIdKey] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', outletIdKey] });
+      queryClient.invalidateQueries({ queryKey: ['inventory', outletIdKey] });
+      queryClient.invalidateQueries({ queryKey: ['stock-movements', outletIdKey] });
       toast.success(isOffline ? "Paiement enregistré (hors ligne)" : "Paiement enregistré", { description: "La facture est marquée payée et la table est libérée." });
     },
     onError: (error: Error, variables: { sessionId: string; paymentMethod?: string }) => {
@@ -792,7 +795,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       queryClient.setQueryData(invoicesQueryKey, snapshotInvoices);
 
       // Force refetch to get server truth
-      void queryClient.refetchQueries({ queryKey: ['table-sessions'] });
+      void queryClient.refetchQueries({ queryKey: ['table-sessions', outletIdKey] });
 
       toast.error('Erreur paiement', { description: error.message || 'Impossible de marquer comme payée. La table a été restaurée.' });
     },
@@ -863,9 +866,9 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       if (error) throw error;
     })()),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['table-sessions', outletIdKey] });
+      queryClient.invalidateQueries({ queryKey: ['invoices', outletIdKey] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', outletIdKey] });
       toast.success(isOffline ? "Table réouverte (hors ligne)" : "Table réouverte", { description: "La facture et transaction ont été annulées." });
     },
     onError: (error: Error) => {

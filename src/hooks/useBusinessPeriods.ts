@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { getData, storeData, queueMutation, generateLocalId } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 export interface BusinessPeriod {
   id: string;
@@ -25,6 +26,7 @@ interface UseBusinessPeriodsProps {
 }
 
 export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const { user } = useAuth();
   const { isOffline } = useNetworkStatus();
   const [periods, setPeriods] = useState<BusinessPeriod[]>([]);
@@ -411,7 +413,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     const scopedOutlet = targetPeriod.outlet_id || outletId;
 
     // Read orders and invoices from IndexedDB
-    const selectedOutlet = scopedOutlet || localStorage.getItem('selectedOutletId') || undefined;
+    const selectedOutlet = scopedOutlet || ctxOutletId || undefined;
     let cachedOrders = await getData<any[]>('orders', user!.id, selectedOutlet);
     if (!cachedOrders?.data) cachedOrders = await getData<any[]>('orders', user!.id);
     let cachedInvoices = await getData<any[]>('invoices', user!.id, selectedOutlet);

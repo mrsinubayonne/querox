@@ -1,3 +1,4 @@
+import { useOutletContext } from '@/contexts/OutletContext';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -33,7 +34,8 @@ const InventoryConsumptionTab: React.FC = () => {
     to: endOfMonth(new Date()),
   });
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const outletId = localStorage.getItem('selectedOutletId') || undefined;
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
+  const outletId = ctxOutletId || undefined;
 
   // Generate month options (last 12 months)
   const monthOptions = Array.from({ length: 12 }, (_, i) => {

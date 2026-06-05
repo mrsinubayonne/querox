@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 interface InventoryLoss {
   id: string;
@@ -24,6 +25,7 @@ interface InventoryLoss {
 }
 
 export const useInventoryLosses = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const [losses, setLosses] = useState<InventoryLoss[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -50,7 +52,7 @@ export const useInventoryLosses = () => {
       }
       
       if (!outletId) {
-        outletId = localStorage.getItem('selectedOutletId');
+        outletId = ctxOutletId ?? null;
       }
 
       let query = supabase
@@ -95,7 +97,7 @@ export const useInventoryLosses = () => {
       }
       
       if (!outletId) {
-        outletId = localStorage.getItem('selectedOutletId');
+        outletId = ctxOutletId ?? null;
       }
 
       const { data, error } = await supabase

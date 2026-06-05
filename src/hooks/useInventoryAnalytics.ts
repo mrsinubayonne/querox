@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 interface ReorderSuggestion {
   item_id: string;
@@ -15,6 +16,7 @@ interface ReorderSuggestion {
 }
 
 export const useInventoryAnalytics = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const [reorderSuggestions, setReorderSuggestions] = useState<ReorderSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
@@ -27,7 +29,7 @@ export const useInventoryAnalytics = () => {
     try {
       setLoading(true);
       
-      let outletId = localStorage.getItem('selectedOutletId');
+      let outletId = ctxOutletId;
 
       if (!outletId) {
         const { data: profile } = await supabase

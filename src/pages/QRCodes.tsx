@@ -1,3 +1,4 @@
+import { useOutletContext } from '@/contexts/OutletContext';
 
 import React, { useState, useEffect } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
@@ -34,7 +35,7 @@ const QRCodes: React.FC = () => {
   const fetchSlugs = async () => {
     if (!user) return;
     try {
-      const selectedOutletId = localStorage.getItem('selectedOutletId');
+      const { selectedOutletId } = useOutletContext();
       const [{ data: profile }, { data: outlet }] = await Promise.all([
         supabase.from('profiles').select('restaurant_slug').eq('id', user.id).maybeSingle(),
         selectedOutletId
