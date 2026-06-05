@@ -66,7 +66,7 @@ export default defineConfig(({ mode }) => ({
           },
           {
             // API Supabase → NetworkFirst avec fallback cache (7 jours)
-            urlPattern: /^https:\/\/aufmphldtjrcddyayqoy\.supabase\.co\/.*/i,
+            urlPattern: /^https:\/\/[^.]+\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api',
