@@ -9,6 +9,7 @@ import { OrderStatusSelect } from './OrderStatusSelect';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import KitchenTicketPrint, { KitchenTicketPrintRef } from './KitchenTicketPrint';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 interface OrderItem {
   id: string;
