@@ -50,7 +50,7 @@ export const useInventoryLosses = () => {
       }
       
       if (!outletId) {
-        outletId = localStorage.getItem('selectedOutletId');
+        outletId = ctxOutletId;
       }
 
       let query = supabase
@@ -95,7 +95,7 @@ export const useInventoryLosses = () => {
       }
       
       if (!outletId) {
-        outletId = localStorage.getItem('selectedOutletId');
+        outletId = ctxOutletId;
       }
 
       const { data, error } = await supabase

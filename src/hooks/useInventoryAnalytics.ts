@@ -27,7 +27,7 @@ export const useInventoryAnalytics = () => {
     try {
       setLoading(true);
       
-      let outletId = localStorage.getItem('selectedOutletId');
+      let outletId = ctxOutletId;
 
       if (!outletId) {
         const { data: profile } = await supabase

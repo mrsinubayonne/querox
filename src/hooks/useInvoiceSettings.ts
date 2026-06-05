@@ -27,7 +27,7 @@ export const useInvoiceSettings = () => {
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
 
   const getOutletId = (): string | null => {
-    const stored = localStorage.getItem('selectedOutletId');
+    const stored = ctxOutletId;
     if (stored && stored !== 'null' && stored !== 'undefined') return stored;
     return null;
   };

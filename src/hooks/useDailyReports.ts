@@ -89,7 +89,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
       if (shouldUseOfflineCache) {
         // --- MODE HORS-LIGNE : lecture d'UN SEUL cache (pas de fusion) ---
         // Si outlet sélectionné: cache scopé uniquement. Sinon: cache global.
-        const selectedOutlet = outletId || localStorage.getItem('selectedOutletId') || undefined;
+        const selectedOutlet = outletId || ctxOutletId || undefined;
         const cachedOrders = selectedOutlet
           ? await getData<any[]>('orders', effectiveUserId, selectedOutlet)
           : await getData<any[]>('orders', effectiveUserId);
@@ -412,7 +412,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
           try {
             const startISO = startOfDay(dateRange!.from!).toISOString();
             const endISO = endOfDay(dateRange!.to!).toISOString();
-            const scopedOutletId = outletId || localStorage.getItem('selectedOutletId') || undefined;
+            const scopedOutletId = outletId || ctxOutletId || undefined;
 
             let invoicesQuery = supabase
               .from('invoices')
@@ -466,7 +466,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
           try {
             const startISO = startOfDay(dateRange!.from!).toISOString();
             const endISO = endOfDay(dateRange!.to!).toISOString();
-            const scopedOutletId = outletId || localStorage.getItem('selectedOutletId') || undefined;
+            const scopedOutletId = outletId || ctxOutletId || undefined;
 
             let ordersQuery = supabase
               .from('orders')
@@ -561,7 +561,7 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
           try {
             const startISO = startOfDay(dateRange!.from!).toISOString();
             const endISO = endOfDay(dateRange!.to!).toISOString();
-            const scopedOutletId = outletId || localStorage.getItem('selectedOutletId') || undefined;
+            const scopedOutletId = outletId || ctxOutletId || undefined;
 
             let movQuery = supabase
               .from('stock_movements')
