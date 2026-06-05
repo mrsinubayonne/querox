@@ -54,7 +54,7 @@ export const usePurchaseOrders = () => {
       }
       
       if (!outletId) {
-        outletId = ctxOutletId;
+        outletId = ctxOutletId ?? null;
       }
 
       let query = supabase
@@ -98,7 +98,7 @@ export const usePurchaseOrders = () => {
       }
       
       if (!outletId) {
-        outletId = ctxOutletId;
+        outletId = ctxOutletId ?? null;
       }
 
       // Générer le numéro de commande
