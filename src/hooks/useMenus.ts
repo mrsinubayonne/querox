@@ -59,7 +59,7 @@ export const useMenus = () => {
   const tokenExpiredHandledRef = useRef(false);
 
   // Resolve outletId — also read from localStorage as offline fallback
-  const resolvedOutletId = selectedOutletId || localStorage.getItem('selectedOutletId') || undefined;
+  const resolvedOutletId = selectedOutletId || ctxOutletId || undefined;
 
   // Use offline data for menus
   const { data: menus, isLoading: menusLoading, refetch: refetchMenus, isOffline } = useOfflineData<Menu>({
