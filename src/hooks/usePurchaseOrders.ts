@@ -27,6 +27,7 @@ interface PurchaseOrder {
 }
 
 export const usePurchaseOrders = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
