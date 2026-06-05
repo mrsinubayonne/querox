@@ -123,7 +123,7 @@ export const useOptimizedTableSessions = () => {
 
   const { data: rawSessions, isLoading, refetch, isOffline: dataOffline } = useOfflineData<TableSession>({
     table: 'table_sessions',
-    queryKey: ['table-sessions'],
+    queryKey: ['table-sessions', outletIdKey],
     buildQuery: async (userId, outletId) => {
       // CRITICAL: table sessions MUST be scoped to an outlet to prevent cross-outlet leaks
       if (!outletId) {
