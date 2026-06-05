@@ -69,6 +69,7 @@ const getOrderTypeDisplay = (orderType?: string, tableNumber?: string) => {
 };
 
 export const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusChange }) => {
+  const { selectedOutletId } = useOutletContext();
   const navigate = useNavigate();
   const ticketRef = useRef<KitchenTicketPrintRef>(null);
   const [showTicket, setShowTicket] = useState(false);
