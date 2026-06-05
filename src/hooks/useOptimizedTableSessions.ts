@@ -98,6 +98,8 @@ function cleanOldPaidMarkers() {
 }
 
 export const useOptimizedTableSessions = () => {
+  const { selectedOutletId: ctxSelectedOutletId } = useOutletContext();
+  const outletIdKey = ctxSelectedOutletId ?? 'no-outlet';
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { outletId, loading: outletLoading } = useOptimizedOutlet();
   const queryClient = useQueryClient();
