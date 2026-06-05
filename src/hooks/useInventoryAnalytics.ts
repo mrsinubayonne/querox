@@ -16,6 +16,7 @@ interface ReorderSuggestion {
 }
 
 export const useInventoryAnalytics = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const [reorderSuggestions, setReorderSuggestions] = useState<ReorderSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
