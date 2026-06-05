@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { getData, storeData, queueMutation, generateLocalId } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 export interface BusinessPeriod {
   id: string;
