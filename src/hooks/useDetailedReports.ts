@@ -91,7 +91,7 @@ export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsPro
         ((cachedOutlets?.data as any[]) || []).forEach((o: any) => outletNameById.set(o.id, o.name));
 
         // Factures payées dans la période — UN SEUL cache (pas de fusion)
-        const selectedOutlet = scopedOutletId || localStorage.getItem('selectedOutletId') || undefined;
+        const selectedOutlet = scopedOutletId || ctxOutletId || undefined;
         const cachedInvoices = selectedOutlet
           ? await getData<any[]>('invoices', effectiveUserId, selectedOutlet)
           : await getData<any[]>('invoices', effectiveUserId);
