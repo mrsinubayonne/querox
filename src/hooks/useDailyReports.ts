@@ -6,6 +6,7 @@ import { getData, getPendingMutations } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
 import { DateRange } from 'react-day-picker';
 import { format, endOfDay, startOfDay, setHours, setMinutes } from 'date-fns';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 export interface DailyReport {
   date: string;
