@@ -35,6 +35,7 @@ interface MenuType {
 }
 
 const Menus: React.FC = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const [menus, setMenus] = useState<MenuType[]>([]);
   const [activeMenu, setActiveMenu] = useState<MenuType | null>(null);
   const [loading, setLoading] = useState(true);
