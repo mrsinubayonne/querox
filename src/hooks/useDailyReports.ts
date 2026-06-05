@@ -30,6 +30,7 @@ interface UseDailyReportsProps {
 }
 
 export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: UseDailyReportsProps) => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
   const [reports, setReports] = useState<DailyReport[]>([]);
