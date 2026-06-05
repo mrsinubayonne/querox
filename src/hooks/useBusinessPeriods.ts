@@ -413,7 +413,7 @@ export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) =
     const scopedOutlet = targetPeriod.outlet_id || outletId;
 
     // Read orders and invoices from IndexedDB
-    const selectedOutlet = scopedOutlet || localStorage.getItem('selectedOutletId') || undefined;
+    const selectedOutlet = scopedOutlet || ctxOutletId || undefined;
     let cachedOrders = await getData<any[]>('orders', user!.id, selectedOutlet);
     if (!cachedOrders?.data) cachedOrders = await getData<any[]>('orders', user!.id);
     let cachedInvoices = await getData<any[]>('invoices', user!.id, selectedOutlet);
