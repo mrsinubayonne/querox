@@ -27,6 +27,7 @@ interface UseDetailedReportsProps {
 }
 
 export const useDetailedReports = ({ outletId, periodId }: UseDetailedReportsProps) => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
   const [transactions, setTransactions] = useState<DetailedTransaction[]>([]);
