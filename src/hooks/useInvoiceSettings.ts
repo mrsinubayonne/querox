@@ -23,6 +23,7 @@ export interface InvoiceSettings {
 }
 
 export const useInvoiceSettings = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const { user } = useAuth();  const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedOutletId, setSelectedOutletId] = useState<string | null>(null);
