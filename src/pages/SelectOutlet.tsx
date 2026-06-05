@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 const SelectOutlet: React.FC = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const navigate = useNavigate();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { outlets, loading, createOutlet, selectOutlet, selectedOutletId, canAddMoreOutlets, getOutletLimit } = useOutlets();
