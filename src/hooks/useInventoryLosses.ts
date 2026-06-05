@@ -25,6 +25,7 @@ interface InventoryLoss {
 }
 
 export const useInventoryLosses = () => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const [losses, setLosses] = useState<InventoryLoss[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
