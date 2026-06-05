@@ -53,7 +53,7 @@ export default defineConfig(({ mode }) => ({
         runtimeCaching: [
           {
             // Assets statiques Supabase (images, fichiers) → CacheFirst
-            urlPattern: /^https:\/\/aufmphldtjrcddyayqoy\.supabase\.co\/storage\/.*/i,
+            urlPattern: /^https:\/\/[^.]+\.supabase\.co\/storage\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'supabase-storage',
