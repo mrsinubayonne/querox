@@ -26,6 +26,7 @@ interface UseBusinessPeriodsProps {
 }
 
 export const useBusinessPeriods = ({ outletId }: UseBusinessPeriodsProps = {}) => {
+  const { selectedOutletId: ctxOutletId } = useOutletContext();
   const { user } = useAuth();
   const { isOffline } = useNetworkStatus();
   const [periods, setPeriods] = useState<BusinessPeriod[]>([]);
