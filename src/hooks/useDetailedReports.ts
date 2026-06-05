@@ -5,6 +5,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { getData } from '@/lib/offlineStorage';
 import { toast } from 'sonner';
 import { format as formatDate } from 'date-fns';
+import { useOutletContext } from '@/contexts/OutletContext';
 
 export interface DetailedTransaction {
   id: string;
