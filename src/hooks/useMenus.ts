@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useOutlets } from '@/hooks/useOutlets';
+import { useOutletContext } from '@/contexts/OutletContext';
 import { useOfflineData } from './useOfflineData';
 import { toast } from 'sonner';
 
