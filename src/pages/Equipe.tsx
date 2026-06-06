@@ -25,6 +25,7 @@ const Equipe: React.FC = () => {
   const { permissions, loading: permissionsLoading } = usePermissions();
   const [open, setOpen] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState<{show: boolean, member: any} | null>(null);
+  const [pinDialogMember, setPinDialogMember] = useState<any | null>(null);
 
   const handleInvite = async (data: {
     fullName: string;
