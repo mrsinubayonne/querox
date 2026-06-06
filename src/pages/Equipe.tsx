@@ -111,6 +111,8 @@ const Equipe: React.FC = () => {
               </DialogContent>
             </Dialog>
           </div>
+          {/* Code restaurant pour connexion équipe (mode PIN) */}
+          <RestaurantCodeCard />
 
           {/* Limite info */}
           {!canAdd && (
