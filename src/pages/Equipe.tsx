@@ -194,7 +194,16 @@ const Equipe: React.FC = () => {
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2 shrink-0">
+                      <div className="flex gap-2 shrink-0 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setPinDialogMember(member)}
+                          title="Définir un pseudo et un PIN pour ce membre"
+                        >
+                          <KeyRound className="w-4 h-4 mr-1" />
+                          PIN
+                        </Button>
                         <Button
                           size="sm"
                           variant={member.is_active ? "outline" : "default"}
@@ -216,6 +225,18 @@ const Equipe: React.FC = () => {
               ))}
             </div>
           )}
+
+          {/* Set PIN Dialog */}
+          {pinDialogMember && (
+            <SetTeamMemberPinDialog
+              open={!!pinDialogMember}
+              onOpenChange={(o) => !o && setPinDialogMember(null)}
+              memberId={pinDialogMember.id}
+              memberName={pinDialogMember.full_name || pinDialogMember.member_email}
+              currentPseudo={(pinDialogMember as any).pseudo || ''}
+            />
+          )}
+
 
           {/* Share Options Modal */}
           <Dialog open={showShareOptions?.show || false} onOpenChange={(open) => !open && setShowShareOptions(null)}>
