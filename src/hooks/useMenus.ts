@@ -373,6 +373,9 @@ export const useMenus = () => {
     createDefaultMenu,
     transferMenu,
     fetchAllMenus,
-    fetchAllCategories
+    fetchAllCategories,
+    applyLocalItemUpdate,
+    applyLocalItemRemove,
+    applyLocalItemAdd,
   };
 };
