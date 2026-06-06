@@ -108,16 +108,21 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   }, [refetch]);
 
   const handleToggleAvailability = useCallback(async (id: string, isActive: boolean) => {
-    await toggleAvailability(id, !isActive);
-    await refetch();
-  }, [toggleAvailability, refetch]);
+    // Optimiste : flip immédiat
+    applyLocalItemUpdate(id, { is_available: !isActive });
+    const ok = await toggleAvailability(id, !isActive);
+    if (!ok) applyLocalItemUpdate(id, { is_available: isActive });
+    else refetch();
+  }, [toggleAvailability, refetch, applyLocalItemUpdate]);
 
   const handleDeleteItem = useCallback(async (id: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) {
-      await deleteMenuItem(id);
-      await refetch();
+      // Optimiste : retirer de la grille immédiatement
+      applyLocalItemRemove(id);
+      const ok = await deleteMenuItem(id);
+      if (!ok) refetch(); // restore en cas d'échec
     }
-  }, [deleteMenuItem, refetch]);
+  }, [deleteMenuItem, refetch, applyLocalItemRemove]);
 
   const handleEditItem = useCallback((item: MenuItem) => {
     const editableItem: EditableMenuItem = {
