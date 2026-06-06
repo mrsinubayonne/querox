@@ -93,36 +93,11 @@ export const useMenuItems = () => {
 
     setLoading(true);
     try {
-      console.log('🔄 Updating menu item:', id, updates);
-
-      // Vérifier que l'item appartient à l'utilisateur
-      const { data: existingItem, error: checkError } = await supabase
+      // RLS gère déjà l'ownership — pas besoin de pré-check (gain réseau x2)
+      const { error } = await supabase
         .from('menu_items')
-        .select(`
-          id,
-          menu_categories!inner(
-            menus!inner(user_id)
-          )
-        `)
-        .eq('id', id)
-        .eq('menu_categories.menus.user_id', user.id)
-        .single();
-
-      if (checkError || !existingItem) {
-        console.error('Item ownership check failed:', checkError);
-        toast.error("Erreur", { description: "Plat non trouvé ou non autorisé" });
-        return false;
-      }
-
-      const { data, error } = await supabase
-        .from('menu_items')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id);
 
       if (error) {
         console.error('Error updating menu item:', error);
@@ -130,10 +105,8 @@ export const useMenuItems = () => {
         return false;
       }
 
-      console.log('✅ Menu item updated successfully:', data.id);
       toast.success("Succès", { description: "Plat modifié avec succès" });
       return true;
-
     } catch (error: any) {
       console.error('🚨 Error updating menu item:', error);
       toast.error("Erreur", { description: "Une erreur inattendue s'est produite" });
@@ -141,7 +114,7 @@ export const useMenuItems = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user]);
 
   const deleteMenuItem = useCallback(async (id: string): Promise<boolean> => {
     if (!user) {
@@ -151,31 +124,7 @@ export const useMenuItems = () => {
 
     setLoading(true);
     try {
-      console.log('🗑️ Deleting menu item:', id);
-
-      // Vérifier que l'item appartient à l'utilisateur
-      const { data: existingItem, error: checkError } = await supabase
-        .from('menu_items')
-        .select(`
-          id,
-          menu_categories!inner(
-            menus!inner(user_id)
-          )
-        `)
-        .eq('id', id)
-        .eq('menu_categories.menus.user_id', user.id)
-        .single();
-
-      if (checkError || !existingItem) {
-        console.error('Item ownership check failed:', checkError);
-        toast.error("Erreur", { description: "Plat non trouvé ou non autorisé" });
-        return false;
-      }
-
-      const { error } = await supabase
-        .from('menu_items')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('menu_items').delete().eq('id', id);
 
       if (error) {
         console.error('Error deleting menu item:', error);
@@ -183,10 +132,8 @@ export const useMenuItems = () => {
         return false;
       }
 
-      console.log('✅ Menu item deleted successfully');
       toast.success("Succès", { description: "Plat supprimé avec succès" });
       return true;
-
     } catch (error: any) {
       console.error('🚨 Error deleting menu item:', error);
       toast.error("Erreur", { description: "Une erreur inattendue s'est produite" });
@@ -194,7 +141,8 @@ export const useMenuItems = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user]);
+
 
   const toggleAvailability = useCallback(async (id: string, isAvailable: boolean): Promise<boolean> => {
     return await updateMenuItem(id, { is_available: isAvailable });

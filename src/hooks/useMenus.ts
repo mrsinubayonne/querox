@@ -274,9 +274,26 @@ export const useMenus = () => {
     }
   }, [user?.id, selectedOutletId, toast, refetchMenus]);
 
-  const refetch = useCallback(() => {
-    return refetchMenus();
-  }, [refetchMenus]);
+  const refetch = useCallback(async () => {
+    await refetchMenus();
+    // Forcer aussi le refetch des catégories et items (sinon les modifs de plats
+    // ne remontent jamais dans l'UI tant que la liste des menus ne change pas).
+    await fetchCategoriesAndItems();
+  }, [refetchMenus, fetchCategoriesAndItems]);
+
+  // Mises à jour optimistes locales (appelées par MenuItemManager pour réagir
+  // instantanément avant que le refetch réseau ne revienne).
+  const applyLocalItemUpdate = useCallback((id: string, updates: Partial<MenuItem>) => {
+    setItems(prev => prev.map(it => (it.id === id ? { ...it, ...updates } : it)));
+  }, []);
+
+  const applyLocalItemRemove = useCallback((id: string) => {
+    setItems(prev => prev.filter(it => it.id !== id));
+  }, []);
+
+  const applyLocalItemAdd = useCallback((item: MenuItem) => {
+    setItems(prev => [item, ...prev]);
+  }, []);
 
   const transferMenu = useCallback(async (menuId: string, newOutletId: string): Promise<boolean> => {
     try {
@@ -356,6 +373,9 @@ export const useMenus = () => {
     createDefaultMenu,
     transferMenu,
     fetchAllMenus,
-    fetchAllCategories
+    fetchAllCategories,
+    applyLocalItemUpdate,
+    applyLocalItemRemove,
+    applyLocalItemAdd,
   };
 };
