@@ -46,7 +46,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
   const itemsPerPage = 12;
   const [ingredientsModalItem, setIngredientsModalItem] = useState<{ id: string; name: string } | null>(null);
   
-  const { items, categories, menus, loading, refetch, fetchAllMenus } = useMenus();
+  const { items, categories, menus, loading, refetch, fetchAllMenus, applyLocalItemUpdate, applyLocalItemRemove } = useMenus();
   const { toggleAvailability, deleteMenuItem, shareMenuItems, addMenuItem } = useMenuItems();
   const { outlets } = useOutlets();
   
