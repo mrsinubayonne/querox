@@ -1368,6 +1368,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          restaurant_code: string | null
           restaurant_slug: string | null
           selected_outlet_id: string | null
           updated_at: string
@@ -1378,6 +1379,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          restaurant_code?: string | null
           restaurant_slug?: string | null
           selected_outlet_id?: string | null
           updated_at?: string
@@ -1388,6 +1390,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          restaurant_code?: string | null
           restaurant_slug?: string | null
           selected_outlet_id?: string | null
           updated_at?: string
@@ -2875,6 +2878,7 @@ export type Database = {
       }
       generate_payslip_number: { Args: never; Returns: string }
       generate_purchase_order_number: { Args: never; Returns: string }
+      generate_restaurant_code: { Args: never; Returns: string }
       generate_team_access_code: { Args: never; Returns: string }
       get_admin_revenue_stats: {
         Args: never
@@ -3108,6 +3112,10 @@ export type Database = {
         Args: { new_password: string; user_email: string }
         Returns: Json
       }
+      resolve_owner_by_restaurant_code: {
+        Args: { _code: string }
+        Returns: string
+      }
       resolve_public_menu: {
         Args: { _outlet_slug: string; _restaurant_slug: string }
         Returns: {
@@ -3118,6 +3126,10 @@ export type Database = {
           user_id: string
           whatsapp_number: string
         }[]
+      }
+      set_team_member_pin: {
+        Args: { _member_id: string; _pin: string; _pseudo: string }
+        Returns: boolean
       }
       slugify: { Args: { _input: string }; Returns: string }
       team_member_can_access: {
@@ -3184,6 +3196,7 @@ export type Database = {
         Args: { _owner_id: string; _pin: string; _pseudo: string }
         Returns: {
           full_name: string
+          member_email: string
           member_id: string
           outlet_id: string
           owner_id: string
