@@ -7,9 +7,11 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, UserPlus, Trash2, Shield, Share2 } from 'lucide-react';
+import { Users, UserPlus, Trash2, Shield, Share2, KeyRound } from 'lucide-react';
 import { InvitationShareOptions } from '@/components/team/InvitationShareOptions';
 import { AddMemberWizard } from '@/components/team/AddMemberWizard';
+import { SetTeamMemberPinDialog } from '@/components/team/SetTeamMemberPinDialog';
+import { RestaurantCodeCard } from '@/components/team/RestaurantCodeCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/EmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -23,6 +25,7 @@ const Equipe: React.FC = () => {
   const { permissions, loading: permissionsLoading } = usePermissions();
   const [open, setOpen] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState<{show: boolean, member: any} | null>(null);
+  const [pinDialogMember, setPinDialogMember] = useState<any | null>(null);
 
   const handleInvite = async (data: {
     fullName: string;
@@ -108,6 +111,8 @@ const Equipe: React.FC = () => {
               </DialogContent>
             </Dialog>
           </div>
+          {/* Code restaurant pour connexion équipe (mode PIN) */}
+          <RestaurantCodeCard />
 
           {/* Limite info */}
           {!canAdd && (
@@ -189,7 +194,16 @@ const Equipe: React.FC = () => {
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2 shrink-0">
+                      <div className="flex gap-2 shrink-0 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setPinDialogMember(member)}
+                          title="Définir un pseudo et un PIN pour ce membre"
+                        >
+                          <KeyRound className="w-4 h-4 mr-1" />
+                          PIN
+                        </Button>
                         <Button
                           size="sm"
                           variant={member.is_active ? "outline" : "default"}
@@ -211,6 +225,18 @@ const Equipe: React.FC = () => {
               ))}
             </div>
           )}
+
+          {/* Set PIN Dialog */}
+          {pinDialogMember && (
+            <SetTeamMemberPinDialog
+              open={!!pinDialogMember}
+              onOpenChange={(o) => !o && setPinDialogMember(null)}
+              memberId={pinDialogMember.id}
+              memberName={pinDialogMember.full_name || pinDialogMember.member_email}
+              currentPseudo={(pinDialogMember as any).pseudo || ''}
+            />
+          )}
+
 
           {/* Share Options Modal */}
           <Dialog open={showShareOptions?.show || false} onOpenChange={(open) => !open && setShowShareOptions(null)}>

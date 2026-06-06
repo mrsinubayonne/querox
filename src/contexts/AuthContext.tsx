@@ -56,10 +56,20 @@ export const useAuth = () => {
   return context;
 };
 
-// Helper to initialize team member state synchronously from localStorage
+// Helper to initialize team member state synchronously from localStorage.
+// Enforces expiresAt (ISO string) defensively — getWithTTL only enforces its
+// own envelope format, not legacy ISO `expiresAt` strings written by the
+// TeamMemberAuth login form.
 const getInitialTeamMemberState = () => {
   const parsed = localStore.raw.getWithTTL<TeamMemberSession | null>('teamMember', null);
   if (parsed && parsed.memberId) {
+    const expiresAtRaw = (parsed as any).expiresAt;
+    const expiresAtMs = typeof expiresAtRaw === 'string' ? Date.parse(expiresAtRaw) : NaN;
+    if (!Number.isNaN(expiresAtMs) && Date.now() > expiresAtMs) {
+      console.log('⏰ Team member session expired — clearing');
+      localStore.raw.remove('teamMember');
+      return { isTeamMember: false, session: null };
+    }
     console.log('✅ Team member session loaded synchronously on init');
     return { isTeamMember: true, session: normalizeTeamMemberSession(parsed) };
   }
