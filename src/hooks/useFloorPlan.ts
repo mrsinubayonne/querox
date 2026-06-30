@@ -34,7 +34,7 @@ export interface FloorPlanTable {
 }
 
 export const useFloorPlan = () => {
-  const { user, isTeamMember, teamMember } = useAuth();
+  const { user, isTeamMember, teamMemberSession } = useAuth();
   const { selectedOutletId } = useOutletContext();
   const ownerId = isTeamMember ? teamMember?.ownerId : user?.id;
 
