@@ -287,6 +287,23 @@ const RapportsJournaliers: React.FC = () => {
           <>
             <DailyReportStats reports={reports} loading={loading} />
             <DailyReportTable reports={reports} loading={loading} reportType={reportType} />
+            {/* Toutes les factures payées de la journée en cours — visibles jusqu'à la clôture de la caissière */}
+            {currentPeriod && (
+              <Card className="border-l-4 border-l-blue-500">
+                <CardHeader>
+                  <CardTitle>Factures payées — journée en cours</CardTitle>
+                  <CardDescription>
+                    Toutes les factures marquées payées restent dans l'aperçu jusqu'à la clôture de la journée par la caissière.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DetailedTransactionsTable
+                    transactions={transactions}
+                    loading={detailedLoading}
+                  />
+                </CardContent>
+              </Card>
+            )}
           </>
         ) : (
           <>
