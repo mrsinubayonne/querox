@@ -257,9 +257,6 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button size="sm" variant="outline" onClick={handleAddZone}>
-                  <Plus className="h-4 w-4 mr-2" /> Salle
-                </Button>
                 <Button size="sm" variant="ghost" onClick={handleRenameZone}>
                   <Pencil className="h-4 w-4" />
                 </Button>
