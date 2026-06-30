@@ -27,6 +27,7 @@ const RapportsJournaliers: React.FC = () => {
   const { outlets, selectedOutletId } = useOutlets();
   const [viewMode, setViewMode] = useState<'periods' | 'calendar'>('calendar');
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | undefined>();
+  const [showInlinePreview, setShowInlinePreview] = useState(false);
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
