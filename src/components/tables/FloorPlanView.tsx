@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useOutlets } from "@/hooks/useOutlets";
 import {
   useFloorPlan,
   FloorPlanShape,
@@ -9,7 +10,7 @@ import { TableSession } from "@/hooks/useOptimizedTableSessions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +69,15 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
     updateTable,
     deleteTable,
   } = useFloorPlan();
+  const { outlets, selectedOutletId } = useOutlets();
+  const currentOutletName = outlets?.find((o) => o.id === selectedOutletId)?.name || "Salle principale";
+
+  // Auto-création : 1 seule salle par point de vente
+  useEffect(() => {
+    if (!loading && zones.length === 0 && selectedOutletId && canManageTables) {
+      createZone(currentOutletName);
+    }
+  }, [loading, zones.length, selectedOutletId, canManageTables, currentOutletName, createZone]);
 
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -101,25 +111,18 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
   // Positions locales pendant le drag (pour ne pas écrire en base à chaque pixel)
   const [dragOverride, setDragOverride] = useState<{ id: string; x: number; y: number } | null>(null);
 
-  const handleAddZone = async () => {
-    const name = window.prompt("Nom de la salle (ex: Terrasse, VIP)", `Salle ${zones.length + 1}`);
-    if (!name) return;
-    const z = await createZone(name);
-    if (z) setActiveZoneId(z.id);
-  };
 
   const handleRenameZone = async () => {
     if (!activeZone) return;
-    const name = window.prompt("Nouveau nom", activeZone.name);
+    const name = window.prompt("Nouveau nom de la salle", activeZone.name);
     if (!name || name === activeZone.name) return;
     await updateZone(activeZone.id, { name });
   };
 
   const handleDeleteZone = async () => {
     if (!activeZone) return;
-    if (!window.confirm(`Supprimer la salle "${activeZone.name}" et toutes ses tables ?`)) return;
+    if (!window.confirm(`Réinitialiser le plan de "${activeZone.name}" (toutes les tables seront supprimées) ?`)) return;
     await deleteZone(activeZone.id);
-    setActiveZoneId(null);
   };
 
   const handleAddTable = async (shape: FloorPlanShape) => {
@@ -204,14 +207,8 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
 
   if (zones.length === 0) {
     return (
-      <div className="text-center py-16 border-2 border-dashed rounded-xl">
-        <p className="text-muted-foreground mb-4">Aucune salle créée pour ce point de vente.</p>
-        {canManageTables && (
-          <Button onClick={handleAddZone}>
-            <Plus className="h-4 w-4 mr-2" />
-            Créer ma première salle
-          </Button>
-        )}
+      <div className="text-center py-16 border-2 border-dashed rounded-xl text-muted-foreground">
+        Préparation du plan…
       </div>
     );
   }
@@ -219,15 +216,9 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Tabs value={activeZone?.id} onValueChange={setActiveZoneId}>
-          <TabsList>
-            {zones.map((z) => (
-              <TabsTrigger key={z.id} value={z.id}>
-                {z.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <div className="text-sm font-medium text-muted-foreground px-3 py-1.5 rounded-md bg-muted">
+          {activeZone?.name}
+        </div>
 
         {canManageTables && (
           <div className="flex gap-2">
@@ -260,9 +251,6 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button size="sm" variant="outline" onClick={handleAddZone}>
-                  <Plus className="h-4 w-4 mr-2" /> Salle
-                </Button>
                 <Button size="sm" variant="ghost" onClick={handleRenameZone}>
                   <Pencil className="h-4 w-4" />
                 </Button>

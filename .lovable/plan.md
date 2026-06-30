@@ -1,64 +1,68 @@
-## 1. Refonte POS "vraie" façon Odoo (CreateSessionWithOrderModal + AddOrderFromCustomerModal)
+## Objectif
+Corriger 3 points liés à la gestion d'équipe / plan de salle.
 
-Objectif : se démarquer nettement de l'ancienne modale. Layout 3 colonnes conservé, mais l'interaction change.
+---
 
-### Colonne centrale — Plats (sans images)
-- Grille dense de **tuiles compactes** (text-only) : nom en haut, prix en bas, couleur de fond dérivée de la catégorie (pastille teintée). 5–6 colonnes sur desktop au lieu de 2–4. Pas d'`<img>`, pas d'`aspect-square` — disparition complète des images.
-- Hauteur fixe par tuile (~76px) → scroll instantané, zéro layout shift.
-- Catégories en **onglets horizontaux** au-dessus de la grille (façon caisse Odoo), avec compteur. La colonne gauche "Catégories" verticale est supprimée → plus de place pour les plats.
+### 1. Code restaurant invisible (capture: "—" affiché)
+**Cause** : `RestaurantCodeCard` lit `profiles.restaurant_code` avec `user.id`. Quand le compte connecté est un **membre d'équipe**, `user.id` n'est pas l'`owner` — la requête ne retourne rien (RLS + ligne inexistante). Les codes existent bien en base pour les propriétaires.
 
-### Colonne droite — Ticket + Pavé numérique (la grosse différence)
-- Le ticket devient une **liste sélectionnable** : on clique sur une ligne, elle devient active (surlignée).
-- En dessous : un **pavé numérique Odoo-like** (0–9, `.`, `←`) + 4 boutons modificateurs : `Qté`, `Prix`, `Remise %`, `×` (suppr).
-  - Sélectionner `Qté` puis taper `3` → met la quantité de la ligne active à 3.
-  - Sélectionner `Prix` puis taper `1500` → change le prix unitaire.
-  - Sélectionner `Remise` puis `10` → applique 10 % sur la ligne.
-- Boutons d'action en bas : `+ Article libre`, `Vider`, `Ouvrir & Commander`.
-- Le champ "Couverts" passe dans le header au-dessus du ticket (toujours visible).
+**Correctif** : dans `src/components/team/RestaurantCodeCard.tsx`, résoudre l'`ownerId` via `useAuth()` :
+```ts
+const { user, isTeamMember, teamMemberSession } = useAuth();
+const ownerId = isTeamMember ? teamMemberSession?.ownerId : user?.id;
+// .eq('id', ownerId)
+```
+Ajout d'un fallback : si `restaurant_code` est null pour un owner, appeler la RPC existante de génération (ou re-trigger via update no-op) puis recharger.
 
-### Comportements
-- Cliquer un plat → ajout direct quantité 1, ligne auto-sélectionnée → on peut taper `2` `Qté` pour ajuster.
-- Recherche menu : raccourci `/` pour focus, `Échap` pour vider.
-- Suppression du `prompt()` natif pour les plats à prix libre → ouverture inline dans le pavé numérique (mode `Prix` auto-activé).
+---
 
-Mêmes changements appliqués à `AddOrderFromCustomerModal.tsx` (variante avec sélection client en haut du panneau droit, pavé numérique en bas).
+### 2. Une seule salle par point de vente
+**Règle métier** : 1 `floor_plan_zone` max par `outlet_id`.
 
-## 2. Suppression définitive des images dans la prise de commande
+**Frontend** (`src/components/tables/FloorPlanView.tsx`) :
+- Masquer le bouton "Salle" (ajouter) et l'onglet `Tabs` des salles dès qu'une zone existe.
+- L'unique zone porte automatiquement le nom du point de vente (récupéré via `useOutletContext`/outlets) — pas de prompt.
+- Conserver Renommer / Supprimer (pour reset).
+- Au premier accès si aucune zone : auto-création silencieuse (plus de bouton "Créer ma première salle").
 
-- Retrait du bloc `{item.image_url && ...}` dans les deux modales.
-- Le champ `image_url` n'est plus sélectionné ni chargé par `useInternalMenuItems` (économie réseau + IndexedDB plus léger).
+**Backend** : ajouter un index unique partiel pour garantir l'invariant :
+```sql
+CREATE UNIQUE INDEX floor_plan_zones_one_per_outlet
+  ON public.floor_plan_zones(outlet_id);
+```
+(Si plusieurs zones existent déjà pour un outlet, garder la plus ancienne et migrer les tables vers elle avant l'index.)
 
-## 3. Chargement ultra-rapide
+---
 
-### Préchargement global du menu
-- Nouveau hook `useMenuPrefetch()` monté dans `App.tsx` (après login) : déclenche `useInternalMenuItems(true)` une seule fois en arrière-plan dès l'arrivée sur l'app → quand l'utilisateur clique sur une table, **le cache mémoire est déjà chaud**, ouverture instantanée.
-- Garde le `menuItemsMemoryCache` existant comme source de vérité ; la modale lit synchroneusement et n'affiche jamais le spinner si le cache est peuplé.
+### 3. Export PDF/Image du plan de salle dans Rapports
+**Emplacement** : `src/pages/RapportsJournaliers.tsx` — ajouter une carte "Plan de salle" avec bouton **"Générer aperçu PDF"** et **"Télécharger image PNG"**.
 
-### Allègement du fetch Supabase
-- Retirer `image_url`, `description`, `is_custom_name` du `select` initial (non utilisés dans le POS sans images).
-- **Différer** le chargement des `menu_item_option_groups` / `option_values` : ne les charger qu'au premier clic sur un plat avec options (lazy via `useMenuItemOptionsPicker`). Aujourd'hui c'est fait pour tous les items à chaque refresh → gros gain.
-- Paralléliser categories + items avec `Promise.all` au lieu de séquentiel.
+**Implémentation** (100% client, compatible offline) :
+- Nouveau composant `src/components/tables/FloorPlanSnapshot.tsx` : rend le plan en lecture seule à partir des données de `useFloorPlan` (zones + tables + sessions courantes) dans un conteneur off-screen identifiable (`id="floor-plan-snapshot"`).
+- Nouveau util `src/utils/floorPlanExport.ts` :
+  - `exportFloorPlanPNG()` : `html2canvas` → blob PNG → `URL.createObjectURL` → download.
+  - `exportFloorPlanPDF()` : `html2canvas` → `jsPDF` A4 paysage → ajoute en-tête (nom restaurant, date DD-MM-YY, point de vente, légende statuts) → `pdf.save()`.
+- Imports **dynamiques** (`await import('jspdf')`, `await import('html2canvas')`) pour ne pas alourdir le bundle (cohérent avec la politique existante).
+- Inclure dans l'image : titre PDV, date, légende couleurs (Libre/Occupée/Attente/Payée), n° de chaque table + couverts.
+- Fonctionne offline : html2canvas + jsPDF tournent en local ; les données viennent du cache React/Zustand.
 
-### Ouverture de modale instantanée
-- `CreateSessionWithOrderModal` : ne plus reset `cart`/`searchTerm` dans un `useEffect` (provoque un re-render après ouverture) — faire le reset dans le `onClose` à la place.
-- Memoïser les composants tuiles (`React.memo`) pour éviter de re-render 200 boutons à chaque frappe de recherche.
-- Debounce de la recherche (150 ms) sur la valeur utilisée pour le filtre (l'input reste contrôlé instantanément).
+**Dépendance** : `html2canvas` n'est pas installé → `bun add html2canvas` ; `jspdf` est déjà présent (utilisé pour factures).
+
+---
 
 ### Détails techniques
-```
-src/
-  components/tables/
-    CreateSessionWithOrderModal.tsx    ← refonte UI + pavé numérique
-    AddOrderFromCustomerModal.tsx      ← idem
-    pos/
-      PosNumpad.tsx                    ← nouveau
-      PosProductTile.tsx               ← nouveau (memo)
-      PosCategoryTabs.tsx              ← nouveau
-      PosTicketLine.tsx                ← nouveau (memo)
-  hooks/
-    useInternalMenuItems.ts            ← select allégé, parallélisation, option_groups lazy
-    useMenuPrefetch.ts                 ← nouveau
-  App.tsx                              ← branche useMenuPrefetch()
-```
+| Fichier | Action |
+|---|---|
+| `src/components/team/RestaurantCodeCard.tsx` | Utiliser `ownerId`, ajouter fallback regénération |
+| Migration SQL | Index unique partiel sur `floor_plan_zones(outlet_id)` après dédoublonnage |
+| `src/components/tables/FloorPlanView.tsx` | Suppression onglets/bouton zone, auto-création, nom = PDV |
+| `src/components/tables/FloorPlanSnapshot.tsx` (NEW) | Rendu lecture seule pour export |
+| `src/utils/floorPlanExport.ts` (NEW) | Génération PNG/PDF dynamique |
+| `src/pages/RapportsJournaliers.tsx` | Nouvelle carte "Plan de salle" avec 2 boutons |
+| `package.json` | + `html2canvas` |
 
-Aucune modification de schéma DB, aucune migration. Pas de changement de logique de paiement, factures ou triggers SQL.
+---
+
+### Hors scope
+- Multilingue (déjà reporté).
+- Modification du système de permissions du plan de salle (inchangé).

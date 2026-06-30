@@ -18,6 +18,7 @@ import { DateRange } from 'react-day-picker';
 import { format, subDays, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FloorPlanReportCard } from '@/components/reports/FloorPlanReportCard';
 
 const RapportsJournaliers: React.FC = () => {
   const { user } = useAuth();
@@ -170,6 +171,9 @@ const RapportsJournaliers: React.FC = () => {
             </AlertDescription>
           </Alert>
         )}
+
+        {/* Plan de salle — aperçu PDF/PNG (offline-friendly) */}
+        <FloorPlanReportCard />
 
         {/* Filters - Only show for calendar mode */}
         {viewMode === 'calendar' && (
