@@ -405,6 +405,44 @@ const RapportsJournaliers: React.FC = () => {
           </>
         )}
         </div>
+
+        {/* Aperçu direct — affiche le rapport tel quel, sans génération PDF/PNG */}
+        <Dialog open={showInlinePreview} onOpenChange={setShowInlinePreview}>
+          <DialogContent className="max-w-6xl w-[95vw] h-[90vh] flex flex-col p-0">
+            <DialogHeader className="px-4 py-3 border-b flex-row items-center justify-between space-y-0">
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" /> Aperçu direct du rapport
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-auto p-4 bg-white">
+              <div className="space-y-6">
+                {viewMode === 'calendar' ? (
+                  <>
+                    <DailyReportStats reports={reports} loading={loading} />
+                    <DailyReportTable reports={reports} loading={loading} reportType={reportType} />
+                    {currentPeriod && (
+                      <Card className="border-l-4 border-l-blue-500">
+                        <CardHeader>
+                          <CardTitle>Factures payées — journée en cours</CardTitle>
+                          <CardDescription>
+                            Toutes les factures marquées payées restent affichées jusqu'à la clôture de la journée.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <DetailedTransactionsTable transactions={transactions} loading={detailedLoading} />
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                ) : (
+                  (currentPeriod || selectedPeriodId) && (
+                    <DetailedTransactionsTable transactions={transactions} loading={detailedLoading} />
+                  )
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageWithSidebar>
   );
