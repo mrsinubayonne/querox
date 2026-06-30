@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FileText, Download, Calendar, TrendingUp, DollarSign, ShoppingBag, Users, CheckCircle2 } from 'lucide-react';
+import { FileText, Download, Calendar, TrendingUp, DollarSign, ShoppingBag, Users, CheckCircle2, Eye, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,6 +27,7 @@ const RapportsJournaliers: React.FC = () => {
   const { outlets, selectedOutletId } = useOutlets();
   const [viewMode, setViewMode] = useState<'periods' | 'calendar'>('calendar');
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | undefined>();
+  const [showInlinePreview, setShowInlinePreview] = useState(false);
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
@@ -118,23 +120,8 @@ const RapportsJournaliers: React.FC = () => {
           </div>
         </div>
 
-        {/* Aperçus hors ligne — placés en tête pour être immédiatement visibles */}
-        <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-4 space-y-4">
-          <div className="flex items-center gap-2 text-primary font-semibold">
-            <FileText className="h-5 w-5" />
-            Zone d'aperçu hors ligne
-          </div>
-          <ReportSnapshotCard
-            targetId="report-snapshot-area"
-            title="Aperçu hors ligne du rapport"
-            description="Capture la vue actuelle (stats, tableau, transactions) en PNG ou PDF. Idéal en mode hors ligne."
-            baseFilename="rapport"
-          />
-          <FloorPlanReportCard />
-        </div>
-
-        {/* View Mode Toggle */}
-        <div className="flex gap-2">
+        {/* View Mode Toggle + Aperçu direct */}
+        <div className="flex flex-wrap gap-2">
           <Button
             variant={viewMode === 'periods' ? 'default' : 'outline'}
             onClick={() => setViewMode('periods')}
@@ -146,6 +133,14 @@ const RapportsJournaliers: React.FC = () => {
             onClick={() => setViewMode('calendar')}
           >
             Par dates calendaires
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setShowInlinePreview(true)}
+            className="border-2 border-primary/40"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Aperçu direct
           </Button>
         </div>
 
@@ -410,6 +405,44 @@ const RapportsJournaliers: React.FC = () => {
           </>
         )}
         </div>
+
+        {/* Aperçu direct — affiche le rapport tel quel, sans génération PDF/PNG */}
+        <Dialog open={showInlinePreview} onOpenChange={setShowInlinePreview}>
+          <DialogContent className="max-w-6xl w-[95vw] h-[90vh] flex flex-col p-0">
+            <DialogHeader className="px-4 py-3 border-b flex-row items-center justify-between space-y-0">
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" /> Aperçu direct du rapport
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-auto p-4 bg-white">
+              <div className="space-y-6">
+                {viewMode === 'calendar' ? (
+                  <>
+                    <DailyReportStats reports={reports} loading={loading} />
+                    <DailyReportTable reports={reports} loading={loading} reportType={reportType} />
+                    {currentPeriod && (
+                      <Card className="border-l-4 border-l-blue-500">
+                        <CardHeader>
+                          <CardTitle>Factures payées — journée en cours</CardTitle>
+                          <CardDescription>
+                            Toutes les factures marquées payées restent affichées jusqu'à la clôture de la journée.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <DetailedTransactionsTable transactions={transactions} loading={detailedLoading} />
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                ) : (
+                  (currentPeriod || selectedPeriodId) && (
+                    <DetailedTransactionsTable transactions={transactions} loading={detailedLoading} />
+                  )
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageWithSidebar>
   );
