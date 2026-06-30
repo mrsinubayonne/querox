@@ -31,6 +31,7 @@ export const InlinePreviewContent: React.FC<Props> = ({
   const effectiveUserId = isTeamMember && teamMemberSession ? teamMemberSession.ownerId : user?.id;
 
 
+
   useEffect(() => {
     const run = async () => {
       if (!effectiveUserId || !periodStart) return;
