@@ -21,6 +21,7 @@ import { fr } from 'date-fns/locale';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FloorPlanReportCard } from '@/components/reports/FloorPlanReportCard';
 import { ReportSnapshotCard } from '@/components/reports/ReportSnapshotCard';
+import { InlinePreviewContent } from '@/components/reports/InlinePreviewContent';
 
 const RapportsJournaliers: React.FC = () => {
   const { user } = useAuth();
