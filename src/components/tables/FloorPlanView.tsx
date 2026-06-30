@@ -111,12 +111,6 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
   // Positions locales pendant le drag (pour ne pas écrire en base à chaque pixel)
   const [dragOverride, setDragOverride] = useState<{ id: string; x: number; y: number } | null>(null);
 
-  const handleAddZone = async () => {
-    const name = window.prompt("Nom de la salle (ex: Terrasse, VIP)", `Salle ${zones.length + 1}`);
-    if (!name) return;
-    const z = await createZone(name);
-    if (z) setActiveZoneId(z.id);
-  };
 
   const handleRenameZone = async () => {
     if (!activeZone) return;
