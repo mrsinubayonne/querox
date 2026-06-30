@@ -146,9 +146,16 @@ export const InlinePreviewContent: React.FC<Props> = ({
       {/* Inventaire consommé */}
       <Card className="border-l-4 border-l-purple-500">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-purple-600" />
-            Inventaire consommé
+          <CardTitle className="flex items-center gap-2 justify-between">
+            <span className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-purple-600" />
+              Inventaire consommé
+            </span>
+            {inventory.length > 0 && (
+              <span className="text-sm font-normal text-muted-foreground">
+                {inventory.length} article{inventory.length > 1 ? 's' : ''} · {inventory.reduce((s, i) => s + i.qty, 0)} unités
+              </span>
+            )}
           </CardTitle>
           <CardDescription>
             Boissons, ingrédients et autres articles sortis du stock sur la période.
@@ -158,7 +165,11 @@ export const InlinePreviewContent: React.FC<Props> = ({
           {loading ? (
             <p className="text-sm text-muted-foreground">Chargement…</p>
           ) : inventory.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucun mouvement de stock sur cette période.</p>
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="h-10 w-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm font-medium">Aucune donnée d'inventaire disponible</p>
+              <p className="text-xs mt-1">Aucun mouvement de stock n'a été enregistré sur cette période.</p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -166,7 +177,7 @@ export const InlinePreviewContent: React.FC<Props> = ({
                   <tr>
                     <th className="py-2 pr-2">Article</th>
                     <th className="py-2 pr-2">Catégorie</th>
-                    <th className="py-2 pr-2 text-right">Quantité</th>
+                    <th className="py-2 pr-2 text-right">Quantité exacte</th>
                     <th className="py-2 pr-2">Unité</th>
                   </tr>
                 </thead>
@@ -175,7 +186,7 @@ export const InlinePreviewContent: React.FC<Props> = ({
                     <tr key={it.name} className="border-b last:border-0">
                       <td className="py-2 pr-2 font-medium">{it.name}</td>
                       <td className="py-2 pr-2 text-muted-foreground">{it.category}</td>
-                      <td className="py-2 pr-2 text-right font-bold">{it.qty}</td>
+                      <td className="py-2 pr-2 text-right font-bold">{it.qty} {it.unit}</td>
                       <td className="py-2 pr-2 text-muted-foreground">{it.unit}</td>
                     </tr>
                   ))}
