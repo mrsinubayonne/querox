@@ -40,6 +40,7 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
   const [groups, setGroups] = useState<OptionGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
   const load = async () => {
     if (!menuItemId) return;
     setLoading(true);
