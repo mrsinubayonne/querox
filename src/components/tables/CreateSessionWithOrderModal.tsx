@@ -620,41 +620,60 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                   {cart.map((item) => {
                     const isActive = item.id === activeLineId;
                     const showBuffer = isActive && numpadBuffer !== '';
+                    const decQty = (e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      setCart(prev => prev.flatMap(i => {
+                        if (i.id !== item.id) return [i];
+                        const q = i.quantity - 1;
+                        return q <= 0 ? [] : [{ ...i, quantity: q }];
+                      }));
+                    };
+                    const incQty = (e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      setCart(prev => prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
+                    };
                     return (
-                      <button
+                      <div
                         key={item.id}
-                        type="button"
                         onClick={() => selectLine(item.id)}
                         className={cn(
-                          "w-full text-left rounded-md p-2 transition active:scale-[0.99] border",
+                          "w-full text-left rounded-md p-2 transition border cursor-pointer",
                           isActive
                             ? "bg-primary/10 border-primary shadow-sm"
                             : "bg-muted/30 border-transparent hover:bg-muted/50",
                         )}
                       >
-                        <div className="flex justify-between items-start gap-2 mb-0.5">
+                        <div className="flex justify-between items-start gap-2 mb-1">
                           <p className="text-sm font-medium leading-tight flex-1 min-w-0 line-clamp-1">{item.name}</p>
                           <span className="text-sm font-bold text-primary shrink-0">
                             {Math.round(lineTotal(item)).toLocaleString()}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>
-                            <span className={cn(numpadMode === 'qty' && isActive && "text-primary font-bold")}>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={decQty}
+                              className="h-6 w-6 rounded-md border bg-background hover:bg-accent font-bold text-sm active:scale-[0.95]"
+                              aria-label="Diminuer"
+                            >−</button>
+                            <span className={cn("min-w-[1.5rem] text-center font-semibold", numpadMode === 'qty' && isActive && "text-primary")}>
                               {showBuffer && numpadMode === 'qty' ? numpadBuffer : item.quantity}
                             </span>
-                            {' × '}
-                            <span className={cn(numpadMode === 'price' && isActive && "text-primary font-bold")}>
-                              {(showBuffer && numpadMode === 'price' ? Number(numpadBuffer) : item.price).toLocaleString()}
-                            </span>
+                            <button
+                              type="button"
+                              onClick={incQty}
+                              className="h-6 w-6 rounded-md border bg-background hover:bg-accent font-bold text-sm active:scale-[0.95]"
+                              aria-label="Augmenter"
+                            >+</button>
                             {(item.discount || (showBuffer && numpadMode === 'discount')) ? (
-                              <span className={cn("ml-1", numpadMode === 'discount' && isActive && "text-primary font-bold")}>
-                                {' '}-{showBuffer && numpadMode === 'discount' ? numpadBuffer : item.discount}%
+                              <span className={cn("ml-2", numpadMode === 'discount' && isActive && "text-primary font-bold")}>
+                                -{showBuffer && numpadMode === 'discount' ? numpadBuffer : item.discount}%
                               </span>
                             ) : null}
-                          </span>
+                          </div>
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
