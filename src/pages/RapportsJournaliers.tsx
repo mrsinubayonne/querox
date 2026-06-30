@@ -143,6 +143,15 @@ const RapportsJournaliers: React.FC = () => {
             <Eye className="h-4 w-4 mr-2" />
             Aperçu direct
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => { refetch(); }}
+            disabled={loading}
+            title="Forcer le rechargement depuis le serveur"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
         </div>
 
         {/* Current Period Alert */}
