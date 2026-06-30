@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,12 +30,6 @@ export const InlinePreviewContent: React.FC<Props> = ({
 
   const effectiveUserId = isTeamMember && teamMemberSession ? teamMemberSession.ownerId : user?.id;
 
-  const signatureName = isTeamMember && teamMemberSession
-    ? teamMemberSession.memberEmail
-    : (user?.email || 'Propriétaire');
-  const signatureRole = isTeamMember && teamMemberSession
-    ? (teamMemberSession.role || 'Membre équipe')
-    : 'Propriétaire du compte';
 
   useEffect(() => {
     const run = async () => {
