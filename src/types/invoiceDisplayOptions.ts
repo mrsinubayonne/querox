@@ -90,8 +90,27 @@ export function formatInvoiceDate(
   format: DateFormat = 'DD-MM-YY'
 ): string {
   if (!dateInput) return '-';
-  const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-  if (isNaN(d.getTime())) return '-';
+
+  let d: Date | null = null;
+  if (typeof dateInput === 'string') {
+    // Pure date (YYYY-MM-DD) → parse as LOCAL date to avoid UTC "next day" drift
+    const isoDateOnly = dateInput.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoDateOnly) {
+      d = new Date(+isoDateOnly[1], +isoDateOnly[2] - 1, +isoDateOnly[3]);
+    } else {
+      const dmy = dateInput.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+      if (dmy) {
+        let y = parseInt(dmy[3]);
+        if (y < 100) y += 2000;
+        d = new Date(y, parseInt(dmy[2]) - 1, parseInt(dmy[1]));
+      } else {
+        d = new Date(dateInput);
+      }
+    }
+  } else {
+    d = dateInput;
+  }
+  if (!d || isNaN(d.getTime())) return '-';
 
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');

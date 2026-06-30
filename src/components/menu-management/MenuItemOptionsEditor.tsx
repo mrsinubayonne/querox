@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
-import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Copy } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import CopyOptionsFromItemModal from './CopyOptionsFromItemModal';
 import { toast } from 'sonner';
 
 interface OptionValue {
@@ -39,6 +40,7 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
   const [groups, setGroups] = useState<OptionGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
   const load = async () => {
     if (!menuItemId) return;
     setLoading(true);
@@ -212,9 +214,14 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
     <div className="space-y-3 border rounded-lg p-3 bg-muted/30">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <Label className="text-base font-semibold">Variantes & suppléments</Label>
-        <Button type="button" variant="outline" size="sm" onClick={addGroup}>
-          <Plus className="h-4 w-4 mr-1" /> Groupe
-        </Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => setCopyOpen(true)}>
+            <Copy className="h-4 w-4 mr-1" /> Copier d'un plat
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={addGroup}>
+            <Plus className="h-4 w-4 mr-1" /> Groupe
+          </Button>
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">
         Ex: "Viande" (Bœuf / Poulet) en choix unique, ou "Suppléments" (Fromage +500, Bacon +700) en choix multiple.
@@ -317,6 +324,12 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
         </Button>
       )}
 
+      <CopyOptionsFromItemModal
+        open={copyOpen}
+        onOpenChange={setCopyOpen}
+        targetMenuItemId={menuItemId}
+        onImported={load}
+      />
     </div>
   );
 };

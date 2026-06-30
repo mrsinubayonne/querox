@@ -102,7 +102,13 @@ const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    // Date-only strings (YYYY-MM-DD) must be parsed as LOCAL to avoid UTC "next day" drift
+    const isoDateOnly = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const d = isoDateOnly
+      ? new Date(+isoDateOnly[1], +isoDateOnly[2] - 1, +isoDateOnly[3])
+      : new Date(dateString);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: 'long',
       year: 'numeric'
