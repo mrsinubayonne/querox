@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useOutlets } from "@/hooks/useOutlets";
 import {
   useFloorPlan,
   FloorPlanShape,
