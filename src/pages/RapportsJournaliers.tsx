@@ -172,6 +172,9 @@ const RapportsJournaliers: React.FC = () => {
           </Alert>
         )}
 
+        {/* Plan de salle — aperçu PDF/PNG (offline-friendly) */}
+        <FloorPlanReportCard />
+
         {/* Filters - Only show for calendar mode */}
         {viewMode === 'calendar' && (
           <Card>
