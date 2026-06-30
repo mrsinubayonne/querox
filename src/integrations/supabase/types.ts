@@ -492,6 +492,107 @@ export type Database = {
         }
         Relationships: []
       }
+      floor_plan_tables: {
+        Row: {
+          created_at: string
+          height: number
+          id: string
+          label: string | null
+          outlet_id: string
+          rotation: number
+          seats: number
+          shape: string
+          table_number: string
+          updated_at: string
+          user_id: string
+          width: number
+          x: number
+          y: number
+          zone_id: string
+        }
+        Insert: {
+          created_at?: string
+          height?: number
+          id?: string
+          label?: string | null
+          outlet_id: string
+          rotation?: number
+          seats?: number
+          shape?: string
+          table_number: string
+          updated_at?: string
+          user_id: string
+          width?: number
+          x?: number
+          y?: number
+          zone_id: string
+        }
+        Update: {
+          created_at?: string
+          height?: number
+          id?: string
+          label?: string | null
+          outlet_id?: string
+          rotation?: number
+          seats?: number
+          shape?: string
+          table_number?: string
+          updated_at?: string
+          user_id?: string
+          width?: number
+          x?: number
+          y?: number
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floor_plan_tables_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "floor_plan_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      floor_plan_zones: {
+        Row: {
+          background_color: string | null
+          created_at: string
+          height: number
+          id: string
+          name: string
+          outlet_id: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+          width: number
+        }
+        Insert: {
+          background_color?: string | null
+          created_at?: string
+          height?: number
+          id?: string
+          name: string
+          outlet_id: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+          width?: number
+        }
+        Update: {
+          background_color?: string | null
+          created_at?: string
+          height?: number
+          id?: string
+          name?: string
+          outlet_id?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+          width?: number
+        }
+        Relationships: []
+      }
       inventory_items: {
         Row: {
           batch_number: string | null

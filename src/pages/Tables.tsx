@@ -9,6 +9,8 @@ import { CreateSessionWithOrderModal } from "@/components/tables/CreateSessionWi
 import { AddOrderFromCustomerModal } from "@/components/tables/AddOrderFromCustomerModal";
 import { TableSessionModal } from "@/components/tables/TableSessionModal";
 import { RenameTableModal } from "@/components/tables/RenameTableModal";
+import { FloorPlanView } from "@/components/tables/FloorPlanView";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOptimizedTableSessions, TableSession } from "@/hooks/useOptimizedTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePaidCelebration } from "@/hooks/usePaidCelebration";
@@ -282,7 +284,7 @@ const Tables: React.FC = () => {
             </div>
           </div>
 
-          {/* Table Grid */}
+          {/* View tabs: Grille | Plan */}
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {[...Array(12)].map((_, i) => (
@@ -290,31 +292,46 @@ const Tables: React.FC = () => {
               ))}
             </div>
           ) : (
-            <>
-              <TableGrid
-                sessions={sessions}
-                filteredTableNumbers={filteredTableNumbers}
-                onTableClick={handleTableClick}
-                onTableRename={handleTableRename}
-                onMarkAsPaid={canManageTables ? handleQuickPayFromTable : undefined}
-                canManageTables={canManageTables}
-              />
-              {filteredTableNumbers.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
-                  Aucune table ne correspond aux filtres sélectionnés
-                </div>
-              )}
-              {statusFilter === "all" && tableCount < 120 && (
-                <div className="flex justify-center pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setTableCount(prev => Math.min(prev + 30, 120))}
-                  >
-                    Afficher plus de tables ({tableCount}/120)
-                  </Button>
-                </div>
-              )}
-            </>
+            <Tabs defaultValue="grid" className="w-full">
+              <TabsList>
+                <TabsTrigger value="grid">Grille</TabsTrigger>
+                <TabsTrigger value="plan">Plan de salle</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="grid" className="space-y-4">
+                <TableGrid
+                  sessions={sessions}
+                  filteredTableNumbers={filteredTableNumbers}
+                  onTableClick={handleTableClick}
+                  onTableRename={handleTableRename}
+                  onMarkAsPaid={canManageTables ? handleQuickPayFromTable : undefined}
+                  canManageTables={canManageTables}
+                />
+                {filteredTableNumbers.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    Aucune table ne correspond aux filtres sélectionnés
+                  </div>
+                )}
+                {statusFilter === "all" && tableCount < 120 && (
+                  <div className="flex justify-center pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setTableCount(prev => Math.min(prev + 30, 120))}
+                    >
+                      Afficher plus de tables ({tableCount}/120)
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="plan">
+                <FloorPlanView
+                  sessions={sessions}
+                  onTableClick={handleTableClick}
+                  canManageTables={canManageTables}
+                />
+              </TabsContent>
+            </Tabs>
           )}
 
           {/* Modals */}
