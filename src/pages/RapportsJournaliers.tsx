@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Download, Calendar, TrendingUp, DollarSign, ShoppingBag, Users, CheckCircle2, Eye, X } from 'lucide-react';
+import { FileText, Download, Calendar, TrendingUp, DollarSign, ShoppingBag, Users, CheckCircle2, Eye, X, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,7 +51,7 @@ const RapportsJournaliers: React.FC = () => {
     periodId: selectedPeriodId || currentPeriod?.id,
   });
 
-  const { reports, loading, downloadReport } = useDailyReports({
+  const { reports, loading, downloadReport, refetch } = useDailyReports({
     outletId: selectedOutletId || undefined,
     dateRange,
     reportType,
@@ -142,6 +142,15 @@ const RapportsJournaliers: React.FC = () => {
           >
             <Eye className="h-4 w-4 mr-2" />
             Aperçu direct
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => { refetch(); }}
+            disabled={loading}
+            title="Forcer le rechargement depuis le serveur"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Actualiser
           </Button>
         </div>
 
