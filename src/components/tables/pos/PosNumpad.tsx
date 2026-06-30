@@ -86,9 +86,8 @@ const PosNumpadImpl: React.FC<PosNumpadProps> = ({
 
   return (
     <div className="p-1.5 border-t bg-muted/20 space-y-1.5">
-      <div className="grid grid-cols-4 gap-1">
+      <div className="grid grid-cols-3 gap-1">
         {modeBtn('qty', 'Qté', Hash)}
-        {modeBtn('price', 'Prix', Tag)}
         {modeBtn('discount', 'Remise', Percent)}
         <button
           type="button"
