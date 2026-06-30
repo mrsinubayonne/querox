@@ -18,6 +18,7 @@ import { DateRange } from 'react-day-picker';
 import { format, subDays, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FloorPlanReportCard } from '@/components/reports/FloorPlanReportCard';
 
 const RapportsJournaliers: React.FC = () => {
   const { user } = useAuth();
