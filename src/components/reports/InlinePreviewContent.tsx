@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Utensils, Package, PenLine } from 'lucide-react';
+import { Utensils, Package, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -30,12 +30,7 @@ export const InlinePreviewContent: React.FC<Props> = ({
 
   const effectiveUserId = isTeamMember && teamMemberSession ? teamMemberSession.ownerId : user?.id;
 
-  const signatureName = isTeamMember && teamMemberSession
-    ? teamMemberSession.memberEmail
-    : (user?.email || 'Propriétaire');
-  const signatureRole = isTeamMember && teamMemberSession
-    ? (teamMemberSession.role || 'Membre équipe')
-    : 'Propriétaire du compte';
+
 
   useEffect(() => {
     const run = async () => {
@@ -191,39 +186,47 @@ export const InlinePreviewContent: React.FC<Props> = ({
         </CardContent>
       </Card>
 
-      {/* Signature */}
+      {/* Résumé du rapport */}
       <Card className="border-l-4 border-l-slate-600">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <PenLine className="h-5 w-5 text-slate-700" />
-            Signature
+            <ClipboardList className="h-5 w-5 text-slate-700" />
+            Résumé du rapport
           </CardTitle>
           <CardDescription>
-            Personne du compte ayant généré cet aperçu.
+            Synthèse des plats, inventaire et chiffre d'affaires sur la période.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs uppercase text-muted-foreground">Nom / Identifiant</p>
-              <p className="font-semibold">{signatureName}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-slate-50 rounded-lg p-4">
+              <p className="text-xs uppercase text-muted-foreground">Plats consommés</p>
+              <p className="text-2xl font-bold text-slate-800">
+                {dishes.reduce((sum, d) => sum + d.qty, 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">{dishes.length} type{dishes.length > 1 ? 's' : ''}</p>
             </div>
-            <div>
-              <p className="text-xs uppercase text-muted-foreground">Rôle</p>
-              <p className="font-semibold capitalize">{signatureRole}</p>
+            <div className="bg-slate-50 rounded-lg p-4">
+              <p className="text-xs uppercase text-muted-foreground">Inventaire consommé</p>
+              <p className="text-2xl font-bold text-slate-800">
+                {inventory.reduce((sum, i) => sum + i.qty, 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">{inventory.length} article{inventory.length > 1 ? 's' : ''}</p>
             </div>
-            <div>
-              <p className="text-xs uppercase text-muted-foreground">Date / heure de l'aperçu</p>
-              <p className="font-semibold">{format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr })}</p>
+            <div className="bg-slate-50 rounded-lg p-4">
+              <p className="text-xs uppercase text-muted-foreground">Chiffre d'affaires estimé</p>
+              <p className="text-2xl font-bold text-green-700">
+                {formatFCFA(dishes.reduce((sum, d) => sum + d.revenue, 0))}
+              </p>
+              <p className="text-xs text-muted-foreground">Depuis {periodStart ? format(new Date(periodStart), 'dd/MM/yyyy HH:mm', { locale: fr }) : '-'}</p>
             </div>
-            <div>
+            <div className="bg-slate-50 rounded-lg p-4">
               <p className="text-xs uppercase text-muted-foreground">Point de vente</p>
-              <p className="font-semibold">{outletName || 'Tous les points de vente'}</p>
+              <p className="text-lg font-bold text-slate-800 truncate">{outletName || 'Tous les PDV'}</p>
+              <p className="text-xs text-muted-foreground">
+                {periodEnd ? format(new Date(periodEnd), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'Journée en cours'}
+              </p>
             </div>
-          </div>
-          <div className="mt-6 border-t pt-4">
-            <p className="text-xs text-muted-foreground mb-8">Signature manuscrite :</p>
-            <div className="border-b border-dashed border-slate-400 h-12" />
           </div>
         </CardContent>
       </Card>
