@@ -71,3 +71,59 @@ export const exportElementPDF = async (
   }
   pdf.save(filename);
 };
+
+// Génère un PDF du même élément et renvoie une URL blob pour aperçu inline (sans téléchargement)
+export const previewElementPDF = async (
+  elementId: string,
+  orientation: "portrait" | "landscape" = "portrait"
+): Promise<string> => {
+  const el = document.getElementById(elementId);
+  if (!el) throw new Error("Élément introuvable");
+  const [canvas, jsPDFMod] = await Promise.all([captureCanvas(el), import("jspdf")]);
+  const jsPDF = (jsPDFMod as any).jsPDF || (jsPDFMod as any).default;
+  const pdf = new jsPDF({ orientation, unit: "mm", format: "a4" });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 10;
+  const maxW = pageW - margin * 2;
+  const imgRatio = canvas.width / canvas.height;
+  const w = maxW;
+  const h = w / imgRatio;
+  const imgData = canvas.toDataURL("image/png");
+
+  if (h <= pageH - margin * 2) {
+    pdf.addImage(imgData, "PNG", margin, margin, w, h);
+  } else {
+    const pageContentH = pageH - margin * 2;
+    const pxPerMm = canvas.width / w;
+    const sliceHeightPx = pageContentH * pxPerMm;
+    let y = 0;
+    let first = true;
+    while (y < canvas.height) {
+      const sliceCanvas = document.createElement("canvas");
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = Math.min(sliceHeightPx, canvas.height - y);
+      const ctx = sliceCanvas.getContext("2d");
+      if (!ctx) break;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+      ctx.drawImage(canvas, 0, -y);
+      const sliceData = sliceCanvas.toDataURL("image/png");
+      const sliceH = sliceCanvas.height / pxPerMm;
+      if (!first) pdf.addPage();
+      pdf.addImage(sliceData, "PNG", margin, margin, w, sliceH);
+      first = false;
+      y += sliceHeightPx;
+    }
+  }
+  const blob = pdf.output("blob");
+  return URL.createObjectURL(blob);
+};
+
+// Renvoie une URL data PNG pour aperçu inline
+export const previewElementPNG = async (elementId: string): Promise<string> => {
+  const el = document.getElementById(elementId);
+  if (!el) throw new Error("Élément introuvable");
+  const canvas = await captureCanvas(el);
+  return canvas.toDataURL("image/png");
+};
