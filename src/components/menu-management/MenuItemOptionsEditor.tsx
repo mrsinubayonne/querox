@@ -211,15 +211,15 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
   };
 
   return (
-    <div className="space-y-3 border rounded-lg p-3 bg-muted/30">
+    <div className="space-y-3 border-2 border-primary/20 rounded-lg p-3 bg-background">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <Label className="text-base font-semibold">Variantes & suppléments</Label>
         <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setCopyOpen(true)}>
+          <Button type="button" variant="secondary" size="sm" onClick={() => setCopyOpen(true)} className="bg-blue-100 hover:bg-blue-200 text-blue-900 border border-blue-300">
             <Copy className="h-4 w-4 mr-1" /> Copier d'un plat
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={addGroup}>
-            <Plus className="h-4 w-4 mr-1" /> Groupe
+          <Button type="button" variant="default" size="sm" onClick={addGroup}>
+            <Plus className="h-4 w-4 mr-1" /> Ajouter un groupe
           </Button>
         </div>
       </div>
