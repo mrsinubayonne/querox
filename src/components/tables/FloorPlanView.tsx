@@ -222,15 +222,9 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Tabs value={activeZone?.id} onValueChange={setActiveZoneId}>
-          <TabsList>
-            {zones.map((z) => (
-              <TabsTrigger key={z.id} value={z.id}>
-                {z.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <div className="text-sm font-medium text-muted-foreground px-3 py-1.5 rounded-md bg-muted">
+          {activeZone?.name}
+        </div>
 
         {canManageTables && (
           <div className="flex gap-2">
