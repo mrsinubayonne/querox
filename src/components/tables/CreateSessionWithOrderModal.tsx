@@ -574,19 +574,11 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             <div className="px-3 py-2 border-b flex items-center justify-between gap-2">
               <h3 className="text-xs font-semibold uppercase text-muted-foreground">Ticket ({totalQty})</h3>
               <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="1"
-                  placeholder="Couv."
-                  value={numberOfGuests}
-                  onChange={(e) => setNumberOfGuests(e.target.value)}
-                  className="w-16 h-7 text-xs"
-                />
                 <Button type="button" size="sm" variant="ghost" onClick={() => setShowCustomItem(!showCustomItem)} className="h-7 text-xs px-2">
                   <Plus className="h-3 w-3 mr-0.5" /> Libre
                 </Button>
                 {cart.length > 0 && (
-                  <Button type="button" size="sm" variant="ghost" onClick={() => { setCart([]); setActiveLineId(null); }} className="h-7 text-xs px-2">
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { setCart([]); setActiveLineId(null); }} className="h-7 text-xs px-2 text-destructive">
                     Vider
                   </Button>
                 )}
