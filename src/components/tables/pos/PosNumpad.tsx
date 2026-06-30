@@ -73,20 +73,20 @@ const PosNumpadImpl: React.FC<PosNumpadProps> = ({
       type="button"
       onClick={() => onModeChange(m)}
       className={cn(
-        'flex flex-col items-center justify-center gap-0.5 h-12 rounded-md text-xs font-semibold border transition active:scale-[0.97]',
+        'flex items-center justify-center gap-1 h-9 rounded-md text-xs font-semibold border transition active:scale-[0.97]',
         mode === m
           ? 'bg-primary text-primary-foreground border-primary shadow'
           : 'bg-background hover:bg-accent border-border',
       )}
     >
-      <Icon className="h-3.5 w-3.5" />
+      <Icon className="h-3 w-3" />
       {label}
     </button>
   );
 
   return (
-    <div className="p-2 border-t bg-muted/20 space-y-2">
-      <div className="grid grid-cols-4 gap-1.5">
+    <div className="p-1.5 border-t bg-muted/20 space-y-1.5">
+      <div className="grid grid-cols-4 gap-1">
         {modeBtn('qty', 'Qté', Hash)}
         {modeBtn('price', 'Prix', Tag)}
         {modeBtn('discount', 'Remise', Percent)}
@@ -94,13 +94,13 @@ const PosNumpadImpl: React.FC<PosNumpadProps> = ({
           type="button"
           onClick={onDeleteLine}
           disabled={disabled}
-          className="flex flex-col items-center justify-center gap-0.5 h-12 rounded-md text-xs font-semibold border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition active:scale-[0.97] disabled:opacity-40"
+          className="flex items-center justify-center gap-1 h-9 rounded-md text-xs font-semibold border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 transition active:scale-[0.97] disabled:opacity-40"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="h-3 w-3" />
           Suppr.
         </button>
       </div>
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-3 gap-1">
         {KEYS.map((k) => (
           <button
             key={k}
@@ -108,11 +108,11 @@ const PosNumpadImpl: React.FC<PosNumpadProps> = ({
             onClick={() => press(k)}
             disabled={disabled}
             className={cn(
-              'h-11 rounded-md font-bold text-base bg-background border hover:bg-accent transition active:scale-[0.95] disabled:opacity-40',
+              'h-9 rounded-md font-bold text-sm bg-background border hover:bg-accent transition active:scale-[0.95] disabled:opacity-40',
               k === '←' && 'text-destructive',
             )}
           >
-            {k === '←' ? <Delete className="h-4 w-4 mx-auto" /> : k}
+            {k === '←' ? <Delete className="h-3.5 w-3.5 mx-auto" /> : k}
           </button>
         ))}
       </div>
