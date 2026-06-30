@@ -324,6 +324,12 @@ const MenuItemOptionsEditor: React.FC<Props> = ({ menuItemId }) => {
         </Button>
       )}
 
+      <CopyOptionsFromItemModal
+        open={copyOpen}
+        onOpenChange={setCopyOpen}
+        targetMenuItemId={menuItemId}
+        onImported={load}
+      />
     </div>
   );
 };
