@@ -170,11 +170,21 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
     if (!tbl) return;
     const nx = Math.max(0, Math.min(activeZone.width - tbl.width, d.origX + dx));
     const ny = Math.max(0, Math.min(activeZone.height - tbl.height, d.origY + dy));
-    updateTable(d.id, { x: Math.round(nx), y: Math.round(ny) });
+    // override local uniquement (pas d'écriture DB)
+    setDragOverride({ id: d.id, x: Math.round(nx), y: Math.round(ny) });
   };
 
   const handlePointerUp = () => {
+    const d = dragState.current;
+    const override = dragOverride;
+    if (d && override && override.id === d.id) {
+      // Persiste une seule fois au relâchement
+      if (override.x !== d.origX || override.y !== d.origY) {
+        updateTable(d.id, { x: override.x, y: override.y });
+      }
+    }
     dragState.current = null;
+    setDragOverride(null);
   };
 
   const handleTableTap = (t: FloorPlanTable) => {
