@@ -416,28 +416,84 @@ const RapportsJournaliers: React.FC = () => {
             </DialogHeader>
             <div className="flex-1 overflow-auto p-4 bg-white">
               <div className="space-y-6">
-                {viewMode === 'calendar' ? (
-                  <>
-                    <DailyReportStats reports={reports} loading={loading} />
-                    <DailyReportTable reports={reports} loading={loading} reportType={reportType} />
-                    {currentPeriod && (
-                      <Card className="border-l-4 border-l-blue-500">
-                        <CardHeader>
-                          <CardTitle>Factures payées — journée en cours</CardTitle>
-                          <CardDescription>
-                            Toutes les factures marquées payées restent affichées jusqu'à la clôture de la journée.
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <DetailedTransactionsTable transactions={transactions} loading={detailedLoading} />
-                        </CardContent>
-                      </Card>
-                    )}
-                  </>
-                ) : (
-                  (currentPeriod || selectedPeriodId) && (
-                    <DetailedTransactionsTable transactions={transactions} loading={detailedLoading} />
-                  )
+                {/* Bloc 1 — Statistiques globales (mode calendrier) */}
+                <DailyReportStats reports={reports} loading={loading} />
+
+                {/* Bloc 2 — Détail par point de vente / période */}
+                <DailyReportTable reports={reports} loading={loading} reportType={reportType} />
+
+                {/* Bloc 3 — Transactions de la période en cours / sélectionnée */}
+                {(currentPeriod || selectedPeriodId) && (
+                  <Card className="border-l-4 border-l-blue-500">
+                    <CardHeader>
+                      <CardTitle>
+                        {currentPeriod ? 'Transactions — journée en cours' : 'Transactions — période sélectionnée'}
+                      </CardTitle>
+                      <CardDescription>
+                        Toutes les factures (payées et impayées) avec heure exacte. Restent visibles jusqu'à la clôture.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <DetailedTransactionsTable transactions={transactions} loading={detailedLoading} />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Bloc 4 — Historique des périodes bouclées */}
+                {periods.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Historique des journées bouclées</CardTitle>
+                      <CardDescription>Récapitulatif des périodes terminées</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {periods.slice(0, 10).map((period) => (
+                          <div key={period.id} className="border-l-4 border-l-green-500 bg-muted/30 rounded-md p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <p className="font-semibold">
+                                  {format(new Date(period.started_at), 'dd MMMM yyyy', { locale: fr })}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {format(new Date(period.started_at), 'HH:mm', { locale: fr })}
+                                  {period.ended_at && ` - ${format(new Date(period.ended_at), 'HH:mm', { locale: fr })}`}
+                                  {' • '}
+                                  {outlets?.find(o => o.id === period.outlet_id)?.name || 'Tous les PDV'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Commandes</p>
+                                <p className="font-bold">{period.total_orders}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">CA</p>
+                                <p className="font-bold text-green-600">
+                                  {Number(period.total_revenue).toLocaleString()} CFA
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Payées</p>
+                                <p className="font-bold text-green-600">{period.paid_invoices}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Impayées</p>
+                                <p className="font-bold text-orange-600">{period.unpaid_invoices}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {!currentPeriod && !selectedPeriodId && periods.length === 0 && reports.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p>Aucune donnée disponible pour l'aperçu.</p>
+                  </div>
                 )}
               </div>
             </div>
