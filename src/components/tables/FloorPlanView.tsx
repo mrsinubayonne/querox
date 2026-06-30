@@ -359,15 +359,18 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
               const session = sessionByNumber.get(t.table_number) ?? null;
               const isRound = t.shape === "round";
               const selected = selectedTableId === t.id;
+              const isDragging = dragOverride?.id === t.id;
+              const renderX = isDragging ? dragOverride!.x : t.x;
+              const renderY = isDragging ? dragOverride!.y : t.y;
               return (
                 <div
                   key={t.id}
-                  className={`absolute flex flex-col items-center justify-center border-2 select-none transition-shadow ${statusBg(session)} ${
+                  className={`absolute flex flex-col items-center justify-center border-2 select-none ${isDragging ? "" : "transition-shadow"} ${statusBg(session)} ${
                     editMode ? "cursor-move" : "cursor-pointer hover:shadow-lg"
                   } ${selected ? "ring-2 ring-primary ring-offset-2" : ""}`}
                   style={{
-                    left: t.x,
-                    top: t.y,
+                    left: renderX,
+                    top: renderY,
                     width: t.width,
                     height: t.height,
                     borderRadius: isRound ? "50%" : 10,
