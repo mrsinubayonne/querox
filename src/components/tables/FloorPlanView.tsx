@@ -69,6 +69,15 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
     updateTable,
     deleteTable,
   } = useFloorPlan();
+  const { outlets, selectedOutletId } = useOutlets();
+  const currentOutletName = outlets?.find((o) => o.id === selectedOutletId)?.name || "Salle principale";
+
+  // Auto-création : 1 seule salle par point de vente
+  useEffect(() => {
+    if (!loading && zones.length === 0 && selectedOutletId && canManageTables) {
+      createZone(currentOutletName);
+    }
+  }, [loading, zones.length, selectedOutletId, canManageTables, currentOutletName, createZone]);
 
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
