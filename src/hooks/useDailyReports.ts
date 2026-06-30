@@ -64,6 +64,19 @@ export const useDailyReports = ({ outletId, dateRange, reportType, timeRange }: 
     }
   }, [effectiveUserId, outletId, dateRange, reportType, timeRange, shouldUseOfflineCache]);
 
+  // Realtime: refetch when orders/invoices/transactions change for this user
+  useEffect(() => {
+    if (!effectiveUserId || shouldUseOfflineCache) return;
+    const channel = supabase
+      .channel(`daily-reports-${effectiveUserId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${effectiveUserId}` }, () => fetchReports())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `user_id=eq.${effectiveUserId}` }, () => fetchReports())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'accounting_transactions', filter: `user_id=eq.${effectiveUserId}` }, () => fetchReports())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveUserId, outletId, dateRange?.from?.toISOString(), dateRange?.to?.toISOString(), reportType, timeRange?.start, timeRange?.end, shouldUseOfflineCache]);
+
   const fetchReports = async () => {
     if (!effectiveUserId || !dateRange?.from || !dateRange?.to) return;
 
