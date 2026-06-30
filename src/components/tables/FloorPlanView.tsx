@@ -120,16 +120,15 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
 
   const handleRenameZone = async () => {
     if (!activeZone) return;
-    const name = window.prompt("Nouveau nom", activeZone.name);
+    const name = window.prompt("Nouveau nom de la salle", activeZone.name);
     if (!name || name === activeZone.name) return;
     await updateZone(activeZone.id, { name });
   };
 
   const handleDeleteZone = async () => {
     if (!activeZone) return;
-    if (!window.confirm(`Supprimer la salle "${activeZone.name}" et toutes ses tables ?`)) return;
+    if (!window.confirm(`Réinitialiser le plan de "${activeZone.name}" (toutes les tables seront supprimées) ?`)) return;
     await deleteZone(activeZone.id);
-    setActiveZoneId(null);
   };
 
   const handleAddTable = async (shape: FloorPlanShape) => {
