@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Image as ImageIcon, Layout, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { FloorPlanSnapshot } from "@/components/tables/FloorPlanSnapshot";
-import { exportFloorPlanPDF, exportFloorPlanPNG } from "@/utils/floorPlanExport";
+import { exportElementPDF, exportElementPNG } from "@/utils/snapshotExport";
 import { useFloorPlan } from "@/hooks/useFloorPlan";
 
 const SNAPSHOT_ID = "floor-plan-report-snapshot";
@@ -21,8 +21,8 @@ export const FloorPlanReportCard: React.FC = () => {
     setBusy(kind);
     try {
       const fname = `plan-de-salle-${new Date().toISOString().slice(0, 10)}.${kind}`;
-      if (kind === "pdf") await exportFloorPlanPDF(SNAPSHOT_ID, fname);
-      else await exportFloorPlanPNG(SNAPSHOT_ID, fname);
+      if (kind === "pdf") await exportElementPDF(SNAPSHOT_ID, fname, "landscape");
+      else await exportElementPNG(SNAPSHOT_ID, fname);
       toast.success("Export réussi", { description: fname });
     } catch (e: any) {
       toast.error("Échec de l'export", { description: e?.message });

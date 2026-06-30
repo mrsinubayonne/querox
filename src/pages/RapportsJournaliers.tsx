@@ -19,6 +19,7 @@ import { format, subDays, startOfWeek, startOfMonth, startOfYear } from 'date-fn
 import { fr } from 'date-fns/locale';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FloorPlanReportCard } from '@/components/reports/FloorPlanReportCard';
+import { ReportSnapshotCard } from '@/components/reports/ReportSnapshotCard';
 
 const RapportsJournaliers: React.FC = () => {
   const { user } = useAuth();
@@ -172,7 +173,13 @@ const RapportsJournaliers: React.FC = () => {
           </Alert>
         )}
 
-        {/* Plan de salle — aperçu PDF/PNG (offline-friendly) */}
+        {/* Aperçus hors ligne — Rapport + Plan de salle */}
+        <ReportSnapshotCard
+          targetId="report-snapshot-area"
+          title="Aperçu hors ligne du rapport"
+          description="Capture la vue actuelle (stats, tableau, transactions) en PNG ou PDF. Idéal en mode hors ligne."
+          baseFilename="rapport"
+        />
         <FloorPlanReportCard />
 
         {/* Filters - Only show for calendar mode */}
@@ -275,6 +282,7 @@ const RapportsJournaliers: React.FC = () => {
         )}
 
         {/* Stats Cards */}
+        <div id="report-snapshot-area" className="space-y-6 bg-white">
         {viewMode === 'calendar' ? (
           <>
             <DailyReportStats reports={reports} loading={loading} />
@@ -377,6 +385,7 @@ const RapportsJournaliers: React.FC = () => {
             </Card>
           </>
         )}
+        </div>
       </div>
     </PageWithSidebar>
   );
