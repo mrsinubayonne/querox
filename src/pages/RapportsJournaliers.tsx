@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FileText, Download, Calendar, TrendingUp, DollarSign, ShoppingBag, Users, CheckCircle2 } from 'lucide-react';
+import { FileText, Download, Calendar, TrendingUp, DollarSign, ShoppingBag, Users, CheckCircle2, Eye, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
