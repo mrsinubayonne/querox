@@ -87,12 +87,19 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
   const sessionByNumber = useMemo(() => {
     const map = new Map<string, TableSession>();
     sessions.forEach((s) => {
-      if (s.status === "active" || s.status === "closed") {
-        map.set(s.table_number, s);
+      if (s.status === "active" || s.status === "closed" || s.status === "paid") {
+        // active/closed prennent priorité sur paid pour une même table
+        const existing = map.get(s.table_number);
+        if (!existing || existing.status === "paid") {
+          map.set(s.table_number, s);
+        }
       }
     });
     return map;
   }, [sessions]);
+
+  // Positions locales pendant le drag (pour ne pas écrire en base à chaque pixel)
+  const [dragOverride, setDragOverride] = useState<{ id: string; x: number; y: number } | null>(null);
 
   const handleAddZone = async () => {
     const name = window.prompt("Nom de la salle (ex: Terrasse, VIP)", `Salle ${zones.length + 1}`);
