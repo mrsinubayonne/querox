@@ -9,6 +9,8 @@ import { CreateSessionWithOrderModal } from "@/components/tables/CreateSessionWi
 import { AddOrderFromCustomerModal } from "@/components/tables/AddOrderFromCustomerModal";
 import { TableSessionModal } from "@/components/tables/TableSessionModal";
 import { RenameTableModal } from "@/components/tables/RenameTableModal";
+import { FloorPlanView } from "@/components/tables/FloorPlanView";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOptimizedTableSessions, TableSession } from "@/hooks/useOptimizedTableSessions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePaidCelebration } from "@/hooks/usePaidCelebration";
