@@ -213,14 +213,8 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
 
   if (zones.length === 0) {
     return (
-      <div className="text-center py-16 border-2 border-dashed rounded-xl">
-        <p className="text-muted-foreground mb-4">Aucune salle créée pour ce point de vente.</p>
-        {canManageTables && (
-          <Button onClick={handleAddZone}>
-            <Plus className="h-4 w-4 mr-2" />
-            Créer ma première salle
-          </Button>
-        )}
+      <div className="text-center py-16 border-2 border-dashed rounded-xl text-muted-foreground">
+        Préparation du plan…
       </div>
     );
   }
