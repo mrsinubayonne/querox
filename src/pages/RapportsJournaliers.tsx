@@ -118,6 +118,21 @@ const RapportsJournaliers: React.FC = () => {
           </div>
         </div>
 
+        {/* Aperçus hors ligne — placés en tête pour être immédiatement visibles */}
+        <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-4 space-y-4">
+          <div className="flex items-center gap-2 text-primary font-semibold">
+            <FileText className="h-5 w-5" />
+            Zone d'aperçu hors ligne
+          </div>
+          <ReportSnapshotCard
+            targetId="report-snapshot-area"
+            title="Aperçu hors ligne du rapport"
+            description="Capture la vue actuelle (stats, tableau, transactions) en PNG ou PDF. Idéal en mode hors ligne."
+            baseFilename="rapport"
+          />
+          <FloorPlanReportCard />
+        </div>
+
         {/* View Mode Toggle */}
         <div className="flex gap-2">
           <Button
@@ -173,14 +188,6 @@ const RapportsJournaliers: React.FC = () => {
           </Alert>
         )}
 
-        {/* Aperçus hors ligne — Rapport + Plan de salle */}
-        <ReportSnapshotCard
-          targetId="report-snapshot-area"
-          title="Aperçu hors ligne du rapport"
-          description="Capture la vue actuelle (stats, tableau, transactions) en PNG ou PDF. Idéal en mode hors ligne."
-          baseFilename="rapport"
-        />
-        <FloorPlanReportCard />
 
         {/* Filters - Only show for calendar mode */}
         {viewMode === 'calendar' && (
