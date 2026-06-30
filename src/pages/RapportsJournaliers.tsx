@@ -51,7 +51,7 @@ const RapportsJournaliers: React.FC = () => {
     periodId: selectedPeriodId || currentPeriod?.id,
   });
 
-  const { reports, loading, downloadReport } = useDailyReports({
+  const { reports, loading, downloadReport, refetch } = useDailyReports({
     outletId: selectedOutletId || undefined,
     dateRange,
     reportType,
