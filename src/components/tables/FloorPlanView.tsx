@@ -87,12 +87,19 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
   const sessionByNumber = useMemo(() => {
     const map = new Map<string, TableSession>();
     sessions.forEach((s) => {
-      if (s.status === "active" || s.status === "closed") {
-        map.set(s.table_number, s);
+      if (s.status === "active" || s.status === "closed" || s.status === "paid") {
+        // active/closed prennent priorité sur paid pour une même table
+        const existing = map.get(s.table_number);
+        if (!existing || existing.status === "paid") {
+          map.set(s.table_number, s);
+        }
       }
     });
     return map;
   }, [sessions]);
+
+  // Positions locales pendant le drag (pour ne pas écrire en base à chaque pixel)
+  const [dragOverride, setDragOverride] = useState<{ id: string; x: number; y: number } | null>(null);
 
   const handleAddZone = async () => {
     const name = window.prompt("Nom de la salle (ex: Terrasse, VIP)", `Salle ${zones.length + 1}`);
@@ -163,11 +170,21 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
     if (!tbl) return;
     const nx = Math.max(0, Math.min(activeZone.width - tbl.width, d.origX + dx));
     const ny = Math.max(0, Math.min(activeZone.height - tbl.height, d.origY + dy));
-    updateTable(d.id, { x: Math.round(nx), y: Math.round(ny) });
+    // override local uniquement (pas d'écriture DB)
+    setDragOverride({ id: d.id, x: Math.round(nx), y: Math.round(ny) });
   };
 
   const handlePointerUp = () => {
+    const d = dragState.current;
+    const override = dragOverride;
+    if (d && override && override.id === d.id) {
+      // Persiste une seule fois au relâchement
+      if (override.x !== d.origX || override.y !== d.origY) {
+        updateTable(d.id, { x: override.x, y: override.y });
+      }
+    }
     dragState.current = null;
+    setDragOverride(null);
   };
 
   const handleTableTap = (t: FloorPlanTable) => {
@@ -342,15 +359,18 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
               const session = sessionByNumber.get(t.table_number) ?? null;
               const isRound = t.shape === "round";
               const selected = selectedTableId === t.id;
+              const isDragging = dragOverride?.id === t.id;
+              const renderX = isDragging ? dragOverride!.x : t.x;
+              const renderY = isDragging ? dragOverride!.y : t.y;
               return (
                 <div
                   key={t.id}
-                  className={`absolute flex flex-col items-center justify-center border-2 select-none transition-shadow ${statusBg(session)} ${
+                  className={`absolute flex flex-col items-center justify-center border-2 select-none ${isDragging ? "" : "transition-shadow"} ${statusBg(session)} ${
                     editMode ? "cursor-move" : "cursor-pointer hover:shadow-lg"
                   } ${selected ? "ring-2 ring-primary ring-offset-2" : ""}`}
                   style={{
-                    left: t.x,
-                    top: t.y,
+                    left: renderX,
+                    top: renderY,
                     width: t.width,
                     height: t.height,
                     borderRadius: isRound ? "50%" : 10,
