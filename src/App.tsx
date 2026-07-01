@@ -75,6 +75,8 @@ const Support = lazy(() => import('@/pages/Support'));
 const Factures = lazy(() => import('@/pages/Factures'));
 const RapportsJournaliers = lazy(() => import('@/pages/RapportsJournaliers'));
 const Equipe = lazy(() => import('@/pages/Equipe'));
+const ProfileManagement = lazy(() => import('@/pages/ProfileManagement').then(m => ({ default: m.ProfileManagement })));
+
 const StaffRequest = lazy(() => import('@/pages/StaffRequest'));
 const Clients = lazy(() => import('@/pages/Clients'));
 const Debiteurs = lazy(() => import('@/pages/Debiteurs'));
