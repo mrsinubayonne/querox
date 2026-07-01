@@ -21,6 +21,10 @@ export const useOptimizedOutlet = () => {
 
     localStorage.setItem(CACHE_KEY, JSON.stringify({ outletId: sanitized, timestamp: Date.now() }));
     setOutletId(sanitized);
+    // Notify OutletContext (same-tab) so modals see the outlet immediately.
+    try {
+      window.dispatchEvent(new CustomEvent('outlet:changed', { detail: { id: sanitized } }));
+    } catch {}
   };
 
   useEffect(() => {
