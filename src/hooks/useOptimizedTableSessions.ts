@@ -548,6 +548,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         cachedSessions.find((s) => s.id === sessionId) ||
         snapshot.find((s) => s.id === sessionId) ||
         sessions?.find((s) => s.id === sessionId) ||
+        useTableStore.getState().sessions.find((s) => s.id === sessionId) ||
         null;
 
       if (!session && !isOffline) {
@@ -564,7 +565,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         session = (dbSession as unknown as TableSession) || null;
       }
 
-      if (!session) {
+      if (!session && isOffline) {
         throw new Error('Session introuvable. La liste des tables a été resynchronisée, réessayez.');
       }
 
