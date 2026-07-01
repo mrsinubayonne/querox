@@ -385,7 +385,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
       try {
         if (!resolvedUserId || !scopedOutletId) {
-          throw new Error("Point de vente non sélectionné");
+          throw new Error("Point de vente non sélectionné. Ouvrez le sélecteur en haut à gauche et choisissez un PDV, puis réessayez.");
         }
 
         // Step 2: Ensure the Edge Function receives a fresh JWT, even after long cashier sessions.
