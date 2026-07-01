@@ -3,12 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSelectedOutletIdFromStorage, sanitizeStorageId } from '@/lib/offlineIdentity';
 
-interface OutletCache {
-  outletId: string | null;
-  timestamp: number;
-}
-
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const CACHE_KEY = 'outlet_cache';
 
 export const useOptimizedOutlet = () => {
