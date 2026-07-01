@@ -117,9 +117,11 @@ export const useOptimizedTableSessions = () => {
     ownerId: teamMemberSession?.ownerId,
   }) || '';
   const scopedOutletId = getSelectedOutletIdFromStorage();
-  const sessionsQueryKey = ['table-sessions', resolvedUserId, scopedOutletId] as const;
-  const invoicesQueryKey = ['invoices', resolvedUserId, scopedOutletId] as const;
-  const ordersQueryKey = ['orders', resolvedUserId, scopedOutletId] as const;
+  // Must match the queryKey used by useOfflineData below (['table-sessions', outletIdKey])
+  // Otherwise queryClient.getQueryData returns undefined and mutations throw "Session introuvable".
+  const sessionsQueryKey = ['table-sessions', outletIdKey] as const;
+  const invoicesQueryKey = ['invoices', outletIdKey] as const;
+  const ordersQueryKey = ['orders', outletIdKey] as const;
 
   const { data: rawSessions, isLoading, refetch, isOffline: dataOffline } = useOfflineData<TableSession>({
     table: 'table_sessions',
