@@ -7,7 +7,9 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, UserPlus, Trash2, Shield, Share2, KeyRound } from 'lucide-react';
+import { Users, UserPlus, Trash2, Shield, Share2, KeyRound, KeySquare, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
 import { InvitationShareOptions } from '@/components/team/InvitationShareOptions';
 import { AddMemberWizard } from '@/components/team/AddMemberWizard';
 import { SetTeamMemberPinDialog } from '@/components/team/SetTeamMemberPinDialog';
@@ -113,6 +115,33 @@ const Equipe: React.FC = () => {
           </div>
           {/* Code restaurant pour connexion équipe (mode PIN) */}
           <RestaurantCodeCard />
+
+          {/* Alternative simple : profils par code d'accès */}
+          <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center shrink-0">
+                  <KeySquare className="w-5 h-5 text-blue-700 dark:text-blue-300" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-blue-900 dark:text-blue-100">
+                    Alternative rapide : profils par code d'accès
+                  </p>
+                  <p className="text-xs text-blue-800/80 dark:text-blue-200/80 mt-1">
+                    Créez des profils Caissier / Comptable / Superviseur dans votre compte, sans invitation email. Chaque profil a son propre code d'accès.
+                  </p>
+                </div>
+              </div>
+              <Button asChild variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300">
+                <Link to="/profils">
+                  Gérer les profils
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+
 
           {/* Limite info */}
           {!canAdd && (

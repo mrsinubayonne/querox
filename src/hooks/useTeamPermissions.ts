@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { localStore } from '@/lib/localStore';
+
 
 interface TeamMemberSession {
   memberId: string;
@@ -54,16 +56,32 @@ export const useTeamPermissions = () => {
     loadPermissions();
   }, []);
 
+  const readTeamSession = (): TeamMemberSession | null => {
+    // Primary storage (AuthContext writes here via localStore with TTL envelope)
+    const wrapped = localStore.raw.getWithTTL<TeamMemberSession | null>('teamMember', null);
+    if (wrapped && wrapped.memberId) return wrapped;
+    // Fallback legacy plain keys
+    try {
+      const raw = localStorage.getItem('team_member_session') || localStorage.getItem('teamMember');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Unwrap TTL envelope if present
+        const candidate = parsed?.value && parsed?.expiresAt ? parsed.value : parsed;
+        if (candidate?.memberId) return candidate as TeamMemberSession;
+      }
+    } catch {}
+    return null;
+  };
+
   const loadPermissions = async () => {
     try {
-      const teamMemberStr = localStorage.getItem('teamMember') || localStorage.getItem('team_member_session');
-      if (!teamMemberStr) {
+      const member = readTeamSession();
+      if (!member) {
         setPermissions([]);
         setLoading(false);
         return;
       }
 
-      const member: TeamMemberSession = JSON.parse(teamMemberStr);
       setTeamMember(member);
 
       // Get permissions using the new RPC function that handles direct permissions with role fallback
@@ -83,16 +101,16 @@ export const useTeamPermissions = () => {
       }
     } catch (error) {
       console.error('Error loading permissions:', error);
-      // Fallback to predefined permissions
-      const teamMemberStr = localStorage.getItem('teamMember') || localStorage.getItem('team_member_session');
-      if (teamMemberStr) {
-        const member: TeamMemberSession = JSON.parse(teamMemberStr);
+      const member = readTeamSession();
+      if (member) {
+        setTeamMember(member);
         setPermissions(ROLE_PERMISSIONS[member.role] || []);
       }
     } finally {
       setLoading(false);
     }
   };
+
 
   const hasPermission = (permission: string): boolean => {
     return permissions.includes(permission);
