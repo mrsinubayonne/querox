@@ -68,10 +68,25 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const { menuItems, loading: menuLoading } = useInternalMenuItems(true);
 
   const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || '') : (user?.id || '');
-  const { selectedOutletId: ctxOutletId } = useOutletContext();
-  const scopedOutletId = (ctxOutletId || undefined) as string | undefined;
+  const { selectedOutletId: ctxOutletId, setSelectedOutletId } = useOutletContext();
+  // Robust fallback: context -> localStorage -> team session (protects accounts whose
+  // OutletContext mounted before useOptimizedOutlet resolved the outlet).
+  const scopedOutletId = (
+    ctxOutletId
+    || (typeof window !== 'undefined' ? localStorage.getItem('selectedOutletId') : null)
+    || teamMemberSession?.outletId
+    || teamMemberSession?.outletIds?.[0]
+    || undefined
+  ) as string | undefined;
   const sessionsQueryKey = ['table-sessions', resolvedUserId, scopedOutletId] as const;
   const ordersQueryKey = ['orders', resolvedUserId, scopedOutletId] as const;
+
+  // If context is empty but we resolved an outlet, sync it back so downstream reads see it.
+  React.useEffect(() => {
+    if (!ctxOutletId && scopedOutletId) {
+      setSelectedOutletId(scopedOutletId);
+    }
+  }, [ctxOutletId, scopedOutletId, setSelectedOutletId]);
 
   // Reset state on close (not on open) -> opening is instant
   React.useEffect(() => {
@@ -370,7 +385,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
       try {
         if (!resolvedUserId || !scopedOutletId) {
-          throw new Error("Point de vente non sélectionné");
+          throw new Error("Point de vente non sélectionné. Ouvrez le sélecteur en haut à gauche et choisissez un PDV, puis réessayez.");
         }
 
         // Step 2: Ensure the Edge Function receives a fresh JWT, even after long cashier sessions.
