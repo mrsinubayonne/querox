@@ -7,7 +7,9 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, UserPlus, Trash2, Shield, Share2, KeyRound } from 'lucide-react';
+import { Users, UserPlus, Trash2, Shield, Share2, KeyRound, KeySquare, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
 import { InvitationShareOptions } from '@/components/team/InvitationShareOptions';
 import { AddMemberWizard } from '@/components/team/AddMemberWizard';
 import { SetTeamMemberPinDialog } from '@/components/team/SetTeamMemberPinDialog';
