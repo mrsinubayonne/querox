@@ -99,7 +99,6 @@ function cleanOldPaidMarkers() {
 
 export const useOptimizedTableSessions = () => {
   const { selectedOutletId: ctxSelectedOutletId } = useOutletContext();
-  const outletIdKey = ctxSelectedOutletId ?? 'no-outlet';
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { outletId, loading: outletLoading } = useOptimizedOutlet();
   const queryClient = useQueryClient();
@@ -117,11 +116,13 @@ export const useOptimizedTableSessions = () => {
     ownerId: teamMemberSession?.ownerId,
   }) || '';
   const scopedOutletId = getSelectedOutletIdFromStorage();
-  // Must match the queryKey used by useOfflineData below (['table-sessions', outletIdKey])
-  // Otherwise queryClient.getQueryData returns undefined and mutations throw "Session introuvable".
-  const sessionsQueryKey = ['table-sessions', outletIdKey] as const;
-  const invoicesQueryKey = ['invoices', outletIdKey] as const;
-  const ordersQueryKey = ['orders', outletIdKey] as const;
+  const outletIdKey = ctxSelectedOutletId || scopedOutletId || 'no-outlet';
+  // useOfflineData stores React Query data under: [...queryKey, userId, outletId].
+  // All direct get/set cache calls below MUST use this final key, otherwise payment
+  // sees an empty cache and raises "Session introuvable" while the row exists.
+  const sessionsQueryKey = ['table-sessions', outletIdKey, resolvedUserId, scopedOutletId] as const;
+  const invoicesQueryKey = ['invoices', outletIdKey, resolvedUserId, scopedOutletId] as const;
+  const ordersQueryKey = ['orders', outletIdKey, resolvedUserId, scopedOutletId] as const;
 
   const { data: rawSessions, isLoading, refetch, isOffline: dataOffline } = useOfflineData<TableSession>({
     table: 'table_sessions',
@@ -539,20 +540,39 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
   const markSessionAsPaidMutation = useMutation({
     mutationFn: ({ sessionId, paymentMethod }: { sessionId: string; paymentMethod?: string }) => withTimeout((async () => {
-      // Guard: validate session exists and snapshot cache before any side effects
-      {
-        const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
-        const sessionToValidate = currentSessions.find(s => s.id === sessionId);
-        if (!sessionToValidate) {
-          throw new Error('Session introuvable. Rafraîchissez la page et réessayez.');
+      // Guard: validate from every reliable source before any side effects.
+      // Do NOT fail only because React Query's cache is temporarily empty/stale.
+      const cachedSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
+      const snapshot = await getSessionsSnapshot();
+      let session =
+        cachedSessions.find((s) => s.id === sessionId) ||
+        snapshot.find((s) => s.id === sessionId) ||
+        sessions?.find((s) => s.id === sessionId) ||
+        null;
+
+      if (!session && !isOffline) {
+        const { data: dbSession, error: dbSessionError } = await supabase
+          .from('table_sessions')
+          .select('*')
+          .eq('id', sessionId)
+          .maybeSingle();
+
+        if (dbSessionError && (dbSessionError as any).code !== 'PGRST116') {
+          throw dbSessionError;
         }
-        snapshotSessions = [...currentSessions];
-        snapshotInvoices = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) ? [...(queryClient.getQueryData(invoicesQueryKey) as Invoice[])] : [];
+
+        session = (dbSession as unknown as TableSession) || null;
       }
 
-      // CRITICAL: Use raw cache to avoid stale closure over memoized `sessions`
-      const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
-      const session = currentSessions.find(s => s.id === sessionId);
+      if (!session) {
+        throw new Error('Session introuvable. La liste des tables a été resynchronisée, réessayez.');
+      }
+
+      snapshotSessions = snapshot.length > 0 ? [...snapshot] : [...cachedSessions];
+      snapshotInvoices = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined)
+        ? [...(queryClient.getQueryData(invoicesQueryKey) as Invoice[])]
+        : [];
+
       const isDebtorSession = session ? session.debtor_id !== null : false;
 
       if (isOffline) {
