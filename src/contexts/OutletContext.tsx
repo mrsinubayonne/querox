@@ -19,6 +19,10 @@ export const OutletProvider = ({ children }: { children: ReactNode }) => {
     } else {
       localStorage.removeItem('selectedOutletId');
     }
+    // Broadcast same-tab change so other consumers can re-read.
+    try {
+      window.dispatchEvent(new CustomEvent('outlet:changed', { detail: { id } }));
+    } catch {}
   };
 
   useEffect(() => {
@@ -27,8 +31,19 @@ export const OutletProvider = ({ children }: { children: ReactNode }) => {
         setSelectedOutletIdState(e.newValue);
       }
     };
+    const handleCustom = () => {
+      const current = localStorage.getItem('selectedOutletId');
+      setSelectedOutletIdState((prev) => (prev === current ? prev : current));
+    };
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    window.addEventListener('outlet:changed', handleCustom as EventListener);
+    // Poll once shortly after mount to catch async writes from useOptimizedOutlet
+    const t = window.setTimeout(handleCustom, 1500);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('outlet:changed', handleCustom as EventListener);
+      window.clearTimeout(t);
+    };
   }, []);
 
   return (
