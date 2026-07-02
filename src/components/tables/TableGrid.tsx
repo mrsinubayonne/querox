@@ -1,6 +1,7 @@
 import React from "react";
 import { TableCard } from "./TableCard";
 import type { TableSession } from "@/hooks/useOptimizedTableSessions";
+import { getSessionTableNumber, isOccupyingTable, normalizeTableNumber, pickSessionForTable } from "@/utils/tableNumbers";
 
 interface TableGridProps {
   sessions: TableSession[];
@@ -24,11 +25,13 @@ export const TableGrid: React.FC<TableGridProps> = ({
   const tableNumbers = filteredTableNumbers || defaultTableNumbers;
   
   const getSessionForTable = (tableNumber: string) => {
-    return sessions.find(
-      (s) =>
-        s.table_number === tableNumber &&
-        (s.status === "active" || s.status === "closed")
-    ) || null;
+    const normalizedTableNumber = normalizeTableNumber(tableNumber);
+    return sessions.reduce<TableSession | undefined>((found, session) => {
+      if (!isOccupyingTable(session) || getSessionTableNumber(session) !== normalizedTableNumber) {
+        return found;
+      }
+      return pickSessionForTable(found, session);
+    }, undefined) || null;
   };
 
   // Get custom name for free tables from localStorage
@@ -36,7 +39,7 @@ export const TableGrid: React.FC<TableGridProps> = ({
     const storedNames = localStorage.getItem('custom_table_names');
     if (storedNames) {
       const names = JSON.parse(storedNames);
-      return names[tableNumber] || null;
+      return names[tableNumber] || names[normalizeTableNumber(tableNumber)] || null;
     }
     return null;
   };

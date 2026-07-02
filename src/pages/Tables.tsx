@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePaidCelebration } from "@/hooks/usePaidCelebration";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTeamPermissions } from "@/hooks/useTeamPermissions";
+import { getSessionTableNumber, isOccupyingTable, pickSessionForTable } from "@/utils/tableNumbers";
 
 import {
   DropdownMenu,
@@ -52,42 +53,63 @@ const Tables: React.FC = () => {
 
   // Generate table numbers (default to 30 tables, expandable)
   const [tableCount, setTableCount] = useState(30);
-  const tableNumbers = Array.from({ length: tableCount }, (_, i) => String(i + 1).padStart(2, "0"));
+  const tableNumbers = useMemo(() => {
+    const base = Array.from({ length: tableCount }, (_, i) => String(i + 1).padStart(2, "0"));
+    const activeExtras = sessions
+      .filter(isOccupyingTable)
+      .map(getSessionTableNumber)
+      .filter((num) => /^\d+$/.test(num));
+
+    return Array.from(new Set([...base, ...activeExtras])).sort(
+      (a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10)
+    );
+  }, [tableCount, sessions]);
+
+  const displayedSessionByTable = useMemo(() => {
+    const map = new Map<string, TableSession>();
+    sessions.filter(isOccupyingTable).forEach((session) => {
+      const tableNumber = getSessionTableNumber(session);
+      map.set(tableNumber, pickSessionForTable(map.get(tableNumber), session));
+    });
+    return map;
+  }, [sessions]);
+
+  const displayedSessions = useMemo(
+    () => Array.from(displayedSessionByTable.values()),
+    [displayedSessionByTable]
+  );
 
   // Filter sessions based on status
   const filteredSessions = useMemo(() => {
-    if (statusFilter === "all") return sessions;
-    
-    const allTableNumbers = new Set(tableNumbers);
-    const occupiedTables = new Set(sessions.filter(s => s.status === "active" || s.status === "closed").map(s => s.table_number));
+    if (statusFilter === "all") return displayedSessions;
     
     switch (statusFilter) {
       case "libre":
         // Return empty array for free tables, filter will be applied to table numbers
         return [];
       case "occupee":
-        return sessions.filter(s => s.status === "active");
+        return displayedSessions.filter(s => s.status === "active");
       case "attente":
-        return sessions.filter(s => s.status === "closed");
+        return displayedSessions.filter(s => s.status === "closed");
       case "payee":
         return sessions.filter(s => s.status === "paid");
       default:
-        return sessions;
+        return displayedSessions;
     }
-  }, [sessions, statusFilter, tableNumbers]);
+  }, [displayedSessions, sessions, statusFilter]);
 
   // Filter table numbers based on status filter
   const filteredTableNumbers = useMemo(() => {
     if (statusFilter === "all") return tableNumbers;
     
-    const occupiedTables = new Set(sessions.filter(s => s.status === "active" || s.status === "closed").map(s => s.table_number));
+    const occupiedTables = new Set(displayedSessionByTable.keys());
     
     if (statusFilter === "libre") {
       return tableNumbers.filter(num => !occupiedTables.has(num));
     } else {
       // For occupied, waiting, or paid, only show tables with sessions
       return tableNumbers.filter(num => {
-        const session = sessions.find(s => s.table_number === num);
+        const session = displayedSessionByTable.get(num);
         if (!session) return false;
         
         switch (statusFilter) {
@@ -102,7 +124,7 @@ const Tables: React.FC = () => {
         }
       });
     }
-  }, [tableNumbers, sessions, statusFilter]);
+  }, [tableNumbers, displayedSessionByTable, statusFilter]);
 
   useEffect(() => {
     if (modalState.type === 'session') {
@@ -253,19 +275,19 @@ const Tables: React.FC = () => {
             <div className="p-4 bg-card border rounded-lg">
               <p className="text-sm text-muted-foreground">Tables Libres</p>
               <p className="text-2xl font-bold text-emerald-600">
-                {tableNumbers.length - sessions.filter(s => s.status === "active" || s.status === "closed").length}
+                {tableNumbers.length - displayedSessions.length}
               </p>
             </div>
             <div className="p-4 bg-card border rounded-lg">
               <p className="text-sm text-muted-foreground">Tables Occupées</p>
               <p className="text-2xl font-bold text-red-600">
-                {sessions.filter(s => s.status === "active").length}
+                {displayedSessions.filter(s => s.status === "active").length}
               </p>
             </div>
             <div className="p-4 bg-card border rounded-lg">
               <p className="text-sm text-muted-foreground">En Attente de Paiement</p>
               <p className="text-2xl font-bold text-yellow-600">
-                {sessions.filter(s => s.status === "closed").length}
+                {displayedSessions.filter(s => s.status === "closed").length}
               </p>
             </div>
             <div className="p-4 bg-card border rounded-lg">
@@ -276,8 +298,7 @@ const Tables: React.FC = () => {
                   currency: "XOF",
                   minimumFractionDigits: 0,
                 }).format(
-                  sessions
-                    .filter(s => s.status === "active" || s.status === "closed")
+                  displayedSessions
                     .reduce((sum, s) => sum + s.total_amount, 0)
                 )}
               </p>

@@ -7,6 +7,7 @@ import {
   FloorPlanZone,
 } from "@/hooks/useFloorPlan";
 import { TableSession } from "@/hooks/useOptimizedTableSessions";
+import { getSessionTableNumber, normalizeTableNumber, pickSessionForTable } from "@/utils/tableNumbers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,9 +100,10 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
     sessions.forEach((s) => {
       if (s.status === "active" || s.status === "closed" || s.status === "paid") {
         // active/closed prennent priorité sur paid pour une même table
-        const existing = map.get(s.table_number);
+        const tableNumber = getSessionTableNumber(s);
+        const existing = map.get(tableNumber);
         if (!existing || existing.status === "paid") {
-          map.set(s.table_number, s);
+          map.set(tableNumber, pickSessionForTable(existing, s));
         }
       }
     });
@@ -195,7 +197,7 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
       setSelectedTableId(t.id);
       return;
     }
-    const session = sessionByNumber.get(t.table_number) ?? null;
+    const session = sessionByNumber.get(normalizeTableNumber(t.table_number)) ?? null;
     onTableClick(t.table_number, session);
   };
 
@@ -344,7 +346,7 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
             onClick={() => setSelectedTableId(null)}
           >
             {zoneTables.map((t) => {
-              const session = sessionByNumber.get(t.table_number) ?? null;
+              const session = sessionByNumber.get(normalizeTableNumber(t.table_number)) ?? null;
               const isRound = t.shape === "round";
               const selected = selectedTableId === t.id;
               const isDragging = dragOverride?.id === t.id;
