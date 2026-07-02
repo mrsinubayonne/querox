@@ -541,33 +541,19 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
   const markSessionAsPaidMutation = useMutation({
     mutationFn: ({ sessionId, paymentMethod }: { sessionId: string; paymentMethod?: string }) => withTimeout((async () => {
-      // Guard: validate from every reliable source before any side effects.
-      // Do NOT fail only because React Query's cache is temporarily empty/stale.
+      // PRIORITÉ ABSOLUE: le paiement ne doit plus dépendre d'un cache React Query.
+      // Le cache sert seulement à l'optimisme/rollback; la source de vérité est la RPC SQL atomique.
       const cachedSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
       const snapshot = await getSessionsSnapshot();
-      let session =
+      const session =
         cachedSessions.find((s) => s.id === sessionId) ||
         snapshot.find((s) => s.id === sessionId) ||
         sessions?.find((s) => s.id === sessionId) ||
         useTableStore.getState().sessions.find((s) => s.id === sessionId) ||
         null;
 
-      if (!session && !isOffline) {
-        const { data: dbSession, error: dbSessionError } = await supabase
-          .from('table_sessions')
-          .select('*')
-          .eq('id', sessionId)
-          .maybeSingle();
-
-        if (dbSessionError && (dbSessionError as any).code !== 'PGRST116') {
-          throw dbSessionError;
-        }
-
-        session = (dbSession as unknown as TableSession) || null;
-      }
-
       if (!session && isOffline) {
-        throw new Error('Session introuvable. La liste des tables a été resynchronisée, réessayez.');
+        throw new Error('Session introuvable hors ligne. Actualisez les tables puis réessayez.');
       }
 
       snapshotSessions = snapshot.length > 0 ? [...snapshot] : [...cachedSessions];
@@ -579,8 +565,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
       if (isOffline) {
         // ANTI-REJEU: supprimer toute mutation antérieure en attente sur cette session
-        // qui voudrait remettre status='closed' ou 'active' (sinon le sync rejoue
-        // ces états après le 'paid' et la table revient occupée/en attente).
+        // qui voudrait remettre status='closed' ou 'active'.
         await removePendingMutationsByFilter((m) => {
           if (m.table !== 'table_sessions') return false;
           if (m.operation !== 'update') return false;
@@ -601,7 +586,6 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
           conflictResolution: 'client-wins',
         });
 
-        // Also mark invoice as paid if not debtor
         if (!isDebtorSession) {
           const nowIso = new Date().toISOString();
           const paidDate = nowIso.split('T')[0];
@@ -647,11 +631,6 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
               items: generatedItems,
               payment_method: paymentMethod || 'Espèces',
             } as Invoice;
-
-            // Don't queue invoice insert for sync — the DB trigger
-            // `create_invoice_for_closed_session` will create the official FAC-xxx
-            // invoice when the session status syncs to 'closed'/'paid'.
-            // The local invoice is kept in cache only for receipt printing.
           } else {
             await queueMutation({
               table: 'invoices',
@@ -679,124 +658,58 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
             } as Invoice;
           }
 
-          if (invoiceForSession) {
-            await upsertInvoiceInCache(invoiceForSession);
-
-            const finalInvoices = [
-              invoiceForSession,
-              ...uniqueInvoices.filter((inv) => inv.id !== invoiceForSession!.id),
-            ];
-            await storeData('invoices', finalInvoices as any, resolvedUserId, scopedOutletId);
-          }
-
-          // Transaction creation is handled by the DB trigger
-          // `create_transaction_from_paid_invoice` when the invoice is marked paid.
+          await upsertInvoiceInCache(invoiceForSession);
+          const finalInvoices = [
+            invoiceForSession,
+            ...uniqueInvoices.filter((inv) => inv.id !== invoiceForSession!.id),
+          ];
+          await storeData('invoices', finalInvoices as any, resolvedUserId, scopedOutletId);
         }
 
-        // Ensure a business period exists for offline reports
         await ensurePeriodExistsOffline(resolvedUserId, scopedOutletId);
-
-        // Remove session from cache entirely — table becomes free immediately
         await removeFromLocalCache(sessionId);
         markSessionPaidLocally(sessionId);
         useTableStore.getState().markPaid(sessionId);
         return { isDebtorSession };
       }
 
-      // CRITICAL: Optimistic update BEFORE DB calls to prevent realtime race condition.
-      // If realtime fires during the DB update, the session is already removed from cache
-      // and the suppress window prevents any refetch from re-adding it.
+      const normalizedPaymentMethod = paymentMethod || 'Espèces';
+
+      // Optimisme immédiat: la table disparaît tout de suite, mais rollback garanti en onError.
       markSessionPaidLocally(sessionId);
       useTableStore.getState().markPaid(sessionId);
       await removeFromLocalCache(sessionId);
 
-      // Online flow — align with Factures flow: pay invoice first so DB trigger frees table
-      const paidAtDate = new Date().toISOString().split('T')[0];
-      const normalizedPaymentMethod = paymentMethod || 'Espèces';
-      let paidInvoiceMeta: { id: string; invoice_number: string; total_amount: number } | null = null;
+      // Paiement atomique côté DB. Cette RPC SECURITY DEFINER valide l'utilisateur,
+      // libère la table, crée/paie la facture et laisse les triggers créer la transaction.
+      const { data: rpcData, error: rpcError } = await (supabase as any).rpc('mark_table_session_paid', {
+        _session_id: sessionId,
+        _payment_method: normalizedPaymentMethod,
+      });
 
-      // Resolve debtor flag safely: fallback to cached session when DB row is not returned
-      const { data: sessionData, error: sessionLookupError } = await supabase
-        .from('table_sessions')
-        .select('debtor_id')
-        .eq('id', sessionId)
-        .maybeSingle();
+      if (rpcError) {
+        // Fallback très ciblé si la migration n'est pas encore appliquée sur un environnement:
+        // on tente l'ancien update direct, mais sans jamais afficher "Session introuvable" venant du cache.
+        if ((rpcError as any).code !== 'PGRST202' && !(rpcError.message || '').includes('mark_table_session_paid')) {
+          throw rpcError;
+        }
 
-      if (sessionLookupError && (sessionLookupError as any).code !== 'PGRST116') {
-        throw sessionLookupError;
-      }
-
-      const isDebtorDb = typeof sessionData?.debtor_id !== 'undefined'
-        ? sessionData.debtor_id !== null
-        : isDebtorSession;
-
-      // 1) Source of truth: mark the linked invoice as paid (same intent as Factures section)
-      const { data: invoiceForSession, error: invoiceLookupError } = await supabase
-        .from('invoices')
-        .select('id, invoice_number, total_amount, status')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (invoiceLookupError && (invoiceLookupError as any).code !== 'PGRST116') {
-        throw invoiceLookupError;
-      }
-
-      if (!invoiceForSession?.id) {
-        // Session has no invoice yet — could be an "active" session paid directly
-        // or a race condition. Try to close session directly.
-        const { error: directCloseError } = await supabase
+        const paidAtDate = new Date().toISOString().split('T')[0];
+        const { error: sessionPaidError } = await supabase
           .from('table_sessions')
-          .update({ status: 'paid', payment_method: normalizedPaymentMethod })
+          .update({ status: 'paid', payment_method: normalizedPaymentMethod, closed_at: new Date().toISOString() })
           .eq('id', sessionId);
-        if (directCloseError) throw directCloseError;
-        return { isDebtorSession: isDebtorDb };
-      }
+        if (sessionPaidError) throw sessionPaidError;
 
-      if (invoiceForSession.status !== 'paid') {
         const { error: invoicePaymentError } = await supabase
           .from('invoices')
-          .update({
-            status: 'paid',
-            paid_date: paidAtDate,
-            payment_method: normalizedPaymentMethod,
-          })
-          .eq('id', invoiceForSession.id);
-
-        if (invoicePaymentError) throw invoicePaymentError;
+          .update({ status: 'paid', paid_date: paidAtDate, payment_method: normalizedPaymentMethod })
+          .eq('session_id', sessionId);
+        if (invoicePaymentError) console.warn('[markSessionAsPaid] invoice fallback warning:', invoicePaymentError);
       }
 
-      // 2) Safety first: always force the session to paid after invoice payment.
-      // This guarantees table release even if the DB trigger is delayed or unavailable.
-      const { error: sessionPaidError } = await supabase
-        .from('table_sessions')
-        .update({ status: 'paid', payment_method: normalizedPaymentMethod })
-        .eq('id', sessionId);
-
-      if (sessionPaidError) {
-        console.error('[markSessionAsPaid] Session paid update failed:', sessionPaidError);
-        const { error: retryError } = await supabase
-          .from('table_sessions')
-          .update({ status: 'paid', payment_method: normalizedPaymentMethod })
-          .eq('id', sessionId)
-          .eq('user_id', resolvedUserId);
-
-        if (retryError) throw retryError;
-      }
-
-      paidInvoiceMeta = invoiceForSession as { id: string; invoice_number: string; total_amount: number };
-
-      // 3) Transaction creation is now handled by the DB trigger
-      // `create_transaction_from_paid_invoice` — no manual insert needed.
-
-      // 4) Ne pas déduire le stock côté client en ligne.
-      // La déduction est déjà gérée côté Supabase au paiement de la facture;
-      // la refaire ici provoque un retrait en double (1 vente => 2 déductions).
-
-      // Local cache already cleared optimistically at the top of this mutation.
-
-      return { isDebtorSession: isDebtorDb };
+      const result = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+      return { isDebtorSession: Boolean(result?.is_debtor ?? isDebtorSession) };
     })()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['table-sessions', outletIdKey] });
@@ -808,17 +721,15 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       toast.success(isOffline ? "Paiement enregistré (hors ligne)" : "Paiement enregistré", { description: "La facture est marquée payée et la table est libérée." });
     },
     onError: (error: Error, variables: { sessionId: string; paymentMethod?: string }) => {
-      // ROLLBACK: undo optimistic update
       localPaidSessionIds.delete(variables.sessionId);
       localPaidTimestamps.delete(variables.sessionId);
       persistPaidSessionsToStorage();
       useTableStore.getState().rollbackPaid(variables.sessionId);
 
-      // Restore React Query cache to snapshot
       queryClient.setQueryData(sessionsQueryKey, snapshotSessions);
       queryClient.setQueryData(invoicesQueryKey, snapshotInvoices);
+      useTableStore.getState().setSessions(snapshotSessions);
 
-      // Force refetch to get server truth
       void queryClient.refetchQueries({ queryKey: ['table-sessions', outletIdKey] });
 
       toast.error('Erreur paiement', { description: error.message || 'Impossible de marquer comme payée. La table a été restaurée.' });
