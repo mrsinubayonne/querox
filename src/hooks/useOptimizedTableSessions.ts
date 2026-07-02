@@ -15,6 +15,7 @@ import { useInvoiceStore } from '@/store/invoiceStore';
 import { toast } from 'sonner';
 import { localStore } from '@/lib/localStore';
 import { useOutletContext } from '@/contexts/OutletContext';
+import { getSessionTableNumber, normalizeTableNumber } from '@/utils/tableNumbers';
 
 export interface TableSession {
   id: string;
@@ -902,7 +903,10 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
   const getActiveSessionForTable = useCallback((tableNumber: string): TableSession | null => {
     if (!sessions) return null;
-    return sessions.find(s => s.table_number === tableNumber && s.status === 'active') || null;
+    const normalizedTableNumber = normalizeTableNumber(tableNumber);
+    return sessions.find(
+      s => getSessionTableNumber(s) === normalizedTableNumber && s.status === 'active'
+    ) || null;
   }, [sessions]);
 
   // Note: realtime subscription is handled by useOfflineData to avoid duplicate channels.
