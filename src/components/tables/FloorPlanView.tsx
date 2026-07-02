@@ -7,7 +7,7 @@ import {
   FloorPlanZone,
 } from "@/hooks/useFloorPlan";
 import { TableSession } from "@/hooks/useOptimizedTableSessions";
-import { getSessionTableNumber, normalizeTableNumber, pickSessionForTable } from "@/utils/tableNumbers";
+import { getSessionTableNumber, isOccupyingTable, normalizeTableNumber, pickSessionForTable } from "@/utils/tableNumbers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,13 +98,10 @@ export const FloorPlanView: React.FC<Props> = ({ sessions, onTableClick, canMana
   const sessionByNumber = useMemo(() => {
     const map = new Map<string, TableSession>();
     sessions.forEach((s) => {
-      if (s.status === "active" || s.status === "closed" || s.status === "paid") {
-        // active/closed prennent priorité sur paid pour une même table
+      if (isOccupyingTable(s)) {
         const tableNumber = getSessionTableNumber(s);
         const existing = map.get(tableNumber);
-        if (!existing || existing.status === "paid") {
-          map.set(tableNumber, pickSessionForTable(existing, s));
-        }
+        map.set(tableNumber, pickSessionForTable(existing, s));
       }
     });
     return map;
