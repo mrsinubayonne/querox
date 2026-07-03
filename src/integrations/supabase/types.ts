@@ -2895,6 +2895,22 @@ export type Database = {
           owner_id: string
         }[]
       }
+      add_order_to_table_session: {
+        Args: {
+          _customer_email?: string
+          _customer_name?: string
+          _customer_phone?: string
+          _items: Json
+          _notes?: string
+          _session_id: string
+          _total_amount: number
+        }
+        Returns: {
+          order_id: string
+          session_id: string
+          session_total: number
+        }[]
+      }
       admin_revenue_stats_policy: { Args: never; Returns: boolean }
       calculate_churn_rate: {
         Args: { period_months?: number }
