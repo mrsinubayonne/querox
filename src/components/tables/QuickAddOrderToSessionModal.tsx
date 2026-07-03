@@ -20,6 +20,7 @@ import { useRestaurant } from "@/contexts/RestaurantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
+import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from "@/lib/offlineIdentity";
 import { useQueryClient } from "@tanstack/react-query";
 import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
 import type { MenuItem, SelectedOption } from "@/types/menu";
@@ -50,12 +51,23 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
   tableNumber,
 }) => {
   const { user, isTeamMember, teamMemberSession } = useAuth();
-  const { outletId } = useRestaurant();
+  const { outletId: restaurantOutletId } = useRestaurant();
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
-  const resolvedUserId = isTeamMember ? (teamMemberSession?.ownerId || user?.id || '') : (user?.id || '');
+  const resolvedUserId = resolveOfflineUserId({
+    userId: user?.id,
+    isTeamMember,
+    ownerId: teamMemberSession?.ownerId,
+  }) || '';
   const { selectedOutletId: ctxOutletId } = useOutletContext();
-  const scopedOutletId = (ctxOutletId || outletId || undefined) as string | undefined;
+  const scopedOutletId = (
+    ctxOutletId ||
+    getSelectedOutletIdFromStorage() ||
+    restaurantOutletId ||
+    teamMemberSession?.outletId ||
+    teamMemberSession?.outletIds?.[0] ||
+    undefined
+  ) as string | undefined;
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -198,15 +210,16 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       if (isOffline) {
         const orderId = generateLocalId();
 
-        const resolvedOutletId = scopedOutletId || localStorage.getItem("selectedOutletId");
+        const resolvedOutletId = scopedOutletId || getSelectedOutletIdFromStorage();
         if (!resolvedOutletId) {
           toast.error("Erreur", { description: "Aucun point de vente sélectionné." });
           return;
         }
 
         const outletKey = resolvedOutletId || undefined;
-        const ordersKey = ["orders", resolvedUserId, outletKey] as const;
-        const sessionsKey = ["table-sessions", resolvedUserId, outletKey] as const;
+        const outletIdKey = outletKey || "no-outlet";
+        const ordersKey = ["orders", outletIdKey, resolvedUserId, outletKey] as const;
+        const sessionsKey = ["table-sessions", outletIdKey, resolvedUserId, outletKey] as const;
 
         await queueMutation({
           table: 'orders',
@@ -290,23 +303,67 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       }
 
       // Online mode
-      const resolvedOutletId = scopedOutletId || ctxOutletId;
+      const resolvedOutletId = scopedOutletId || getSelectedOutletIdFromStorage();
+      if (!resolvedOutletId) {
+        throw new Error("Aucun point de vente sélectionné.");
+      }
 
-      const { error } = await supabase.from("orders").insert([
-        {
-          user_id: resolvedUserId,
-          outlet_id: resolvedOutletId,
-          session_id: sessionId,
-          table_number: tableNumber,
-          order_type: "sur_place",
-          customer_name: `Table ${tableNumber}`,
-          items: orderItems as any,
-          total_amount: totalAmount,
-          status: "pending",
-        },
-      ]);
+      const { data: rpcResult, error } = await supabase.rpc("add_order_to_table_session", {
+        _session_id: sessionId,
+        _items: orderItems as any,
+        _total_amount: totalAmount,
+        _customer_name: `Table ${tableNumber}`,
+        _customer_phone: null,
+        _customer_email: null,
+        _notes: null,
+      });
 
       if (error) throw error;
+
+      const serverResult = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
+      const orderId = serverResult?.order_id || generateLocalId();
+      const sessionTotal = Number(serverResult?.session_total ?? 0);
+      const nowIso = new Date().toISOString();
+      const outletKey = resolvedOutletId || undefined;
+      const outletIdKey = outletKey || "no-outlet";
+      const ordersKey = ["orders", outletIdKey, resolvedUserId, outletKey] as const;
+      const sessionsKey = ["table-sessions", outletIdKey, resolvedUserId, outletKey] as const;
+
+      const newOrder = {
+        id: orderId,
+        user_id: resolvedUserId,
+        outlet_id: resolvedOutletId,
+        session_id: sessionId,
+        table_number: tableNumber,
+        order_type: "sur_place",
+        customer_name: `Table ${tableNumber}`,
+        items: orderItems as any,
+        total_amount: totalAmount,
+        status: "pending",
+        created_at: nowIso,
+        updated_at: nowIso,
+      };
+      const currentOrders = (queryClient.getQueryData(ordersKey) as any[] | undefined) || [];
+      queryClient.setQueryData(ordersKey, [newOrder, ...currentOrders.filter((o) => o.id !== orderId)]);
+      await storeData("orders", [newOrder, ...currentOrders.filter((o) => o.id !== orderId)] as any, resolvedUserId, outletKey);
+
+      const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
+      if (currentSessions.length > 0) {
+        const nextSessions = currentSessions.map((s: any) =>
+          s.id === sessionId
+            ? {
+                ...s,
+                total_amount: sessionTotal || Number(s.total_amount || 0) + Number(totalAmount || 0),
+                updated_at: nowIso,
+              }
+            : s
+        );
+        queryClient.setQueryData(sessionsKey, nextSessions);
+        await storeData("table_sessions", nextSessions as any, resolvedUserId, outletKey);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["orders", outletIdKey, resolvedUserId, outletKey] });
+      queryClient.invalidateQueries({ queryKey: ["table-sessions", outletIdKey, resolvedUserId, outletKey] });
 
       toast.success("Commande ajoutée", { description: `${cart.length} plat(s) ajoutés à la session.` });
 
@@ -317,7 +374,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       onClose();
     } catch (err: any) {
       console.error("Error adding order:", err);
-      toast.error("Erreur", { description: "Impossible d'ajouter la commande." });
+      toast.error("Erreur", { description: err?.message || "Impossible d'ajouter la commande." });
     } finally {
       setLoading(false);
     }
