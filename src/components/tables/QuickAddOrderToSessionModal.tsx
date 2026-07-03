@@ -313,9 +313,9 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         _items: orderItems as any,
         _total_amount: totalAmount,
         _customer_name: `Table ${tableNumber}`,
-        _customer_phone: null,
-        _customer_email: null,
-        _notes: null,
+        _customer_phone: "",
+        _customer_email: "",
+        _notes: "",
       });
 
       if (error) throw error;
