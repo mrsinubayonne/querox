@@ -3225,6 +3225,14 @@ export type Database = {
         Args: { _profile_id: string }
         Returns: undefined
       }
+      mark_table_session_paid: {
+        Args: { _payment_method?: string; _session_id: string }
+        Returns: {
+          invoice_id: string
+          is_debtor: boolean
+          session_id: string
+        }[]
+      }
       public_reset_password: {
         Args: { new_password: string; user_email: string }
         Returns: Json
