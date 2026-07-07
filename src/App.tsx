@@ -186,8 +186,9 @@ function App() {
           </Suspense>
         </div>
         <Sonner />
-        <InvoicePaidCelebration />
-        <KeyboardShortcutsProvider />
+         <InvoicePaidCelebration />
+         <GlobalAnnouncementModal />
+         <KeyboardShortcutsProvider />
       </Router>
     </RestaurantProvider>
   );
