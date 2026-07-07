@@ -8,6 +8,8 @@ import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
 import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvider";
 import { useGlobalNewOrderNotifier } from "@/hooks/useGlobalNewOrderNotifier";
 import { useMenuPrefetch } from "@/hooks/useMenuPrefetch";
+import GlobalAnnouncementModal from "@/components/GlobalAnnouncementModal";
+import GlobalAnnouncementBanner from "@/components/GlobalAnnouncementBanner";
 
 const GlobalOrderNotifier = () => {
   useGlobalNewOrderNotifier();
