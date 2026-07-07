@@ -50,14 +50,13 @@ const ADMIN_ITEMS = [
   { icon: Crown, label: 'Tableau de Bord', path: '/admin/dashboard' },
   { icon: Building2, label: 'Gestion Restaurants', path: '/admin/restaurants' },
   { icon: BarChart3, label: 'Activité Temps Réel', path: '/admin/real-time' },
+  { icon: FileText, label: 'Rapports par PDV', path: '/admin/reports' },
+  { icon: Megaphone, label: 'Communications', path: '/admin/announcements' },
   { icon: Calculator, label: 'Comptabilité', path: '/admin/comptabilite' },
   { icon: Shield, label: 'Alertes Globales', path: '/admin/alerts' },
   { icon: Settings, label: 'Contrôle Global', path: '/admin/global-control' },
   { icon: CreditCard, label: 'Abonnements', path: '/admin/subscriptions' },
   { icon: UserCog, label: 'Gestion des Rôles', path: '/admin/roles' },
-  { icon: Shield, label: "Codes d'Accès", path: '/admin/access-codes' },
-  { icon: Settings, label: 'Paramètres Système', path: '/admin/system-settings' },
-  { icon: FlaskConical, label: 'Diagnostics', path: '/admin/diagnostics' },
 ] as const;
 
 const TOUR_MAP: Record<string, string> = {
