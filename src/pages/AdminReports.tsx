@@ -51,7 +51,7 @@ const AdminReports: React.FC = () => {
           .eq('status', 'paid')
           .gte('updated_at', startOfWeek.toISOString())
           .limit(10000),
-        supabase.from('profiles').select('id,full_name,phone'),
+        supabase.from('profiles').select('id,full_name'),
       ]);
 
       const outlets = outletsRes.data || [];
