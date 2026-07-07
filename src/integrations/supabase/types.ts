@@ -77,6 +77,48 @@ export type Database = {
         }
         Relationships: []
       }
+      app_announcements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          kind: string
+          message: string
+          starts_at: string
+          title: string
+          updated_at: string
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          message: string
+          starts_at?: string
+          title: string
+          updated_at?: string
+          variant?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          message?: string
+          starts_at?: string
+          title?: string
+          updated_at?: string
+          variant?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string

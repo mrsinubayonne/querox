@@ -8,6 +8,8 @@ import { InvoicePaidCelebration } from "@/components/InvoicePaidCelebration";
 import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvider";
 import { useGlobalNewOrderNotifier } from "@/hooks/useGlobalNewOrderNotifier";
 import { useMenuPrefetch } from "@/hooks/useMenuPrefetch";
+import GlobalAnnouncementModal from "@/components/GlobalAnnouncementModal";
+import GlobalAnnouncementBanner from "@/components/GlobalAnnouncementBanner";
 
 const GlobalOrderNotifier = () => {
   useGlobalNewOrderNotifier();
@@ -68,6 +70,8 @@ const AdminGlobalControl = lazy(() => import('@/pages/AdminGlobalControl'));
 const AdminSystemSettings = lazy(() => import('@/pages/AdminSystemSettings'));
 const AdminComptabilite = lazy(() => import('@/pages/AdminComptabilite'));
 const AdminDiagnostics = lazy(() => import('@/pages/AdminDiagnostics'));
+const AdminAnnouncements = lazy(() => import('@/pages/AdminAnnouncements'));
+const AdminReports = lazy(() => import('@/pages/AdminReports'));
 const PartnerSignup = lazy(() => import('@/pages/PartnerSignup'));
 const PartnerDashboard = lazy(() => import('@/pages/PartnerDashboard'));
 const Reservations = lazy(() => import('@/pages/Reservations'));
@@ -91,8 +95,9 @@ function App() {
   return (
     <RestaurantProvider restaurantUserId={null} outletId={null}>
       <Router>
-        <GlobalOrderNotifier />
-        <div className="min-h-screen bg-background">
+         <GlobalOrderNotifier />
+         <div className="min-h-screen bg-background">
+           <GlobalAnnouncementBanner />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Routes publiques */}
@@ -154,6 +159,8 @@ function App() {
               <Route path="/admin/roles" element={<ProtectedRoute><AdminRoles /></ProtectedRoute>} />
               <Route path="/admin/access-codes" element={<ProtectedRoute><AdminAccessCodes /></ProtectedRoute>} />
               <Route path="/admin/diagnostics" element={<ProtectedRoute><AdminDiagnostics /></ProtectedRoute>} />
+              <Route path="/admin/announcements" element={<ProtectedRoute><AdminAnnouncements /></ProtectedRoute>} />
+              <Route path="/admin/reports" element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
 
               {/* Routes Partner */}
               <Route path="/partner-dashboard" element={<ProtectedRoute><PartnerDashboard /></ProtectedRoute>} />
@@ -179,8 +186,9 @@ function App() {
           </Suspense>
         </div>
         <Sonner />
-        <InvoicePaidCelebration />
-        <KeyboardShortcutsProvider />
+         <InvoicePaidCelebration />
+         <GlobalAnnouncementModal />
+         <KeyboardShortcutsProvider />
       </Router>
     </RestaurantProvider>
   );

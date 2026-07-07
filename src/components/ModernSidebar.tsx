@@ -1,6 +1,6 @@
 
 import React, { useMemo, useCallback } from 'react';
-import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, Utensils, UserPlus, Award, User, FlaskConical, Wallet } from 'lucide-react';
+import { Home, ShoppingBag, Menu, Package, Users, QrCode, Globe, TrendingUp, BarChart3, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Headphones, Phone, UserCheck, Palette, Share2, Facebook, Shield, Crown, UserCog, LifeBuoy, Calendar, Calculator, FileText, Building2, Check, Plus, Utensils, UserPlus, Award, User, FlaskConical, Wallet, Megaphone } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -50,14 +50,13 @@ const ADMIN_ITEMS = [
   { icon: Crown, label: 'Tableau de Bord', path: '/admin/dashboard' },
   { icon: Building2, label: 'Gestion Restaurants', path: '/admin/restaurants' },
   { icon: BarChart3, label: 'Activité Temps Réel', path: '/admin/real-time' },
+  { icon: FileText, label: 'Rapports par PDV', path: '/admin/reports' },
+  { icon: Megaphone, label: 'Communications', path: '/admin/announcements' },
   { icon: Calculator, label: 'Comptabilité', path: '/admin/comptabilite' },
   { icon: Shield, label: 'Alertes Globales', path: '/admin/alerts' },
   { icon: Settings, label: 'Contrôle Global', path: '/admin/global-control' },
   { icon: CreditCard, label: 'Abonnements', path: '/admin/subscriptions' },
   { icon: UserCog, label: 'Gestion des Rôles', path: '/admin/roles' },
-  { icon: Shield, label: "Codes d'Accès", path: '/admin/access-codes' },
-  { icon: Settings, label: 'Paramètres Système', path: '/admin/system-settings' },
-  { icon: FlaskConical, label: 'Diagnostics', path: '/admin/diagnostics' },
 ] as const;
 
 const TOUR_MAP: Record<string, string> = {
