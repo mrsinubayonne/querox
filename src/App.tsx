@@ -95,8 +95,9 @@ function App() {
   return (
     <RestaurantProvider restaurantUserId={null} outletId={null}>
       <Router>
-        <GlobalOrderNotifier />
-        <div className="min-h-screen bg-background">
+         <GlobalOrderNotifier />
+         <div className="min-h-screen bg-background">
+           <GlobalAnnouncementBanner />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Routes publiques */}
