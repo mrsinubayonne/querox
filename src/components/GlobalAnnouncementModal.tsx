@@ -20,12 +20,14 @@ const GlobalAnnouncementModal: React.FC = () => {
     if (!user) return;
 
     const loadAnnouncement = async () => {
+      const nowIso = new Date().toISOString();
       const { data, error } = await (supabase as any)
         .from('app_announcements')
-        .select('id,title,message')
+        .select('id,title,message,kind')
         .eq('is_active', true)
-        .lte('starts_at', new Date().toISOString())
-        .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`)
+        .in('kind', ['modal', 'both'])
+        .lte('starts_at', nowIso)
+        .or(`ends_at.is.null,ends_at.gt.${nowIso}`)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
