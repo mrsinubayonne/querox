@@ -111,7 +111,7 @@ export const usePurchaseOrders = () => {
           user_id: user.id,
           outlet_id: outletId,
           order_number: orderNumber || `PO-${Date.now()}`
-        })
+        } as any)
         .select()
         .single();
 
@@ -133,7 +133,7 @@ export const usePurchaseOrders = () => {
     try {
       const { data, error } = await supabase
         .from('purchase_orders')
-        .update(updates)
+        .update(updates as any)
         .eq('id', id)
         .select()
         .single();

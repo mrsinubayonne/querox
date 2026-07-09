@@ -107,7 +107,7 @@ export const useInventoryLosses = () => {
           user_id: user.id,
           outlet_id: outletId,
           recorded_by_user_id: user.id
-        })
+        } as any)
         .select()
         .single();
 
