@@ -111,7 +111,7 @@ export const usePurchaseOrders = () => {
           user_id: user.id,
           outlet_id: outletId,
           order_number: orderNumber || `PO-${Date.now()}`
-        })
+        } as any)
         .select()
         .single();
 
