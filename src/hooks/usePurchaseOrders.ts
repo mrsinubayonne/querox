@@ -133,7 +133,7 @@ export const usePurchaseOrders = () => {
     try {
       const { data, error } = await supabase
         .from('purchase_orders')
-        .update(updates)
+        .update(updates as any)
         .eq('id', id)
         .select()
         .single();
