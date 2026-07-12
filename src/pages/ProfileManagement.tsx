@@ -5,27 +5,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Trash2, UserPlus, Shield, Copy, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { Trash2, UserPlus, Shield, Copy, CheckCircle2, Briefcase, Calculator, Wallet, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 type OutletRole = 'proprietaire' | 'superviseur' | 'comptable' | 'caissier';
+
+const ROLES: { value: Exclude<OutletRole, 'proprietaire'>; label: string; icon: React.ElementType; color: string }[] = [
+  { value: 'caissier',    label: 'Caissier',    icon: Wallet,     color: 'from-purple-500 to-fuchsia-500' },
+  { value: 'comptable',   label: 'Comptable',   icon: Calculator, color: 'from-emerald-500 to-teal-500' },
+  { value: 'superviseur', label: 'Superviseur', icon: Briefcase,  color: 'from-blue-500 to-indigo-500' },
+];
 
 const ROLE_LABELS: Record<OutletRole, string> = {
   proprietaire: 'Propriétaire',
   superviseur: 'Superviseur',
   comptable: 'Comptable',
   caissier: 'Caissier'
-};
-
-const ROLE_COLORS: Record<OutletRole, string> = {
-  proprietaire: 'bg-yellow-100 text-yellow-800',
-  superviseur: 'bg-blue-100 text-blue-800',
-  comptable: 'bg-green-100 text-green-800',
-  caissier: 'bg-purple-100 text-purple-800'
 };
 
 interface OutletProfile {
@@ -41,58 +39,50 @@ interface OutletProfile {
 export const ProfileManagement: React.FC = () => {
   const { selectedOutletId } = useOutlets();
   const queryClient = useQueryClient();
-  const [newProfileName, setNewProfileName] = useState('');
-  const [newProfileRole, setNewProfileRole] = useState<OutletRole>('caissier');
-  const [showCodes, setShowCodes] = useState<Record<string, boolean>>({});
+  const [name, setName] = useState('');
+  const [role, setRole] = useState<Exclude<OutletRole, 'proprietaire'>>('caissier');
+  const [justCreated, setJustCreated] = useState<{ name: string; code: string } | null>(null);
 
   const { data: outletProfiles, isLoading } = useQuery({
     queryKey: ['outlet-profiles', selectedOutletId],
     queryFn: async () => {
       if (!selectedOutletId) return [];
-
       const { data, error } = await supabase
-        .from('outlet_profiles')
+        .from('outlet_profiles' as any)
         .select('*')
         .eq('outlet_id', selectedOutletId)
         .order('created_at', { ascending: false });
-
       if (error) throw error;
-      return data as OutletProfile[];
+      return (data as any) as OutletProfile[];
     },
     enabled: !!selectedOutletId
   });
 
   const addProfileMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedOutletId || !newProfileName) return;
-
-      // Generate access code
-      const { data: codeData, error: codeError } = await supabase.rpc('generate_outlet_access_code', {
+      if (!selectedOutletId) throw new Error('Aucun point de vente sélectionné');
+      const { data: codeData, error: codeError } = await supabase.rpc('generate_outlet_access_code' as any, {
         _outlet_id: selectedOutletId,
-        _role: newProfileRole
+        _role: role
       });
-
       if (codeError) throw codeError;
-
-      // Create profile
       const { data, error } = await supabase
-        .from('outlet_profiles')
+        .from('outlet_profiles' as any)
         .insert({
           outlet_id: selectedOutletId,
-          profile_name: newProfileName,
-          role: newProfileRole,
+          profile_name: name.trim(),
+          role,
           access_code: codeData
-        })
+        } as any)
         .select()
         .single();
-
       if (error) throw error;
-      return data;
+      return data as any;
     },
-    onSuccess: (data) => {
-      toast.success(`Profil créé ! Code: ${data?.access_code}`);
-      setNewProfileName('');
-      setNewProfileRole('caissier');
+    onSuccess: (data: any) => {
+      setJustCreated({ name: data.profile_name, code: data.access_code });
+      setName('');
+      setRole('caissier');
       queryClient.invalidateQueries({ queryKey: ['outlet-profiles'] });
     },
     onError: (error: any) => {
@@ -103,209 +93,202 @@ export const ProfileManagement: React.FC = () => {
   const toggleProfileMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const { error } = await supabase
-        .from('outlet_profiles')
-        .update({ is_active: isActive })
+        .from('outlet_profiles' as any)
+        .update({ is_active: isActive } as any)
         .eq('id', id);
-
       if (error) throw error;
     },
-    onSuccess: () => {
-      toast.success('Statut du profil mis à jour');
-      queryClient.invalidateQueries({ queryKey: ['outlet-profiles'] });
-    },
-    onError: () => {
-      toast.error('Erreur lors de la mise à jour');
-    }
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['outlet-profiles'] }),
+    onError: () => toast.error('Erreur lors de la mise à jour'),
   });
 
   const deleteProfileMutation = useMutation({
     mutationFn: async (profileId: string) => {
-      const { error } = await supabase
-        .from('outlet_profiles')
-        .delete()
-        .eq('id', profileId);
-
+      const { error } = await supabase.from('outlet_profiles' as any).delete().eq('id', profileId);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Profil supprimé');
       queryClient.invalidateQueries({ queryKey: ['outlet-profiles'] });
     },
-    onError: () => {
-      toast.error('Erreur lors de la suppression');
-    }
+    onError: () => toast.error('Erreur lors de la suppression'),
   });
 
-  const copyAccessCode = (code: string) => {
+  const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast.success('Code copié dans le presse-papier !');
+    toast.success('Code copié');
   };
 
-  const toggleCodeVisibility = (profileId: string) => {
-    setShowCodes(prev => ({ ...prev, [profileId]: !prev[profileId] }));
-  };
-
-  const handleAddProfile = () => {
-    if (!newProfileName.trim()) {
-      toast.error('Veuillez entrer un nom de profil');
+  const handleCreate = () => {
+    if (!name.trim()) {
+      toast.error('Donnez un nom au profil');
       return;
     }
     addProfileMutation.mutate();
   };
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center p-8">Chargement...</div>;
-  }
-
   return (
     <div className="space-y-6">
+      {/* Success card just after creation */}
+      {justCreated && (
+        <Card className="border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800">
+          <CardContent className="p-5 flex flex-col md:flex-row md:items-center gap-4">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-emerald-900 dark:text-emerald-100">
+                  Profil « {justCreated.name} » créé
+                </p>
+                <p className="text-xs text-emerald-800/80 dark:text-emerald-200/80">
+                  Partagez ce code — il permet la connexion.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-white dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700 rounded-lg px-3 py-2">
+              <code className="font-mono text-lg tracking-wider font-bold text-emerald-900 dark:text-emerald-100">
+                {justCreated.code}
+              </code>
+              <Button size="sm" variant="ghost" onClick={() => copyCode(justCreated.code)}>
+                <Copy className="w-4 h-4 mr-1" /> Copier
+              </Button>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setJustCreated(null)}>OK</Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Gestion des Profils
+            <Shield className="h-5 w-5 text-primary" />
+            Ajouter un profil
           </CardTitle>
           <CardDescription>
-            Gérez les profils d'accès pour ce point de vente
+            Choisissez un rôle, donnez un nom — un code d'accès est généré automatiquement.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Add Profile Form */}
-          <div className="border rounded-lg p-4 space-y-4 bg-blue-50">
-            <h3 className="font-semibold flex items-center gap-2">
-              <UserPlus className="h-4 w-4" />
-              Créer un nouveau profil
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="profileName">Nom du profil</Label>
-                <Input
-                  id="profileName"
-                  placeholder="Ex: Caissier Principal"
-                  value={newProfileName}
-                  onChange={(e) => setNewProfileName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Rôle</Label>
-                <Select value={newProfileRole} onValueChange={(v) => setNewProfileRole(v as OutletRole)}>
-                  <SelectTrigger id="role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="superviseur">Superviseur</SelectItem>
-                    <SelectItem value="comptable">Comptable</SelectItem>
-                    <SelectItem value="caissier">Caissier</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-end">
-                <Button 
-                  onClick={handleAddProfile}
-                  disabled={addProfileMutation.isPending}
-                  className="w-full"
+        <CardContent className="space-y-4">
+          {/* Role picker as icon cards */}
+          <div className="grid grid-cols-3 gap-2">
+            {ROLES.map((r) => {
+              const Icon = r.icon;
+              const active = role === r.value;
+              return (
+                <button
+                  key={r.value}
+                  type="button"
+                  onClick={() => setRole(r.value)}
+                  className={cn(
+                    'group relative rounded-xl border-2 p-3 text-left transition active:scale-[0.97]',
+                    active
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-border hover:border-primary/40 bg-background'
+                  )}
                 >
-                  {addProfileMutation.isPending ? 'Création...' : 'Créer le profil'}
-                </Button>
-              </div>
-            </div>
-            <p className="text-xs text-blue-600">
-              Un code d'accès unique sera généré automatiquement (format: QRX-XXX-XXXX)
-            </p>
-          </div>
-
-          {/* Profiles List */}
-          <div className="space-y-3">
-            <h3 className="font-semibold">Profils existants ({outletProfiles?.length || 0})</h3>
-            {outletProfiles && outletProfiles.length > 0 ? (
-              <div className="space-y-2">
-                {outletProfiles.map((profile) => (
-                  <div
-                    key={profile.id}
-                    className={`p-4 border rounded-lg ${profile.is_active ? 'bg-white' : 'bg-gray-50'}`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-3">
-                          <p className="font-medium text-lg">{profile.profile_name}</p>
-                          <Badge className={ROLE_COLORS[profile.role]}>
-                            {ROLE_LABELS[profile.role]}
-                          </Badge>
-                          {!profile.is_active && (
-                            <Badge variant="destructive">Désactivé</Badge>
-                          )}
-                        </div>
-
-                        {/* Access Code */}
-                        <div className="flex items-center gap-2 bg-gray-100 p-2 rounded">
-                          <code className="font-mono text-sm flex-1">
-                            {showCodes[profile.id] ? profile.access_code : '●●●●-●●●-●●●●'}
-                          </code>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => toggleCodeVisibility(profile.id)}
-                            className="h-8 w-8"
-                          >
-                            {showCodes[profile.id] ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => copyAccessCode(profile.access_code)}
-                            className="h-8 w-8"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        {/* Last Login */}
-                        <p className="text-xs text-gray-500">
-                          {profile.last_login_at 
-                            ? `Dernière connexion: ${new Date(profile.last_login_at).toLocaleString('fr-FR')}`
-                            : 'Jamais connecté'}
-                        </p>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 ml-4">
-                        <div className="flex items-center gap-2">
-                          <Label htmlFor={`active-${profile.id}`} className="text-xs">
-                            {profile.is_active ? 'Actif' : 'Inactif'}
-                          </Label>
-                          <Switch
-                            id={`active-${profile.id}`}
-                            checked={profile.is_active}
-                            onCheckedChange={(checked) => 
-                              toggleProfileMutation.mutate({ id: profile.id, isActive: checked })
-                            }
-                          />
-                        </div>
-                        {profile.role !== 'proprietaire' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => deleteProfileMutation.mutate(profile.id)}
-                            disabled={deleteProfileMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
+                  <div className={cn(
+                    'w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center mb-2',
+                    r.color
+                  )}>
+                    <Icon className="w-4 h-4 text-white" />
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 text-center py-8">
-                Aucun profil créé pour ce point de vente
-              </p>
-            )}
+                  <p className="text-sm font-medium">{r.label}</p>
+                  {active && (
+                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
+                  )}
+                </button>
+              );
+            })}
           </div>
+
+          {/* Name + create in one row */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              placeholder={`Nom du ${ROLE_LABELS[role].toLowerCase()} (ex : Awa)`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+              className="flex-1 h-11"
+            />
+            <Button
+              onClick={handleCreate}
+              disabled={addProfileMutation.isPending || !name.trim()}
+              size="lg"
+              className="h-11 sm:w-auto"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              {addProfileMutation.isPending ? 'Création…' : 'Créer'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Profiles list */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center justify-between">
+            <span>Profils existants</span>
+            <Badge variant="secondary">{outletProfiles?.length || 0}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Chargement…</p>
+          ) : outletProfiles && outletProfiles.length > 0 ? (
+            <div className="space-y-2">
+              {outletProfiles.map((profile) => (
+                <div
+                  key={profile.id}
+                  className={cn(
+                    'flex items-center gap-3 p-3 rounded-lg border transition',
+                    profile.is_active ? 'bg-background' : 'bg-muted/50 opacity-70'
+                  )}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium truncate">{profile.profile_name}</p>
+                      <Badge variant="outline" className="text-xs">
+                        {ROLE_LABELS[profile.role]}
+                      </Badge>
+                    </div>
+                    <button
+                      onClick={() => copyCode(profile.access_code)}
+                      className="mt-1 inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-foreground transition"
+                      title="Copier le code"
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span className="tracking-wider">{profile.access_code}</span>
+                      <Copy className="w-3 h-3 opacity-60" />
+                    </button>
+                  </div>
+                  <Switch
+                    checked={profile.is_active}
+                    onCheckedChange={(checked) =>
+                      toggleProfileMutation.mutate({ id: profile.id, isActive: checked })
+                    }
+                  />
+                  {profile.role !== 'proprietaire' && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        if (confirm(`Supprimer le profil « ${profile.profile_name} » ?`)) {
+                          deleteProfileMutation.mutate(profile.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Aucun profil pour ce point de vente
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
