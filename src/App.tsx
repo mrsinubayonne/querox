@@ -10,7 +10,7 @@ import { useGlobalNewOrderNotifier } from "@/hooks/useGlobalNewOrderNotifier";
 import { useMenuPrefetch } from "@/hooks/useMenuPrefetch";
 import GlobalAnnouncementModal from "@/components/GlobalAnnouncementModal";
 import GlobalAnnouncementBanner from "@/components/GlobalAnnouncementBanner";
-import MaintenanceNotice from "@/components/MaintenanceNotice";
+
 
 const GlobalOrderNotifier = () => {
   useGlobalNewOrderNotifier();
@@ -98,7 +98,6 @@ function App() {
       <Router>
          <GlobalOrderNotifier />
          <div className="min-h-screen bg-background">
-           <MaintenanceNotice />
            <GlobalAnnouncementBanner />
           <Suspense fallback={<PageLoader />}>
             <Routes>
