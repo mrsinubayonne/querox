@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useOutlets } from '@/hooks/useOutlets';
+import { useOutletProfile } from '@/hooks/useOutletProfile';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Trash2, UserPlus, Shield, Copy, CheckCircle2, Briefcase, Calculator, Wallet, Eye } from 'lucide-react';
+import { Trash2, UserPlus, Shield, Copy, CheckCircle2, Briefcase, Calculator, Wallet, Eye, LogIn, KeyRound } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -37,11 +40,17 @@ interface OutletProfile {
 }
 
 export const ProfileManagement: React.FC = () => {
-  const { selectedOutletId } = useOutlets();
+  const { selectedOutletId, outlets } = useOutlets();
+  const { login: loginProfile } = useOutletProfile();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
+  const [customCode, setCustomCode] = useState('');
   const [role, setRole] = useState<Exclude<OutletRole, 'proprietaire'>>('caissier');
   const [justCreated, setJustCreated] = useState<{ name: string; code: string } | null>(null);
+
+  const currentOutletName = outlets?.find((o: any) => o.id === selectedOutletId)?.name || '';
 
   const { data: outletProfiles, isLoading } = useQuery({
     queryKey: ['outlet-profiles', selectedOutletId],
@@ -61,18 +70,24 @@ export const ProfileManagement: React.FC = () => {
   const addProfileMutation = useMutation({
     mutationFn: async () => {
       if (!selectedOutletId) throw new Error('Aucun point de vente sélectionné');
-      const { data: codeData, error: codeError } = await supabase.rpc('generate_outlet_access_code' as any, {
-        _outlet_id: selectedOutletId,
-        _role: role
-      });
-      if (codeError) throw codeError;
+      let plainCode = customCode.trim().toUpperCase();
+      if (!plainCode) {
+        const { data: codeData, error: codeError } = await supabase.rpc('generate_outlet_access_code' as any, {
+          _outlet_id: selectedOutletId,
+          _role: role
+        });
+        if (codeError) throw codeError;
+        plainCode = codeData as any;
+      } else if (plainCode.length < 4) {
+        throw new Error('Le code doit faire au moins 4 caractères');
+      }
       const { data, error } = await supabase
         .from('outlet_profiles' as any)
         .insert({
           outlet_id: selectedOutletId,
           profile_name: name.trim(),
           role,
-          access_code: codeData
+          access_code: plainCode,
         } as any)
         .select()
         .single();
@@ -82,6 +97,7 @@ export const ProfileManagement: React.FC = () => {
     onSuccess: (data: any) => {
       setJustCreated({ name: data.profile_name, code: data.access_code });
       setName('');
+      setCustomCode('');
       setRole('caissier');
       queryClient.invalidateQueries({ queryKey: ['outlet-profiles'] });
     },
@@ -89,6 +105,21 @@ export const ProfileManagement: React.FC = () => {
       toast.error(error.message || 'Erreur lors de la création');
     }
   });
+
+  const connectAs = (profile: OutletProfile) => {
+    if (!selectedOutletId) return;
+    loginProfile({
+      profileId: profile.id,
+      outletId: selectedOutletId,
+      role: profile.role,
+      profileName: profile.profile_name,
+      outletName: currentOutletName,
+      ownerId: user?.id || '',
+    });
+    toast.success(`Connecté en tant que ${profile.profile_name}`);
+    navigate('/');
+  };
+
 
   const toggleProfileMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
@@ -202,15 +233,28 @@ export const ProfileManagement: React.FC = () => {
             })}
           </div>
 
-          {/* Name + create in one row */}
+          {/* Name */}
+          <Input
+            placeholder={`Nom du ${ROLE_LABELS[role].toLowerCase()} (ex : Awa)`}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            className="h-11"
+          />
+
+          {/* Custom code (optional) + create */}
           <div className="flex flex-col sm:flex-row gap-2">
-            <Input
-              placeholder={`Nom du ${ROLE_LABELS[role].toLowerCase()} (ex : Awa)`}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-              className="flex-1 h-11"
-            />
+            <div className="relative flex-1">
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Code d'accès (optionnel — auto si vide)"
+                value={customCode}
+                onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                className="pl-9 h-11 font-mono tracking-wider uppercase"
+                maxLength={20}
+              />
+            </div>
             <Button
               onClick={handleCreate}
               disabled={addProfileMutation.isPending || !name.trim()}
@@ -221,6 +265,9 @@ export const ProfileManagement: React.FC = () => {
               {addProfileMutation.isPending ? 'Création…' : 'Créer'}
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Les accès sont pré-configurés selon le rôle sélectionné.
+          </p>
         </CardContent>
       </Card>
 
@@ -262,6 +309,17 @@ export const ProfileManagement: React.FC = () => {
                       <Copy className="w-3 h-3 opacity-60" />
                     </button>
                   </div>
+                  {profile.is_active && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => connectAs(profile)}
+                      className="h-9"
+                    >
+                      <LogIn className="w-4 h-4 mr-1" />
+                      Se connecter
+                    </Button>
+                  )}
                   <Switch
                     checked={profile.is_active}
                     onCheckedChange={(checked) =>
