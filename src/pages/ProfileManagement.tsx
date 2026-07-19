@@ -233,15 +233,28 @@ export const ProfileManagement: React.FC = () => {
             })}
           </div>
 
-          {/* Name + create in one row */}
+          {/* Name */}
+          <Input
+            placeholder={`Nom du ${ROLE_LABELS[role].toLowerCase()} (ex : Awa)`}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            className="h-11"
+          />
+
+          {/* Custom code (optional) + create */}
           <div className="flex flex-col sm:flex-row gap-2">
-            <Input
-              placeholder={`Nom du ${ROLE_LABELS[role].toLowerCase()} (ex : Awa)`}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-              className="flex-1 h-11"
-            />
+            <div className="relative flex-1">
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Code d'accès (optionnel — auto si vide)"
+                value={customCode}
+                onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                className="pl-9 h-11 font-mono tracking-wider uppercase"
+                maxLength={20}
+              />
+            </div>
             <Button
               onClick={handleCreate}
               disabled={addProfileMutation.isPending || !name.trim()}
@@ -252,6 +265,9 @@ export const ProfileManagement: React.FC = () => {
               {addProfileMutation.isPending ? 'Création…' : 'Créer'}
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Les accès sont pré-configurés selon le rôle sélectionné.
+          </p>
         </CardContent>
       </Card>
 
