@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useOutlets } from '@/hooks/useOutlets';
+import { useOutletProfile } from '@/hooks/useOutletProfile';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Trash2, UserPlus, Shield, Copy, CheckCircle2, Briefcase, Calculator, Wallet, Eye } from 'lucide-react';
+import { Trash2, UserPlus, Shield, Copy, CheckCircle2, Briefcase, Calculator, Wallet, Eye, LogIn, KeyRound } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
