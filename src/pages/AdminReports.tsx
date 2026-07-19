@@ -43,31 +43,45 @@ const AdminReports: React.FC = () => {
       const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0);
       const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - 6); startOfWeek.setHours(0, 0, 0, 0);
 
+      // Fenetre elargie pour capter les paid_date <= startOfWeek mais updated_at recents
+      const windowStart = new Date(startOfWeek); windowStart.setDate(windowStart.getDate() - 2);
       const [outletsRes, invoicesRes, profilesRes] = await Promise.all([
         supabase.from('outlets').select('id,name,user_id,whatsapp_number'),
         supabase
           .from('invoices')
-          .select('id,outlet_id,total_amount,paid_date,updated_at,status,created_at')
+          .select('id,outlet_id,total_amount,paid_date,updated_at,status,created_at,invoice_number')
           .eq('status', 'paid')
-          .gte('updated_at', startOfWeek.toISOString())
+          .gte('updated_at', windowStart.toISOString())
           .limit(10000),
         supabase.from('profiles').select('id,full_name'),
       ]);
 
       const outlets = outletsRes.data || [];
-      const invoices = invoicesRes.data || [];
+      const rawInvoices = (invoicesRes.data || []) as any[];
       const profiles = profilesRes.data || [];
       const profileById = new Map(profiles.map((p: any) => [p.id, p]));
 
+      // Dedupe par (outlet_id + invoice_number) en gardant la version la plus recente
+      const dedupMap = new Map<string, any>();
+      for (const inv of rawInvoices) {
+        const key = `${inv.outlet_id || 'none'}::${inv.invoice_number || inv.id}`;
+        const cur = dedupMap.get(key);
+        const t = new Date(inv.updated_at || inv.paid_date || inv.created_at).getTime();
+        const ct = cur ? new Date(cur.updated_at || cur.paid_date || cur.created_at).getTime() : -1;
+        if (!cur || t > ct) dedupMap.set(key, inv);
+      }
+      const invoices = Array.from(dedupMap.values());
+
       const perOutlet = new Map<string, { d: number; dc: number; w: number; wc: number }>();
-      for (const inv of invoices as any[]) {
-        const ts = new Date(inv.paid_date || inv.updated_at || inv.created_at);
+      for (const inv of invoices) {
+        // Priorite a paid_date, fallback updated_at
+        const ref = inv.paid_date ? new Date(inv.paid_date) : new Date(inv.updated_at || inv.created_at);
         const oid = inv.outlet_id || '__none__';
         if (!perOutlet.has(oid)) perOutlet.set(oid, { d: 0, dc: 0, w: 0, wc: 0 });
         const bucket = perOutlet.get(oid)!;
-        const amt = Number(inv.total_amount) || 0;
-        if (ts >= startOfWeek) { bucket.w += amt; bucket.wc += 1; }
-        if (ts >= startOfDay) { bucket.d += amt; bucket.dc += 1; }
+        const amt = Math.round(Number(inv.total_amount) || 0);
+        if (ref >= startOfWeek) { bucket.w += amt; bucket.wc += 1; }
+        if (ref >= startOfDay) { bucket.d += amt; bucket.dc += 1; }
       }
 
       const list: OutletRow[] = outlets.map((o: any) => {
