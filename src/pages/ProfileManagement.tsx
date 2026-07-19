@@ -309,6 +309,17 @@ export const ProfileManagement: React.FC = () => {
                       <Copy className="w-3 h-3 opacity-60" />
                     </button>
                   </div>
+                  {profile.is_active && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => connectAs(profile)}
+                      className="h-9"
+                    >
+                      <LogIn className="w-4 h-4 mr-1" />
+                      Se connecter
+                    </Button>
+                  )}
                   <Switch
                     checked={profile.is_active}
                     onCheckedChange={(checked) =>
