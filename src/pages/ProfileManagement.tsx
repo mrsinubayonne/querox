@@ -40,11 +40,17 @@ interface OutletProfile {
 }
 
 export const ProfileManagement: React.FC = () => {
-  const { selectedOutletId } = useOutlets();
+  const { selectedOutletId, outlets } = useOutlets();
+  const { login: loginProfile } = useOutletProfile();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
+  const [customCode, setCustomCode] = useState('');
   const [role, setRole] = useState<Exclude<OutletRole, 'proprietaire'>>('caissier');
   const [justCreated, setJustCreated] = useState<{ name: string; code: string } | null>(null);
+
+  const currentOutletName = outlets?.find((o: any) => o.id === selectedOutletId)?.name || '';
 
   const { data: outletProfiles, isLoading } = useQuery({
     queryKey: ['outlet-profiles', selectedOutletId],
@@ -64,18 +70,24 @@ export const ProfileManagement: React.FC = () => {
   const addProfileMutation = useMutation({
     mutationFn: async () => {
       if (!selectedOutletId) throw new Error('Aucun point de vente sélectionné');
-      const { data: codeData, error: codeError } = await supabase.rpc('generate_outlet_access_code' as any, {
-        _outlet_id: selectedOutletId,
-        _role: role
-      });
-      if (codeError) throw codeError;
+      let plainCode = customCode.trim().toUpperCase();
+      if (!plainCode) {
+        const { data: codeData, error: codeError } = await supabase.rpc('generate_outlet_access_code' as any, {
+          _outlet_id: selectedOutletId,
+          _role: role
+        });
+        if (codeError) throw codeError;
+        plainCode = codeData as any;
+      } else if (plainCode.length < 4) {
+        throw new Error('Le code doit faire au moins 4 caractères');
+      }
       const { data, error } = await supabase
         .from('outlet_profiles' as any)
         .insert({
           outlet_id: selectedOutletId,
           profile_name: name.trim(),
           role,
-          access_code: codeData
+          access_code: plainCode,
         } as any)
         .select()
         .single();
@@ -85,6 +97,7 @@ export const ProfileManagement: React.FC = () => {
     onSuccess: (data: any) => {
       setJustCreated({ name: data.profile_name, code: data.access_code });
       setName('');
+      setCustomCode('');
       setRole('caissier');
       queryClient.invalidateQueries({ queryKey: ['outlet-profiles'] });
     },
@@ -92,6 +105,21 @@ export const ProfileManagement: React.FC = () => {
       toast.error(error.message || 'Erreur lors de la création');
     }
   });
+
+  const connectAs = (profile: OutletProfile) => {
+    if (!selectedOutletId) return;
+    loginProfile({
+      profileId: profile.id,
+      outletId: selectedOutletId,
+      role: profile.role,
+      profileName: profile.profile_name,
+      outletName: currentOutletName,
+      ownerId: user?.id || '',
+    });
+    toast.success(`Connecté en tant que ${profile.profile_name}`);
+    navigate('/');
+  };
+
 
   const toggleProfileMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
