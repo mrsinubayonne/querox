@@ -87,6 +87,7 @@ const Clients = lazy(() => import('@/pages/Clients'));
 const Debiteurs = lazy(() => import('@/pages/Debiteurs'));
 const PerformancePersonnel = lazy(() => import('@/pages/PerformancePersonnel'));
 const SelectOutlet = lazy(() => import('@/pages/SelectOutlet'));
+const ProfileLogin = lazy(() => import('@/pages/ProfileLogin'));
 const TeamMemberAuth = lazy(() => import('@/pages/TeamMemberAuth'));
 const TeamJoin = lazy(() => import('@/pages/TeamJoin'));
 const TeamMemberSetup = lazy(() => import('@/pages/TeamMemberSetup'));
@@ -172,6 +173,7 @@ function App() {
               <Route path="/factures" element={<ProtectedRoute><Factures /></ProtectedRoute>} />
               <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
               <Route path="/profils" element={<ProtectedRoute><ProfileManagement /></ProtectedRoute>} />
+              <Route path="/profile-login" element={<ProtectedRoute><ProfileLogin /></ProtectedRoute>} />
 
               <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
               <Route path="/debiteurs" element={<ProtectedRoute><Debiteurs /></ProtectedRoute>} />
