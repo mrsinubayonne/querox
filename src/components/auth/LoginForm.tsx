@@ -141,7 +141,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
         toast.success("Connexion réussie !", { description: "Bienvenue sur QUEROX" });
 
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/profile-login');
         }, 100);
       }
     } catch (error: any) {
