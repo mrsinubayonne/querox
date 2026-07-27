@@ -116,7 +116,7 @@ const DomainTab: React.FC = () => {
             Sous-domaine Querox
           </CardTitle>
           <CardDescription>
-            Choisissez votre sous-domaine gratuit sur querox.me
+            Choisissez votre sous-domaine gratuit sur querox.org
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

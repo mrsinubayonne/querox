@@ -45,7 +45,7 @@ export const OutletSettingsTab: React.FC = () => {
   const restaurantSlug = (profile as any)?.restaurant_slug || '';
   const outletSlug = (currentOutlet as any)?.slug || '';
   const publicUrl = restaurantSlug && outletSlug
-    ? `https://querox.me/${restaurantSlug}/${outletSlug}`
+    ? `https://querox.org/${restaurantSlug}/${outletSlug}`
     : '';
 
   const copyUrl = async () => {

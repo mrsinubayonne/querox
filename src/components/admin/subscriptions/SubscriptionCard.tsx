@@ -22,13 +22,15 @@ interface SubscriptionCardProps {
   onToggleStatus: (id: string, currentStatus: boolean) => void;
   onChangeTier: (id: string, newTier: string) => void;
   onExtendSubscription: (id: string, days: number) => void;
+  onSetCustomEndDate: (id: string, dateIso: string) => void;
 }
 
 const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   subscription,
   onToggleStatus,
   onChangeTier,
-  onExtendSubscription
+  onExtendSubscription,
+  onSetCustomEndDate,
 }) => {
   return (
     <div className="border rounded-lg p-6 bg-white shadow-sm">
@@ -56,6 +58,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           onToggleStatus={onToggleStatus}
           onChangeTier={onChangeTier}
           onExtendSubscription={onExtendSubscription}
+          onSetCustomEndDate={onSetCustomEndDate}
         />
       </div>
     </div>

@@ -16,7 +16,7 @@ export const InvitationShareOptions: React.FC<InvitationShareOptionsProps> = ({
   memberName,
   memberEmail
 }) => {
-  const baseUrl = 'https://querox.me';
+  const baseUrl = 'https://querox.org';
   const invitationLink = `${baseUrl}/team-join?token=${invitationToken}`;
 
   const copyToClipboard = (text: string, type: string) => {

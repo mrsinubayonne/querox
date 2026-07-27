@@ -38,7 +38,7 @@ Nouveaux hooks avec React Query :
 ✅ Pas besoin de l'App Store ou Play Store
 
 **Comment installer** :
-1. Ouvrir https://querox.me sur le téléphone
+1. Ouvrir https://querox.org sur le téléphone
 2. Cliquer sur "Ajouter à l'écran d'accueil"
 3. L'app QUEROX s'installe comme une app native !
 
