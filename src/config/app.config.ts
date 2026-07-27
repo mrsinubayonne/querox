@@ -6,24 +6,24 @@
 export const APP_CONFIG = {
   // Domaines
   domains: {
-    main: 'querox.me',
-    publicMenu: 'querox.me/menu',
-    publicWebsite: 'querox.me/w',
+    main: 'querox.org',
+    publicMenu: 'querox.org/menu',
+    publicWebsite: 'querox.org/w',
   },
   
   // URLs
   urls: {
     // Génère l'URL publique d'un menu (par menuId, fallback)
-    getPublicMenuUrl: (menuId: string) => `https://querox.me/menu/${menuId}`,
+    getPublicMenuUrl: (menuId: string) => `https://querox.org/menu/${menuId}`,
     // Génère l'URL publique via slugs (PDV) — préféré
     getPublicMenuUrlBySlug: (restaurantSlug: string, outletSlug: string) =>
-      `https://querox.me/${restaurantSlug}/${outletSlug}`,
+      `https://querox.org/${restaurantSlug}/${outletSlug}`,
     
     // Génère l'URL publique d'un site web
-    getPublicWebsiteUrl: (slug: string) => `https://querox.me/w/${slug}`,
+    getPublicWebsiteUrl: (slug: string) => `https://querox.org/w/${slug}`,
     
     // Génère le sous-domaine d'un restaurant
-    getSubdomain: (slug: string) => `${slug}.querox.me`,
+    getSubdomain: (slug: string) => `${slug}.querox.org`,
   },
   
   // Images par défaut
@@ -36,7 +36,7 @@ export const APP_CONFIG = {
   
   // Contact
   contact: {
-    email: 'contact@querox.me',
+    email: 'contact@querox.org',
     phone: '+242 05 010 3710',
     whatsapp: '+242 05 010 3710',
   },

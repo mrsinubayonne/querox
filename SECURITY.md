@@ -93,7 +93,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=votre_cle_publique
 
 ## 🌐 Configuration DNS (Domaines Personnalisés)
 
-**Problème actuel :** Les domaines `querox.me` ne fonctionneront pas sans configuration DNS.
+**Problème actuel :** Les domaines `querox.org` ne fonctionneront pas sans configuration DNS.
 
 **Solutions possibles :**
 
@@ -108,7 +108,7 @@ domains: {
 ```
 
 ### Option 2 : Configurer un Vrai Domaine
-1. Acheter le domaine `querox.me`
+1. Acheter le domaine `querox.org`
 2. Configurer les DNS :
    ```
    Type: A
@@ -117,7 +117,7 @@ domains: {
    
    Type: CNAME
    Nom: www
-   Valeur: querox.me
+   Valeur: querox.org
    ```
 
 ### Option 3 : Utiliser Vercel/Netlify
