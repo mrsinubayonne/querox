@@ -30,69 +30,90 @@ const SubscriptionsList: React.FC<SubscriptionsListProps> = ({
   console.log('📋 SubscriptionsList - Rendu avec', subscriptions.length, 'abonnements');
 
   const toggleSubscriptionStatus = async (id: string, currentStatus: boolean) => {
-    console.log('🔄 Modification du statut de l\'abonnement:', { id, currentStatus });
-    
     try {
-      const { error } = await supabase
-        .from('subscribers')
-        .update({ 
-          subscribed: !currentStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) {
-        console.error('❌ Erreur lors de la modification du statut:', error);
-        throw error;
+      const nowIso = new Date().toISOString();
+      const updates: Record<string, any> = {
+        subscribed: !currentStatus,
+        updated_at: nowIso,
+      };
+      if (currentStatus) {
+        // Désactivation → expire immédiatement
+        updates.subscription_end = nowIso;
+        updates.subscription_status = 'cancelled';
+      } else {
+        updates.subscription_status = 'active';
       }
 
-      console.log('✅ Statut modifié avec succès');
-      toast.success("Succès", { description: `Abonnement ${!currentStatus ? 'activé' : 'désactivé'}` });
+      const { error } = await supabase.from('subscribers').update(updates).eq('id', id);
+      if (error) throw error;
 
+      toast.success("Succès", { description: `Abonnement ${!currentStatus ? 'activé' : 'désactivé (expiré immédiatement)'}` });
       onSubscriptionUpdated();
     } catch (error: any) {
-      console.error('💥 Erreur dans toggleSubscriptionStatus:', error);
       toast.error("Erreur", { description: `Impossible de modifier le statut: ${error.message}` });
     }
   };
 
   const extendSubscription = async (id: string, days: number) => {
-    console.log('📅 Extension de l\'abonnement:', { id, days });
-    
     try {
       const subscription = subscriptions.find(sub => sub.id === id);
-      if (!subscription) {
-        console.error('❌ Abonnement non trouvé:', id);
-        return;
-      }
+      if (!subscription) return;
 
-      const currentEnd = subscription.subscription_end 
+      const currentEnd = subscription.subscription_end
         ? new Date(subscription.subscription_end)
         : new Date();
-      
       currentEnd.setDate(currentEnd.getDate() + days);
 
-      const { error } = await supabase
-        .from('subscribers')
-        .update({ 
-          subscription_end: currentEnd.toISOString(),
-          subscribed: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) {
-        console.error('❌ Erreur lors de l\'extension:', error);
-        throw error;
+      const updates: Record<string, any> = {
+        subscription_end: currentEnd.toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      // Si on prolonge (days > 0), on réactive. Si on réduit et que la nouvelle date est passée, on désactive.
+      if (days > 0) {
+        updates.subscribed = true;
+        updates.subscription_status = 'active';
+      } else if (currentEnd.getTime() <= Date.now()) {
+        updates.subscribed = false;
+        updates.subscription_status = 'expired';
       }
 
-      console.log('✅ Abonnement étendu avec succès');
-      toast.success("Succès", { description: `Abonnement prolongé de ${days} jours` });
+      const { error } = await supabase.from('subscribers').update(updates).eq('id', id);
+      if (error) throw error;
 
+      toast.success("Succès", {
+        description: days >= 0
+          ? `Abonnement prolongé de ${days} jours`
+          : `Abonnement réduit de ${Math.abs(days)} jours`,
+      });
       onSubscriptionUpdated();
     } catch (error: any) {
-      console.error('💥 Erreur dans extendSubscription:', error);
-      toast.error("Erreur", { description: `Impossible de prolonger l'abonnement: ${error.message}` });
+      toast.error("Erreur", { description: `Impossible de modifier la durée: ${error.message}` });
+    }
+  };
+
+  const setCustomEndDate = async (id: string, dateIso: string) => {
+    try {
+      const end = new Date(dateIso);
+      if (isNaN(end.getTime())) {
+        toast.error("Erreur", { description: "Date invalide" });
+        return;
+      }
+      const isPast = end.getTime() <= Date.now();
+      const { error } = await supabase
+        .from('subscribers')
+        .update({
+          subscription_end: end.toISOString(),
+          subscribed: !isPast,
+          subscription_status: isPast ? 'expired' : 'active',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+      if (error) throw error;
+
+      toast.success("Succès", { description: `Date d'expiration fixée au ${end.toLocaleDateString('fr-FR')}` });
+      onSubscriptionUpdated();
+    } catch (error: any) {
+      toast.error("Erreur", { description: `Impossible de fixer la date: ${error.message}` });
     }
   };
 
