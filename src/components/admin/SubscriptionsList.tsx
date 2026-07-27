@@ -174,6 +174,7 @@ const SubscriptionsList: React.FC<SubscriptionsListProps> = ({
               onToggleStatus={toggleSubscriptionStatus}
               onChangeTier={changeTier}
               onExtendSubscription={extendSubscription}
+              onSetCustomEndDate={setCustomEndDate}
             />
           ))}
           
