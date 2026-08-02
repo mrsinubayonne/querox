@@ -44,15 +44,16 @@ const ComparisonTable: React.FC = () => {
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
                     {item.feature}
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    {renderFeatureValue(item.starter)}
-                  </td>
                   <td className="px-6 py-4 text-center bg-primary/5">
                     {renderFeatureValue(item.pro)}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    {renderFeatureValue(item.enterprise)}
+                    {renderFeatureValue(item.business)}
                   </td>
+                  <td className="px-6 py-4 text-center">
+                    {renderFeatureValue(item.max)}
+                  </td>
+
                   <td className="px-6 py-4 text-center bg-yellow-25">
                     {renderFeatureValue(item.licence)}
                   </td>
