@@ -17,9 +17,9 @@ interface FinancialStats {
   totalSubscriptionRevenue: number;
   monthlyRevenue: number;
   activeSubscribers: number;
-  starterCount: number;
-  premiumCount: number;
   proCount: number;
+  businessCount: number;
+  maxCount: number;
   trialingCount: number;
   cancelledCount: number;
   arr: number;
@@ -64,9 +64,9 @@ const AdminComptabilite: React.FC = () => {
     totalSubscriptionRevenue: 0,
     monthlyRevenue: 0,
     activeSubscribers: 0,
-    starterCount: 0,
-    premiumCount: 0,
     proCount: 0,
+    businessCount: 0,
+    maxCount: 0,
     trialingCount: 0,
     cancelledCount: 0,
     arr: 0,
@@ -107,13 +107,13 @@ const AdminComptabilite: React.FC = () => {
         return;
       }
 
-      const prices = { starter: 35000, premium: 65000, pro: 91000 };
+      const prices = { pro: 65000, business: 101000, max: 120000, premium: 65000, starter: 65000, enterprise: 101000 };
 
       // Basic counts
       const activeSubscribers = subscribers.filter(s => s.subscription_status === 'active').length;
-      const starterCount = subscribers.filter(s => s.subscription_tier === 'starter' && s.subscription_status === 'active').length;
-      const premiumCount = subscribers.filter(s => s.subscription_tier === 'premium' && s.subscription_status === 'active').length;
       const proCount = subscribers.filter(s => s.subscription_tier === 'pro' && s.subscription_status === 'active').length;
+      const businessCount = subscribers.filter(s => (s.subscription_tier === 'business' || s.subscription_tier === 'enterprise') && s.subscription_status === 'active').length;
+      const maxCount = subscribers.filter(s => s.subscription_tier === 'max' && s.subscription_status === 'active').length;
       const trialingCount = subscribers.filter(s => s.subscription_status === 'trialing').length;
       const cancelledCount = subscribers.filter(s => s.subscription_status === 'cancelled').length;
 
@@ -211,22 +211,22 @@ const AdminComptabilite: React.FC = () => {
       // Tier distribution
       const tierDist: TierDistribution[] = [
         {
-          name: 'Starter',
-          value: starterCount,
-          revenue: starterCount * 35000,
-          color: '#3B82F6'
-        },
-        {
-          name: 'Premium',
-          value: premiumCount,
-          revenue: premiumCount * 65000,
+          name: 'Pro',
+          value: proCount,
+          revenue: proCount * 65000,
           color: '#8B5CF6'
         },
         {
-          name: 'Pro',
-          value: proCount,
-          revenue: proCount * 91000,
-          color: '#10B981'
+          name: 'Business',
+          value: businessCount,
+          revenue: businessCount * 101000,
+          color: '#3B82F6'
+        },
+        {
+          name: 'Max',
+          value: maxCount,
+          revenue: maxCount * 120000,
+          color: '#F59E0B'
         }
       ];
 
@@ -246,9 +246,9 @@ const AdminComptabilite: React.FC = () => {
         totalSubscriptionRevenue: mrr,
         monthlyRevenue,
         activeSubscribers,
-        starterCount,
-        premiumCount,
         proCount,
+        businessCount,
+        maxCount,
         trialingCount,
         cancelledCount,
         arr,
@@ -570,29 +570,14 @@ const AdminComptabilite: React.FC = () => {
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Starter</span>
-                  <Badge variant="outline">35 000 FCFA/mois</Badge>
-                </div>
-                <div className="text-2xl font-bold text-blue-600">
-                  {stats.starterCount}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {(stats.starterCount * 35000).toLocaleString('fr-FR')} FCFA/mois
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Premium</span>
+                  <span className="text-sm font-medium text-muted-foreground">Pro</span>
                   <Badge variant="outline">65 000 FCFA/mois</Badge>
                 </div>
                 <div className="text-2xl font-bold text-purple-600">
-                  {stats.premiumCount}
+                  {stats.proCount}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {(stats.premiumCount * 65000).toLocaleString('fr-FR')} FCFA/mois
+                  {(stats.proCount * 65000).toLocaleString('fr-FR')} FCFA/mois
                 </p>
               </CardContent>
             </Card>
@@ -600,14 +585,29 @@ const AdminComptabilite: React.FC = () => {
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Pro</span>
-                  <Badge variant="outline">91 000 FCFA/mois</Badge>
+                  <span className="text-sm font-medium text-muted-foreground">Business</span>
+                  <Badge variant="outline">101 000 FCFA/mois</Badge>
                 </div>
-                <div className="text-2xl font-bold text-green-600">
-                  {stats.proCount}
+                <div className="text-2xl font-bold text-blue-600">
+                  {stats.businessCount}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {(stats.proCount * 91000).toLocaleString('fr-FR')} FCFA/mois
+                  {(stats.businessCount * 101000).toLocaleString('fr-FR')} FCFA/mois
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Max</span>
+                  <Badge variant="outline">120 000 FCFA/mois</Badge>
+                </div>
+                <div className="text-2xl font-bold text-amber-600">
+                  {stats.maxCount}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(stats.maxCount * 120000).toLocaleString('fr-FR')} FCFA/mois
                 </p>
               </CardContent>
             </Card>

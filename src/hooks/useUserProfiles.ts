@@ -32,10 +32,10 @@ export const useUserProfiles = () => {
   }, [user]);
 
   const getProfileLimit = (): number => {
-    const tier = subscription?.subscription_tier || 'starter';
-    if (tier === 'pro') return 7;
-    if (tier === 'premium') return 3;
-    return 1; // starter tier
+    const tier = subscription?.subscription_tier || 'pro';
+    if (tier === 'max' || tier === 'licence') return Infinity;
+    if (tier === 'business' || tier === 'enterprise' || tier === 'entreprise') return 15;
+    return 7; // plan Pro
   };
 
   const canAddMoreProfiles = (): boolean => {

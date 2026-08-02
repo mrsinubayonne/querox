@@ -9,14 +9,14 @@ const corsHeaders = {
 // Checkout URLs for each plan
 const CHECKOUT_URLS: Record<string, Record<string, string>> = {
   monthly: {
-    starter: "https://querox.maketou.com/products/plan-starter-querox/checkout",
     pro: "https://querox.maketou.com/products/plan-starter-querox-6/checkout",
-    enterprise: "https://querox.maketou.com/products/plan-starter-querox-6-1/checkout",
+    business: "https://querox.maketou.com/products/plan-starter-querox-6-1/checkout",
+    max: "https://querox.maketou.com/products/plan-starter-querox-6-1/checkout",
   },
   annual: {
-    starter: "https://querox.mymaketou.store/products/plan-starter-querox-6-1-2-6-4/checkout",
     pro: "https://querox.mymaketou.store/fr/products/plan-starter-querox-6-1-2-6/checkout",
-    enterprise: "https://querox.mymaketou.store/fr/products/plan-starter-querox-6-1-2/checkout",
+    business: "https://querox.mymaketou.store/fr/products/plan-starter-querox-6-1-2/checkout",
+    max: "https://querox.mymaketou.store/fr/products/plan-starter-querox-6-1-2/checkout",
   },
 };
 

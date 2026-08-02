@@ -8,9 +8,10 @@ interface SubscriptionTierBadgeProps {
 
 const SubscriptionTierBadge: React.FC<SubscriptionTierBadgeProps> = ({ tier }) => {
   const colors = {
-    starter: 'bg-green-100 text-green-800',
-    premium: 'bg-blue-100 text-blue-800',
-    pro: 'bg-purple-100 text-purple-800'
+    pro: 'bg-purple-100 text-purple-800',
+    business: 'bg-blue-100 text-blue-800',
+    max: 'bg-orange-100 text-orange-800',
+    licence: 'bg-yellow-100 text-yellow-800'
   };
 
   return (

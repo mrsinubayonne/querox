@@ -92,9 +92,9 @@ const SubscriptionActions: React.FC<SubscriptionActionsProps> = ({
               <SelectValue placeholder="Changer tier" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="starter">Starter</SelectItem>
-              <SelectItem value="premium">Premium</SelectItem>
               <SelectItem value="pro">Pro</SelectItem>
+              <SelectItem value="business">Business</SelectItem>
+              <SelectItem value="max">Max</SelectItem>
             </SelectContent>
           </Select>
         </div>

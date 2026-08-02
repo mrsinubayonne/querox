@@ -9,13 +9,13 @@ const corsHeaders = {
 // Map Maketou product names/IDs to Querox tiers
 const TIER_MAP: Record<string, { tier: string; months: number }> = {
   // Monthly plans
-  "plan-starter-querox": { tier: "starter", months: 1 },
+  "plan-starter-querox": { tier: "pro", months: 1 },
   "plan-starter-querox-6": { tier: "pro", months: 1 },
-  "plan-starter-querox-6-1": { tier: "enterprise", months: 1 },
+  "plan-starter-querox-6-1": { tier: "business", months: 1 },
   // Annual plans
-  "plan-starter-querox-6-1-2-6-4": { tier: "starter", months: 12 },
+  "plan-starter-querox-6-1-2-6-4": { tier: "pro", months: 12 },
   "plan-starter-querox-6-1-2-6": { tier: "pro", months: 12 },
-  "plan-starter-querox-6-1-2": { tier: "enterprise", months: 12 },
+  "plan-starter-querox-6-1-2": { tier: "business", months: 12 },
 };
 
 Deno.serve(async (req: Request) => {
@@ -84,7 +84,7 @@ Deno.serve(async (req: Request) => {
 
     if (!tierInfo) {
       console.error("[Maketou Webhook] Unknown product:", product_slug || product_id);
-      tierInfo = { tier: "starter", months: 1 }; // Safe fallback
+      tierInfo = { tier: "pro", months: 1 }; // Safe fallback
     }
 
     // Find the user — by user_id (custom param) or email

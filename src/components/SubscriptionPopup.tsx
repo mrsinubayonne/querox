@@ -57,32 +57,35 @@ const SubscriptionPopup: React.FC = () => {
     switch (tier) {
       case 'trial':
       case 'starter':
+      case 'premium':
+      case 'pro':
         return {
-          currentPlan: tier === 'trial' ? 'Essai gratuit' : 'Starter',
-          targetPlan: 'Professionnel',
+          currentPlan: tier === 'trial' ? 'Essai gratuit' : 'Pro',
+          targetPlan: 'Business',
           benefits: [
-            'Catégories illimitées',
-            'Gestion des stocks',
-            'Site web personnalisé',
-            'Support prioritaire'
+            'Membres d\'équipe illimités',
+            'Notifications temps réel',
+            'Reporting financier complet',
+            'Réservations en ligne'
           ],
           color: 'from-blue-600 to-purple-600'
         };
-      case 'premium':
+      case 'business':
+      case 'enterprise':
         return {
-          currentPlan: 'Professionnel',
-          targetPlan: 'Entreprise',
+          currentPlan: 'Business',
+          targetPlan: 'Max',
           benefits: [
-            'Multi-établissements',
-            'API personnalisée',
-            'Formations personnalisées',
+            'Points de vente illimités',
+            'Rapports consolidés multi-sites',
+            'Accompagnement dédié',
             'Support dédié 24/7'
           ],
           color: 'from-purple-600 to-pink-600'
         };
-      case 'pro':
+      case 'max':
         return {
-          currentPlan: 'Entreprise',
+          currentPlan: 'Max',
           targetPlan: 'Licence QUEROX',
           benefits: [
             'Licence perpétuelle',

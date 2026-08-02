@@ -81,99 +81,23 @@ const AdminSystemSettings: React.FC = () => {
 
             {/* Plans d'Abonnement */}
             <TabsContent value="plans" className="space-y-6">
-              {/* Starter Plan */}
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-blue-500" />
-                    Plan Starter
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="starter-price">Prix mensuel (FCFA)</Label>
-                      <Input id="starter-price" type="number" defaultValue="35000" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="starter-outlets">Nombre de PDV</Label>
-                      <Input id="starter-outlets" type="number" defaultValue="1" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="starter-profiles">Nombre de profils</Label>
-                      <Input id="starter-profiles" type="number" defaultValue="3" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="starter-features">Fonctionnalités incluses</Label>
-                    <Textarea 
-                      id="starter-features" 
-                      placeholder="Listez les fonctionnalités..."
-                      defaultValue="Menu digital, Gestion des commandes, Statistiques de base, Support email"
-                    />
-                  </div>
-                  <Button onClick={handleSave} className="w-full">
-                    <Save className="w-4 h-4 mr-2" />
-                    Sauvegarder le plan Starter
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Premium Plan */}
+              {/* Pro Plan */}
               <Card className="border-0 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CreditCard className="w-5 h-5 text-purple-500" />
-                    Plan Premium
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="premium-price">Prix mensuel (FCFA)</Label>
-                      <Input id="premium-price" type="number" defaultValue="65000" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="premium-outlets">Nombre de PDV</Label>
-                      <Input id="premium-outlets" type="number" defaultValue="2" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="premium-profiles">Nombre de profils</Label>
-                      <Input id="premium-profiles" type="number" defaultValue="5" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="premium-features">Fonctionnalités incluses</Label>
-                    <Textarea 
-                      id="premium-features" 
-                      placeholder="Listez les fonctionnalités..."
-                      defaultValue="Toutes les fonctionnalités Starter + Gestion des tables, Réservations, CRM, Reports avancés, Support prioritaire"
-                    />
-                  </div>
-                  <Button onClick={handleSave} className="w-full">
-                    <Save className="w-4 h-4 mr-2" />
-                    Sauvegarder le plan Premium
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Pro/Entreprise Plan */}
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-amber-500" />
-                    Plan Pro / Entreprise
+                    Plan Pro
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="pro-price">Prix mensuel (FCFA)</Label>
-                      <Input id="pro-price" type="number" defaultValue="91000" />
+                      <Input id="pro-price" type="number" defaultValue="65000" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="pro-outlets">Nombre de PDV</Label>
-                      <Input id="pro-outlets" type="number" defaultValue="3" />
+                      <Input id="pro-outlets" type="number" defaultValue="2" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="pro-profiles">Nombre de profils</Label>
@@ -185,7 +109,7 @@ const AdminSystemSettings: React.FC = () => {
                     <Textarea 
                       id="pro-features" 
                       placeholder="Listez les fonctionnalités..."
-                      defaultValue="Toutes les fonctionnalités Premium + Multi-établissements, API access, White-label, Support dédié 24/7, Formation personnalisée"
+                      defaultValue="Menu digital, Commandes, Tables illimitées, Stocks, Comptabilité, CRM, Support prioritaire"
                     />
                   </div>
                   <Button onClick={handleSave} className="w-full">
@@ -194,6 +118,83 @@ const AdminSystemSettings: React.FC = () => {
                   </Button>
                 </CardContent>
               </Card>
+
+              {/* Business Plan */}
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-blue-500" />
+                    Plan Business
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="business-price">Prix mensuel (FCFA)</Label>
+                      <Input id="business-price" type="number" defaultValue="101000" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="business-outlets">Nombre de PDV</Label>
+                      <Input id="business-outlets" type="number" defaultValue="3" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="business-profiles">Nombre de profils</Label>
+                      <Input id="business-profiles" type="number" defaultValue="20" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="business-features">Fonctionnalités incluses</Label>
+                    <Textarea 
+                      id="business-features" 
+                      placeholder="Listez les fonctionnalités..."
+                      defaultValue="Tout le plan Pro + Membres illimités, Notifications temps réel, Reporting financier complet, Réservations en ligne"
+                    />
+                  </div>
+                  <Button onClick={handleSave} className="w-full">
+                    <Save className="w-4 h-4 mr-2" />
+                    Sauvegarder le plan Business
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Max Plan */}
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-amber-500" />
+                    Plan Max
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="max-price">Prix mensuel (FCFA)</Label>
+                      <Input id="max-price" type="number" defaultValue="120000" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="max-outlets">Nombre de PDV</Label>
+                      <Input id="max-outlets" type="number" defaultValue="999" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="max-profiles">Nombre de profils</Label>
+                      <Input id="max-profiles" type="number" defaultValue="999" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="max-features">Fonctionnalités incluses</Label>
+                    <Textarea 
+                      id="max-features" 
+                      placeholder="Listez les fonctionnalités..."
+                      defaultValue="Tout le plan Business + Points de vente illimités, Rapports consolidés multi-sites, Support dédié 24/7"
+                    />
+                  </div>
+                  <Button onClick={handleSave} className="w-full">
+                    <Save className="w-4 h-4 mr-2" />
+                    Sauvegarder le plan Max
+                  </Button>
+                </CardContent>
+              </Card>
+
             </TabsContent>
 
             {/* Taxes & TVA */}

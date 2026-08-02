@@ -23,15 +23,16 @@ const ComparisonTable: React.FC = () => {
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                   Fonctionnalités
                 </th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">
-                  Starter
-                </th>
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900 bg-primary/10">
-                  Professionnel
+                  Pro
                 </th>
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">
-                  Entreprise
+                  Business
                 </th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">
+                  Max
+                </th>
+
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900 bg-yellow-50">
                   LICENCE QUEROX
                 </th>
@@ -43,15 +44,16 @@ const ComparisonTable: React.FC = () => {
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
                     {item.feature}
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    {renderFeatureValue(item.starter)}
-                  </td>
                   <td className="px-6 py-4 text-center bg-primary/5">
                     {renderFeatureValue(item.pro)}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    {renderFeatureValue(item.enterprise)}
+                    {renderFeatureValue(item.business)}
                   </td>
+                  <td className="px-6 py-4 text-center">
+                    {renderFeatureValue(item.max)}
+                  </td>
+
                   <td className="px-6 py-4 text-center bg-yellow-25">
                     {renderFeatureValue(item.licence)}
                   </td>

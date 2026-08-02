@@ -9,10 +9,14 @@ import { getData, storeData } from '@/lib/offlineStorage';
 import { useOutletContext } from '@/contexts/OutletContext';
 
 const OUTLET_LIMITS = {
-  'starter': 1,
+  'pro': 2,
+  'business': 3,
+  'max': Infinity,
+  // Alias historiques
   'premium': 2,
-  'pro': 3,
-  'entreprise': 3
+  'enterprise': 3,
+  'entreprise': 3,
+  'licence': Infinity
 };
 
 export interface Outlet {
@@ -55,8 +59,8 @@ export const useOutlets = () => {
   }, []);
 
   const getOutletLimit = () => {
-    const tier = subscription?.subscription_tier || 'starter';
-    return OUTLET_LIMITS[tier as keyof typeof OUTLET_LIMITS] || 1;
+    const tier = subscription?.subscription_tier || 'pro';
+    return OUTLET_LIMITS[tier as keyof typeof OUTLET_LIMITS] || 2;
   };
 
   const canAddMoreOutlets = () => {
@@ -276,7 +280,7 @@ export const useOutlets = () => {
     if (!canAddMoreOutlets()) {
       const limit = getOutletLimit();
       toast.error(
-        `Limite atteinte - Votre plan ${subscription?.subscription_tier || 'starter'} permet jusqu'à ${limit} point(s) de vente. Passez à un plan supérieur pour en ajouter plus.`
+        `Limite atteinte - Votre plan ${subscription?.subscription_tier || 'pro'} permet jusqu'à ${limit} point(s) de vente. Passez à un plan supérieur pour en ajouter plus.`
       );
       return undefined;
     }
