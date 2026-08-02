@@ -42,7 +42,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       '/commandes': 'orders', '/tables': 'orders', '/factures': 'invoices', '/menus': 'menus',
       '/inventaire': 'inventory', '/reservations': 'reservations', '/comptabilite': 'accounting',
       '/statistiques': 'statistics', '/rapports': 'statistics', '/clients': 'customers',
-      '/equipe': 'team', '/parametres': 'settings', '/site-web': 'website', '/qr-codes': 'qrcodes',
+      '/equipe': 'team', '/parametres': 'settings', '/qr-codes': 'qrcodes',
     };
     const requiredPermission = routePermissions[location.pathname];
     if (requiredPermission && !hasPermission(requiredPermission as any)) {
