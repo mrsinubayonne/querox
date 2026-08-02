@@ -148,9 +148,9 @@ const CGUCGV: React.FC = () => {
               <h3 className="text-xl font-bold text-foreground mb-3">10. Prix</h3>
               <p className="text-muted-foreground mb-3">Les tarifs QUEROX sont proposés en trois formules :</p>
               <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                <li><strong>35 000 FCFA / mois</strong> – Offre Essentielle</li>
                 <li><strong>65 000 FCFA / mois</strong> – Offre Pro</li>
-                <li><strong>91 000 FCFA / mois</strong> – Offre Premium</li>
+                <li><strong>101 000 FCFA / mois</strong> – Offre Business</li>
+                <li><strong>120 000 FCFA / mois</strong> – Offre Max</li>
               </ul>
               <p className="text-muted-foreground mt-3">
                 Les prix peuvent évoluer. En cas de modification, les utilisateurs seront informés à l'avance.

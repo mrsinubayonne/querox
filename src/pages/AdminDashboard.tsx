@@ -336,28 +336,13 @@ const AdminDashboard: React.FC = () => {
               <Card className="border border-border bg-card">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">Plan Starter</span>
-                    <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs font-medium">
-                      35 000 FCFA
-                    </div>
-                  </div>
-                  <div className="text-3xl font-bold text-foreground">
-                    {subscribersByPlan.starter}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">abonnés actifs</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border border-border bg-card">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">Plan Premium</span>
+                    <span className="text-sm font-medium text-muted-foreground">Plan Pro</span>
                     <div className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-xs font-medium">
                       65 000 FCFA
                     </div>
                   </div>
                   <div className="text-3xl font-bold text-foreground">
-                    {subscribersByPlan.premium}
+                    {subscribersByPlan.pro}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">abonnés actifs</p>
                 </CardContent>
@@ -366,13 +351,28 @@ const AdminDashboard: React.FC = () => {
               <Card className="border border-border bg-card">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">Plan Pro / Entreprise</span>
-                    <div className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded text-xs font-medium">
-                      91 000 FCFA
+                    <span className="text-sm font-medium text-muted-foreground">Plan Business</span>
+                    <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs font-medium">
+                      101 000 FCFA
                     </div>
                   </div>
                   <div className="text-3xl font-bold text-foreground">
-                    {subscribersByPlan.pro}
+                    {subscribersByPlan.business}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">abonnés actifs</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-border bg-card">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Plan Max</span>
+                    <div className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded text-xs font-medium">
+                      120 000 FCFA
+                    </div>
+                  </div>
+                  <div className="text-3xl font-bold text-foreground">
+                    {subscribersByPlan.max}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">abonnés actifs</p>
                 </CardContent>
