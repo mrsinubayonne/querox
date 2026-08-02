@@ -5,16 +5,16 @@ import { Label } from '@/components/ui/label';
 import { Calculator, TrendingUp } from 'lucide-react';
 
 const PLANS = {
-  starter: { name: 'Starter', price: 35000, color: 'text-blue-500' },
-  premium: { name: 'Premium', price: 65000, color: 'text-purple-500' },
-  pro: { name: 'Entreprise', price: 91000, color: 'text-orange-500' },
+  pro: { name: 'Pro', price: 65000, color: 'text-purple-500' },
+  business: { name: 'Business', price: 101000, color: 'text-blue-500' },
+  max: { name: 'Max', price: 120000, color: 'text-orange-500' },
 };
 
 export const RevenueProjectionCalculator = () => {
   const [subscribers, setSubscribers] = useState({
-    starter: 0,
-    premium: 0,
     pro: 0,
+    business: 0,
+    max: 0,
   });
 
   const handleChange = (plan: keyof typeof subscribers, value: string) => {
@@ -23,12 +23,12 @@ export const RevenueProjectionCalculator = () => {
   };
 
   const monthlyRevenue = 
-    subscribers.starter * PLANS.starter.price +
-    subscribers.premium * PLANS.premium.price +
-    subscribers.pro * PLANS.pro.price;
+    subscribers.pro * PLANS.pro.price +
+    subscribers.business * PLANS.business.price +
+    subscribers.max * PLANS.max.price;
 
   const annualRevenue = monthlyRevenue * 12;
-  const totalSubscribers = subscribers.starter + subscribers.premium + subscribers.pro;
+  const totalSubscribers = subscribers.pro + subscribers.business + subscribers.max;
 
   return (
     <Card className="bg-card border-border">

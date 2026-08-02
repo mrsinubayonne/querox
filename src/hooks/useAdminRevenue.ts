@@ -27,16 +27,16 @@ interface ChurnRateData {
 }
 
 interface SubscribersByPlan {
-  starter: number;
-  premium: number;
   pro: number;
+  business: number;
+  max: number;
 }
 
 export const useAdminRevenue = () => {
   const [revenueStats, setRevenueStats] = useState<RevenueStats[]>([]);
   const [churnData, setChurnData] = useState<ChurnRateData[]>([]);
   const [restaurantRevenue, setRestaurantRevenue] = useState<RestaurantRevenueData | null>(null);
-  const [subscribersByPlan, setSubscribersByPlan] = useState<SubscribersByPlan>({ starter: 0, premium: 0, pro: 0 });
+  const [subscribersByPlan, setSubscribersByPlan] = useState<SubscribersByPlan>({ pro: 0, business: 0, max: 0 });
   const [loading, setLoading] = useState(true);
   const fetchRevenueStats = async () => {
     try {
@@ -125,18 +125,18 @@ export const useAdminRevenue = () => {
       }
       
       const counts = {
-        starter: 0,
-        premium: 0,
-        pro: 0
+        pro: 0,
+        business: 0,
+        max: 0
       };
       
       data?.forEach(subscriber => {
         const tier = subscriber.subscription_tier?.toLowerCase();
-        if (tier === 'starter') {
-          counts.starter++;
-        } else if (tier === 'premium') {
-          counts.premium++;
-        } else if (tier === 'pro' || tier === 'entreprise') {
+        if (tier === 'max') {
+          counts.max++;
+        } else if (tier === 'business' || tier === 'enterprise' || tier === 'entreprise') {
+          counts.business++;
+        } else if (tier === 'pro' || tier === 'premium' || tier === 'starter') {
           counts.pro++;
         }
       });

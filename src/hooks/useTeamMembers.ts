@@ -29,9 +29,14 @@ export interface TeamMember {
 }
 
 const TEAM_LIMITS = {
-  'starter': 3,
   'pro': 10,
-  'entreprise': 10
+  'business': Infinity,
+  'max': Infinity,
+  // Alias historiques
+  'premium': 10,
+  'enterprise': Infinity,
+  'entreprise': Infinity,
+  'licence': Infinity
 };
 
 export const useTeamMembers = () => {
@@ -41,8 +46,8 @@ export const useTeamMembers = () => {
   const { subscription } = useSubscription();
 
   const getTeamLimit = () => {
-    const tier = subscription?.subscription_tier || 'starter';
-    return TEAM_LIMITS[tier as keyof typeof TEAM_LIMITS] || 3;
+    const tier = subscription?.subscription_tier || 'pro';
+    return TEAM_LIMITS[tier as keyof typeof TEAM_LIMITS] || 10;
   };
 
   const canAddMoreMembers = () => {
@@ -100,7 +105,7 @@ export const useTeamMembers = () => {
     permissionIds?: string[]
   ) => {
     if (!canAddMoreMembers()) {
-      toast.error("Limite atteinte", { description: `Votre plan ${subscription?.subscription_tier || 'starter'} permet jusqu'à ${getTeamLimit()} membres. Passez à un plan supérieur pour ajouter plus de membres.` });
+      toast.error("Limite atteinte", { description: `Votre plan ${subscription?.subscription_tier || 'pro'} permet jusqu'à ${getTeamLimit()} membres. Passez à un plan supérieur pour ajouter plus de membres.` });
       return;
     }
 

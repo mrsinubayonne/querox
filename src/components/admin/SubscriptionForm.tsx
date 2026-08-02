@@ -35,7 +35,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
         .from('subscribers')
         .upsert({
           email: quickEmail,
-          subscription_tier: 'starter',
+          subscription_tier: 'pro',
           subscribed: true,
           subscription_end: endDate.toISOString(),
           subscription_status: 'trialing',
@@ -44,7 +44,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
 
       if (error) throw error;
 
-      toast.success("Succès", { description: `Essai gratuit Starter accordé pour ${days} jour${days > 1 ? 's' : ''}` });
+      toast.success("Succès", { description: `Essai gratuit Pro accordé pour ${days} jour${days > 1 ? 's' : ''}` });
 
       setQuickEmail('');
       onSubscriptionCreated();
@@ -179,9 +179,9 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ onSubscriptionCreat
                 <SelectValue placeholder="Choisir un tier" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="starter">Starter</SelectItem>
-                <SelectItem value="premium">Premium</SelectItem>
                 <SelectItem value="pro">Pro</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+                <SelectItem value="max">Max</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -70,7 +70,7 @@ export const EquipeTab: React.FC = () => {
         <div>
           <h2 className="text-lg font-semibold">Gestion d'équipe</h2>
           <p className="text-sm text-muted-foreground">
-            {teamMembers.length} / {teamLimit} membres · Plan {subscription?.subscription_tier || 'starter'}
+            {teamMembers.length} / {teamLimit} membres · Plan {subscription?.subscription_tier || 'pro'}
           </p>
         </div>
 
