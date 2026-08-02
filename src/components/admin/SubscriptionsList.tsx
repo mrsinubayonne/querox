@@ -44,7 +44,7 @@ const SubscriptionsList: React.FC<SubscriptionsListProps> = ({
         updates.subscription_status = 'active';
       }
 
-      const { error } = await supabase.from('subscribers').update(updates).eq('id', id);
+      const { error } = await supabase.from('subscribers').update(updates as any).eq("id", id);
       if (error) throw error;
 
       toast.success("Succès", { description: `Abonnement ${!currentStatus ? 'activé' : 'désactivé (expiré immédiatement)'}` });
@@ -77,7 +77,7 @@ const SubscriptionsList: React.FC<SubscriptionsListProps> = ({
         updates.subscription_status = 'expired';
       }
 
-      const { error } = await supabase.from('subscribers').update(updates).eq('id', id);
+      const { error } = await supabase.from('subscribers').update(updates as any).eq("id", id);
       if (error) throw error;
 
       toast.success("Succès", {
