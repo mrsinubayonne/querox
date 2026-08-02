@@ -98,25 +98,11 @@ const Dashboard: React.FC = () => {
       color: "from-violet-500 to-violet-600"
     },
     {
-      title: "Site Web",
-      description: "Personnalisez votre présence en ligne",
-      icon: Globe,
-      link: "/site-web",
-      color: "from-cyan-500 to-cyan-600"
-    },
-    {
       title: "QR Codes",
       description: "Générez des QR codes pour vos menus",
       icon: QrCode,
       link: "/qr-codes",
       color: "from-indigo-500 to-indigo-600"
-    },
-    {
-      title: "Marketing",
-      description: "Gérez vos campagnes marketing",
-      icon: MessageSquare,
-      link: "/marketing",
-      color: "from-emerald-500 to-emerald-600"
     }
   ];
 
@@ -431,13 +417,7 @@ const Dashboard: React.FC = () => {
                     </Link>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium">2. Configurez votre site web</span>
-                    <Link to="/site-web">
-                      <Button size="sm" variant="outline">Configurer</Button>
-                    </Link>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium">3. Générez vos QR codes</span>
+                    <span className="text-sm font-medium">2. Générez vos QR codes</span>
                     <Link to="/qr-codes">
                       <Button size="sm" variant="outline">Générer</Button>
                     </Link>

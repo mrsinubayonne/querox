@@ -39,13 +39,6 @@ const NAV_ITEMS = [
   { icon: LifeBuoy, label: 'Support', path: '/support', permission: 'support' },
 ] as const;
 
-const MARKETING_ITEMS = [
-  { icon: TrendingUp, label: 'Aperçu Marketing', path: '/marketing' },
-  { icon: Palette, label: 'Conception Graphique', path: '/conception-graphique' },
-  { icon: Share2, label: 'Réseaux Sociaux', path: '/reseaux-sociaux' },
-  { icon: Facebook, label: 'Publicité Facebook', path: '/publicite-facebook' },
-] as const;
-
 const ADMIN_ITEMS = [
   { icon: Crown, label: 'Tableau de Bord', path: '/admin/dashboard' },
   { icon: Building2, label: 'Gestion Restaurants', path: '/admin/restaurants' },
@@ -115,7 +108,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const { trackClick } = useButtonTracking();
   const unreadOrders = useNotificationStore((s) => s.unreadOrders);
   
-  const [marketingExpanded, setMarketingExpanded] = React.useState(false);
   const [adminExpanded, setAdminExpanded] = React.useState(false);
 
   const currentPath = location.pathname;
@@ -126,8 +118,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     () => NAV_ITEMS.filter(item => hasPermission(item.permission as any)),
     [hasPermission]
   );
-
-  const showMarketing = hasPermission('marketing');
 
   const handleOutletChange = useCallback(async (outletId: string) => {
     await selectOutlet(outletId);
@@ -141,9 +131,8 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
   const isActive = useCallback((path: string) => currentPath === path, [currentPath]);
 
-  const isMarketingSection = currentPath.includes('/marketing') || currentPath.includes('/conception-graphique') || currentPath.includes('/reseaux-sociaux') || currentPath.includes('/publicite-facebook');
   const isAdminSection = currentPath.includes('/admin');
-  const isPlusSection = ['/clients', '/equipe', '/performance-personnel', '/qr-codes', '/debiteurs', '/site-web', '/plus'].some(p => currentPath.startsWith(p));
+  const isPlusSection = ['/clients', '/equipe', '/qr-codes', '/debiteurs', '/plus'].some(p => currentPath.startsWith(p));
 
   const bottomMenuItems = useMemo(() => [
     ...(hasPermission('settings') ? [{ icon: Settings, label: 'Paramètres', path: '/parametres' }] : []),
@@ -217,39 +206,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
                 badge={item.path === '/commandes' ? unreadOrders : undefined}
               />
             ))}
-
-            {/* Marketing Section */}
-            {showMarketing && (
-              <div className="pt-2">
-                <button
-                  onClick={() => setMarketingExpanded(v => !v)}
-                  className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors duration-150 ${
-                    isMarketingSection ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-accent'
-                  }`}
-                >
-                  <TrendingUp size={20} className="flex-shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="ml-3 flex-1">Marketing</span>
-                      <ChevronRight size={16} className={`transition-transform duration-200 ${marketingExpanded ? 'rotate-90' : ''}`} />
-                    </>
-                  )}
-                </button>
-                {marketingExpanded && !collapsed && (
-                  <div className="ml-6 mt-1 space-y-1">
-                    {MARKETING_ITEMS.map(item => (
-                      <NavButton
-                        key={item.path}
-                        item={item}
-                        active={isActive(item.path)}
-                        collapsed={false}
-                        onClick={() => handleNavigation(item.path, item.label)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Plus */}
             <div className="pt-2">
