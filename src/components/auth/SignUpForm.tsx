@@ -155,58 +155,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
               </div>
             </div>
 
-            {/* Informations du restaurant */}
-            <div className="space-y-4 pt-6 border-t border-border">
-              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Utensils className="h-5 w-5" />
-                Informations du restaurant
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="restaurantName" render={({
-                field
-              }) => <FormItem>
-                      <FormLabel>Nom du restaurant</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Le nom de votre restaurant" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                
-                <FormField control={form.control} name="restaurantType" render={({
-                field
-              }) => <FormItem>
-                      <FormLabel>Type de restaurant</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez le type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {restaurantTypes.map(type => <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>} />
-              </div>
 
-            </div>
 
-            {/* Code promo */}
-            <div className="space-y-4 pt-6 border-t border-border">
-              <FormField control={form.control} name="promoCode" render={({
-              field
-            }) => <FormItem>
-                    <FormLabel>Code promo (optionnel)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Entrez votre code promo" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>} />
-            </div>
 
             <Button type="submit" className="w-full h-12 text-lg bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 font-semibold" disabled={loading}>
               {loading ? <>
