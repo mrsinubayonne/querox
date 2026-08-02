@@ -34,7 +34,7 @@ const Parametres = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
         <div className="container max-w-4xl py-4 flex items-center gap-2">
-          <Link to="/site-web">
+          <Link to="/dashboard">
             <Button variant="ghost" size="icon" className="rounded-full">
               <ArrowLeft className="h-5 w-5" />
             </Button>

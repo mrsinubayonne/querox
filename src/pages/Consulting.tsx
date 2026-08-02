@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import ModernSidebar from '../components/ModernSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { UserCheck, CheckCircle, Award, Target, TrendingUp, Users } from 'lucide-react';
-import ConsultingModal from '@/components/marketing/ConsultingModal';
+import ConsultingModal from '@/components/services/ConsultingModal';
 import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { useIsMobile } from '@/hooks/use-mobile';
-import MarketingServiceCard from '@/components/marketing/MarketingServiceCard';
+import MarketingServiceCard from '@/components/services/ServiceCard';
 import { Card, CardContent } from '@/components/ui/card';
 
 const Consulting: React.FC = () => {

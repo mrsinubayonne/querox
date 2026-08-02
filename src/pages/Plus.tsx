@@ -4,7 +4,7 @@ import ModernSidebar from '../components/ModernSidebar';
 import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, Award, QrCode, CreditCard, Globe, ArrowRight } from 'lucide-react';
+import { Users, QrCode, CreditCard, ArrowRight } from 'lucide-react';
 
 const Plus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -19,13 +19,6 @@ const Plus: React.FC = () => {
       color: 'from-violet-500 to-purple-500',
     },
     {
-      icon: Award,
-      label: 'Performance Personnel',
-      description: 'Suivez les performances de votre personnel',
-      path: '/performance-personnel',
-      color: 'from-amber-500 to-orange-500',
-    },
-    {
       icon: QrCode,
       label: 'QR Codes',
       description: 'Créez et gérez vos QR codes',
@@ -38,13 +31,6 @@ const Plus: React.FC = () => {
       description: 'Suivez les créances et paiements en attente',
       path: '/debiteurs',
       color: 'from-rose-500 to-red-500',
-    },
-    {
-      icon: Globe,
-      label: 'Site Web',
-      description: 'Configurez et gérez votre site web',
-      path: '/site-web',
-      color: 'from-indigo-500 to-blue-500',
     },
   ];
 

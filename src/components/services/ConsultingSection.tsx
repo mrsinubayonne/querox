@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { UserCheck } from 'lucide-react';
-import MarketingServiceCard from '@/components/marketing/MarketingServiceCard';
+import MarketingServiceCard from '@/components/services/ServiceCard';
 
 interface ConsultingSectionProps {
   onOpenModal: (serviceId: string) => void;

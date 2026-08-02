@@ -36,9 +36,6 @@ const Commandes = lazy(() => import('@/pages/Commandes'));
 const Tables = lazy(() => import('@/pages/Tables'));
 const Inventaire = lazy(() => import('@/pages/Inventaire'));
 const QRCodes = lazy(() => import('@/pages/QRCodes'));
-const SiteWeb = lazy(() => import('@/pages/SiteWeb'));
-const SiteWebContainer = lazy(() => import('@/pages/SiteWebContainer'));
-const SiteWebBenefits = lazy(() => import('@/pages/SiteWebBenefits'));
 const Statistiques = lazy(() => import('@/pages/Statistiques'));
 const Parametres = lazy(() => import('@/pages/Parametres'));
 const Abonnement = lazy(() => import('@/pages/Abonnement'));
@@ -50,11 +47,6 @@ const PaymentSuccess = lazy(() => import('@/pages/PaymentSuccess'));
 const PaymentFailure = lazy(() => import('@/pages/PaymentFailure'));
 const Comptabilite = lazy(() => import('@/pages/Comptabilite'));
 const Salaires = lazy(() => import('@/pages/Salaires'));
-const MarketingHub = lazy(() => import('@/pages/MarketingHub'));
-const Marketing = lazy(() => import('@/pages/Marketing'));
-const ConceptionGraphique = lazy(() => import('@/pages/ConceptionGraphique'));
-const ReseauxSociaux = lazy(() => import('@/pages/ReseauxSociaux'));
-const PubliciteFacebook = lazy(() => import('@/pages/PubliciteFacebook'));
 const Services = lazy(() => import('@/pages/Services'));
 const Consulting = lazy(() => import('@/pages/Consulting'));
 const Plus = lazy(() => import('@/pages/Plus'));
@@ -85,7 +77,6 @@ const ProfileManagement = lazy(() => import('@/pages/ProfileManagement').then(m 
 const StaffRequest = lazy(() => import('@/pages/StaffRequest'));
 const Clients = lazy(() => import('@/pages/Clients'));
 const Debiteurs = lazy(() => import('@/pages/Debiteurs'));
-const PerformancePersonnel = lazy(() => import('@/pages/PerformancePersonnel'));
 const SelectOutlet = lazy(() => import('@/pages/SelectOutlet'));
 const ProfileLogin = lazy(() => import('@/pages/ProfileLogin'));
 const TeamMemberAuth = lazy(() => import('@/pages/TeamMemberAuth'));
@@ -125,9 +116,6 @@ function App() {
               <Route path="/tables" element={<ProtectedRoute><Tables /></ProtectedRoute>} />
               <Route path="/inventaire" element={<ProtectedRoute><Inventaire /></ProtectedRoute>} />
               <Route path="/qr-codes" element={<ProtectedRoute><QRCodes /></ProtectedRoute>} />
-              <Route path="/site-web" element={<ProtectedRoute><SiteWeb /></ProtectedRoute>} />
-              <Route path="/site-web-container" element={<ProtectedRoute><SiteWebContainer /></ProtectedRoute>} />
-              <Route path="/site-web-benefits" element={<ProtectedRoute><SiteWebBenefits /></ProtectedRoute>} />
               <Route path="/statistiques" element={<ProtectedRoute><Statistiques /></ProtectedRoute>} />
               <Route path="/rapports" element={<ProtectedRoute><RapportsJournaliers /></ProtectedRoute>} />
               <Route path="/parametres" element={<ProtectedRoute><Parametres /></ProtectedRoute>} />
@@ -135,12 +123,6 @@ function App() {
               <Route path="/comptabilite" element={<ProtectedRoute><Comptabilite /></ProtectedRoute>} />
               <Route path="/salaires" element={<ProtectedRoute><Salaires /></ProtectedRoute>} />
 
-              {/* Routes Marketing */}
-              <Route path="/marketing-hub" element={<ProtectedRoute><MarketingHub /></ProtectedRoute>} />
-              <Route path="/marketing" element={<ProtectedRoute><Marketing /></ProtectedRoute>} />
-              <Route path="/conception-graphique" element={<ProtectedRoute><ConceptionGraphique /></ProtectedRoute>} />
-              <Route path="/reseaux-sociaux" element={<ProtectedRoute><ReseauxSociaux /></ProtectedRoute>} />
-              <Route path="/publicite-facebook" element={<ProtectedRoute><PubliciteFacebook /></ProtectedRoute>} />
 
               {/* Routes Services */}
               <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
@@ -177,7 +159,6 @@ function App() {
 
               <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
               <Route path="/debiteurs" element={<ProtectedRoute><Debiteurs /></ProtectedRoute>} />
-              <Route path="/performance-personnel" element={<ProtectedRoute><PerformancePersonnel /></ProtectedRoute>} />
               <Route path="/staff-request" element={<ProtectedRoute><StaffRequest /></ProtectedRoute>} />
 
               {/* Redirection par défaut */}
