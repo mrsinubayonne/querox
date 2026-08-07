@@ -385,6 +385,16 @@ export const ProfileManagement: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {permissionsProfile && (
+        <ProfilePermissionsDialog
+          open={!!permissionsProfile}
+          onOpenChange={(o) => !o && setPermissionsProfile(null)}
+          profileId={permissionsProfile.id}
+          profileName={permissionsProfile.profile_name}
+          defaults={ROLE_DEFAULT_PERMISSIONS[permissionsProfile.role] || {}}
+        />
+      )}
     </div>
   );
 };
