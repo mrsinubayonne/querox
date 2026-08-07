@@ -13,6 +13,9 @@ import { SyncStatusIndicator } from '@/components/SyncStatusIndicator'
 import { cleanupQueue } from '@/lib/offlineQueue'
 import { createIDBPersister } from '@/lib/idbPersister'
 import { toast } from 'sonner';
+import { installAuditInterceptor } from '@/lib/auditInterceptor'
+
+installAuditInterceptor()
 
 // Helper to detect network errors
 const isNetworkError = (error: unknown): boolean => {

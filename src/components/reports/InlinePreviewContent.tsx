@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Utensils, Package, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { getActiveActor } from '@/lib/profileAccess';
 
 interface Props {
   periodId?: string;
@@ -238,6 +239,22 @@ export const InlinePreviewContent: React.FC<Props> = ({
                 {periodEnd ? format(new Date(periodEnd), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'Journée en cours'}
               </p>
             </div>
+          </div>
+
+          {/* Établi par */}
+          <div className="mt-6 pt-4 border-t border-dashed flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <p className="text-xs uppercase text-muted-foreground">Rapport établi par</p>
+              <p className="text-base font-semibold text-slate-800">
+                {getActiveActor().name}
+                <span className="ml-2 text-xs font-normal capitalize text-muted-foreground">
+                  ({getActiveActor().role})
+                </span>
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Édité le {format(new Date(), 'dd-MM-yy HH:mm', { locale: fr })}
+            </p>
           </div>
         </CardContent>
       </Card>

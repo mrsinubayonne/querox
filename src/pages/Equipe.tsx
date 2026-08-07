@@ -1,12 +1,23 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, KeySquare, LogIn } from 'lucide-react';
 import { ProfileManagement } from '@/pages/ProfileManagement';
+import { useOutletProfile } from '@/hooks/useOutletProfile';
 
 const Equipe: React.FC = () => {
+  const { isProfileAuthenticated, loading } = useOutletProfile();
+
+  if (loading) return null;
+
+  // Réservé au propriétaire : un profil équipe connecté n'y a pas accès
+  if (isProfileAuthenticated()) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <SubscriptionGuard feature="la gestion d'équipe">
       <PageWithSidebar>

@@ -9,10 +9,35 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Trash2, UserPlus, Shield, Copy, CheckCircle2, Briefcase, Calculator, Wallet, Eye, LogIn, KeyRound } from 'lucide-react';
+import { Trash2, UserPlus, Shield, Copy, CheckCircle2, Briefcase, Calculator, Wallet, Eye, LogIn, KeyRound, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import ProfilePermissionsDialog from '@/components/team/ProfilePermissionsDialog';
+import type { PermissionKey } from '@/lib/profileAccess';
+
+const ROLE_DEFAULT_PERMISSIONS: Record<string, Partial<Record<PermissionKey, boolean>>> = {
+  proprietaire: {
+    dashboard: true, orders: true, reservations: true, menus: true, inventory: true, invoices: true,
+    accounting: true, statistics: true, customers: true, events: true, qrcodes: true, settings: true,
+    team: true, support: true,
+  },
+  superviseur: {
+    dashboard: true, orders: true, reservations: true, menus: true, inventory: true, invoices: true,
+    accounting: true, statistics: true, customers: true, events: true, qrcodes: true, settings: false,
+    team: false, support: true,
+  },
+  comptable: {
+    dashboard: true, orders: false, reservations: false, menus: false, inventory: true, invoices: true,
+    accounting: true, statistics: true, customers: false, events: false, qrcodes: false, settings: false,
+    team: false, support: true,
+  },
+  caissier: {
+    dashboard: true, orders: true, reservations: true, menus: false, inventory: true, invoices: true,
+    accounting: false, statistics: false, customers: false, events: false, qrcodes: false, settings: false,
+    team: false, support: true,
+  },
+};
 
 type OutletRole = 'proprietaire' | 'superviseur' | 'comptable' | 'caissier';
 
@@ -49,6 +74,7 @@ export const ProfileManagement: React.FC = () => {
   const [customCode, setCustomCode] = useState('');
   const [role, setRole] = useState<Exclude<OutletRole, 'proprietaire'>>('caissier');
   const [justCreated, setJustCreated] = useState<{ name: string; code: string } | null>(null);
+  const [permissionsProfile, setPermissionsProfile] = useState<OutletProfile | null>(null);
 
   const currentOutletName = outlets?.find((o: any) => o.id === selectedOutletId)?.name || '';
 
@@ -320,6 +346,16 @@ export const ProfileManagement: React.FC = () => {
                       Se connecter
                     </Button>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9"
+                    onClick={() => setPermissionsProfile(profile)}
+                    title="Personnaliser les accès"
+                  >
+                    <SlidersHorizontal className="w-4 h-4 mr-1" />
+                    Accès
+                  </Button>
                   <Switch
                     checked={profile.is_active}
                     onCheckedChange={(checked) =>
@@ -349,6 +385,16 @@ export const ProfileManagement: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {permissionsProfile && (
+        <ProfilePermissionsDialog
+          open={!!permissionsProfile}
+          onOpenChange={(o) => !o && setPermissionsProfile(null)}
+          profileId={permissionsProfile.id}
+          profileName={permissionsProfile.profile_name}
+          defaults={ROLE_DEFAULT_PERMISSIONS[permissionsProfile.role] || {}}
+        />
+      )}
     </div>
   );
 };

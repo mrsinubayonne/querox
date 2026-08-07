@@ -16,6 +16,8 @@ import {
   Wallet, Calculator, Briefcase, Crown, KeyRound, ArrowRight, Building2, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import OwnerCodeDialog from '@/components/team/OwnerCodeDialog';
+import { hasOwnerCode, isOwnerUnlocked } from '@/lib/profileAccess';
 
 type OutletRole = 'proprietaire' | 'superviseur' | 'comptable' | 'caissier';
 
@@ -42,6 +44,7 @@ const ProfileLogin: React.FC = () => {
   const [selected, setSelected] = useState<ProfileRow | null>(null);
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [ownerDialogOpen, setOwnerDialogOpen] = useState(false);
 
   const { data: profiles, isLoading } = useQuery({
     queryKey: ['owner-outlet-profiles', user?.id],
@@ -75,9 +78,19 @@ const ProfileLogin: React.FC = () => {
     return Array.from(map.entries());
   }, [profiles]);
 
-  const continueAsOwner = () => {
-    // Skip profile step — go to PDV selection (owner mode)
+  const goToOwnerMode = () => {
+    // Le propriétaire n'a pas de profil équipe : on nettoie toute session profil
+    localStorage.removeItem('outletProfile');
     navigate('/select-outlet');
+  };
+
+  const continueAsOwner = () => {
+    if (!user?.id) return;
+    if (isOwnerUnlocked() && hasOwnerCode(user.id)) {
+      goToOwnerMode();
+      return;
+    }
+    setOwnerDialogOpen(true);
   };
 
   const handleConnect = async () => {
@@ -221,6 +234,15 @@ const ProfileLogin: React.FC = () => {
           </Button>
         </DialogContent>
       </Dialog>
+
+      {user?.id && (
+        <OwnerCodeDialog
+          open={ownerDialogOpen}
+          onOpenChange={setOwnerDialogOpen}
+          userId={user.id}
+          onSuccess={() => { setOwnerDialogOpen(false); goToOwnerMode(); }}
+        />
+      )}
     </div>
   );
 };

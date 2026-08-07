@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { recordActor } from '@/lib/profileAccess';
 // useOptimizedOutlet removed - no longer blocking invoice loading
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { useOfflineInsert, useOfflineUpdate } from '@/hooks/useOfflineMutation';
@@ -127,6 +128,7 @@ export const useInvoices = () => {
         updateData.payment_method = paymentMethod;
       }
     }
+    recordActor(invoiceId);
     updateMutation.mutate(updateData as unknown as Record<string, unknown> & { id: string });
   }, [updateMutation]);
 

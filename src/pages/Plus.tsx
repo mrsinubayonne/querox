@@ -4,20 +4,35 @@ import ModernSidebar from '../components/ModernSidebar';
 import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, QrCode, CreditCard, ArrowRight } from 'lucide-react';
+import { Users, QrCode, CreditCard, ArrowRight, History } from 'lucide-react';
+import { useOutletProfile } from '@/hooks/useOutletProfile';
 
 const Plus: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
+  const { isProfileAuthenticated } = useOutletProfile();
+  const isOwner = !isProfileAuthenticated();
 
   const items = [
-    {
-      icon: Users,
-      label: 'Équipe',
-      description: 'Gérez les membres de votre équipe',
-      path: '/equipe',
-      color: 'from-violet-500 to-purple-500',
-    },
+    // Réservé au propriétaire (aucun profil équipe connecté)
+    ...(isOwner
+      ? [
+          {
+            icon: Users,
+            label: 'Équipe',
+            description: 'Gérez les profils et leurs accès',
+            path: '/equipe',
+            color: 'from-violet-500 to-purple-500',
+          },
+          {
+            icon: History,
+            label: "Journal d'activité",
+            description: 'Ajouts, modifications et suppressions par profil',
+            path: '/journal',
+            color: 'from-slate-600 to-slate-800',
+          },
+        ]
+      : []),
     {
       icon: QrCode,
       label: 'QR Codes',

@@ -50,6 +50,7 @@ const Salaires = lazy(() => import('@/pages/Salaires'));
 const Services = lazy(() => import('@/pages/Services'));
 const Consulting = lazy(() => import('@/pages/Consulting'));
 const Plus = lazy(() => import('@/pages/Plus'));
+const Journal = lazy(() => import('@/pages/Journal'));
 const AdminSubscriptions = lazy(() => import('@/pages/AdminSubscriptions'));
 const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'));
 const AdminRoles = lazy(() => import('@/pages/AdminRoles'));
@@ -128,6 +129,7 @@ function App() {
               <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
               <Route path="/consulting" element={<ProtectedRoute><Consulting /></ProtectedRoute>} />
               <Route path="/plus" element={<ProtectedRoute><Plus /></ProtectedRoute>} />
+              <Route path="/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
 
               {/* Routes Admin */}
               <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

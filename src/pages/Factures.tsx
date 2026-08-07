@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { getActor } from '@/lib/profileAccess';
 
 const Factures: React.FC = () => {
   const navigate = useNavigate();
@@ -287,6 +288,10 @@ const Factures: React.FC = () => {
                           <div>
                             <p className="font-medium text-gray-900">Date de paiement</p>
                             <p>{formatDate(invoice.paid_date)}</p>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">Facturé par</p>
+                            <p>{getActor(invoice.id, invoice.invoice_number)?.name || '—'}</p>
                           </div>
                         </div>
                         {invoice.notes && <p className="mt-3 text-sm text-gray-600 line-clamp-2">{invoice.notes}</p>}
