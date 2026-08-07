@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { History, Trash2, RefreshCw, PlusCircle, PencilLine, XCircle } from 'lucide-react';
 import { getAuditLog, clearAuditLog, AuditEntry } from '@/lib/profileAccess';
+import { useOutletProfile } from '@/hooks/useOutletProfile';
+import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const ACTION_META: Record<AuditEntry['action'], { icon: React.ElementType; className: string; label: string }> = {
