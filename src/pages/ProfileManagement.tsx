@@ -74,6 +74,7 @@ export const ProfileManagement: React.FC = () => {
   const [customCode, setCustomCode] = useState('');
   const [role, setRole] = useState<Exclude<OutletRole, 'proprietaire'>>('caissier');
   const [justCreated, setJustCreated] = useState<{ name: string; code: string } | null>(null);
+  const [permissionsProfile, setPermissionsProfile] = useState<OutletProfile | null>(null);
 
   const currentOutletName = outlets?.find((o: any) => o.id === selectedOutletId)?.name || '';
 
