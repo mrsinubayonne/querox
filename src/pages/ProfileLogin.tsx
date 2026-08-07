@@ -44,6 +44,7 @@ const ProfileLogin: React.FC = () => {
   const [selected, setSelected] = useState<ProfileRow | null>(null);
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [ownerDialogOpen, setOwnerDialogOpen] = useState(false);
 
   const { data: profiles, isLoading } = useQuery({
     queryKey: ['owner-outlet-profiles', user?.id],
