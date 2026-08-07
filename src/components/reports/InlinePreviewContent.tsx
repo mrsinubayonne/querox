@@ -239,6 +239,22 @@ export const InlinePreviewContent: React.FC<Props> = ({
               </p>
             </div>
           </div>
+
+          {/* Établi par */}
+          <div className="mt-6 pt-4 border-t border-dashed flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <p className="text-xs uppercase text-muted-foreground">Rapport établi par</p>
+              <p className="text-base font-semibold text-slate-800">
+                {getActiveActor().name}
+                <span className="ml-2 text-xs font-normal capitalize text-muted-foreground">
+                  ({getActiveActor().role})
+                </span>
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Édité le {format(new Date(), 'dd-MM-yy HH:mm', { locale: fr })}
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
