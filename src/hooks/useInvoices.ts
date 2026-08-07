@@ -127,6 +127,7 @@ export const useInvoices = () => {
         updateData.payment_method = paymentMethod;
       }
     }
+    recordActor(invoiceId);
     updateMutation.mutate(updateData as unknown as Record<string, unknown> & { id: string });
   }, [updateMutation]);
 
