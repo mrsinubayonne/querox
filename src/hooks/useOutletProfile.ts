@@ -209,7 +209,7 @@ export const useOutletProfile = () => {
 
     localStorage.setItem('outletProfile', JSON.stringify(session));
     setProfileSession(session);
-    setPermissions(ROLE_PERMISSIONS[session.role]);
+    setPermissions(applyOverrides(session));
   };
 
   const logout = () => {
