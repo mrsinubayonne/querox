@@ -234,6 +234,15 @@ const ProfileLogin: React.FC = () => {
           </Button>
         </DialogContent>
       </Dialog>
+
+      {user?.id && (
+        <OwnerCodeDialog
+          open={ownerDialogOpen}
+          onOpenChange={setOwnerDialogOpen}
+          userId={user.id}
+          onSuccess={() => { setOwnerDialogOpen(false); goToOwnerMode(); }}
+        />
+      )}
     </div>
   );
 };
