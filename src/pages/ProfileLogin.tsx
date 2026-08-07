@@ -75,9 +75,19 @@ const ProfileLogin: React.FC = () => {
     return Array.from(map.entries());
   }, [profiles]);
 
-  const continueAsOwner = () => {
-    // Skip profile step — go to PDV selection (owner mode)
+  const goToOwnerMode = () => {
+    // Le propriétaire n'a pas de profil équipe : on nettoie toute session profil
+    localStorage.removeItem('outletProfile');
     navigate('/select-outlet');
+  };
+
+  const continueAsOwner = () => {
+    if (!user?.id) return;
+    if (isOwnerUnlocked() && hasOwnerCode(user.id)) {
+      goToOwnerMode();
+      return;
+    }
+    setOwnerDialogOpen(true);
   };
 
   const handleConnect = async () => {
