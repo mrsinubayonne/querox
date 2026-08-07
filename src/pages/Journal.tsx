@@ -37,6 +37,10 @@ const Journal: React.FC = () => {
     return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${String(d.getFullYear()).slice(-2)} ${p(d.getHours())}:${p(d.getMinutes())}`;
   };
 
+  if (loading) return null;
+  if (isProfileAuthenticated()) return <Navigate to="/dashboard" replace />;
+
+
   return (
     <PageWithSidebar>
       <div className="space-y-6">
