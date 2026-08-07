@@ -346,6 +346,16 @@ export const ProfileManagement: React.FC = () => {
                       Se connecter
                     </Button>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9"
+                    onClick={() => setPermissionsProfile(profile)}
+                    title="Personnaliser les accès"
+                  >
+                    <SlidersHorizontal className="w-4 h-4 mr-1" />
+                    Accès
+                  </Button>
                   <Switch
                     checked={profile.is_active}
                     onCheckedChange={(checked) =>
