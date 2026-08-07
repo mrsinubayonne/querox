@@ -16,6 +16,8 @@ import {
   Wallet, Calculator, Briefcase, Crown, KeyRound, ArrowRight, Building2, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import OwnerCodeDialog from '@/components/team/OwnerCodeDialog';
+import { hasOwnerCode, isOwnerUnlocked } from '@/lib/profileAccess';
 
 type OutletRole = 'proprietaire' | 'superviseur' | 'comptable' | 'caissier';
 
