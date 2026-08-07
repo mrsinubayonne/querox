@@ -129,6 +129,7 @@ function App() {
               <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
               <Route path="/consulting" element={<ProtectedRoute><Consulting /></ProtectedRoute>} />
               <Route path="/plus" element={<ProtectedRoute><Plus /></ProtectedRoute>} />
+              <Route path="/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
 
               {/* Routes Admin */}
               <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
