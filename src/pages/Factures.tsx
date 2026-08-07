@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { getActor } from '@/lib/profileAccess';
 
 const Factures: React.FC = () => {
   const navigate = useNavigate();
