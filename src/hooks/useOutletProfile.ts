@@ -155,6 +155,12 @@ export const useOutletProfile = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const applyOverrides = (session: ProfileSession): Permission => {
+    const base = ROLE_PERMISSIONS[session.role];
+    const overrides = getPermissionOverrides(session.profileId);
+    return { ...base, ...overrides } as Permission;
+  };
+
   const loadSession = () => {
     try {
       const sessionStr = localStorage.getItem('outletProfile');
@@ -164,7 +170,7 @@ export const useOutletProfile = () => {
         // Check expiration
         if (new Date(session.expiresAt) > new Date()) {
           setProfileSession(session);
-          setPermissions(ROLE_PERMISSIONS[session.role]);
+          setPermissions(applyOverrides(session));
         } else {
           // Session expired
           logout();
