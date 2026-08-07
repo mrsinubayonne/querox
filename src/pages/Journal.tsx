@@ -15,6 +15,7 @@ const ACTION_META: Record<AuditEntry['action'], { icon: React.ElementType; class
 };
 
 const Journal: React.FC = () => {
+  const { isProfileAuthenticated, loading } = useOutletProfile();
   const [entries, setEntries] = useState<AuditEntry[]>(() => getAuditLog());
   const [search, setSearch] = useState('');
 
