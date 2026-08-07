@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTeamPermissions } from '@/hooks/useTeamPermissions';
+import { getPermissionOverrides } from '@/lib/profileAccess';
 
 type OutletRole = 'proprietaire' | 'superviseur' | 'comptable' | 'caissier';
 
