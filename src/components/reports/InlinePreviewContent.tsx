@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Utensils, Package, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { getActiveActor } from '@/lib/profileAccess';
 
 interface Props {
   periodId?: string;
