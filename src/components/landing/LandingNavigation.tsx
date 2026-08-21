@@ -131,7 +131,7 @@ const LandingNavigation: React.FC = () => {
                       <User className="h-4 w-4" />
                       <span className="truncate">{user.user_metadata?.full_name || user.email}</span>
                     </div>
-                    <Button onClick={() => navigate('/dashboard')} size="sm" className="w-full bg-primary hover:bg-primary/90">
+                    <Button onClick={() => navigate('/profile-login')} size="sm" className="w-full bg-primary hover:bg-primary/90">
                       Dashboard
                     </Button>
                     <Button variant="outline" size="sm" onClick={handleSignOut} className="w-full">
