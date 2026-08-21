@@ -199,7 +199,6 @@ const Dashboard: React.FC = () => {
                       }}
                     />
                   </div>
-                  <div className="hidden">
 
                   <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
                     <ModernStatCard
