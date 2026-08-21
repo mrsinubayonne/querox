@@ -439,24 +439,10 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         );
 
         if (sessionError) {
-          const edgeMessage = `${sessionError.message || ''} ${(sessionResponse as any)?.error || ''}`.toLowerCase();
-          const isTimeout = edgeMessage.includes('statement timeout') || edgeMessage.includes('canceling statement');
-          if (isTimeout) {
-            throw new Error('DATABASE_TIMEOUT');
-          }
-
-          console.warn("Edge session creation failed, falling back to RPC:", sessionError);
-          const fallback = await supabase.rpc("create_table_session_with_order", creationPayload as any);
-          if (fallback.error) {
-            const rpcMessage = fallback.error.message.toLowerCase();
-            if (rpcMessage.includes('statement timeout') || rpcMessage.includes('canceling statement')) {
-              throw new Error('DATABASE_TIMEOUT');
-            }
-          }
-          sessionResponse = fallback.error
-            ? { success: false, error: fallback.error.message }
-            : { success: true, session: fallback.data };
-          sessionError = null;
+          // Do not immediately repeat the same expensive transaction through RPC:
+          // that doubled the wait and commonly hit the database timeout a second time.
+          console.warn("Server session creation unavailable; saving locally:", sessionError);
+          throw new Error('SERVER_UNAVAILABLE');
         }
 
         if (sessionError) throw sessionError;
@@ -503,7 +489,8 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         // Rollback optimistic update
         queryClient.setQueryData(sessionsQueryKey, (prev: any[] = []) => prev.filter((s) => s.id !== tempSessionId));
         const message = onlineError instanceof Error ? onlineError.message.toLowerCase() : '';
-        const isDatabaseTimeout = message.includes('database_timeout')
+        const isDatabaseTimeout = message.includes('server_unavailable')
+          || message.includes('database_timeout')
           || message.includes('statement timeout')
           || message.includes('canceling statement');
         if (isDatabaseTimeout) {
