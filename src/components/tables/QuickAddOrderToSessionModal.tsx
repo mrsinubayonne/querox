@@ -306,16 +306,49 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         _notes: "",
       });
 
-      if (error) throw error;
-
-      const serverResult = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
-      const orderId = serverResult?.order_id || generateLocalId();
-      const sessionTotal = Number(serverResult?.session_total ?? 0);
       const nowIso = new Date().toISOString();
       const outletKey = resolvedOutletId || undefined;
       const outletIdKey = outletKey || "no-outlet";
       const ordersKey = ["orders", outletIdKey, resolvedUserId, outletKey] as const;
       const sessionsKey = ["table-sessions", outletIdKey, resolvedUserId, outletKey] as const;
+      const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
+      const currentSession = currentSessions.find((item: any) => item.id === sessionId);
+      const fallbackSessionTotal = Number(currentSession?.total_amount || 0) + Number(totalAmount || 0);
+
+      let serverResult = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
+      if (error?.code === 'PGRST202') {
+        const directOrderId = crypto.randomUUID();
+        const { error: directOrderError } = await supabase.from('orders').insert({
+          id: directOrderId,
+          user_id: resolvedUserId,
+          outlet_id: resolvedOutletId,
+          session_id: sessionId,
+          table_number: tableNumber,
+          order_type: 'sur_place',
+          customer_name: `Table ${tableNumber}`,
+          items: orderItems as any,
+          total_amount: totalAmount,
+          status: 'pending',
+          created_at: nowIso,
+          updated_at: nowIso,
+        } as any);
+        if (directOrderError) throw directOrderError;
+
+        const { error: sessionUpdateError } = await supabase
+          .from('table_sessions')
+          .update({ total_amount: fallbackSessionTotal, updated_at: nowIso } as any)
+          .eq('id', sessionId);
+        if (sessionUpdateError) {
+          await supabase.from('orders').delete().eq('id', directOrderId);
+          throw sessionUpdateError;
+        }
+        serverResult = { order_id: directOrderId, session_total: fallbackSessionTotal };
+      } else if (error) {
+        throw error;
+      }
+
+      const orderId = serverResult?.order_id || generateLocalId();
+      const sessionTotal = Number(serverResult?.session_total ?? fallbackSessionTotal);
 
       const newOrder = {
         id: orderId,
@@ -335,7 +368,6 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       queryClient.setQueryData(ordersKey, [newOrder, ...currentOrders.filter((o) => o.id !== orderId)]);
       await storeData("orders", [newOrder, ...currentOrders.filter((o) => o.id !== orderId)] as any, resolvedUserId, outletKey);
 
-      const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined) || [];
       if (currentSessions.length > 0) {
         const nextSessions = currentSessions.map((s: any) =>
           s.id === sessionId
