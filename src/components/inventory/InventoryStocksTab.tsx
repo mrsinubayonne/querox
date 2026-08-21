@@ -4,11 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useInventory } from '@/hooks/useInventory';
-import { useSuppliers } from '@/hooks/useSuppliers';
-import { Package, TrendingDown, TrendingUp, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { Package, TrendingDown, TrendingUp, Edit, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from '@/components/EmptyState';
-import { format, differenceInDays } from 'date-fns';
 
 interface InventoryStocksTabProps {
   onEdit: (item: any) => void;
@@ -18,7 +16,6 @@ interface InventoryStocksTabProps {
 
 const InventoryStocksTab: React.FC<InventoryStocksTabProps> = ({ onEdit, onDelete, onAdjust }) => {
   const { items, loading, updateItem } = useInventory();
-  const { suppliers } = useSuppliers();
 
   const handleQuickUpdate = async (id: string, change: number, currentStock: number) => {
     const newStock = Math.max(0, currentStock + change);
@@ -36,14 +33,6 @@ const InventoryStocksTab: React.FC<InventoryStocksTabProps> = ({ onEdit, onDelet
     return 'normal';
   };
 
-  const getExpirationStatus = (expirationDate: string | null) => {
-    if (!expirationDate) return null;
-    const days = differenceInDays(new Date(expirationDate), new Date());
-    if (days < 0) return { label: 'Périmé', color: 'bg-red-600', days };
-    if (days <= 7) return { label: 'Expire bientôt', color: 'bg-orange-600', days };
-    if (days <= 30) return { label: `${days}j restants`, color: 'bg-yellow-600', days };
-    return null;
-  };
 
   if (loading) {
     return (
