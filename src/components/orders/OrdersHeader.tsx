@@ -39,7 +39,6 @@ export const OrdersHeader: React.FC<OrdersHeaderProps> = ({ onOrderCreated, orde
         </Button>
       </div>
 
-      </div>
       <QuickOrderModal 
         isOpen={open} 
         onClose={() => setOpen(false)} 
