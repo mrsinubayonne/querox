@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOutletContext } from '@/contexts/OutletContext';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
+import { hasOwnerCode, isOwnerUnlocked } from '@/lib/profileAccess';
+
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
