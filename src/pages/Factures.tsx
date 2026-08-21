@@ -200,10 +200,10 @@ const Factures: React.FC = () => {
                 <Settings className="w-4 h-4" />
                 Personnaliser les factures
               </Button>
-              <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
+              <Button onClick={() => setIsAddModalOpen(true)} className="gap-2 hidden">
                 <Plus className="w-4 h-4" />
                 Créer une facture
-              </Button>
+
             </div>
           </div>
 
