@@ -420,12 +420,60 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         // Step 2: Create the session and its first order atomically in the database.
         // Calling the RPC directly avoids depending on an Edge Function deployment
         // that may not exist after changing the connected project.
-        const { data: session, error: sessionError } = await supabase.rpc(
+        const { data: rpcSession, error: sessionError } = await supabase.rpc(
           "create_table_session_with_order",
           creationPayload
         );
 
-        if (sessionError) throw sessionError;
+        let session = rpcSession;
+        if (sessionError?.code === 'PGRST202') {
+          const directSessionId = crypto.randomUUID();
+          const directSession = {
+            id: directSessionId,
+            user_id: resolvedUserId,
+            outlet_id: scopedOutletId,
+            debtor_id: null,
+            table_number: tableNumber,
+            status: 'active',
+            started_at: nowIso,
+            closed_at: null,
+            number_of_guests: guestCount,
+            total_amount: totalAmount,
+            notes: null,
+            payment_method: null,
+            created_at: nowIso,
+            updated_at: nowIso,
+          };
+          const { error: directSessionError } = await supabase
+            .from('table_sessions')
+            .insert(directSession as any);
+          if (directSessionError) throw directSessionError;
+
+          const directOrder = {
+            id: crypto.randomUUID(),
+            user_id: resolvedUserId,
+            outlet_id: scopedOutletId,
+            session_id: directSessionId,
+            table_number: tableNumber,
+            order_type: 'sur_place',
+            customer_name: `Table ${tableNumber}`,
+            items: orderItems,
+            total_amount: totalAmount,
+            status: 'pending',
+            created_at: nowIso,
+            updated_at: nowIso,
+          };
+          const { error: directOrderError } = await supabase
+            .from('orders')
+            .insert(directOrder as any);
+          if (directOrderError) {
+            await supabase.from('table_sessions').delete().eq('id', directSessionId);
+            throw directOrderError;
+          }
+          session = directSession as any;
+        } else if (sessionError) {
+          throw sessionError;
+        }
         if (!session?.id) throw new Error("Session non créée");
 
         // Step 3: Replace temp ID with real ID in cache
