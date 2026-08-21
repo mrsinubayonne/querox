@@ -119,16 +119,17 @@ const Reservations: React.FC = () => {
 
                       <div className="space-y-2">
                         <Label htmlFor="guests">Nombre de personnes *</Label>
-                        <Select name="guests" required>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                              <SelectItem key={num} value={num.toString()}>{num} {num === 1 ? 'personne' : 'personnes'}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          id="guests"
+                          name="guests"
+                          type="number"
+                          min="1"
+                          step="1"
+                          defaultValue="2"
+                          placeholder="ex: 14"
+                          required
+                        />
+
                       </div>
 
                       <div className="space-y-2">
