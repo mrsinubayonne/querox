@@ -253,7 +253,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         table_number: tableNumber,
         number_of_guests: guestCount,
         status: 'active',
-        // The order trigger adds its amount when the queued writes synchronize.
         total_amount: totalAmount,
         started_at: nowIso,
         created_at: nowIso,
