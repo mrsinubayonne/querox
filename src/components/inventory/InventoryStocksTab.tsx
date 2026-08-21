@@ -70,8 +70,6 @@ const InventoryStocksTab: React.FC<InventoryStocksTabProps> = ({ onEdit, onDelet
       {items.map((item) => {
         const status = getStockStatus(item.current_stock, item.min_stock);
         const percentage = getStockPercentage(item.current_stock, item.min_stock);
-        const expirationStatus = getExpirationStatus(item.expiration_date);
-        const supplier = suppliers.find(s => s.id === item.supplier_id);
 
         return (
           <Card key={item.id}>
@@ -86,27 +84,13 @@ const InventoryStocksTab: React.FC<InventoryStocksTabProps> = ({ onEdit, onDelet
                     <Badge variant="outline">{item.category}</Badge>
                     {status === 'rupture' && <Badge variant="destructive">Rupture</Badge>}
                     {status === 'faible' && <Badge className="bg-orange-500">Stock faible</Badge>}
-                    {expirationStatus && (
-                      <Badge className={expirationStatus.color}>
-                        <AlertTriangle className="h-3 w-3 mr-1" />
-                        {expirationStatus.label}
-                      </Badge>
-                    )}
-                    {item.batch_number && (
-                      <Badge variant="outline" className="text-xs">
-                        Lot: {item.batch_number}
-                      </Badge>
-                    )}
                   </div>
                   <div className="flex items-center gap-6 text-sm text-muted-foreground flex-wrap">
                     <span>Stock: <strong>{item.current_stock} {item.unit}</strong></span>
                     <span>Min: {item.min_stock} {item.unit}</span>
-                    {item.unit_price && <span>Prix: {item.unit_price.toLocaleString()} CFA/{item.unit}</span>}
-                    {supplier && <span>Fournisseur: {supplier.name}</span>}
-                    {item.expiration_date && (
-                      <span>Expire: {format(new Date(item.expiration_date), 'dd/MM/yyyy')}</span>
-                    )}
+                    {item.unit_price ? <span>Prix d'achat: {item.unit_price.toLocaleString()} CFA/{item.unit}</span> : null}
                   </div>
+
                   {item.unit_price && (
                     <div className="text-sm">
                       <span className="text-muted-foreground">Valeur: </span>
