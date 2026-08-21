@@ -18,7 +18,7 @@ import ManualAdjustmentModal from '@/components/inventory/ManualAdjustmentModal'
 const MIN_STOCK_HINT = "(à partir de ce nombre restant, une alerte vous sera envoyée)";
 
 const Inventaire: React.FC = () => {
-  const { items, loading: itemsLoading, createItem, updateItem, deleteItem, getLowStockItems } = useInventory();
+  const { items, createItem, updateItem, deleteItem, getLowStockItems } = useInventory();
   const [showAddItem, setShowAddItem] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [adjustmentItem, setAdjustmentItem] = useState<any>(null);
