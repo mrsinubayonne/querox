@@ -408,18 +408,6 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           throw new Error("Point de vente non sélectionné. Ouvrez le sélecteur en haut à gauche et choisissez un PDV, puis réessayez.");
         }
 
-        // Step 2: Ensure the Edge Function receives a fresh JWT, even after long cashier sessions.
-        let { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData.session?.access_token) {
-          const refreshed = await supabase.auth.refreshSession();
-          sessionData = refreshed.data;
-        }
-
-        const accessToken = sessionData.session?.access_token;
-        if (!accessToken) {
-          throw new Error("Session expirée. Reconnectez-vous pour ouvrir une table.");
-        }
-
         const creationPayload = {
           _owner_id: resolvedUserId,
           _outlet_id: scopedOutletId,
@@ -429,37 +417,24 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           _total_amount: totalAmount,
         };
 
-        // Step 3: Create session + first order atomically through the server audit wrapper.
-        let { data: sessionResponse, error: sessionError } = await supabase.functions.invoke(
-          "create-table-session-with-order",
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-            body: creationPayload,
-          }
+        // Step 2: Create the session and its first order atomically in the database.
+        // Calling the RPC directly avoids depending on an Edge Function deployment
+        // that may not exist after changing the connected project.
+        const { data: session, error: sessionError } = await supabase.rpc(
+          "create_table_session_with_order",
+          creationPayload
         );
 
-        if (sessionError) {
-          // Do not immediately repeat the same expensive transaction through RPC:
-          // that doubled the wait and commonly hit the database timeout a second time.
-          console.warn("Server session creation unavailable; saving locally:", sessionError);
-          throw new Error('SERVER_UNAVAILABLE');
-        }
-
         if (sessionError) throw sessionError;
-        if (!sessionResponse?.success) {
-          throw new Error(sessionResponse?.error || "Session non créée");
-        }
-
-        const session = sessionResponse.session;
         if (!session?.id) throw new Error("Session non créée");
 
-        // Step 4: Replace temp ID with real ID in cache
+        // Step 3: Replace temp ID with real ID in cache
         const sessionsAfterInsert = ((queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) || [])
           .map((s: any) => (s.id === tempSessionId ? { ...optimisticSession, ...session } : s));
         queryClient.setQueryData(sessionsQueryKey, sessionsAfterInsert);
         await storeData('table_sessions', sessionsAfterInsert as any, resolvedUserId, scopedOutletId);
 
-        // Step 5: Update orders cache (DB insert was already done by the RPC)
+        // Step 4: Update orders cache (DB insert was already done by the RPC)
         const orderObj = {
           id: `order-${Date.now()}`,
           user_id: resolvedUserId,
@@ -489,10 +464,11 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         // Rollback optimistic update
         queryClient.setQueryData(sessionsQueryKey, (prev: any[] = []) => prev.filter((s) => s.id !== tempSessionId));
         const message = onlineError instanceof Error ? onlineError.message.toLowerCase() : '';
-        const isDatabaseTimeout = message.includes('server_unavailable')
-          || message.includes('database_timeout')
+        const isDatabaseTimeout = message.includes('database_timeout')
           || message.includes('statement timeout')
-          || message.includes('canceling statement');
+          || message.includes('canceling statement')
+          || message.includes('failed to fetch')
+          || message.includes('networkerror');
         if (isDatabaseTimeout) {
           await saveOrderLocally(guestCount, orderItems);
           toast.success("Commande enregistrée", {
