@@ -46,16 +46,27 @@ const ProfileLogin: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [ownerDialogOpen, setOwnerDialogOpen] = useState(false);
 
-  const { data: profiles, isLoading } = useQuery({
+  const { data: profiles, isLoading, isError } = useQuery({
     queryKey: ['owner-outlet-profiles', user?.id],
     enabled: !!user,
+    retry: false,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('outlet_profiles' as any)
-        .select('id, outlet_id, role, profile_name, access_code, is_active, outlets!inner(id, name, user_id)')
-        .eq('outlets.user_id', user!.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: true });
+      if (!user?.id) return [];
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+      let result;
+      try {
+        result = await supabase
+          .from('outlet_profiles' as any)
+          .select('id, outlet_id, role, profile_name, access_code, is_active, outlets!inner(id, name, user_id)')
+          .eq('outlets.user_id', user.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: true })
+          .abortSignal(controller.signal);
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+      const { data, error } = result;
       if (error) throw error;
       return (data as any) as ProfileRow[];
     },
@@ -158,6 +169,15 @@ const ProfileLogin: React.FC = () => {
 
         {isLoading ? (
           <p className="text-center text-muted-foreground">Chargement des profils…</p>
+        ) : isError ? (
+          <Card>
+            <CardContent className="p-8 text-center space-y-3">
+              <p className="text-muted-foreground">Les profils ne sont pas disponibles pour le moment.</p>
+              <Button onClick={continueAsOwner}>
+                Continuer en tant que Propriétaire
+              </Button>
+            </CardContent>
+          </Card>
         ) : grouped.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center space-y-3">

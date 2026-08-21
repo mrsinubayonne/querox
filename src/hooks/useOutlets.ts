@@ -42,6 +42,16 @@ export const useOutlets = () => {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const readCachedOutlets = async (userId: string): Promise<Outlet[]> => {
+    try {
+      const cached = await getData<Outlet[]>('outlets', userId);
+      return cached?.data || [];
+    } catch (error) {
+      console.warn('⚠️ Impossible de lire le cache des points de vente', error);
+      return [];
+    }
+  };
+
   // Listen for profile changes in localStorage
   useEffect(() => {
     const profileId = localStorage.getItem('selectedProfileId');
@@ -88,8 +98,8 @@ export const useOutlets = () => {
     if (isOffline) {
       try {
         console.log('📴 Offline: loading outlets from cache');
-        const cached = await getData<Outlet[]>('outlets', userId);
-        setOutlets(cached?.data || []);
+        const cached = await readCachedOutlets(userId);
+        setOutlets(cached);
 
         // Ensure we still have a selected outlet for ProtectedRoute fallback
         const localSelected = localStorage.getItem('selectedOutletId');
@@ -108,10 +118,13 @@ export const useOutlets = () => {
     try {
       console.log('🔄 Loading outlets for user:', userId);
 
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 8000);
       let query = supabase
         .from('outlets')
         .select('*')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .abortSignal(controller.signal);
 
       if (isTeamMember && teamMemberSession) {
         const assignedOutletIds = (teamMemberSession.outletIds || [])
@@ -130,7 +143,13 @@ export const useOutlets = () => {
         query = query.in('id', scopedOutletIds);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: true });
+      let result;
+      try {
+        result = await query.order('created_at', { ascending: true });
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+      const { data, error } = result;
 
       if (error) {
         console.error('❌ Error fetching outlets:', error);
@@ -159,10 +178,12 @@ export const useOutlets = () => {
 
       // Fallback to cache even if online fetch fails (unstable connection)
       try {
-        const cached = await getData<Outlet[]>('outlets', userId);
-        if (cached?.data?.length) {
+        const cached = await readCachedOutlets(userId);
+        if (cached.length) {
           console.log('↩️ Using cached outlets after fetch error');
-          setOutlets(cached.data);
+          setOutlets(cached);
+        } else {
+          setOutlets([]);
         }
       } catch {
         // ignore
@@ -172,7 +193,7 @@ export const useOutlets = () => {
       const msg = error?.message || '';
       if (msg.includes('JWT') || msg.includes('token') || msg.includes('session')) {
         toast.error('Session expirée. Veuillez vous reconnecter.');
-      } else {
+      } else if (!msg.toLowerCase().includes('abort')) {
         toast.error('Erreur lors du chargement des points de vente. Rechargez la page.');
       }
     } finally {
