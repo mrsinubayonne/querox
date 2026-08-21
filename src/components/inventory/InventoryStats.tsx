@@ -6,14 +6,12 @@ interface InventoryStatsProps {
   totalItems: number;
   lowStockCount: number;
   totalValue: number;
-  suppliersCount: number;
 }
 
 const InventoryStats: React.FC<InventoryStatsProps> = ({
   totalItems,
   lowStockCount,
   totalValue,
-  suppliersCount
 }) => {
   const stats = [
     {
@@ -33,17 +31,11 @@ const InventoryStats: React.FC<InventoryStatsProps> = ({
       value: `${totalValue.toLocaleString()} CFA`,
       icon: "💰",
       color: "text-green-600"
-    },
-    {
-      title: "Fournisseurs",
-      value: suppliersCount.toString(),
-      icon: "👥",
-      color: "text-purple-600"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       {stats.map((stat, index) => (
         <Card key={index} className="bg-white border-0 shadow-sm">
           <CardContent className="p-4">
