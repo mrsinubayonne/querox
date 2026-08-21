@@ -25,7 +25,7 @@ interface AccountingPeriodsTabProps {
   invoices: Invoice[];
 }
 
-type Period = 'week' | 'month' | 'quarter' | 'year';
+type Period = 'day' | 'week' | 'month' | 'quarter' | 'year';
 
 const AccountingPeriodsTab: React.FC<AccountingPeriodsTabProps> = ({ transactions, invoices }) => {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('month');
@@ -35,6 +35,9 @@ const AccountingPeriodsTab: React.FC<AccountingPeriodsTabProps> = ({ transaction
     let startDate = new Date();
     
     switch (period) {
+      case 'day':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        break;
       case 'week':
         startDate.setDate(now.getDate() - 7);
         break;
@@ -91,6 +94,7 @@ const AccountingPeriodsTab: React.FC<AccountingPeriodsTabProps> = ({ transaction
 
   const getPeriodLabel = () => {
     const labels = {
+      day: "Aujourd'hui",
       week: 'Semaine dernière',
       month: 'Mois dernier',
       quarter: 'Trimestre dernier',
@@ -111,6 +115,7 @@ const AccountingPeriodsTab: React.FC<AccountingPeriodsTabProps> = ({ transaction
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="day">Journalier</SelectItem>
             <SelectItem value="week">Hebdomadaire</SelectItem>
             <SelectItem value="month">Mensuel</SelectItem>
             <SelectItem value="quarter">Trimestriel</SelectItem>

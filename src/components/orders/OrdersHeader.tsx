@@ -37,11 +37,8 @@ export const OrdersHeader: React.FC<OrdersHeaderProps> = ({ onOrderCreated, orde
           <SquareArrowOutUpRight className="w-4 h-4 mr-2" />
           Voir les Tables
         </Button>
-        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvelle commande
-        </Button>
       </div>
+
       <QuickOrderModal 
         isOpen={open} 
         onClose={() => setOpen(false)} 

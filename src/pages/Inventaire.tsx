@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import PageWithSidebar from '@/components/PageWithSidebar';
 import SubscriptionGuard from '@/components/SubscriptionGuard';
 import { useInventory } from '@/hooks/useInventory';
-import { useSuppliers } from '@/hooks/useSuppliers';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,36 +15,41 @@ import InventoryStats from '@/components/inventory/InventoryStats';
 import InventoryTabs from '@/components/inventory/InventoryTabs';
 import ManualAdjustmentModal from '@/components/inventory/ManualAdjustmentModal';
 
+const MIN_STOCK_HINT = "(à partir de ce nombre restant, une alerte vous sera envoyée)";
+
 const Inventaire: React.FC = () => {
-  const { items, loading: itemsLoading, createItem, updateItem, deleteItem, getLowStockItems } = useInventory();
-  const { suppliers, loading: suppliersLoading } = useSuppliers();
+  const { items, createItem, updateItem, deleteItem, getLowStockItems } = useInventory();
   const [showAddItem, setShowAddItem] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [adjustmentItem, setAdjustmentItem] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const lowStockItems = getLowStockItems();
   const totalValue = items.reduce((sum, item) => sum + (item.current_stock * (item.unit_price || 0)), 0);
 
   const handleAddItem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
     const itemData = {
-      name: formData.get('name') as string,
+      name: (formData.get('name') as string)?.trim(),
       category: formData.get('category') as string,
       current_stock: parseInt(formData.get('current_stock') as string) || 0,
       min_stock: parseInt(formData.get('min_stock') as string) || 0,
-      unit: formData.get('unit') as string,
+      unit: (formData.get('unit') as string) || 'pcs',
       unit_price: parseFloat(formData.get('unit_price') as string) || 0,
-      supplier_id: formData.get('supplier_id') as string || undefined,
-      expiration_date: formData.get('expiration_date') as string || undefined,
-      batch_number: formData.get('batch_number') as string || undefined,
     };
 
-    const success = await createItem(itemData);
-    if (success) {
-      setShowAddItem(false);
-      e.currentTarget.reset();
+    setSaving(true);
+    try {
+      const success = await createItem(itemData as any);
+      if (success) {
+        setShowAddItem(false);
+        form.reset();
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -58,22 +62,24 @@ const Inventaire: React.FC = () => {
   const handleEditItem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editingItem) return;
-    
+
     const formData = new FormData(e.currentTarget);
-    
+
     const itemData = {
-      name: formData.get('name') as string,
+      name: (formData.get('name') as string)?.trim(),
       category: formData.get('category') as string,
       current_stock: parseInt(formData.get('current_stock') as string) || 0,
       min_stock: parseInt(formData.get('min_stock') as string) || 0,
-      unit: formData.get('unit') as string,
+      unit: (formData.get('unit') as string) || 'pcs',
       unit_price: parseFloat(formData.get('unit_price') as string) || 0,
-      supplier_id: formData.get('supplier_id') as string || undefined,
     };
 
-    const success = await updateItem(editingItem.id, itemData);
-    if (success) {
-      setEditingItem(null);
+    setSaving(true);
+    try {
+      const success = await updateItem(editingItem.id, itemData);
+      if (success) setEditingItem(null);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -81,22 +87,19 @@ const Inventaire: React.FC = () => {
     const { default: jsPDF } = await import('jspdf');
     await import('jspdf-autotable');
     const doc = new jsPDF();
-    
-    // Header
+
     doc.setFontSize(20);
     doc.text('Rapport d\'Inventaire', 14, 22);
     doc.setFontSize(10);
     doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, 14, 30);
-    
-    // Stats
+
     doc.setFontSize(12);
     doc.text('Statistiques', 14, 42);
     doc.setFontSize(10);
     doc.text(`Articles totaux: ${items.length}`, 14, 50);
     doc.text(`Stock critique: ${lowStockItems.length}`, 14, 56);
     doc.text(`Valeur totale: ${totalValue.toLocaleString()} CFA`, 14, 62);
-    
-    // Table
+
     const tableData = items.map(item => [
       item.name,
       item.category,
@@ -108,7 +111,7 @@ const Inventaire: React.FC = () => {
 
     (doc as any).autoTable({
       startY: 70,
-      head: [['Article', 'Catégorie', 'Stock', 'Min', 'Prix unit.', 'Valeur']],
+      head: [['Article', 'Catégorie', 'Stock', 'Min', 'Prix d\'achat unit.', 'Valeur']],
       body: tableData,
       theme: 'striped',
       styles: { fontSize: 8 },
@@ -122,21 +125,17 @@ const Inventaire: React.FC = () => {
     <SubscriptionGuard feature="la gestion d'inventaire">
       <PageWithSidebar>
         <div className="space-y-6">
-          {/* Header */}
-          <InventoryHeader 
+          <InventoryHeader
             onAddItem={() => setShowAddItem(true)}
             onExport={handleExportPDF}
           />
 
-          {/* Stats */}
           <InventoryStats
             totalItems={items.length}
             lowStockCount={lowStockItems.length}
             totalValue={totalValue}
-            suppliersCount={suppliers.length}
           />
 
-          {/* Low Stock Alert */}
           {lowStockItems.length > 0 && (
             <Card className="border-orange-200 bg-orange-50">
               <CardContent className="p-4">
@@ -157,7 +156,6 @@ const Inventaire: React.FC = () => {
             </Card>
           )}
 
-          {/* Tabs */}
           <InventoryTabs
             onEditItem={setEditingItem}
             onDeleteItem={handleDeleteItem}
@@ -179,7 +177,7 @@ const Inventaire: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="category">Catégorie *</Label>
-                    <Select name="category" required>
+                    <Select name="category" defaultValue="Ingrédients" required>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -198,12 +196,14 @@ const Inventaire: React.FC = () => {
                     <Input id="current_stock" name="current_stock" type="number" min="0" defaultValue="0" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="min_stock">Stock minimum *</Label>
+                    <Label htmlFor="min_stock">
+                      Stock minimum <span className="text-xs font-normal text-muted-foreground">{MIN_STOCK_HINT}</span>
+                    </Label>
                     <Input id="min_stock" name="min_stock" type="number" min="0" defaultValue="0" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="unit">Unité *</Label>
-                    <Select name="unit" required>
+                    <Select name="unit" defaultValue="pcs" required>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -218,33 +218,12 @@ const Inventaire: React.FC = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="unit_price">Prix unitaire (CFA)</Label>
+                    <Label htmlFor="unit_price">Prix d'achat unitaire (CFA)</Label>
                     <Input id="unit_price" name="unit_price" type="number" min="0" step="0.01" defaultValue="0" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="expiration_date">Date de péremption</Label>
-                    <Input id="expiration_date" name="expiration_date" type="date" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="batch_number">Numéro de lot</Label>
-                    <Input id="batch_number" name="batch_number" placeholder="Ex: LOT2024-001" />
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="supplier_id">Fournisseur</Label>
-                    <Select name="supplier_id">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un fournisseur" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {suppliers.map(s => (
-                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button type="submit">Ajouter</Button>
+                  <Button type="submit" disabled={saving}>{saving ? 'Ajout…' : 'Ajouter'}</Button>
                   <Button type="button" variant="outline" onClick={() => setShowAddItem(false)}>Annuler</Button>
                 </div>
               </form>
@@ -285,7 +264,9 @@ const Inventaire: React.FC = () => {
                     <Input id="edit-current_stock" name="current_stock" type="number" min="0" defaultValue={editingItem?.current_stock} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-min_stock">Stock minimum *</Label>
+                    <Label htmlFor="edit-min_stock">
+                      Stock minimum <span className="text-xs font-normal text-muted-foreground">{MIN_STOCK_HINT}</span>
+                    </Label>
                     <Input id="edit-min_stock" name="min_stock" type="number" min="0" defaultValue={editingItem?.min_stock} required />
                   </div>
                   <div className="space-y-2">
@@ -305,32 +286,18 @@ const Inventaire: React.FC = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-unit_price">Prix unitaire (CFA)</Label>
+                    <Label htmlFor="edit-unit_price">Prix d'achat unitaire (CFA)</Label>
                     <Input id="edit-unit_price" name="unit_price" type="number" min="0" step="0.01" defaultValue={editingItem?.unit_price} />
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="edit-supplier_id">Fournisseur</Label>
-                    <Select name="supplier_id" defaultValue={editingItem?.supplier_id}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un fournisseur" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {suppliers.map(s => (
-                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button type="submit">Enregistrer</Button>
+                  <Button type="submit" disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Button>
                   <Button type="button" variant="outline" onClick={() => setEditingItem(null)}>Annuler</Button>
                 </div>
               </form>
             </DialogContent>
           </Dialog>
 
-          {/* Manual Adjustment Modal */}
           {adjustmentItem && (
             <ManualAdjustmentModal
               isOpen={!!adjustmentItem}

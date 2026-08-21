@@ -76,7 +76,11 @@ const LandingNavigation: React.FC = () => {
                     {user.user_metadata?.full_name || user.email}
                   </span>
                 </div>
-                <Button onClick={() => navigate('/dashboard')} size="sm" className="bg-primary hover:bg-primary/90 text-xs sm:text-sm">
+                <Button
+                  onClick={() => navigate('/profile-login')}
+                  size="sm"
+                  className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-xs sm:text-sm font-semibold shadow-sm transition-transform active:scale-[0.97]"
+                >
                   Dashboard
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleSignOut} className="hidden md:flex text-xs sm:text-sm">
@@ -127,7 +131,7 @@ const LandingNavigation: React.FC = () => {
                       <User className="h-4 w-4" />
                       <span className="truncate">{user.user_metadata?.full_name || user.email}</span>
                     </div>
-                    <Button onClick={() => navigate('/dashboard')} size="sm" className="w-full bg-primary hover:bg-primary/90">
+                    <Button onClick={() => navigate('/profile-login')} size="sm" className="w-full bg-primary hover:bg-primary/90">
                       Dashboard
                     </Button>
                     <Button variant="outline" size="sm" onClick={handleSignOut} className="w-full">

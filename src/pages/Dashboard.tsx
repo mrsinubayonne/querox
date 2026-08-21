@@ -199,20 +199,7 @@ const Dashboard: React.FC = () => {
                       }}
                     />
                   </div>
-                  <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-                    <ModernStatCard
-                      title="Taux de réussite"
-                      value={`${stats.successRate.toFixed(1)}%`}
-                      icon={<TrendingUp className="h-5 w-5" />}
-                      color="purple"
-                      trend={stats.successRate >= 80 ? 'up' : 'down'}
-                      change={{
-                        value: "Livraison/Collecte",
-                        label: "taux de réussite",
-                        isPositive: stats.successRate >= 80
-                      }}
-                    />
-                  </div>
+
                   <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
                     <ModernStatCard
                       title="Panier moyen"
@@ -382,28 +369,6 @@ const Dashboard: React.FC = () => {
               </Card>
             </div>
 
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Accès Rapide</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {quickActions.map((action, index) => (
-                <Link key={index} to={action.link}>
-                  <Card className="h-full hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer">
-                    <CardHeader className="pb-3">
-                      <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${action.color} flex items-center justify-center mb-3`}>
-                        <action.icon className="h-6 w-6 text-white" />
-                      </div>
-                      <CardTitle className="text-lg">{action.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 text-sm mb-4">{action.description}</p>
-                      <Button variant="outline" size="sm" className="w-full">
-                        Configurer →
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-
             <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -424,27 +389,8 @@ const Dashboard: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Fonctionnalités populaires</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Link to="/inventaire" className="block p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <Package className="h-5 w-5 text-red-600" />
-                      <span className="font-medium">Gestion d'inventaire</span>
-                    </div>
-                  </Link>
-                  <Link to="/comptabilite" className="block p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <DollarSign className="h-5 w-5 text-yellow-600" />
-                      <span className="font-medium">Suivi financier</span>
-                    </div>
-                  </Link>
-                </CardContent>
-              </Card>
             </div>
+
           </div>
         </div>
       </div>

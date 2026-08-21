@@ -211,23 +211,8 @@ const Tables: React.FC = () => {
                 <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               </Button>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button disabled={loading || permissionsLoading || !canManageTables}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nouvelle commande
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => {
-                    setModalState({ type: 'addOrder', tableNumber: '01' });
-                  }}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Client existant
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
+
           </div>
 
           {/* Filters */}

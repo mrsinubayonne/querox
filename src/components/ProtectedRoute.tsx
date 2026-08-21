@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOutletContext } from '@/contexts/OutletContext';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletProfile } from '@/hooks/useOutletProfile';
+import { hasOwnerCode, isOwnerUnlocked } from '@/lib/profileAccess';
+
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -58,9 +60,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" replace />;
   }
 
+  // Verrou propriétaire : si un code propriétaire est défini et qu'aucun profil
+  // n'est actif, l'accès au mode propriétaire doit passer par /profile-login.
+  const hasActiveProfile = typeof window !== 'undefined' && !!localStorage.getItem('outletProfile');
+  const ownerLocked =
+    !!user && !hasActiveProfile && hasOwnerCode(user.id) && !isOwnerUnlocked();
+
+  if (ownerLocked && location.pathname !== '/profile-login') {
+    return <Navigate to="/profile-login" replace />;
+  }
+
   if (location.pathname === '/select-outlet' || location.pathname === '/abonnement') {
     return <>{children}</>;
   }
+
 
   const { selectedOutletId: localOutletId } = useOutletContext();
   const effectiveOutletId = selectedOutletId || localOutletId;
