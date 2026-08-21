@@ -199,20 +199,8 @@ const Dashboard: React.FC = () => {
                       }}
                     />
                   </div>
-                  <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-                    <ModernStatCard
-                      title="Taux de réussite"
-                      value={`${stats.successRate.toFixed(1)}%`}
-                      icon={<TrendingUp className="h-5 w-5" />}
-                      color="purple"
-                      trend={stats.successRate >= 80 ? 'up' : 'down'}
-                      change={{
-                        value: "Livraison/Collecte",
-                        label: "taux de réussite",
-                        isPositive: stats.successRate >= 80
-                      }}
-                    />
-                  </div>
+                  <div className="hidden">
+
                   <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
                     <ModernStatCard
                       title="Panier moyen"
