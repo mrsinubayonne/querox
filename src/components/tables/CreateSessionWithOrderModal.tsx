@@ -78,8 +78,11 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
     || teamMemberSession?.outletIds?.[0]
     || undefined
   ) as string | undefined;
-  const sessionsQueryKey = ['table-sessions', resolvedUserId, scopedOutletId] as const;
-  const ordersQueryKey = ['orders', resolvedUserId, scopedOutletId] as const;
+  // useOfflineData appends [userId, outletId] to the outlet-scoped base key.
+  // Keep this exact shape so optimistic/local orders are visible immediately.
+  const outletIdKey = scopedOutletId || 'no-outlet';
+  const sessionsQueryKey = ['table-sessions', outletIdKey, resolvedUserId, scopedOutletId] as const;
+  const ordersQueryKey = ['orders', outletIdKey, resolvedUserId, scopedOutletId] as const;
 
   // If context is empty but we resolved an outlet, sync it back so downstream reads see it.
   React.useEffect(() => {
@@ -222,6 +225,121 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
 
   const totalAmount = useMemo(() => cart.reduce((s, i) => s + lineTotal(i), 0), [cart]);
 
+  const saveOrderLocally = async (
+    guestCount: number,
+    orderItems: Array<{
+      id: string;
+      name: string;
+      price: number;
+      quantity: number;
+      selected_options: SelectedOption[];
+    }>,
+  ) => {
+    if (!resolvedUserId || !scopedOutletId) {
+      throw new Error("Point de vente non sélectionné.");
+    }
+
+    const sessionId = generateLocalId();
+    const orderId = generateLocalId();
+    const nowIso = new Date().toISOString();
+
+    await queueMutation({
+      table: 'table_sessions',
+      operation: 'insert',
+      data: {
+        id: sessionId,
+        user_id: resolvedUserId,
+        outlet_id: scopedOutletId,
+        table_number: tableNumber,
+        number_of_guests: guestCount,
+        status: 'active',
+        // The order trigger adds its amount when the queued writes synchronize.
+        total_amount: 0,
+        started_at: nowIso,
+        created_at: nowIso,
+        updated_at: nowIso,
+      },
+      localId: sessionId,
+      userId: resolvedUserId,
+      outletId: scopedOutletId,
+      maxRetries: 5,
+      conflictResolution: 'client-wins',
+    });
+
+    await queueMutation({
+      table: 'orders',
+      operation: 'insert',
+      data: {
+        id: orderId,
+        user_id: resolvedUserId,
+        outlet_id: scopedOutletId,
+        session_id: sessionId,
+        table_number: tableNumber,
+        order_type: 'sur_place',
+        customer_name: `Table ${tableNumber}`,
+        items: orderItems,
+        total_amount: totalAmount,
+        status: 'pending',
+        created_at: nowIso,
+        updated_at: nowIso,
+      },
+      localId: orderId,
+      userId: resolvedUserId,
+      outletId: scopedOutletId,
+      maxRetries: 5,
+      conflictResolution: 'client-wins',
+    });
+
+    const newSession = {
+      id: sessionId,
+      user_id: resolvedUserId,
+      outlet_id: scopedOutletId,
+      debtor_id: null,
+      table_number: tableNumber,
+      custom_table_name: null,
+      status: 'active' as const,
+      started_at: nowIso,
+      closed_at: null,
+      number_of_guests: guestCount,
+      total_amount: totalAmount,
+      notes: null,
+      payment_method: null,
+      created_at: nowIso,
+      updated_at: nowIso,
+    };
+    const cachedSessions = await getData<any[]>('table_sessions', resolvedUserId, scopedOutletId);
+    const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as any[] | undefined)
+      || cachedSessions?.data
+      || [];
+    const nextSessions = [newSession, ...currentSessions.filter((session: any) => session.id !== sessionId)];
+    queryClient.setQueryData(sessionsQueryKey, nextSessions);
+    await storeData('table_sessions', nextSessions, resolvedUserId, scopedOutletId);
+
+    const newOrder = {
+      id: orderId,
+      user_id: resolvedUserId,
+      outlet_id: scopedOutletId,
+      session_id: sessionId,
+      table_number: tableNumber,
+      order_type: 'sur_place',
+      customer_name: `Table ${tableNumber}`,
+      items: orderItems,
+      total_amount: totalAmount,
+      status: 'pending',
+      created_at: nowIso,
+      updated_at: nowIso,
+    };
+    const cachedOrders = await getData<any[]>('orders', resolvedUserId, scopedOutletId);
+    const currentOrders = (queryClient.getQueryData(ordersQueryKey) as any[] | undefined)
+      || cachedOrders?.data
+      || [];
+    const nextOrders = [newOrder, ...currentOrders.filter((order: any) => order.id !== orderId)];
+    queryClient.setQueryData(ordersQueryKey, nextOrders);
+    await storeData('orders', nextOrders, resolvedUserId, scopedOutletId);
+
+    return newSession;
+  };
+
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -247,105 +365,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
       }));
 
       if (isOffline) {
-        const sessionId = generateLocalId();
-        const orderId = generateLocalId();
-        const nowIso = new Date().toISOString();
-
-        // Queue session creation
-        await queueMutation({
-          table: 'table_sessions',
-          operation: 'insert',
-          data: {
-            id: sessionId,
-            user_id: resolvedUserId,
-            outlet_id: scopedOutletId || null,
-            table_number: tableNumber,
-            number_of_guests: guestCount,
-            status: 'active',
-            total_amount: totalAmount,
-            started_at: nowIso,
-            created_at: nowIso,
-            updated_at: nowIso,
-          },
-          localId: sessionId,
-          userId: user.id,
-          outletId: scopedOutletId,
-          maxRetries: 3,
-          conflictResolution: 'client-wins',
-        });
-
-        // Queue order creation
-        await queueMutation({
-          table: 'orders',
-          operation: 'insert',
-          data: {
-            id: orderId,
-            user_id: resolvedUserId,
-            outlet_id: scopedOutletId || null,
-            session_id: sessionId,
-            table_number: tableNumber,
-            order_type: 'sur_place',
-            customer_name: `Table ${tableNumber}`,
-            items: orderItems,
-            total_amount: totalAmount,
-            status: 'pending',
-            created_at: nowIso,
-            updated_at: nowIso,
-          },
-          localId: orderId,
-          userId: user.id,
-          outletId: scopedOutletId,
-          maxRetries: 3,
-          conflictResolution: 'client-wins',
-        });
-
-        // Update caches using the SAME keys as the hook
-        const newSession = {
-          id: sessionId,
-          user_id: resolvedUserId,
-          outlet_id: scopedOutletId || null,
-          debtor_id: null,
-          table_number: tableNumber,
-          custom_table_name: null,
-          status: 'active' as const,
-          started_at: nowIso,
-          closed_at: null,
-          number_of_guests: guestCount,
-          total_amount: totalAmount,
-          notes: null,
-          created_at: nowIso,
-          updated_at: nowIso,
-        };
-        const cachedSessionsScoped = await getData<any[]>('table_sessions', resolvedUserId, scopedOutletId);
-        const cachedSessionsFallback = !cachedSessionsScoped?.data && scopedOutletId
-          ? await getData<any[]>('table_sessions', resolvedUserId)
-          : cachedSessionsScoped;
-        const currentSessions =
-          (queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) ||
-          (cachedSessionsFallback?.data as any[] | undefined) ||
-          (cachedSessionsScoped?.data as any[] | undefined) ||
-          [];
-        const nextSessions = [newSession, ...currentSessions.filter((s: any) => s.id !== newSession.id)];
-        queryClient.setQueryData(sessionsQueryKey, nextSessions);
-        await storeData('table_sessions', nextSessions as any, resolvedUserId, scopedOutletId);
-
-        const newOrder = {
-          id: orderId,
-          user_id: resolvedUserId,
-          outlet_id: scopedOutletId || null,
-          session_id: sessionId,
-          table_number: tableNumber,
-          order_type: 'sur_place',
-          customer_name: `Table ${tableNumber}`,
-          items: orderItems,
-          total_amount: totalAmount,
-          status: 'pending',
-          created_at: nowIso,
-          updated_at: nowIso,
-        };
-        const currentOrders = (queryClient.getQueryData(ordersQueryKey) as any[] | undefined) || [];
-        queryClient.setQueryData(ordersQueryKey, [newOrder, ...currentOrders]);
-        await storeData('orders', [newOrder, ...currentOrders] as any, resolvedUserId, scopedOutletId);
+        await saveOrderLocally(guestCount, orderItems);
 
         toast.success("Session créée (hors ligne)", { description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s). Sera synchronisée.` });
 
@@ -419,12 +439,10 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         );
 
         if (sessionError) {
-          console.warn("Edge session creation failed, falling back to RPC:", sessionError);
-          const fallback = await supabase.rpc("create_table_session_with_order", creationPayload as any);
-          sessionResponse = fallback.error
-            ? { success: false, error: fallback.error.message }
-            : { success: true, session: fallback.data };
-          sessionError = null;
+          // Do not immediately repeat the same expensive transaction through RPC:
+          // that doubled the wait and commonly hit the database timeout a second time.
+          console.warn("Server session creation unavailable; saving locally:", sessionError);
+          throw new Error('SERVER_UNAVAILABLE');
         }
 
         if (sessionError) throw sessionError;
@@ -470,6 +488,23 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         console.error("Error creating session with order (online):", onlineError);
         // Rollback optimistic update
         queryClient.setQueryData(sessionsQueryKey, (prev: any[] = []) => prev.filter((s) => s.id !== tempSessionId));
+        const message = onlineError instanceof Error ? onlineError.message.toLowerCase() : '';
+        const isDatabaseTimeout = message.includes('server_unavailable')
+          || message.includes('database_timeout')
+          || message.includes('statement timeout')
+          || message.includes('canceling statement');
+        if (isDatabaseTimeout) {
+          await saveOrderLocally(guestCount, orderItems);
+          toast.success("Commande enregistrée", {
+            description: "La base est momentanément lente. La commande est sauvegardée et sera synchronisée automatiquement.",
+          });
+          setNumberOfGuests("");
+          setCart([]);
+          setSearchTerm("");
+          onSuccess();
+          onClose();
+          return;
+        }
         throw onlineError;
       }
     } catch (error: any) {
