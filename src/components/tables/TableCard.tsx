@@ -210,17 +210,17 @@ export const TableCard: React.FC<TableCardProps> = ({
               </span>
             </div>
 
-            {session.status === "closed" && onQuickPay && (
-              <div className="pt-2">
-                <QuickPayButton onQuickPay={onQuickPay} />
-              </div>
-            )}
-
             {session.status === "active" && (
               <div className="pt-2">
                 <p className="text-2xl font-bold text-foreground">
                   {formatCurrency(session.total_amount)}
                 </p>
+              </div>
+            )}
+
+            {onQuickPay && (
+              <div className="pt-2">
+                <QuickPayButton onQuickPay={onQuickPay} />
               </div>
             )}
 
