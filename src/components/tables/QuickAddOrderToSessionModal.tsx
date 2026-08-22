@@ -316,7 +316,14 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
       const fallbackSessionTotal = Number(currentSession?.total_amount || 0) + Number(totalAmount || 0);
 
       let serverResult = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
-      if (error?.code === 'PGRST202') {
+      if (error) {
+        const rpcMessage = `${error.message || ''} ${error.code || ''}`.toLowerCase();
+        const rpcRecoverable = error.code === 'PGRST202'
+          || rpcMessage.includes('statement timeout')
+          || rpcMessage.includes('canceling statement')
+          || rpcMessage.includes('57014');
+        if (!rpcRecoverable) throw error;
+
         const directOrderId = crypto.randomUUID();
         const { error: directOrderError } = await supabase.from('orders').insert({
           id: directOrderId,
@@ -343,9 +350,8 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
           throw sessionUpdateError;
         }
         serverResult = { order_id: directOrderId, session_total: fallbackSessionTotal };
-      } else if (error) {
-        throw error;
       }
+
 
       const orderId = serverResult?.order_id || generateLocalId();
       const sessionTotal = Number(serverResult?.session_total ?? fallbackSessionTotal);

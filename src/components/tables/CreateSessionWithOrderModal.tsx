@@ -416,16 +416,8 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
           _total_amount: totalAmount,
         };
 
-        // Step 2: Create the session and its first order atomically in the database.
-        // Calling the RPC directly avoids depending on an Edge Function deployment
-        // that may not exist after changing the connected project.
-        const { data: rpcSession, error: sessionError } = await supabase.rpc(
-          "create_table_session_with_order",
-          creationPayload
-        );
-
-        let session = rpcSession;
-        if (sessionError?.code === 'PGRST202') {
+        // Direct insert path: used when the RPC is missing OR when it times out.
+        const directCreate = async () => {
           const directSessionId = crypto.randomUUID();
           const directSession = {
             id: directSessionId,
@@ -469,11 +461,29 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
             await supabase.from('table_sessions').delete().eq('id', directSessionId);
             throw directOrderError;
           }
-          session = directSession as any;
-        } else if (sessionError) {
-          throw sessionError;
+          return directSession as any;
+        };
+
+        // Step 2: Create the session and its first order atomically in the database.
+        // Calling the RPC directly avoids depending on an Edge Function deployment
+        // that may not exist after changing the connected project.
+        const { data: rpcSession, error: sessionError } = await supabase.rpc(
+          "create_table_session_with_order",
+          creationPayload
+        );
+
+        let session = rpcSession;
+        if (sessionError) {
+          const rpcMessage = `${sessionError.message || ''} ${sessionError.code || ''}`.toLowerCase();
+          const rpcRecoverable = sessionError.code === 'PGRST202'
+            || rpcMessage.includes('statement timeout')
+            || rpcMessage.includes('canceling statement')
+            || rpcMessage.includes('57014');
+          if (!rpcRecoverable) throw sessionError;
+          session = await directCreate();
         }
         if (!session?.id) throw new Error("Session non créée");
+
 
         // Step 3: Replace temp ID with real ID in cache
         const sessionsAfterInsert = ((queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) || [])
