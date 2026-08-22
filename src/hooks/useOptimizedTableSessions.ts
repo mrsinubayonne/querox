@@ -267,7 +267,7 @@ export const useOptimizedTableSessions = () => {
         {
           _owner_id: userId,
           _outlet_id: outletId,
-          _table_number: normalizeTableNumber(tableNumber),
+          _table_number: tableNumber,
           _number_of_guests: numberOfGuests ?? 1,
           _items: items,
           _total_amount: totalAmount,
@@ -306,7 +306,7 @@ export const useOptimizedTableSessions = () => {
         _session_id: sessionId,
         _items: items,
         _total_amount: totalAmount,
-        _customer_name: `Table ${normalizeTableNumber(tableNumber)}`,
+        _customer_name: `Table ${tableNumber}`,
         _customer_phone: null,
         _customer_email: null,
         _notes: null,
