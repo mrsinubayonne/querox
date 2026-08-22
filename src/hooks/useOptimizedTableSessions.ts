@@ -140,6 +140,10 @@ export const useOptimizedTableSessions = () => {
     retry: 1,
   });
 
+  useEffect(() => {
+    purgeLegacyTableArtifacts();
+  }, []);
+
   /** Temps réel: un seul canal pour les sessions et les commandes du PDV. */
   useEffect(() => {
     if (!userId || !outletId) return;
