@@ -34,6 +34,7 @@ const Menus = lazy(() => import('@/pages/Menus'));
 const AllMenus = lazy(() => import('@/pages/AllMenus'));
 const Commandes = lazy(() => import('@/pages/Commandes'));
 const Tables = lazy(() => import('@/pages/Tables'));
+const Service = lazy(() => import('@/pages/Service'));
 const Inventaire = lazy(() => import('@/pages/Inventaire'));
 const QRCodes = lazy(() => import('@/pages/QRCodes'));
 const Statistiques = lazy(() => import('@/pages/Statistiques'));
