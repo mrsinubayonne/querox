@@ -564,8 +564,8 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
       const isDebtorSession = session ? session.debtor_id !== null : false;
 
-      // Paiement local-first : aucun appel SQL bloquant dans le clic utilisateur.
-      {
+      if (isOffline) {
+        // === MODE HORS LIGNE : sauvegarde locale, sync en arrière-plan ===
         // ANTI-REJEU: supprimer toute mutation antérieure en attente sur cette session
         // qui voudrait remettre status='closed' ou 'active'.
         await removePendingMutationsByFilter((m) => {
@@ -705,9 +705,76 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         await removeFromLocalCache(sessionId);
         markSessionPaidLocally(sessionId);
         useTableStore.getState().markPaid(sessionId);
-        if (!isOffline) void syncEngine.sync();
+        void syncEngine.sync();
         return { isDebtorSession };
       }
+
+      // === MODE EN LIGNE : écriture directe en base ===
+      const nowIso = new Date().toISOString();
+      const paidDate = nowIso.split('T')[0];
+
+      // 1. Fermer + payer la session
+      const { error: sessionErr } = await supabase
+        .from('table_sessions')
+        .update({
+          status: 'paid',
+          payment_method: paymentMethod || 'Espèces',
+          closed_at: session.closed_at || nowIso,
+          updated_at: nowIso,
+        })
+        .eq('id', sessionId);
+
+      if (sessionErr) throw sessionErr;
+
+      // 2. Trouver et payer la facture
+      if (!isDebtorSession) {
+        const { data: existingInvoices } = await supabase
+          .from('invoices')
+          .select('id, status')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (existingInvoices && existingInvoices.length > 0) {
+          const { error: invErr } = await supabase
+            .from('invoices')
+            .update({
+              status: 'paid',
+              paid_date: paidDate,
+              payment_method: paymentMethod || 'Espèces',
+              updated_at: nowIso,
+            })
+            .eq('id', existingInvoices[0].id);
+          if (invErr) throw invErr;
+        } else {
+          const ordersForSession = await getOrdersForSession(sessionId);
+          const generatedItems = ordersForSession.flatMap((order) =>
+            Array.isArray((order as any).items) ? (order as any).items : []
+          );
+          const { error: invErr } = await supabase
+            .from('invoices')
+            .insert([{
+              user_id: resolvedUserId || user?.id,
+              outlet_id: scopedOutletId,
+              session_id: sessionId,
+              total_amount: Number(session.total_amount || 0),
+              status: 'paid',
+              paid_date: paidDate,
+              payment_method: paymentMethod || 'Espèces',
+              customer_name: `Table ${session.table_number}`,
+              items: generatedItems,
+            }]);
+          if (invErr) throw invErr;
+        }
+      }
+
+      // 3. Cache local + invalidation
+      await ensurePeriodExistsOffline(resolvedUserId, scopedOutletId);
+      await removeFromLocalCache(sessionId);
+      markSessionPaidLocally(sessionId);
+      useTableStore.getState().markPaid(sessionId);
+
+      return { isDebtorSession };
     })()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['table-sessions', outletIdKey] });

@@ -23,6 +23,7 @@ import { syncEngine } from "@/lib/syncEngine";
 import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from "@/lib/offlineIdentity";
 import { useQueryClient } from "@tanstack/react-query";
 import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
+import { supabase } from "@/integrations/supabase/client";
 import type { MenuItem, SelectedOption } from "@/types/menu";
 import { useMenuItemOptionsPicker } from "@/components/menu-management/useMenuItemOptionsPicker";
 
@@ -294,12 +295,50 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         selected_options: item.selected_options || [],
       }));
 
-      // Même chemin en ligne et hors ligne : validation locale immédiate,
-      // puis synchronisation idempotente hors du clic utilisateur.
-      await saveOrderLocally(orderItems);
-      if (!isOffline) void syncEngine.sync();
+      if (!isOffline) {
+        // En ligne : écriture directe en base
+        const { error: orderErr } = await supabase
+          .from('orders')
+          .insert([{
+            user_id: resolvedUserId || user.id,
+            outlet_id: scopedOutletId,
+            session_id: sessionId,
+            table_number: tableNumber,
+            order_type: 'sur_place',
+            customer_name: `Table ${tableNumber}`,
+            items: orderItems,
+            total_amount: totalAmount,
+            status: 'pending',
+          }]);
 
-      toast.success("Commande ajoutée", { description: `${cart.length} plat(s) ajoutés à la session.` });
+        if (orderErr) throw orderErr;
+
+        // Mettre à jour le total de la session
+        const { data: sessionData } = await supabase
+          .from('table_sessions')
+          .select('total_amount')
+          .eq('id', sessionId)
+          .single();
+
+        if (sessionData) {
+          await supabase
+            .from('table_sessions')
+            .update({
+              total_amount: Number(sessionData.total_amount || 0) + totalAmount,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', sessionId);
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+
+        toast.success("Commande ajoutée", { description: `${cart.length} plat(s) ajoutés à la session.` });
+      } else {
+        // Hors ligne : sauvegarde locale
+        await saveOrderLocally(orderItems);
+        toast.success("Commande ajoutée (hors ligne)", { description: `${cart.length} plat(s) ajoutés.` });
+      }
 
       window.dispatchEvent(new CustomEvent("session-updated"));
       setCart([]);
