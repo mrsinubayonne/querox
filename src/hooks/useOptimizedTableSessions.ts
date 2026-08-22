@@ -688,25 +688,62 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
       });
 
       if (rpcError) {
-        // Fallback très ciblé si la migration n'est pas encore appliquée sur un environnement:
-        // on tente l'ancien update direct, mais sans jamais afficher "Session introuvable" venant du cache.
-        if ((rpcError as any).code !== 'PGRST202' && !(rpcError.message || '').includes('mark_table_session_paid')) {
-          throw rpcError;
-        }
+        // Fallback ciblé: RPC absente OU base momentanément lente (statement timeout).
+        const rpcMessage = `${rpcError.message || ''} ${(rpcError as any).code || ''}`.toLowerCase();
+        const recoverable = (rpcError as any).code === 'PGRST202'
+          || rpcMessage.includes('mark_table_session_paid')
+          || rpcMessage.includes('statement timeout')
+          || rpcMessage.includes('canceling statement')
+          || rpcMessage.includes('57014');
+        if (!recoverable) throw rpcError;
 
         const paidAtDate = new Date().toISOString().split('T')[0];
+        const nowIso = new Date().toISOString();
         const { error: sessionPaidError } = await supabase
           .from('table_sessions')
-          .update({ status: 'paid', payment_method: normalizedPaymentMethod, closed_at: new Date().toISOString() })
+          .update({ status: 'paid', payment_method: normalizedPaymentMethod, closed_at: nowIso })
           .eq('id', sessionId);
         if (sessionPaidError) throw sessionPaidError;
 
-        const { error: invoicePaymentError } = await supabase
+        // La facture doit exister: sinon les rapports restent vides.
+        const { data: existingInvoices } = await supabase
           .from('invoices')
-          .update({ status: 'paid', paid_date: paidAtDate, payment_method: normalizedPaymentMethod })
-          .eq('session_id', sessionId);
-        if (invoicePaymentError) console.warn('[markSessionAsPaid] invoice fallback warning:', invoicePaymentError);
+          .select('id')
+          .eq('session_id', sessionId)
+          .limit(1);
+
+        if (existingInvoices && existingInvoices.length > 0) {
+          const { error: invoicePaymentError } = await supabase
+            .from('invoices')
+            .update({ status: 'paid', paid_date: paidAtDate, payment_method: normalizedPaymentMethod })
+            .eq('session_id', sessionId);
+          if (invoicePaymentError) console.warn('[markSessionAsPaid] invoice fallback warning:', invoicePaymentError);
+        } else {
+          const session = (queryClient.getQueryData(['table-sessions', outletIdKey]) as any[] | undefined)
+            ?.find((s: any) => s.id === sessionId);
+          let invoiceNumber: string | null = null;
+          try {
+            const { data: generated } = await (supabase as any).rpc('generate_invoice_number');
+            invoiceNumber = generated || null;
+          } catch { /* ignore */ }
+          if (!invoiceNumber) {
+            invoiceNumber = `OFF-${Date.now().toString().slice(-8)}`;
+          }
+          const { error: invoiceInsertError } = await supabase.from('invoices').insert({
+            user_id: session?.user_id,
+            outlet_id: session?.outlet_id ?? outletId,
+            session_id: sessionId,
+            invoice_number: invoiceNumber,
+            total_amount: Number(session?.total_amount || 0),
+            status: 'paid',
+            paid_date: paidAtDate,
+            due_date: paidAtDate,
+            payment_method: normalizedPaymentMethod,
+          } as any);
+          if (invoiceInsertError) console.warn('[markSessionAsPaid] invoice creation warning:', invoiceInsertError);
+        }
       }
+
 
       const result = Array.isArray(rpcData) ? rpcData[0] : rpcData;
       return { isDebtorSession: Boolean(result?.is_debtor ?? isDebtorSession) };
