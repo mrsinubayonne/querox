@@ -51,6 +51,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
+  const { createSessionWithOrder } = useOptimizedTableSessions();
   const [numberOfGuests, setNumberOfGuests] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearch = useDeferredValue(searchTerm);
