@@ -360,9 +360,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         updated_at: new Date().toISOString(),
       };
 
-      // Paiement local-first : l'action utilisateur est validée immédiatement et
-      // la base est synchronisée en arrière-plan, sans attendre une RPC bloquante.
-      {
+      if (isOffline) {
         await queueMutation({
           table: 'table_sessions',
           operation: 'insert',
@@ -555,8 +553,8 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         useTableStore.getState().sessions.find((s) => s.id === sessionId) ||
         null;
 
-      if (!session && isOffline) {
-        throw new Error('Session introuvable hors ligne. Actualisez les tables puis réessayez.');
+      if (!session) {
+        throw new Error('Session introuvable. Actualisez les tables puis réessayez.');
       }
 
       snapshotSessions = snapshot.length > 0 ? [...snapshot] : [...cachedSessions];
@@ -566,7 +564,8 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
 
       const isDebtorSession = session ? session.debtor_id !== null : false;
 
-      if (isOffline) {
+      // Paiement local-first : aucun appel SQL bloquant dans le clic utilisateur.
+      {
         // ANTI-REJEU: supprimer toute mutation antérieure en attente sur cette session
         // qui voudrait remettre status='closed' ou 'active'.
         await removePendingMutationsByFilter((m) => {
@@ -690,7 +689,6 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
     })()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['table-sessions', outletIdKey] });
-      queryClient.refetchQueries({ queryKey: ['table-sessions', outletIdKey] });
       queryClient.invalidateQueries({ queryKey: ['invoices', outletIdKey] });
       queryClient.invalidateQueries({ queryKey: ['transactions', outletIdKey] });
       queryClient.invalidateQueries({ queryKey: ['inventory', outletIdKey] });

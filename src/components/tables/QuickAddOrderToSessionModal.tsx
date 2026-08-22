@@ -253,6 +253,23 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
           }
         : session
     );
+    const updatedSession = nextSessions.find((session: any) => session.id === sessionId);
+    if (updatedSession) {
+      await queueMutation({
+        table: 'table_sessions',
+        operation: 'update',
+        data: {
+          id: sessionId,
+          total_amount: updatedSession.total_amount,
+          updated_at: nowIso,
+        },
+        localId: generateLocalId(),
+        userId: resolvedUserId,
+        outletId: outletKey,
+        maxRetries: 5,
+        conflictResolution: 'client-wins',
+      });
+    }
     queryClient.setQueryData(sessionsKey, nextSessions);
     await storeData('table_sessions', nextSessions, resolvedUserId, outletKey);
   };
