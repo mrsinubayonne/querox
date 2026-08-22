@@ -188,95 +188,8 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
 
   const totalAmount = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
 
-  const saveOrderLocally = async (orderItems: Array<{
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-    selected_options: SelectedOption[];
-  }>) => {
-    const resolvedOutletId = scopedOutletId || getSelectedOutletIdFromStorage();
-    if (!resolvedOutletId || !resolvedUserId) {
-      throw new Error("Aucun point de vente sélectionné.");
-    }
-
-    const orderId = generateLocalId();
-    const nowIso = new Date().toISOString();
-    const outletKey = resolvedOutletId;
-    const outletIdKey = outletKey || "no-outlet";
-    const ordersKey = ["orders", outletIdKey, resolvedUserId, outletKey] as const;
-    const sessionsKey = ["table-sessions", outletIdKey, resolvedUserId, outletKey] as const;
-
-    const newOrder = {
-      id: orderId,
-      user_id: resolvedUserId,
-      outlet_id: resolvedOutletId,
-      session_id: sessionId,
-      table_number: tableNumber,
-      order_type: 'sur_place',
-      customer_name: `Table ${tableNumber}`,
-      items: orderItems,
-      total_amount: totalAmount,
-      status: 'pending',
-      created_at: nowIso,
-      updated_at: nowIso,
-    };
-
-    await queueMutation({
-      table: 'orders',
-      operation: 'insert',
-      data: newOrder,
-      localId: orderId,
-      userId: resolvedUserId,
-      outletId: outletKey,
-      maxRetries: 5,
-      conflictResolution: 'client-wins',
-    });
-
-    const cachedOrders = await getData<any[]>('orders', resolvedUserId, outletKey);
-    const currentOrders = (queryClient.getQueryData(ordersKey) as any[] | undefined)
-      || cachedOrders?.data
-      || [];
-    const nextOrders = [newOrder, ...currentOrders.filter((order: any) => order.id !== orderId)];
-    queryClient.setQueryData(ordersKey, nextOrders);
-    await storeData('orders', nextOrders, resolvedUserId, outletKey);
-
-    const cachedSessions = await getData<any[]>('table_sessions', resolvedUserId, outletKey);
-    const currentSessions = (queryClient.getQueryData(sessionsKey) as any[] | undefined)
-      || cachedSessions?.data
-      || [];
-    const nextSessions = currentSessions.map((session: any) =>
-      session.id === sessionId
-        ? {
-            ...session,
-            total_amount: Number(session.total_amount || 0) + Number(totalAmount || 0),
-            updated_at: nowIso,
-          }
-        : session
-    );
-    const updatedSession = nextSessions.find((session: any) => session.id === sessionId);
-    if (updatedSession) {
-      await queueMutation({
-        table: 'table_sessions',
-        operation: 'update',
-        data: {
-          id: sessionId,
-          total_amount: updatedSession.total_amount,
-          updated_at: nowIso,
-        },
-        localId: generateLocalId(),
-        userId: resolvedUserId,
-        outletId: outletKey,
-        maxRetries: 5,
-        conflictResolution: 'client-wins',
-      });
-    }
-    queryClient.setQueryData(sessionsKey, nextSessions);
-    await storeData('table_sessions', nextSessions, resolvedUserId, outletKey);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
 
     if (cart.length === 0) {
       toast.error("Panier vide", { description: "Veuillez ajouter au moins un plat à la commande." });
@@ -285,8 +198,6 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
 
     setLoading(true);
     try {
-      if (!user) throw new Error("Non authentifié");
-
       const orderItems = cart.map((item) => ({
         id: item.id,
         name: item.name,
@@ -295,59 +206,20 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
         selected_options: item.selected_options || [],
       }));
 
-      if (!isOffline) {
-        // En ligne : écriture directe en base
-        const { error: orderErr } = await supabase
-          .from('orders')
-          .insert([{
-            user_id: resolvedUserId || user.id,
-            outlet_id: scopedOutletId,
-            session_id: sessionId,
-            table_number: tableNumber,
-            order_type: 'sur_place',
-            customer_name: `Table ${tableNumber}`,
-            items: orderItems,
-            total_amount: totalAmount,
-            status: 'pending',
-          }]);
-
-        if (orderErr) throw orderErr;
-
-        // Mettre à jour le total de la session
-        const { data: sessionData } = await supabase
-          .from('table_sessions')
-          .select('total_amount')
-          .eq('id', sessionId)
-          .single();
-
-        if (sessionData) {
-          await supabase
-            .from('table_sessions')
-            .update({
-              total_amount: Number(sessionData.total_amount || 0) + totalAmount,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', sessionId);
-        }
-
-        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
-        queryClient.invalidateQueries({ queryKey: ['orders'] });
-
-        toast.success("Commande ajoutée", { description: `${cart.length} plat(s) ajoutés à la session.` });
-      } else {
-        // Hors ligne : sauvegarde locale
-        await saveOrderLocally(orderItems);
-        toast.success("Commande ajoutée (hors ligne)", { description: `${cart.length} plat(s) ajoutés.` });
-      }
+      await addOrderToSession({
+        sessionId,
+        tableNumber,
+        items: orderItems,
+        totalAmount,
+      });
 
       window.dispatchEvent(new CustomEvent("session-updated"));
       setCart([]);
       setSearchTerm("");
       onSuccess?.();
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error adding order:", err);
-      toast.error("Erreur", { description: err?.message || "Impossible d'ajouter la commande." });
     } finally {
       setLoading(false);
     }
