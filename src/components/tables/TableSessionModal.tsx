@@ -125,10 +125,9 @@ export const TableSessionModal: React.FC<TableSessionModalProps> = ({
           .order("created_at", { ascending: true });
 
         if (error) throw error;
-        const serverOrders = ((data as any) || []) as Order[];
-        const serverIds = new Set(serverOrders.map((o) => o.id));
-        const unsyncedLocal = cachedSessionOrders.filter((o) => !serverIds.has(o.id));
-        setOrders([...serverOrders, ...unsyncedLocal]);
+        // Serveur = source de vérité: aucune fusion avec le cache local,
+        // pour éviter les lignes fantômes issues d'anciennes files hors ligne.
+        setOrders(((data as any) || []) as Order[]);
       } catch (error) {
         console.warn("Error fetching orders, using cache:", error);
         setOrders(cachedSessionOrders);
