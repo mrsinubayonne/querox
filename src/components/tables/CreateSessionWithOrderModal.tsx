@@ -502,7 +502,7 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
                   disabled={loading || cart.length === 0}
                   className="active:scale-[0.97]"
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ouvrir & Commander"}
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enregistrer la commande"}
                 </Button>
               </div>
             </div>
