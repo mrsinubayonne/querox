@@ -63,7 +63,7 @@ export const TableGrid: React.FC<TableGridProps> = ({
                 onTableClick(tableNumber, session);
               }}
               onRename={session && onTableRename ? () => onTableRename(session) : undefined}
-              onQuickPay={session && session.status === "closed" && onMarkAsPaid ? () => onMarkAsPaid(session) : undefined}
+              onQuickPay={session && session.status !== "paid" && onMarkAsPaid ? () => onMarkAsPaid(session) : undefined}
             />
           </div>
         );

@@ -1,22 +1,26 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
-import { useEffect, useCallback, useMemo } from 'react';
-import { useOfflineData } from './useOfflineData';
-import { queueMutation, generateLocalId, storeData, getData, removePendingMutationsByFilter } from '@/lib/offlineStorage';
-import { getSelectedOutletIdFromStorage, resolveOfflineUserId } from '@/lib/offlineIdentity';
-import { ensurePeriodExistsOffline } from './useAutoStartPeriod';
-import { useNetworkStatus } from './useNetworkStatus';
-import type { Invoice } from '@/hooks/useInvoices';
-import type { Order } from '@/hooks/useOptimizedOrders';
-import { useTableStore } from '@/store/tableStore';
-import { useInvoiceStore } from '@/store/invoiceStore';
+/**
+ * useOptimizedTableSessions — VERSION SERVEUR D'ABORD (réécriture complète)
+ *
+ * Principes:
+ *  - La base de données est l'unique source de vérité. Aucun cache local "fantôme",
+ *    aucun marqueur "payé" en localStorage, aucune file de mutations parallèle.
+ *  - Le total d'une session est TOUJOURS recalculé à partir de ses commandes,
+ *    ce qui supprime définitivement les tables "Occupée - 0 FCFA".
+ *  - Temps réel: un seul canal Supabase (sessions + commandes) invalide la requête.
+ *  - Hors ligne: lecture seule (dernier état connu via React Query), écriture bloquée
+ *    avec un message clair.
+ */
+import { useCallback, useEffect, useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { localStore } from '@/lib/localStore';
-import { syncEngine } from '@/lib/syncEngine';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useOutletContext } from '@/contexts/OutletContext';
+import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
+import { useNetworkStatus } from './useNetworkStatus';
+import { resolveOfflineUserId, getSelectedOutletIdFromStorage } from '@/lib/offlineIdentity';
 import { getSessionTableNumber, normalizeTableNumber } from '@/utils/tableNumbers';
+import { removePendingMutationsByFilter } from '@/lib/offlineStorage';
 
 export interface TableSession {
   id: string;
@@ -25,7 +29,7 @@ export interface TableSession {
   debtor_id: string | null;
   table_number: string;
   custom_table_name?: string | null;
-  status: "active" | "closed" | "paid";
+  status: 'active' | 'closed' | 'paid';
   started_at: string;
   closed_at: string | null;
   number_of_guests: number | null;
@@ -36,863 +40,512 @@ export interface TableSession {
   updated_at: string;
 }
 
-// Generate offline invoice number
-function generateOfflineInvoiceNumber(): string {
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `OFF-${timestamp}-${random}`;
+export interface OrderLineInput {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  selected_options?: unknown[];
 }
 
-// Module-level set to track session IDs that have been paid locally.
-// PERSISTÉ dans localStorage pour survivre aux redémarrages de PC et fenêtres
-// offline longues (clé: querox_paid_session_ids_v1).
-const PAID_SESSIONS_STORAGE_KEY = 'querox_paid_session_ids_v1';
-const PAID_RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
+const OFFLINE_MESSAGE =
+  "Vous êtes hors ligne. Reconnectez-vous pour enregistrer cette action.";
 
-const localPaidSessionIds = new Set<string>();
-const localPaidTimestamps = new Map<string, number>();
-
-function loadPaidSessionsFromStorage() {
+/**
+ * Purge unique des résidus de l'ancienne architecture local-first:
+ * marqueurs "payé" et mutations en attente sur les tables/commandes qui
+ * faisaient réapparaître de vieilles tables fantômes.
+ */
+const LEGACY_PURGE_KEY = 'querox_tables_legacy_purged_v2';
+function purgeLegacyTableArtifacts() {
   if (typeof window === 'undefined') return;
-  const parsed = localStore.raw.get<Record<string, number> | null>(PAID_SESSIONS_STORAGE_KEY, null);
-  if (!parsed) return;
-  try {
-    const now = Date.now();
-    for (const [id, tsRaw] of Object.entries(parsed)) {
-      const ts = Number(tsRaw);
-      if (Number.isFinite(ts) && now - ts < PAID_RETENTION_MS) {
-        localPaidSessionIds.add(id);
-        localPaidTimestamps.set(id, ts);
-      }
-    }
-  } catch (e) {
-    console.warn('[paid-sessions] Échec lecture localStorage:', e);
-  }
-}
-
-function persistPaidSessionsToStorage() {
-  if (typeof window === 'undefined') return;
-  const obj: Record<string, number> = {};
-  for (const [id, ts] of localPaidTimestamps.entries()) obj[id] = ts;
-  localStore.raw.set(PAID_SESSIONS_STORAGE_KEY, obj);
-}
-
-// Initialiser au chargement du module
-loadPaidSessionsFromStorage();
-
-function markSessionPaidLocally(sessionId: string) {
-  localPaidSessionIds.add(sessionId);
-  localPaidTimestamps.set(sessionId, Date.now());
-  persistPaidSessionsToStorage();
-}
-
-function cleanOldPaidMarkers() {
-  const now = Date.now();
-  let mutated = false;
-  for (const [id, ts] of localPaidTimestamps.entries()) {
-    if (now - ts > PAID_RETENTION_MS) {
-      localPaidSessionIds.delete(id);
-      localPaidTimestamps.delete(id);
-      mutated = true;
-    }
-  }
-  if (mutated) persistPaidSessionsToStorage();
+  if (localStorage.getItem(LEGACY_PURGE_KEY)) return;
+  localStorage.setItem(LEGACY_PURGE_KEY, '1');
+  localStorage.removeItem('querox_paid_session_ids_v1');
+  void removePendingMutationsByFilter(
+    (m) => m.table === 'table_sessions' || m.table === 'orders'
+  ).catch(() => undefined);
 }
 
 export const useOptimizedTableSessions = () => {
-  const { selectedOutletId: ctxSelectedOutletId } = useOutletContext();
+  const { selectedOutletId } = useOutletContext();
   const { user, isTeamMember, teamMemberSession } = useAuth();
-  const { outletId, loading: outletLoading } = useOptimizedOutlet();
-  const queryClient = useQueryClient();
+  const { loading: outletLoading } = useOptimizedOutlet();
   const { isOffline } = useNetworkStatus();
+  const queryClient = useQueryClient();
 
-  // IMPORTANT: useOfflineData appends [userId, outletId] to queryKey internally.
-  // Any setQueryData/getQueryData must use the *same* final key.
-  // CRITICAL: Must match the userId/outletId that useOfflineData uses internally
-  // CRITICAL: Must match the userId/outletId that useOfflineData uses internally
-  // useOfflineData uses: isTeamMember ? teamMemberSession?.ownerId : user?.id
-  // useOfflineData uses: localStorage.getItem('selectedOutletId') || undefined
-  const resolvedUserId = resolveOfflineUserId({
-    userId: user?.id,
-    isTeamMember,
-    ownerId: teamMemberSession?.ownerId,
-  }) || '';
-  const scopedOutletId = getSelectedOutletIdFromStorage();
-  const outletIdKey = ctxSelectedOutletId || scopedOutletId || 'no-outlet';
-  // useOfflineData stores React Query data under: [...queryKey, userId, outletId].
-  // All direct get/set cache calls below MUST use this final key, otherwise payment
-  // sees an empty cache and raises "Session introuvable" while the row exists.
-  const sessionsQueryKey = ['table-sessions', outletIdKey, resolvedUserId, scopedOutletId] as const;
-  const invoicesQueryKey = ['invoices', outletIdKey, resolvedUserId, scopedOutletId] as const;
-  const ordersQueryKey = ['orders', outletIdKey, resolvedUserId, scopedOutletId] as const;
+  const userId =
+    resolveOfflineUserId({
+      userId: user?.id,
+      isTeamMember,
+      ownerId: teamMemberSession?.ownerId,
+    }) || '';
+  const outletId = selectedOutletId || getSelectedOutletIdFromStorage() || '';
 
-  const { data: rawSessions, isLoading, refetch, isOffline: dataOffline } = useOfflineData<TableSession>({
-    table: 'table_sessions',
-    queryKey: ['table-sessions', outletIdKey],
-    buildQuery: async (userId, outletId) => {
-      // CRITICAL: table sessions MUST be scoped to an outlet to prevent cross-outlet leaks
-      if (!outletId) {
-        console.warn('[table-sessions] No outletId — returning empty to prevent cross-outlet leak');
-        return { data: [], error: null };
-      }
-      try {
-        const query = supabase
-          .from('table_sessions')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('outlet_id', outletId)
-          .in('status', ['active', 'closed']) // ONLY fetch non-paid sessions
-          .order('started_at', { ascending: false })
-          .limit(50);
+  const queryKey = useMemo(
+    () => ['table-sessions', userId, outletId] as const,
+    [userId, outletId]
+  );
 
-        const { data, error } = await query;
-        if (error) {
-          console.error('Error fetching table sessions:', error);
-          return { data: [], error };
-        }
-        // Filter out any sessions we've locally marked as paid
-        const filtered = ((data as unknown as TableSession[]) || []).filter(
-          s => !localPaidSessionIds.has(s.id)
-        );
-        return { data: filtered, error: null };
-      } catch (e) {
-        console.error('Exception fetching table sessions:', e);
-        return { data: [], error: e };
-      }
-    },
-    enabled: !!resolvedUserId && !!scopedOutletId,
-    // Important for published app: always refresh server truth on mount when online.
-    refetchOnMount: isOffline ? false : 'always',
+  /** Lecture: sessions non payées + totaux recalculés depuis les commandes. */
+  const fetchSessions = useCallback(async (): Promise<TableSession[]> => {
+    if (!userId || !outletId) return [];
+
+    const { data, error } = await supabase
+      .from('table_sessions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('outlet_id', outletId)
+      .in('status', ['active', 'closed'])
+      .order('started_at', { ascending: false })
+      .limit(200);
+
+    if (error) throw error;
+
+    const list = ((data as unknown as TableSession[]) || []).map((s) => ({
+      ...s,
+      total_amount: Number(s.total_amount || 0),
+    }));
+    if (list.length === 0) return [];
+
+    // Totaux réels = somme des commandes de la session.
+    const { data: orderRows } = await supabase
+      .from('orders')
+      .select('session_id, total_amount')
+      .in('session_id', list.map((s) => s.id))
+      .limit(10000);
+
+    const totals = new Map<string, number>();
+    for (const row of (orderRows as { session_id: string | null; total_amount: number | null }[]) || []) {
+      if (!row.session_id) continue;
+      totals.set(row.session_id, (totals.get(row.session_id) || 0) + Number(row.total_amount || 0));
+    }
+
+    return list.map((s) =>
+      totals.has(s.id) ? { ...s, total_amount: totals.get(s.id) as number } : s
+    );
+  }, [userId, outletId]);
+
+  const {
+    data: sessions,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey,
+    queryFn: fetchSessions,
+    enabled: !!userId && !!outletId,
+    staleTime: 5_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: true,
+    retry: 1,
   });
 
-  // Clean old markers and filter out locally-paid sessions
-  const sessions = useMemo(() => {
-    cleanOldPaidMarkers();
-    if (!rawSessions) return rawSessions;
-    return rawSessions.filter(s => !localPaidSessionIds.has(s.id));
-  }, [rawSessions]);
+  useEffect(() => {
+    purgeLegacyTableArtifacts();
+  }, []);
 
-// Timeout wrapper — prevents mutations from hanging forever on flaky networks
-const MUTATION_TIMEOUT_MS = 15_000;
-function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Opération expirée. Veuillez réessayer.')), ms)
-    ),
-  ]);
-}
+  /** Temps réel: un seul canal pour les sessions et les commandes du PDV. */
+  useEffect(() => {
+    if (!userId || !outletId) return;
+    const invalidate = () => {
+      queryClient.invalidateQueries({ queryKey });
+    };
+    const channel = supabase
+      .channel(`tables-${outletId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'table_sessions', filter: `outlet_id=eq.${outletId}` },
+        invalidate
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `outlet_id=eq.${outletId}` },
+        invalidate
+      )
+      .subscribe();
 
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, outletId, queryClient, queryKey]);
 
-  const getSessionsSnapshot = useCallback(async (): Promise<TableSession[]> => {
-    const fromQuery = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
-    const cachedScoped = await getData<TableSession[]>('table_sessions', resolvedUserId, scopedOutletId);
+  const invalidateAll = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey });
+    queryClient.invalidateQueries({ queryKey: ['orders'] });
+    queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await refetch();
+  }, [queryClient, queryKey, refetch]);
 
-    // STRICT: si un outlet est sélectionné, ne JAMAIS fusionner avec le cache unscoped
-    // (évite l'injection de sessions d'autres PDV).
-    const merged = scopedOutletId
-      ? [
-          ...((cachedScoped?.data || []) as TableSession[]),
-          ...fromQuery,
-        ]
-      : (() => {
-          // Fallback uniquement si aucun outlet (pas de risque de fuite inter-PDV)
-          return [...((cachedScoped?.data || []) as TableSession[]), ...fromQuery];
-        })();
+  const assertReady = useCallback(() => {
+    if (isOffline) throw new Error(OFFLINE_MESSAGE);
+    if (!userId) throw new Error('Non authentifié.');
+    if (!outletId) throw new Error('Aucun point de vente sélectionné.');
+  }, [isOffline, userId, outletId]);
 
-    // Déduplication par id ET filtrage strict par outlet
-    const deduped = Array.from(new Map(merged.map((s) => [s.id, s])).values());
-    if (scopedOutletId) {
-      return deduped.filter((s) => s.outlet_id === scopedOutletId);
-    }
-    return deduped;
-  }, [queryClient, sessionsQueryKey, resolvedUserId, scopedOutletId]);
-
-  const updateLocalCache = useCallback(async (updatedSession: Partial<TableSession> & { id: string }) => {
-    const baseSessions = await getSessionsSnapshot();
-    if (baseSessions.length === 0) {
-      console.warn('[Offline] updateLocalCache ignoré: snapshot vide pour table_sessions');
-      return;
-    }
-
-    const updatedSessions = baseSessions.map((s) =>
-      s.id === updatedSession.id ? { ...s, ...updatedSession } : s
+  /** Recalcule et persiste le total d'une session à partir de ses commandes. */
+  const syncSessionTotal = useCallback(async (sessionId: string): Promise<number> => {
+    const { data } = await supabase
+      .from('orders')
+      .select('total_amount')
+      .eq('session_id', sessionId)
+      .limit(10000);
+    const total = ((data as { total_amount: number | null }[]) || []).reduce(
+      (sum, o) => sum + Number(o.total_amount || 0),
+      0
     );
-    queryClient.setQueryData(sessionsQueryKey, updatedSessions);
-    useTableStore.getState().setSessions(updatedSessions);
+    await supabase
+      .from('table_sessions')
+      .update({ total_amount: total, updated_at: new Date().toISOString() })
+      .eq('id', sessionId);
+    return total;
+  }, []);
 
-    if (user) {
-      await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
-
-      const cachedUnscoped = await getData<TableSession[]>('table_sessions', resolvedUserId);
-      const unscopedList = (cachedUnscoped?.data || []) as TableSession[];
-      if (unscopedList.length > 0) {
-        const updatedUnscoped = unscopedList.map((s) =>
-          s.id === updatedSession.id ? { ...s, ...updatedSession } : s
-        );
-        await storeData('table_sessions', updatedUnscoped, resolvedUserId);
-      }
-    }
-  }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
-
-  // Remove a session from the local cache entirely (used after payment)
-  const removeFromLocalCache = useCallback(async (sessionId: string) => {
-    const baseSessions = await getSessionsSnapshot();
-    if (baseSessions.length === 0) {
-      console.warn('[Offline] removeFromLocalCache ignoré: snapshot vide pour table_sessions');
-      return;
-    }
-
-    const filtered = baseSessions.filter((s) => s.id !== sessionId);
-    queryClient.setQueryData(sessionsQueryKey, filtered);
-    useTableStore.getState().removeSession(sessionId);
-    if (user) {
-      await storeData('table_sessions', filtered, resolvedUserId, scopedOutletId);
-
-      const cachedUnscoped = await getData<TableSession[]>('table_sessions', resolvedUserId);
-      const unscopedList = (cachedUnscoped?.data || []) as TableSession[];
-      if (unscopedList.length > 0) {
-        const unscopedFiltered = unscopedList.filter((s) => s.id !== sessionId);
-        await storeData('table_sessions', unscopedFiltered, resolvedUserId);
-      }
-    }
-  }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
-
-  // Helper to add to local cache
-  const addToLocalCache = useCallback(async (newSession: TableSession) => {
-    const baseSessions = await getSessionsSnapshot();
-    const withoutDuplicate = baseSessions.filter((s) => s.id !== newSession.id);
-    const updatedSessions = [newSession, ...withoutDuplicate];
-    queryClient.setQueryData(sessionsQueryKey, updatedSessions);
-    useTableStore.getState().addSession(newSession);
-
-    if (user) {
-      await storeData('table_sessions', updatedSessions, resolvedUserId, scopedOutletId);
-
-      const cachedUnscoped = await getData<TableSession[]>('table_sessions', resolvedUserId);
-      const unscopedList = (cachedUnscoped?.data || []) as TableSession[];
-      const withoutDuplicateUnscoped = unscopedList.filter((s) => s.id !== newSession.id);
-      const updatedUnscoped = [newSession, ...withoutDuplicateUnscoped];
-      await storeData('table_sessions', updatedUnscoped, resolvedUserId);
-    }
-  }, [getSessionsSnapshot, queryClient, user, resolvedUserId, scopedOutletId, sessionsQueryKey]);
-
-  const upsertInvoiceInCache = useCallback(async (invoice: Invoice) => {
-    if (!resolvedUserId) return;
-    const current = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
-    const exists = current.some((i) => i.id === invoice.id);
-    const next = exists ? current.map((i) => (i.id === invoice.id ? { ...i, ...invoice } : i)) : [invoice, ...current];
-    queryClient.setQueryData(invoicesQueryKey, next);
-    useInvoiceStore.getState().upsertInvoice(invoice);
-    await storeData('invoices', next, resolvedUserId, scopedOutletId);
-  }, [queryClient, invoicesQueryKey, resolvedUserId, scopedOutletId]);
-
-  const updateInvoiceInCache = useCallback(async (invoiceId: string, patch: Partial<Invoice>) => {
-    if (!resolvedUserId) return;
-    const current = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
-    const next = current.map((i) => (i.id === invoiceId ? ({ ...i, ...patch } as Invoice) : i));
-    queryClient.setQueryData(invoicesQueryKey, next);
-    await storeData('invoices', next, resolvedUserId, scopedOutletId);
-  }, [queryClient, invoicesQueryKey, resolvedUserId, scopedOutletId]);
-
-  const removeInvoiceFromCacheById = useCallback(async (invoiceId: string) => {
-    if (!resolvedUserId) return;
-    const current = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
-    const next = current.filter((i) => i.id !== invoiceId);
-    queryClient.setQueryData(invoicesQueryKey, next);
-    useInvoiceStore.getState().removeInvoice(invoiceId);
-    await storeData('invoices', next, resolvedUserId, scopedOutletId);
-  }, [queryClient, invoicesQueryKey, resolvedUserId, scopedOutletId]);
-
-  const getOrdersForSession = useCallback(async (sessionId: string): Promise<Order[]> => {
-    // Try React Query cache first
-    const cachedFromQuery = queryClient.getQueryData(ordersQueryKey) as Order[] | undefined;
-    if (cachedFromQuery?.length) {
-      return cachedFromQuery.filter((o) => (o as any).session_id === sessionId);
-    }
-
-    if (!resolvedUserId && !user?.id) return [];
-
-    // Fallback to IndexedDB (owner-scoped first, then current-user scoped for backward compatibility)
-    const ownerCached = await getData<Order[]>('orders', resolvedUserId, scopedOutletId);
-    const ownerFallback = !ownerCached?.data && scopedOutletId
-      ? await getData<Order[]>('orders', resolvedUserId)
-      : ownerCached;
-
-    const effectiveOwnerList = (ownerFallback?.data || ownerCached?.data || []) as Order[];
-    if (effectiveOwnerList.length > 0) {
-      return effectiveOwnerList.filter((o) => (o as any).session_id === sessionId);
-    }
-
-    if (user?.id && user.id !== resolvedUserId) {
-      const legacyCached = await getData<Order[]>('orders', user.id, scopedOutletId);
-      const legacyFallback = !legacyCached?.data && scopedOutletId
-        ? await getData<Order[]>('orders', user.id)
-        : legacyCached;
-      const legacyList = (legacyFallback?.data || legacyCached?.data || []) as Order[];
-      return legacyList.filter((o) => (o as any).session_id === sessionId);
-    }
-
-    return [];
-  }, [queryClient, ordersQueryKey, resolvedUserId, scopedOutletId, user?.id]);
+  // ---------------------------------------------------------------- mutations
 
   const createSessionMutation = useMutation({
-    mutationFn: ({ tableNumber, numberOfGuests, notes, debtorId }: {
+    mutationFn: async ({
+      tableNumber,
+      numberOfGuests,
+      notes,
+      debtorId,
+    }: {
       tableNumber: string;
       numberOfGuests?: number;
       notes?: string;
       debtorId?: string;
-    }) => withTimeout((async () => {
-      const localId = generateLocalId();
-      const sessionData: Partial<TableSession> = {
-        id: localId,
-        user_id: resolvedUserId,
-        outlet_id: scopedOutletId || null,
-        table_number: tableNumber,
-        number_of_guests: numberOfGuests || null,
-        notes: notes || null,
-        debtor_id: debtorId || null,
-        status: 'active',
-        total_amount: 0,
-        started_at: new Date().toISOString(),
-        closed_at: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      if (isOffline) {
-        await queueMutation({
-          table: 'table_sessions',
-          operation: 'insert',
-          data: sessionData as Record<string, unknown>,
-          localId,
-          userId: resolvedUserId,
-          outletId: scopedOutletId,
-          maxRetries: 3,
-          conflictResolution: 'client-wins',
-        });
-        
-        // Add to local cache immediately
-        await addToLocalCache(sessionData as TableSession);
-        
-        return sessionData as TableSession;
-      }
-
+    }) => {
+      assertReady();
       const { data, error } = await supabase
         .from('table_sessions')
-        .insert([{
-          user_id: resolvedUserId || user?.id,
-          outlet_id: scopedOutletId,
-          table_number: tableNumber,
-          number_of_guests: numberOfGuests,
-          notes: notes,
-          debtor_id: debtorId,
-          status: 'active',
-        }])
+        .insert([
+          {
+            user_id: userId,
+            outlet_id: outletId,
+            table_number: tableNumber,
+            number_of_guests: numberOfGuests ?? null,
+            notes: notes ?? null,
+            debtor_id: debtorId ?? null,
+            status: 'active',
+            total_amount: 0,
+          },
+        ])
         .select()
         .single();
-
       if (error) throw error;
-
-      // Keep UI consistent even when refetch is temporarily suppressed.
-      await addToLocalCache(data as unknown as TableSession);
       return data as unknown as TableSession;
-    })()),
-    onSuccess: (data) => {
-      // Force an immediate refetch so the grid updates without manual refresh
-      refetch();
-      toast.success(isOffline ? "Session créée (hors ligne)" : "Session ouverte", { description: `Table ${(data as any).table_number} activée` });
     },
-    onError: (error: Error) => {
-      toast.error("Erreur", { description: error.message || "Impossible de créer la session." });
+    onSuccess: async (session) => {
+      await invalidateAll();
+      toast.success('Table ouverte', { description: `Table ${session.table_number} activée` });
     },
+    onError: (error: Error) => toast.error('Erreur', { description: error.message }),
   });
 
-  const closeSessionMutation = useMutation({
-    mutationFn: (sessionId: string) => withTimeout((async () => {
-      const session = sessions?.find(s => s.id === sessionId);
-      const hasDebtor = session?.debtor_id !== null;
-      // Closing generates the invoice; payment is a separate action.
-      const newStatus: TableSession["status"] = 'closed';
+  /** Ouvre une table ET enregistre la première commande (flux POS). */
+  const createSessionWithOrderMutation = useMutation({
+    mutationFn: async ({
+      tableNumber,
+      numberOfGuests,
+      items,
+      totalAmount,
+    }: {
+      tableNumber: string;
+      numberOfGuests?: number;
+      items: OrderLineInput[];
+      totalAmount: number;
+    }) => {
+      assertReady();
+      if (!items.length) throw new Error('Le panier est vide.');
 
-      if (isOffline) {
-        await queueMutation({
-          table: 'table_sessions',
-          operation: 'update',
-          data: { id: sessionId, status: newStatus, closed_at: new Date().toISOString() },
-          localId: generateLocalId(),
-          userId: resolvedUserId,
-          outletId: scopedOutletId,
-          maxRetries: 3,
-          conflictResolution: 'client-wins',
-        });
-
-        // Create offline invoice
-        const invoiceNumber = generateOfflineInvoiceNumber();
-        const invoiceId = generateLocalId();
-
-        // Build items from cached orders (best-effort, so printing works offline)
-        const ordersForSession = await getOrdersForSession(sessionId);
-        const items: unknown[] = [];
-        for (const o of ordersForSession) {
-          const list = Array.isArray(o.items) ? o.items : [];
-          items.push(...list);
-        }
-
-        const invoiceToCache: Invoice = {
-          id: invoiceId,
-          user_id: resolvedUserId,
-          outlet_id: scopedOutletId || null,
-          order_id: null,
-          session_id: sessionId,
-          invoice_number: invoiceNumber,
-          total_amount: Number(session?.total_amount || 0),
-          status: hasDebtor ? 'unpaid' : 'unpaid',
-          due_date: null,
-          paid_date: null,
-          notes: `Facture (hors ligne) - Table ${session?.table_number || ''}`.trim(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          customer_name: `Table ${session?.table_number || ''}`.trim(),
-          customer_email: null,
-          customer_phone: null,
-          items,
-          payment_method: null,
-        };
-
-        await queueMutation({
-          table: 'invoices',
-          operation: 'insert',
-          data: {
-            id: invoiceId,
-            user_id: resolvedUserId,
-            outlet_id: scopedOutletId,
-            session_id: sessionId,
-            invoice_number: invoiceNumber,
-            total_amount: session?.total_amount || 0,
-            status: hasDebtor ? 'unpaid' : 'unpaid',
-            invoice_type: hasDebtor ? 'b2b' : 'b2c',
-            business_customer_id: session?.debtor_id || null,
-            customer_name: `Table ${session?.table_number}`,
-            items,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+      const { data: session, error: sessionErr } = await supabase
+        .from('table_sessions')
+        .insert([
+          {
+            user_id: userId,
+            outlet_id: outletId,
+            table_number: tableNumber,
+            number_of_guests: numberOfGuests ?? null,
+            status: 'active',
+            total_amount: totalAmount,
           },
-          localId: invoiceId,
-          userId: resolvedUserId,
-          outletId: scopedOutletId,
-          maxRetries: 3,
-          conflictResolution: 'client-wins',
-        });
+        ])
+        .select()
+        .single();
+      if (sessionErr) throw sessionErr;
 
-        await upsertInvoiceInCache(invoiceToCache);
-
-        // Ensure a business period exists for offline reports
-        await ensurePeriodExistsOffline(resolvedUserId, scopedOutletId);
-
-        // Update local cache
-        await updateLocalCache({ id: sessionId, status: newStatus as any, closed_at: new Date().toISOString() });
-
-        return { hasDebtor, invoiceNumber };
+      const { error: orderErr } = await supabase.from('orders').insert([
+        {
+          user_id: userId,
+          outlet_id: outletId,
+          session_id: session.id,
+          table_number: tableNumber,
+          order_type: 'sur_place',
+          customer_name: `Table ${tableNumber}`,
+          items: items as unknown as never,
+          total_amount: totalAmount,
+          status: 'pending',
+        },
+      ]);
+      if (orderErr) {
+        // Pas de session orpheline vide en cas d'échec de la commande.
+        await supabase.from('table_sessions').delete().eq('id', session.id);
+        throw orderErr;
       }
 
-      // Fetch session details for invoice generation
-      const { data: sessionData } = await supabase
+      await syncSessionTotal(session.id);
+      return session as unknown as TableSession;
+    },
+    onSuccess: async (session) => {
+      await invalidateAll();
+      toast.success('Commande enregistrée', { description: `Table ${session.table_number} ouverte.` });
+    },
+    onError: (error: Error) => toast.error('Erreur', { description: error.message }),
+  });
+
+  /** Ajoute une commande à une session existante. */
+  const addOrderToSessionMutation = useMutation({
+    mutationFn: async ({
+      sessionId,
+      tableNumber,
+      items,
+      totalAmount,
+    }: {
+      sessionId: string;
+      tableNumber: string;
+      items: OrderLineInput[];
+      totalAmount: number;
+    }) => {
+      assertReady();
+      if (!items.length) throw new Error('Le panier est vide.');
+
+      const { error } = await supabase.from('orders').insert([
+        {
+          user_id: userId,
+          outlet_id: outletId,
+          session_id: sessionId,
+          table_number: tableNumber,
+          order_type: 'sur_place',
+          customer_name: `Table ${tableNumber}`,
+          items: items as unknown as never,
+          total_amount: totalAmount,
+          status: 'pending',
+        },
+      ]);
+      if (error) throw error;
+
+      return syncSessionTotal(sessionId);
+    },
+    onSuccess: async () => {
+      await invalidateAll();
+      toast.success('Commande ajoutée');
+    },
+    onError: (error: Error) => toast.error('Erreur', { description: error.message }),
+  });
+
+  /** Ferme la session: le trigger SQL génère la facture. */
+  const closeSessionMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      assertReady();
+      const total = await syncSessionTotal(sessionId);
+      const { data, error } = await supabase
+        .from('table_sessions')
+        .update({ status: 'closed', closed_at: new Date().toISOString() })
+        .eq('id', sessionId)
+        .select('debtor_id')
+        .single();
+      if (error) throw error;
+      return { hasDebtor: !!data?.debtor_id, total };
+    },
+    onSuccess: async ({ hasDebtor }) => {
+      await invalidateAll();
+      toast.success(hasDebtor ? 'Session fermée - Crédit accordé' : 'Session fermée', {
+        description: hasDebtor ? 'Dette enregistrée' : 'Facture générée',
+      });
+    },
+    onError: (error: Error) => toast.error('Erreur', { description: error.message }),
+  });
+
+  /**
+   * Encaissement. Fonctionne aussi bien depuis une table "occupée" (fermeture
+   * implicite) que depuis une table "en attente".
+   */
+  const markSessionAsPaidMutation = useMutation({
+    mutationFn: async ({
+      sessionId,
+      paymentMethod,
+    }: {
+      sessionId: string;
+      paymentMethod?: string;
+    }) => {
+      assertReady();
+
+      const { data: session, error: readErr } = await supabase
         .from('table_sessions')
         .select('*')
         .eq('id', sessionId)
-        .single();
+        .maybeSingle();
+      if (readErr) throw readErr;
+      if (!session) throw new Error('Session introuvable. Actualisez puis réessayez.');
 
-      if (!sessionData) throw new Error('Session introuvable');
-
-      const hasDebtorDb = sessionData.debtor_id !== null;
-
-      // Close the session
-      const { error } = await supabase
-        .from('table_sessions')
-        .update({
-          status: 'closed',
-          closed_at: new Date().toISOString(),
-        })
-        .eq('id', sessionId);
-
-      if (error) throw error;
-
-      // Invoice generation is handled by DB trigger: create_invoice_for_closed_session.
-      // We keep frontend close flow focused on session lifecycle to avoid duplicate invoice logic.
-
-      // Immediately update local cache so the table turns yellow instantly
-      await updateLocalCache({ id: sessionId, status: 'closed', closed_at: new Date().toISOString() });
-
-      return { hasDebtor: hasDebtorDb };
-    })()),
-    onSuccess: ({ hasDebtor }) => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions', outletIdKey] });
-      queryClient.invalidateQueries({ queryKey: ['invoices', outletIdKey] });
-      queryClient.refetchQueries({ queryKey: ['invoices', outletIdKey] });
-      toast.success(hasDebtor ? "Session fermée - Crédit accordé" : (isOffline ? "Session fermée (hors ligne)" : "Session fermée"), { description: hasDebtor ? "Dette enregistrée" : "Facture générée" });
-    },
-    onError: (error: Error) => {
-      toast.error("Erreur", { description: error.message || "Impossible de fermer la session." });
-    },
-  });
-
-  let snapshotSessions: TableSession[] = [];
-  let snapshotInvoices: Invoice[] = [];
-
-  const markSessionAsPaidMutation = useMutation({
-    mutationFn: ({ sessionId, paymentMethod }: { sessionId: string; paymentMethod?: string }) => withTimeout((async () => {
-      // PRIORITÉ ABSOLUE: le paiement ne doit plus dépendre d'un cache React Query.
-      // Le cache sert seulement à l'optimisme/rollback; la source de vérité est la RPC SQL atomique.
-      const cachedSessions = (queryClient.getQueryData(sessionsQueryKey) as TableSession[] | undefined) || [];
-      const snapshot = await getSessionsSnapshot();
-      const session =
-        cachedSessions.find((s) => s.id === sessionId) ||
-        snapshot.find((s) => s.id === sessionId) ||
-        sessions?.find((s) => s.id === sessionId) ||
-        useTableStore.getState().sessions.find((s) => s.id === sessionId) ||
-        null;
-
-      if (!session) {
-        throw new Error('Session introuvable. Actualisez les tables puis réessayez.');
-      }
-
-      snapshotSessions = snapshot.length > 0 ? [...snapshot] : [...cachedSessions];
-      snapshotInvoices = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined)
-        ? [...(queryClient.getQueryData(invoicesQueryKey) as Invoice[])]
-        : [];
-
-      const isDebtorSession = session ? session.debtor_id !== null : false;
-
-      if (isOffline) {
-        // === MODE HORS LIGNE : sauvegarde locale, sync en arrière-plan ===
-        // ANTI-REJEU: supprimer toute mutation antérieure en attente sur cette session
-        // qui voudrait remettre status='closed' ou 'active'.
-        await removePendingMutationsByFilter((m) => {
-          if (m.table !== 'table_sessions') return false;
-          if (m.operation !== 'update') return false;
-          const data = m.data as Record<string, unknown>;
-          if (data?.id !== sessionId) return false;
-          const status = data?.status as string | undefined;
-          return status === 'closed' || status === 'active';
-        });
-
-        await queueMutation({
-          table: 'table_sessions',
-          operation: 'update',
-          data: { id: sessionId, status: 'paid', payment_method: paymentMethod || 'Espèces' },
-          localId: generateLocalId(),
-          userId: resolvedUserId,
-          outletId: scopedOutletId,
-          maxRetries: 3,
-          conflictResolution: 'client-wins',
-        });
-
-        if (!isDebtorSession) {
-          const nowIso = new Date().toISOString();
-          const paidDate = nowIso.split('T')[0];
-
-          const queryInvoices = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
-          const cachedInvoicesScoped = await getData<Invoice[]>('invoices', resolvedUserId, scopedOutletId);
-          const cachedInvoicesFallback = !cachedInvoicesScoped?.data && scopedOutletId
-            ? await getData<Invoice[]>('invoices', resolvedUserId)
-            : cachedInvoicesScoped;
-
-          const mergedInvoices = [...queryInvoices, ...((cachedInvoicesFallback?.data || []) as Invoice[])];
-          const uniqueInvoices = Array.from(new Map(mergedInvoices.map((inv) => [inv.id, inv])).values());
-
-          let invoiceForSession = uniqueInvoices
-            .filter((inv) => inv.session_id === sessionId)
-            .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))[0];
-
-          if (!invoiceForSession) {
-            const ordersForSession = await getOrdersForSession(sessionId);
-            const generatedInvoiceId = generateLocalId();
-            const generatedInvoiceNumber = generateOfflineInvoiceNumber();
-            const generatedItems = ordersForSession.flatMap((order) =>
-              Array.isArray((order as any).items) ? (order as any).items : []
-            );
-
-            invoiceForSession = {
-              id: generatedInvoiceId,
-              user_id: resolvedUserId,
-              outlet_id: scopedOutletId || null,
-              order_id: null,
-              session_id: sessionId,
-              invoice_number: generatedInvoiceNumber,
-              total_amount: Number(session?.total_amount || 0),
-              status: 'paid',
-              due_date: null,
-              paid_date: paidDate as any,
-              notes: `Facture générée au paiement (hors ligne) - Table ${session?.table_number || ''}`.trim(),
-              created_at: nowIso,
-              updated_at: nowIso,
-              customer_name: `Table ${session?.table_number || ''}`.trim(),
-              customer_email: null,
-              customer_phone: null,
-              items: generatedItems,
-              payment_method: paymentMethod || 'Espèces',
-            } as Invoice;
-
-            await queueMutation({
-              table: 'invoices',
-              operation: 'insert',
-              data: {
-                ...(invoiceForSession as unknown as Record<string, unknown>),
-                status: 'unpaid',
-                paid_date: null,
-              },
-              localId: generatedInvoiceId,
-              userId: resolvedUserId || user?.id || '',
-              outletId: scopedOutletId,
-              maxRetries: 3,
-              conflictResolution: 'client-wins',
-            });
-            // Passer ensuite à paid pour déclencher exactement une fois les
-            // automatisations SQL de stock et de comptabilité.
-            await queueMutation({
-              table: 'invoices',
-              operation: 'update',
-              data: {
-                id: generatedInvoiceId,
-                status: 'paid',
-                paid_date: paidDate,
-                payment_method: paymentMethod || 'Espèces',
-                updated_at: nowIso,
-              },
-              localId: generateLocalId(),
-              userId: resolvedUserId || user?.id || '',
-              outletId: scopedOutletId,
-              maxRetries: 3,
-              conflictResolution: 'client-wins',
-            });
-          } else {
-            await queueMutation({
-              table: 'invoices',
-              operation: 'update',
-              data: {
-                id: invoiceForSession.id,
-                status: 'paid',
-                paid_date: nowIso,
-                payment_method: paymentMethod || 'Espèces',
-                updated_at: nowIso,
-              },
-              localId: generateLocalId(),
-              userId: resolvedUserId || user?.id || '',
-              outletId: scopedOutletId,
-              maxRetries: 3,
-              conflictResolution: 'client-wins',
-            });
-
-            invoiceForSession = {
-              ...invoiceForSession,
-              status: 'paid',
-              paid_date: paidDate as any,
-              payment_method: paymentMethod || 'Espèces',
-              updated_at: nowIso,
-            } as Invoice;
-          }
-
-          await upsertInvoiceInCache(invoiceForSession);
-          const finalInvoices = [
-            invoiceForSession,
-            ...uniqueInvoices.filter((inv) => inv.id !== invoiceForSession!.id),
-          ];
-          await storeData('invoices', finalInvoices as any, resolvedUserId, scopedOutletId);
-        }
-
-        await ensurePeriodExistsOffline(resolvedUserId, scopedOutletId);
-        await removeFromLocalCache(sessionId);
-        markSessionPaidLocally(sessionId);
-        useTableStore.getState().markPaid(sessionId);
-        void syncEngine.sync();
-        return { isDebtorSession };
-      }
-
-      // === MODE EN LIGNE : écriture directe en base ===
       const nowIso = new Date().toISOString();
-      const paidDate = nowIso.split('T')[0];
+      const paidDate = nowIso.slice(0, 10);
+      const method = paymentMethod || 'Espèces';
+      const total = await syncSessionTotal(sessionId);
+      const isDebtorSession = !!session.debtor_id;
 
-      // 1. Fermer + payer la session
-      const { error: sessionErr } = await supabase
-        .from('table_sessions')
-        .update({
-          status: 'paid',
-          payment_method: paymentMethod || 'Espèces',
-          closed_at: session.closed_at || nowIso,
-          updated_at: nowIso,
-        })
-        .eq('id', sessionId);
+      // La table doit d'abord passer par "closed" pour que le trigger facture
+      // s'exécute, puis par "paid".
+      if (session.status === 'active') {
+        const { error } = await supabase
+          .from('table_sessions')
+          .update({ status: 'closed', closed_at: nowIso })
+          .eq('id', sessionId);
+        if (error) throw error;
+      }
 
-      if (sessionErr) throw sessionErr;
-
-      // 2. Trouver et payer la facture
       if (!isDebtorSession) {
-        const { data: existingInvoices } = await supabase
+        const { data: invoices } = await supabase
           .from('invoices')
-          .select('id, status')
+          .select('id')
           .eq('session_id', sessionId)
           .order('created_at', { ascending: false })
           .limit(1);
 
-        if (existingInvoices && existingInvoices.length > 0) {
-          const { error: invErr } = await supabase
+        if (invoices && invoices.length > 0) {
+          const { error } = await supabase
             .from('invoices')
             .update({
               status: 'paid',
               paid_date: paidDate,
-              payment_method: paymentMethod || 'Espèces',
+              payment_method: method,
+              total_amount: total,
               updated_at: nowIso,
             })
-            .eq('id', existingInvoices[0].id);
-          if (invErr) throw invErr;
+            .eq('id', invoices[0].id);
+          if (error) throw error;
         } else {
-          const ordersForSession = await getOrdersForSession(sessionId);
-          const generatedItems = ordersForSession.flatMap((order) =>
-            Array.isArray((order as any).items) ? (order as any).items : []
+          // Filet de sécurité si le trigger n'a pas créé de facture.
+          const { data: orderRows } = await supabase
+            .from('orders')
+            .select('items')
+            .eq('session_id', sessionId)
+            .limit(10000);
+          const items = ((orderRows as { items: unknown }[]) || []).flatMap((o) =>
+            Array.isArray(o.items) ? (o.items as unknown[]) : []
           );
-          const { error: invErr } = await supabase
-            .from('invoices')
-            .insert([{
-              user_id: resolvedUserId || user?.id,
-              outlet_id: scopedOutletId,
+          const { error } = await supabase.from('invoices').insert([
+            {
+              user_id: userId,
+              outlet_id: outletId,
               session_id: sessionId,
-              total_amount: Number(session.total_amount || 0),
+              total_amount: total,
               status: 'paid',
               paid_date: paidDate,
-              payment_method: paymentMethod || 'Espèces',
+              payment_method: method,
               customer_name: `Table ${session.table_number}`,
-              items: generatedItems,
-            }]);
-          if (invErr) throw invErr;
+              items: items as unknown as never,
+            },
+          ]);
+          if (error) throw error;
         }
       }
 
-      // 3. Cache local + invalidation
-      await ensurePeriodExistsOffline(resolvedUserId, scopedOutletId);
-      await removeFromLocalCache(sessionId);
-      markSessionPaidLocally(sessionId);
-      useTableStore.getState().markPaid(sessionId);
+      const { error: paidErr } = await supabase
+        .from('table_sessions')
+        .update({
+          status: 'paid',
+          payment_method: method,
+          closed_at: session.closed_at || nowIso,
+          total_amount: total,
+          updated_at: nowIso,
+        })
+        .eq('id', sessionId);
+      if (paidErr) throw paidErr;
 
       return { isDebtorSession };
-    })()),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions', outletIdKey] });
-      queryClient.invalidateQueries({ queryKey: ['invoices', outletIdKey] });
-      queryClient.invalidateQueries({ queryKey: ['transactions', outletIdKey] });
-      queryClient.invalidateQueries({ queryKey: ['inventory', outletIdKey] });
-      queryClient.invalidateQueries({ queryKey: ['stock-movements', outletIdKey] });
-      toast.success(isOffline ? "Paiement enregistré (hors ligne)" : "Paiement enregistré", { description: "La facture est marquée payée et la table est libérée." });
     },
-    onError: (error: Error, variables: { sessionId: string; paymentMethod?: string }) => {
-      localPaidSessionIds.delete(variables.sessionId);
-      localPaidTimestamps.delete(variables.sessionId);
-      persistPaidSessionsToStorage();
-      useTableStore.getState().rollbackPaid(variables.sessionId);
-
-      queryClient.setQueryData(sessionsQueryKey, snapshotSessions);
-      queryClient.setQueryData(invoicesQueryKey, snapshotInvoices);
-      useTableStore.getState().setSessions(snapshotSessions);
-
-      void queryClient.refetchQueries({ queryKey: ['table-sessions', outletIdKey] });
-
-      toast.error('Erreur paiement', { description: error.message || 'Impossible de marquer comme payée. La table a été restaurée.' });
+    // Optimiste: la table disparaît immédiatement de la grille, et revient si erreur.
+    onMutate: async ({ sessionId }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<TableSession[]>(queryKey);
+      queryClient.setQueryData<TableSession[]>(queryKey, (old) =>
+        (old || []).filter((s) => s.id !== sessionId)
+      );
+      return { previous };
+    },
+    onError: (error: Error, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+      toast.error('Erreur paiement', { description: error.message });
+    },
+    onSuccess: async ({ isDebtorSession }) => {
+      await invalidateAll();
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+      toast.success('Paiement enregistré', {
+        description: isDebtorSession
+          ? 'Crédit débiteur enregistré, table libérée.'
+          : 'Facture payée, table libérée.',
+      });
     },
   });
 
+  /** Réouvre une table fermée: annule la facture et la transaction associées. */
   const reopenSessionMutation = useMutation({
-    mutationFn: (sessionId: string) => withTimeout((async () => {
-      if (isOffline) {
-        await queueMutation({
-          table: 'table_sessions',
-          operation: 'update',
-          data: { id: sessionId, status: 'active', closed_at: null },
-          localId: generateLocalId(),
-          userId: resolvedUserId,
-          outletId: scopedOutletId,
-          maxRetries: 3,
-          conflictResolution: 'client-wins',
-        });
-
-        // Delete invoice(s) by ID (syncEngine requires id)
-        const invoicesCached = (queryClient.getQueryData(invoicesQueryKey) as Invoice[] | undefined) || [];
-        const invoicesForSession = invoicesCached.filter((inv) => inv.session_id === sessionId);
-        for (const inv of invoicesForSession) {
-          await queueMutation({
-            table: 'invoices',
-            operation: 'delete',
-            data: { id: inv.id },
-            localId: generateLocalId(),
-            userId: resolvedUserId,
-            outletId: scopedOutletId,
-            maxRetries: 3,
-            conflictResolution: 'client-wins',
-          });
-          await removeInvoiceFromCacheById(inv.id);
-        }
-
-        await updateLocalCache({ id: sessionId, status: 'active', closed_at: null });
-        return;
-      }
-
-      // Get invoice number for transaction deletion
+    mutationFn: async (sessionId: string) => {
+      assertReady();
       const { data: invoice } = await supabase
         .from('invoices')
         .select('invoice_number')
         .eq('session_id', sessionId)
         .maybeSingle();
 
-      // Delete transaction
       if (invoice?.invoice_number) {
-        await supabase
-          .from('transactions')
-          .delete()
-          .eq('title', `Facture ${invoice.invoice_number}`);
+        await supabase.from('transactions').delete().eq('title', `Facture ${invoice.invoice_number}`);
       }
+      await supabase.from('invoices').delete().eq('session_id', sessionId);
 
-      // Delete invoice
-      await supabase
-        .from('invoices')
-        .delete()
-        .eq('session_id', sessionId);
-
-      // Reopen session
       const { error } = await supabase
         .from('table_sessions')
         .update({ status: 'active', closed_at: null })
         .eq('id', sessionId);
-
       if (error) throw error;
-    })()),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['table-sessions', outletIdKey] });
-      queryClient.invalidateQueries({ queryKey: ['invoices', outletIdKey] });
-      queryClient.invalidateQueries({ queryKey: ['transactions', outletIdKey] });
-      toast.success(isOffline ? "Table réouverte (hors ligne)" : "Table réouverte", { description: "La facture et transaction ont été annulées." });
     },
-    onError: (error: Error) => {
-      toast.error("Erreur", { description: error.message || "Impossible de réouvrir la table." });
+    onSuccess: async () => {
+      await invalidateAll();
+      toast.success('Table réouverte', { description: 'Facture et transaction annulées.' });
     },
+    onError: (error: Error) => toast.error('Erreur', { description: error.message }),
   });
 
-
-  const getActiveSessionForTable = useCallback((tableNumber: string): TableSession | null => {
-    if (!sessions) return null;
-    const normalizedTableNumber = normalizeTableNumber(tableNumber);
-    return sessions.find(
-      s => getSessionTableNumber(s) === normalizedTableNumber && s.status === 'active'
-    ) || null;
-  }, [sessions]);
-
-  // Note: realtime subscription is handled by useOfflineData to avoid duplicate channels.
+  const getActiveSessionForTable = useCallback(
+    (tableNumber: string): TableSession | null => {
+      if (!sessions) return null;
+      const normalized = normalizeTableNumber(tableNumber);
+      return (
+        sessions.find(
+          (s) => getSessionTableNumber(s) === normalized && s.status === 'active'
+        ) || null
+      );
+    },
+    [sessions]
+  );
 
   return {
     sessions: sessions || [],
     loading: isLoading,
     outletLoading,
-    isOffline: dataOffline,
-    isMutating: createSessionMutation.isPending || closeSessionMutation.isPending || markSessionAsPaidMutation.isPending || reopenSessionMutation.isPending,
+    isOffline,
+    isMutating:
+      createSessionMutation.isPending ||
+      createSessionWithOrderMutation.isPending ||
+      addOrderToSessionMutation.isPending ||
+      closeSessionMutation.isPending ||
+      markSessionAsPaidMutation.isPending ||
+      reopenSessionMutation.isPending,
     createSession: createSessionMutation.mutateAsync,
+    createSessionWithOrder: createSessionWithOrderMutation.mutateAsync,
+    addOrderToSession: addOrderToSessionMutation.mutateAsync,
     closeSession: closeSessionMutation.mutateAsync,
     markSessionAsPaid: (sessionId: string, paymentMethod?: string) =>
       markSessionAsPaidMutation.mutateAsync({ sessionId, paymentMethod }),
