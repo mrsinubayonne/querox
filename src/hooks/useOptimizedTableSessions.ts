@@ -20,6 +20,7 @@ import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
 import { useNetworkStatus } from './useNetworkStatus';
 import { resolveOfflineUserId, getSelectedOutletIdFromStorage } from '@/lib/offlineIdentity';
 import { getSessionTableNumber, normalizeTableNumber } from '@/utils/tableNumbers';
+import { removePendingMutationsByFilter } from '@/lib/offlineStorage';
 
 export interface TableSession {
   id: string;
