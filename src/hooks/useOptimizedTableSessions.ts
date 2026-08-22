@@ -719,7 +719,7 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
             .eq('session_id', sessionId);
           if (invoicePaymentError) console.warn('[markSessionAsPaid] invoice fallback warning:', invoicePaymentError);
         } else {
-          const session = (queryClient.getQueryData(['table-sessions', outletIdKey]) as any[] | undefined)
+          const session = (queryClient.getQueryData(sessionsQueryKey) as any[] | undefined)
             ?.find((s: any) => s.id === sessionId);
           let invoiceNumber: string | null = null;
           try {
