@@ -109,11 +109,13 @@ export const useOptimizedTableSessions = () => {
     if (list.length === 0) return [];
 
     // Totaux réels = somme des commandes de la session.
-    const { data: orderRows } = await supabase
+    const { data: orderRows, error: ordersError } = await supabase
       .from('orders')
       .select('session_id, total_amount')
       .in('session_id', list.map((s) => s.id))
       .limit(10000);
+
+    if (ordersError) throw ordersError;
 
     const totals = new Map<string, number>();
     for (const row of (orderRows as { session_id: string | null; total_amount: number | null }[]) || []) {
@@ -258,42 +260,21 @@ export const useOptimizedTableSessions = () => {
       assertReady();
       if (!items.length) throw new Error('Le panier est vide.');
 
-      const { data: session, error: sessionErr } = await supabase
-        .from('table_sessions')
-        .insert([
-          {
-            user_id: userId,
-            outlet_id: outletId,
-            table_number: tableNumber,
-            number_of_guests: numberOfGuests ?? null,
-            status: 'active',
-            total_amount: totalAmount,
-          },
-        ])
-        .select()
-        .single();
-      if (sessionErr) throw sessionErr;
-
-      const { error: orderErr } = await supabase.from('orders').insert([
+      // Une seule transaction serveur: aucune table vide ne peut être créée si
+      // l'enregistrement de la commande échoue.
+      const { data: session, error } = await supabase.rpc(
+        'create_table_session_with_order',
         {
-          user_id: userId,
-          outlet_id: outletId,
-          session_id: session.id,
-          table_number: tableNumber,
-          order_type: 'sur_place',
-          customer_name: `Table ${tableNumber}`,
-          items: items as unknown as never,
-          total_amount: totalAmount,
-          status: 'pending',
-        },
-      ]);
-      if (orderErr) {
-        // Pas de session orpheline vide en cas d'échec de la commande.
-        await supabase.from('table_sessions').delete().eq('id', session.id);
-        throw orderErr;
-      }
-
-      await syncSessionTotal(session.id);
+          _owner_id: userId,
+          _outlet_id: outletId,
+          _table_number: normalizeTableNumber(tableNumber),
+          _number_of_guests: numberOfGuests ?? 1,
+          _items: items,
+          _total_amount: totalAmount,
+        }
+      );
+      if (error) throw error;
+      if (!session) throw new Error("La commande n'a pas été enregistrée.");
       return session as unknown as TableSession;
     },
     onSuccess: async (session) => {
@@ -319,22 +300,20 @@ export const useOptimizedTableSessions = () => {
       assertReady();
       if (!items.length) throw new Error('Le panier est vide.');
 
-      const { error } = await supabase.from('orders').insert([
-        {
-          user_id: userId,
-          outlet_id: outletId,
-          session_id: sessionId,
-          table_number: tableNumber,
-          order_type: 'sur_place',
-          customer_name: `Table ${tableNumber}`,
-          items: items as unknown as never,
-          total_amount: totalAmount,
-          status: 'pending',
-        },
-      ]);
+      // L'ajout et le recalcul du total sont verrouillés dans la même
+      // transaction serveur pour éviter les montants à zéro.
+      const { data, error } = await supabase.rpc('add_order_to_table_session', {
+        _session_id: sessionId,
+        _items: items,
+        _total_amount: totalAmount,
+        _customer_name: `Table ${normalizeTableNumber(tableNumber)}`,
+        _customer_phone: null,
+        _customer_email: null,
+        _notes: null,
+      });
       if (error) throw error;
-
-      return syncSessionTotal(sessionId);
+      if (!data) throw new Error("La commande n'a pas été ajoutée.");
+      return data;
     },
     onSuccess: async () => {
       await invalidateAll();
@@ -380,90 +359,18 @@ export const useOptimizedTableSessions = () => {
     }) => {
       assertReady();
 
-      const { data: session, error: readErr } = await supabase
-        .from('table_sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .maybeSingle();
-      if (readErr) throw readErr;
-      if (!session) throw new Error('Session introuvable. Actualisez puis réessayez.');
-
-      const nowIso = new Date().toISOString();
-      const paidDate = nowIso.slice(0, 10);
       const method = paymentMethod || 'Espèces';
-      const total = await syncSessionTotal(sessionId);
-      const isDebtorSession = !!session.debtor_id;
+      // Facture, paiement et libération de table sont atomiques côté serveur.
+      // Le client ne fabrique jamais lui-même une facture.
+      const { data, error } = await supabase.rpc('mark_table_session_paid', {
+        _session_id: sessionId,
+        _payment_method: method,
+      });
+      if (error) throw error;
 
-      // La table doit d'abord passer par "closed" pour que le trigger facture
-      // s'exécute, puis par "paid".
-      if (session.status === 'active') {
-        const { error } = await supabase
-          .from('table_sessions')
-          .update({ status: 'closed', closed_at: nowIso })
-          .eq('id', sessionId);
-        if (error) throw error;
-      }
-
-      if (!isDebtorSession) {
-        const { data: invoices } = await supabase
-          .from('invoices')
-          .select('id')
-          .eq('session_id', sessionId)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (invoices && invoices.length > 0) {
-          const { error } = await supabase
-            .from('invoices')
-            .update({
-              status: 'paid',
-              paid_date: paidDate,
-              payment_method: method,
-              total_amount: total,
-              updated_at: nowIso,
-            })
-            .eq('id', invoices[0].id);
-          if (error) throw error;
-        } else {
-          // Filet de sécurité si le trigger n'a pas créé de facture.
-          const { data: orderRows } = await supabase
-            .from('orders')
-            .select('items')
-            .eq('session_id', sessionId)
-            .limit(10000);
-          const items = ((orderRows as { items: unknown }[]) || []).flatMap((o) =>
-            Array.isArray(o.items) ? (o.items as unknown[]) : []
-          );
-          const { error } = await supabase.from('invoices').insert([
-            {
-              user_id: userId,
-              outlet_id: outletId,
-              session_id: sessionId,
-              total_amount: total,
-              status: 'paid',
-              paid_date: paidDate,
-              payment_method: method,
-              customer_name: `Table ${session.table_number}`,
-              items: items as unknown as never,
-            },
-          ]);
-          if (error) throw error;
-        }
-      }
-
-      const { error: paidErr } = await supabase
-        .from('table_sessions')
-        .update({
-          status: 'paid',
-          payment_method: method,
-          closed_at: session.closed_at || nowIso,
-          total_amount: total,
-          updated_at: nowIso,
-        })
-        .eq('id', sessionId);
-      if (paidErr) throw paidErr;
-
-      return { isDebtorSession };
+      const result = Array.isArray(data) ? data[0] : data;
+      if (!result) throw new Error("Le paiement n'a pas été enregistré.");
+      return { isDebtorSession: Boolean(result.is_debtor) };
     },
     // Optimiste: la table disparaît immédiatement de la grille, et revient si erreur.
     onMutate: async ({ sessionId }) => {
