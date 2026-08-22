@@ -54,6 +54,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
   const { outletId: restaurantOutletId } = useRestaurant();
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
+  const { addOrderToSession } = useOptimizedTableSessions();
   const resolvedUserId = resolveOfflineUserId({
     userId: user?.id,
     isTeamMember,
