@@ -28,6 +28,7 @@ const NAV_ITEMS = [
   { icon: Home, label: 'Dashboard', path: '/dashboard', permission: 'dashboard' },
   { icon: ShoppingBag, label: 'Commandes', path: '/commandes', permission: 'orders' },
   { icon: Utensils, label: 'Tables', path: '/tables', permission: 'orders' },
+  { icon: Utensils, label: 'Service', path: '/service', permission: 'orders' },
   { icon: FileText, label: 'Factures', path: '/factures', permission: 'invoices' },
   { icon: Menu, label: 'Menus', path: '/menus', permission: 'menus' },
   { icon: Package, label: 'Inventaire', path: '/inventaire', permission: 'inventory' },

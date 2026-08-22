@@ -34,6 +34,7 @@ const Menus = lazy(() => import('@/pages/Menus'));
 const AllMenus = lazy(() => import('@/pages/AllMenus'));
 const Commandes = lazy(() => import('@/pages/Commandes'));
 const Tables = lazy(() => import('@/pages/Tables'));
+const Service = lazy(() => import('@/pages/Service'));
 const Inventaire = lazy(() => import('@/pages/Inventaire'));
 const QRCodes = lazy(() => import('@/pages/QRCodes'));
 const Statistiques = lazy(() => import('@/pages/Statistiques'));
@@ -115,6 +116,7 @@ function App() {
               <Route path="/all-menus" element={<ProtectedRoute><AllMenus /></ProtectedRoute>} />
               <Route path="/commandes" element={<ProtectedRoute><Commandes /></ProtectedRoute>} />
               <Route path="/tables" element={<ProtectedRoute><Tables /></ProtectedRoute>} />
+              <Route path="/service" element={<ProtectedRoute><Service /></ProtectedRoute>} />
               <Route path="/inventaire" element={<ProtectedRoute><Inventaire /></ProtectedRoute>} />
               <Route path="/qr-codes" element={<ProtectedRoute><QRCodes /></ProtectedRoute>} />
               <Route path="/statistiques" element={<ProtectedRoute><Statistiques /></ProtectedRoute>} />
