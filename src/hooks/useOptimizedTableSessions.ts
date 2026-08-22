@@ -637,8 +637,30 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
             await queueMutation({
               table: 'invoices',
               operation: 'insert',
-              data: invoiceForSession as unknown as Record<string, unknown>,
+              data: {
+                ...(invoiceForSession as unknown as Record<string, unknown>),
+                status: 'unpaid',
+                paid_date: null,
+              },
               localId: generatedInvoiceId,
+              userId: resolvedUserId || user?.id || '',
+              outletId: scopedOutletId,
+              maxRetries: 3,
+              conflictResolution: 'client-wins',
+            });
+            // Passer ensuite à paid pour déclencher exactement une fois les
+            // automatisations SQL de stock et de comptabilité.
+            await queueMutation({
+              table: 'invoices',
+              operation: 'update',
+              data: {
+                id: generatedInvoiceId,
+                status: 'paid',
+                paid_date: paidDate,
+                payment_method: paymentMethod || 'Espèces',
+                updated_at: nowIso,
+              },
+              localId: generateLocalId(),
               userId: resolvedUserId || user?.id || '',
               outletId: scopedOutletId,
               maxRetries: 3,
