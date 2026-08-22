@@ -13,9 +13,9 @@ import { Search, WifiOff, ShoppingCart, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
+import { syncEngine } from "@/lib/syncEngine";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMenuItemOptionsPicker } from "@/components/menu-management/useMenuItemOptionsPicker";
@@ -363,183 +363,19 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         selected_options: item.selected_options || [],
       }));
 
-      if (isOffline) {
-        await saveOrderLocally(guestCount, orderItems);
+      // Flux local-first unique : le clic ne dépend plus d'une requête SQL lente.
+      // Les UUID définitifs rendent la synchronisation idempotente et évitent tout doublon.
+      await saveOrderLocally(guestCount, orderItems);
+      if (!isOffline) void syncEngine.sync();
 
-        toast.success("Session créée (hors ligne)", { description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s). Sera synchronisée.` });
-
-        setNumberOfGuests("");
-        setCart([]);
-        setSearchTerm("");
-        onSuccess();
-        onClose();
-        return;
-      }
-
-      // ===== ONLINE MODE =====
-      // Step 1: Optimistic update using the EXACT same cache key as the hook
-      const nowIso = new Date().toISOString();
-      const tempSessionId = `temp-${Date.now()}`;
-
-      const optimisticSession = {
-        id: tempSessionId,
-        user_id: resolvedUserId,
-        outlet_id: scopedOutletId || null,
-        debtor_id: null,
-        table_number: tableNumber,
-        custom_table_name: null,
-        status: 'active' as const,
-        started_at: nowIso,
-        closed_at: null,
-        number_of_guests: guestCount,
-        total_amount: totalAmount,
-        notes: null,
-        payment_method: null,
-        created_at: nowIso,
-        updated_at: nowIso,
-      };
-
-      const currentSessions = (queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) || [];
-      queryClient.setQueryData(sessionsQueryKey, [optimisticSession, ...currentSessions]);
-
-      try {
-        if (!resolvedUserId || !scopedOutletId) {
-          throw new Error("Point de vente non sélectionné. Ouvrez le sélecteur en haut à gauche et choisissez un PDV, puis réessayez.");
-        }
-
-        const creationPayload = {
-          _owner_id: resolvedUserId,
-          _outlet_id: scopedOutletId,
-          _table_number: tableNumber,
-          _number_of_guests: guestCount,
-          _items: orderItems,
-          _total_amount: totalAmount,
-        };
-
-        // Direct insert path: used when the RPC is missing OR when it times out.
-        const directCreate = async () => {
-          const directSessionId = crypto.randomUUID();
-          const directSession = {
-            id: directSessionId,
-            user_id: resolvedUserId,
-            outlet_id: scopedOutletId,
-            debtor_id: null,
-            table_number: tableNumber,
-            status: 'active',
-            started_at: nowIso,
-            closed_at: null,
-            number_of_guests: guestCount,
-            total_amount: totalAmount,
-            notes: null,
-            payment_method: null,
-            created_at: nowIso,
-            updated_at: nowIso,
-          };
-          const { error: directSessionError } = await supabase
-            .from('table_sessions')
-            .insert(directSession as any);
-          if (directSessionError) throw directSessionError;
-
-          const directOrder = {
-            id: crypto.randomUUID(),
-            user_id: resolvedUserId,
-            outlet_id: scopedOutletId,
-            session_id: directSessionId,
-            table_number: tableNumber,
-            order_type: 'sur_place',
-            customer_name: `Table ${tableNumber}`,
-            items: orderItems,
-            total_amount: totalAmount,
-            status: 'pending',
-            created_at: nowIso,
-            updated_at: nowIso,
-          };
-          const { error: directOrderError } = await supabase
-            .from('orders')
-            .insert(directOrder as any);
-          if (directOrderError) {
-            await supabase.from('table_sessions').delete().eq('id', directSessionId);
-            throw directOrderError;
-          }
-          return directSession as any;
-        };
-
-        // Step 2: Create the session and its first order atomically in the database.
-        // Calling the RPC directly avoids depending on an Edge Function deployment
-        // that may not exist after changing the connected project.
-        const { data: rpcSession, error: sessionError } = await supabase.rpc(
-          "create_table_session_with_order",
-          creationPayload
-        );
-
-        let session = rpcSession;
-        if (sessionError) {
-          const rpcMessage = `${sessionError.message || ''} ${sessionError.code || ''}`.toLowerCase();
-          const rpcRecoverable = sessionError.code === 'PGRST202'
-            || rpcMessage.includes('statement timeout')
-            || rpcMessage.includes('canceling statement')
-            || rpcMessage.includes('57014');
-          if (!rpcRecoverable) throw sessionError;
-          session = await directCreate();
-        }
-        if (!session?.id) throw new Error("Session non créée");
-
-
-        // Step 3: Replace temp ID with real ID in cache
-        const sessionsAfterInsert = ((queryClient.getQueryData(sessionsQueryKey) as any[] | undefined) || [])
-          .map((s: any) => (s.id === tempSessionId ? { ...optimisticSession, ...session } : s));
-        queryClient.setQueryData(sessionsQueryKey, sessionsAfterInsert);
-        await storeData('table_sessions', sessionsAfterInsert as any, resolvedUserId, scopedOutletId);
-
-        // Step 4: Update orders cache (DB insert was already done by the RPC)
-        const orderObj = {
-          id: `order-${Date.now()}`,
-          user_id: resolvedUserId,
-          outlet_id: scopedOutletId,
-          session_id: session.id,
-          table_number: tableNumber,
-          order_type: 'sur_place',
-          customer_name: `Table ${tableNumber}`,
-          items: orderItems,
-          total_amount: totalAmount,
-          status: 'pending',
-          created_at: nowIso,
-          updated_at: nowIso,
-        };
-        const currentOrders = (queryClient.getQueryData(ordersQueryKey) as any[] | undefined) || [];
-        queryClient.setQueryData(ordersQueryKey, [orderObj, ...currentOrders]);
-
-        toast.success("Session créée", { description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s).` });
-
-        setNumberOfGuests("");
-        setCart([]);
-        setSearchTerm("");
-        onSuccess();
-        onClose();
-      } catch (onlineError) {
-        console.error("Error creating session with order (online):", onlineError);
-        // Rollback optimistic update
-        queryClient.setQueryData(sessionsQueryKey, (prev: any[] = []) => prev.filter((s) => s.id !== tempSessionId));
-        const message = onlineError instanceof Error ? onlineError.message.toLowerCase() : '';
-        const isDatabaseTimeout = message.includes('database_timeout')
-          || message.includes('statement timeout')
-          || message.includes('canceling statement')
-          || message.includes('failed to fetch')
-          || message.includes('networkerror');
-        if (isDatabaseTimeout) {
-          await saveOrderLocally(guestCount, orderItems);
-          toast.success("Commande enregistrée", {
-            description: "La base est momentanément lente. La commande est sauvegardée et sera synchronisée automatiquement.",
-          });
-          setNumberOfGuests("");
-          setCart([]);
-          setSearchTerm("");
-          onSuccess();
-          onClose();
-          return;
-        }
-        throw onlineError;
-      }
+      toast.success("Session créée", {
+        description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s).${isOffline ? " Synchronisation dès le retour du réseau." : ""}`,
+      });
+      setNumberOfGuests("");
+      setCart([]);
+      setSearchTerm("");
+      onSuccess();
+      onClose();
     } catch (error: any) {
       console.error("Error creating session with order:", error);
       toast.error("Erreur", { description: error?.message || "Impossible de créer la session." });

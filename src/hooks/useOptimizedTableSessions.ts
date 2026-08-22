@@ -14,6 +14,7 @@ import { useTableStore } from '@/store/tableStore';
 import { useInvoiceStore } from '@/store/invoiceStore';
 import { toast } from 'sonner';
 import { localStore } from '@/lib/localStore';
+import { syncEngine } from '@/lib/syncEngine';
 import { useOutletContext } from '@/contexts/OutletContext';
 import { getSessionTableNumber, normalizeTableNumber } from '@/utils/tableNumbers';
 
@@ -359,7 +360,9 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         updated_at: new Date().toISOString(),
       };
 
-      if (isOffline) {
+      // Paiement local-first : l'action utilisateur est validée immédiatement et
+      // la base est synchronisée en arrière-plan, sans attendre une RPC bloquante.
+      {
         await queueMutation({
           table: 'table_sessions',
           operation: 'insert',
@@ -631,6 +634,17 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
               items: generatedItems,
               payment_method: paymentMethod || 'Espèces',
             } as Invoice;
+
+            await queueMutation({
+              table: 'invoices',
+              operation: 'insert',
+              data: invoiceForSession as unknown as Record<string, unknown>,
+              localId: generatedInvoiceId,
+              userId: resolvedUserId || user?.id || '',
+              outletId: scopedOutletId,
+              maxRetries: 3,
+              conflictResolution: 'client-wins',
+            });
           } else {
             await queueMutation({
               table: 'invoices',
@@ -670,83 +684,9 @@ function withTimeout<T>(promise: Promise<T>, ms = MUTATION_TIMEOUT_MS): Promise<
         await removeFromLocalCache(sessionId);
         markSessionPaidLocally(sessionId);
         useTableStore.getState().markPaid(sessionId);
+        if (!isOffline) void syncEngine.sync();
         return { isDebtorSession };
       }
-
-      const normalizedPaymentMethod = paymentMethod || 'Espèces';
-
-      // Optimisme immédiat: la table disparaît tout de suite, mais rollback garanti en onError.
-      markSessionPaidLocally(sessionId);
-      useTableStore.getState().markPaid(sessionId);
-      await removeFromLocalCache(sessionId);
-
-      // Paiement atomique côté DB. Cette RPC SECURITY DEFINER valide l'utilisateur,
-      // libère la table, crée/paie la facture et laisse les triggers créer la transaction.
-      const { data: rpcData, error: rpcError } = await (supabase as any).rpc('mark_table_session_paid', {
-        _session_id: sessionId,
-        _payment_method: normalizedPaymentMethod,
-      });
-
-      if (rpcError) {
-        // Fallback ciblé: RPC absente OU base momentanément lente (statement timeout).
-        const rpcMessage = `${rpcError.message || ''} ${(rpcError as any).code || ''}`.toLowerCase();
-        const recoverable = (rpcError as any).code === 'PGRST202'
-          || rpcMessage.includes('mark_table_session_paid')
-          || rpcMessage.includes('statement timeout')
-          || rpcMessage.includes('canceling statement')
-          || rpcMessage.includes('57014');
-        if (!recoverable) throw rpcError;
-
-        const paidAtDate = new Date().toISOString().split('T')[0];
-        const nowIso = new Date().toISOString();
-        const { error: sessionPaidError } = await supabase
-          .from('table_sessions')
-          .update({ status: 'paid', payment_method: normalizedPaymentMethod, closed_at: nowIso })
-          .eq('id', sessionId);
-        if (sessionPaidError) throw sessionPaidError;
-
-        // La facture doit exister: sinon les rapports restent vides.
-        const { data: existingInvoices } = await supabase
-          .from('invoices')
-          .select('id')
-          .eq('session_id', sessionId)
-          .limit(1);
-
-        if (existingInvoices && existingInvoices.length > 0) {
-          const { error: invoicePaymentError } = await supabase
-            .from('invoices')
-            .update({ status: 'paid', paid_date: paidAtDate, payment_method: normalizedPaymentMethod })
-            .eq('session_id', sessionId);
-          if (invoicePaymentError) console.warn('[markSessionAsPaid] invoice fallback warning:', invoicePaymentError);
-        } else {
-          const session = (queryClient.getQueryData(sessionsQueryKey) as any[] | undefined)
-            ?.find((s: any) => s.id === sessionId);
-          let invoiceNumber: string | null = null;
-          try {
-            const { data: generated } = await (supabase as any).rpc('generate_invoice_number');
-            invoiceNumber = generated || null;
-          } catch { /* ignore */ }
-          if (!invoiceNumber) {
-            invoiceNumber = `OFF-${Date.now().toString().slice(-8)}`;
-          }
-          const { error: invoiceInsertError } = await supabase.from('invoices').insert({
-            user_id: session?.user_id,
-            outlet_id: session?.outlet_id ?? outletId,
-            session_id: sessionId,
-            invoice_number: invoiceNumber,
-            total_amount: Number(session?.total_amount || 0),
-            status: 'paid',
-            paid_date: paidAtDate,
-            due_date: paidAtDate,
-            payment_method: normalizedPaymentMethod,
-          } as any);
-          if (invoiceInsertError) console.warn('[markSessionAsPaid] invoice creation warning:', invoiceInsertError);
-        }
-      }
-
-
-      const result = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-      return { isDebtorSession: Boolean(result?.is_debtor ?? isDebtorSession) };
     })()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['table-sessions', outletIdKey] });
