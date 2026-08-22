@@ -408,7 +408,7 @@ const QuickAddOrderToSessionModal: React.FC<Props> = ({
                   Annuler
                 </Button>
                 <Button type="submit" disabled={loading || cart.length === 0}>
-                  {loading ? "Envoi..." : `Confirmer (${cart.length} plat${cart.length > 1 ? "s" : ""})`}
+                  {loading ? "Envoi..." : `Enregistrer la commande (${cart.length})`}
                 </Button>
               </div>
             </div>
