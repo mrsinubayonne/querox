@@ -50,6 +50,22 @@ export interface OrderLineInput {
 const OFFLINE_MESSAGE =
   "Vous êtes hors ligne. Reconnectez-vous pour enregistrer cette action.";
 
+/**
+ * Purge unique des résidus de l'ancienne architecture local-first:
+ * marqueurs "payé" et mutations en attente sur les tables/commandes qui
+ * faisaient réapparaître de vieilles tables fantômes.
+ */
+const LEGACY_PURGE_KEY = 'querox_tables_legacy_purged_v2';
+function purgeLegacyTableArtifacts() {
+  if (typeof window === 'undefined') return;
+  if (localStorage.getItem(LEGACY_PURGE_KEY)) return;
+  localStorage.setItem(LEGACY_PURGE_KEY, '1');
+  localStorage.removeItem('querox_paid_session_ids_v1');
+  void removePendingMutationsByFilter(
+    (m) => m.table === 'table_sessions' || m.table === 'orders'
+  ).catch(() => undefined);
+}
+
 export const useOptimizedTableSessions = () => {
   const { selectedOutletId } = useOutletContext();
   const { user, isTeamMember, teamMemberSession } = useAuth();
