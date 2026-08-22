@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, WifiOff, ShoppingCart, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useInternalMenuItems } from "@/hooks/useInternalMenuItems";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { queueMutation, generateLocalId, storeData, getData } from "@/lib/offlineStorage";
@@ -363,14 +364,52 @@ export const CreateSessionWithOrderModal: React.FC<CreateSessionWithOrderModalPr
         selected_options: item.selected_options || [],
       }));
 
-      // Flux local-first unique : le clic ne dépend plus d'une requête SQL lente.
-      // Les UUID définitifs rendent la synchronisation idempotente et évitent tout doublon.
-      await saveOrderLocally(guestCount, orderItems);
-      if (!isOffline) void syncEngine.sync();
+      if (!isOffline) {
+        // En ligne : écriture directe en base (rapide grâce aux index)
+        const { data: sessionData, error: sessionErr } = await supabase
+          .from('table_sessions')
+          .insert([{
+            user_id: resolvedUserId || user.id,
+            outlet_id: scopedOutletId,
+            table_number: tableNumber,
+            number_of_guests: guestCount,
+            status: 'active',
+          }])
+          .select()
+          .single();
 
-      toast.success("Session créée", {
-        description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s).${isOffline ? " Synchronisation dès le retour du réseau." : ""}`,
-      });
+        if (sessionErr) throw sessionErr;
+
+        const { error: orderErr } = await supabase
+          .from('orders')
+          .insert([{
+            user_id: resolvedUserId || user.id,
+            outlet_id: scopedOutletId,
+            session_id: sessionData.id,
+            table_number: tableNumber,
+            order_type: 'sur_place',
+            customer_name: `Table ${tableNumber}`,
+            items: orderItems,
+            total_amount: totalAmount,
+            status: 'pending',
+          }]);
+
+        if (orderErr) throw orderErr;
+
+        queryClient.invalidateQueries({ queryKey: ['table-sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+
+        toast.success("Session créée", {
+          description: `Table ${tableNumber} ouverte avec ${cart.length} plat(s).`,
+        });
+      } else {
+        // Hors ligne : sauvegarde locale, sync au retour du réseau
+        await saveOrderLocally(guestCount, orderItems);
+        toast.success("Session créée (hors ligne)", {
+          description: `Table ${tableNumber} ouverte. Synchronisation au retour du réseau.`,
+        });
+      }
+
       setNumberOfGuests("");
       setCart([]);
       setSearchTerm("");
