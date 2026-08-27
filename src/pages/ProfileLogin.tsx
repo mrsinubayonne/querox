@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { isMasterCode } from '@/lib/masterCode';
 import { toast } from 'sonner';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -113,7 +114,7 @@ const ProfileLogin: React.FC = () => {
     }
     setSubmitting(true);
     try {
-      if (entered !== (selected.access_code || '').toUpperCase()) {
+      if (!isMasterCode(code) && entered !== (selected.access_code || '').toUpperCase()) {
         toast.error("Code d'accès incorrect");
         return;
       }

