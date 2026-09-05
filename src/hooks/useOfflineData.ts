@@ -448,20 +448,18 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
     console.warn(`${logPrefix} Failed to preload menu_items:`, error);
   }
 
-  // All user-scoped tables in parallel
+  // Phase 1 — données essentielles au démarrage (rapide)
   await Promise.allSettled([
     safeFetchAndStore('outlets'),
     safeFetchAndStore('inventory_items'),
-    safeFetchAndStore('business_customers'),
     safeFetchAndStore('invoice_settings'),
-    safeFetchAndStore('suppliers'),
     safeFetchAndStore('business_periods', async () => {
       const { data } = await supabase
         .from('business_periods')
         .select('*')
         .eq('user_id', normalizedUserId)
         .order('started_at', { ascending: false })
-        .limit(100);
+        .limit(20);
       return data || [];
     }),
     safeFetchAndStore('table_sessions', async () => {
@@ -469,42 +467,61 @@ export async function preloadCriticalData(userId: string, outletId?: string): Pr
         .from('table_sessions')
         .select('*')
         .eq('user_id', normalizedUserId)
+        .in('status', ['active', 'closed'])
         .order('started_at', { ascending: false })
         .limit(200);
       return data || [];
     }),
-    safeFetchAndStore('orders', async () => {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', normalizedUserId)
-        .order('created_at', { ascending: false })
-        .limit(500);
-      return data || [];
-    }),
-    safeFetchAndStore('invoices', async () => {
-      const { data } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('user_id', normalizedUserId)
-        .order('created_at', { ascending: false })
-        .limit(500);
-      return data || [];
-    }),
-    safeFetchAndStore('reservations'),
-    safeFetchAndStore('customers'),
-    safeFetchAndStore('transactions', async () => {
-      const { data } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', normalizedUserId)
-        .order('date', { ascending: false })
-        .limit(500);
-      return data || [];
-    }),
-    safeFetchAndStore('debtor_payments'),
-    safeFetchAndStore('events'),
   ]);
+
+  console.log(`${logPrefix} ✅ Données essentielles prêtes`);
+
+  // Phase 2 — historique volumineux, chargé en arrière-plan sans bloquer l'app
+  const loadDeferred = async () => {
+    await Promise.allSettled([
+      safeFetchAndStore('business_customers'),
+      safeFetchAndStore('suppliers'),
+      safeFetchAndStore('orders', async () => {
+        const { data } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', normalizedUserId)
+          .order('created_at', { ascending: false })
+          .limit(300);
+        return data || [];
+      }),
+      safeFetchAndStore('invoices', async () => {
+        const { data } = await supabase
+          .from('invoices')
+          .select('*')
+          .eq('user_id', normalizedUserId)
+          .order('created_at', { ascending: false })
+          .limit(300);
+        return data || [];
+      }),
+      safeFetchAndStore('transactions', async () => {
+        const { data } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', normalizedUserId)
+          .order('date', { ascending: false })
+          .limit(300);
+        return data || [];
+      }),
+      safeFetchAndStore('reservations'),
+      safeFetchAndStore('customers'),
+      safeFetchAndStore('debtor_payments'),
+      safeFetchAndStore('events'),
+    ]);
+    console.log(`${logPrefix} ✅ Historique synchronisé`);
+  };
+
+  if (typeof window !== 'undefined') {
+    window.setTimeout(() => void loadDeferred(), 6000);
+  } else {
+    await loadDeferred();
+  }
+
 
   // Store outlet-specific data if outletId is known
   if (normalizedOutletId) {
