@@ -8,7 +8,7 @@
  *  - Le serveur reste la référence pour la lecture, mais l'affichage démarre
  *    depuis le cache local (IndexedDB) pour être instantané.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -129,6 +129,11 @@ export const useOptimizedTableSessions = () => {
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const [pendingSyncCount, setPendingSyncCount] = useState(() => outboxCount());
+  const realtimeChannelIdRef = useRef(
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
 
   const userId =
     resolveOfflineUserId({
@@ -235,8 +240,11 @@ export const useOptimizedTableSessions = () => {
     const invalidate = () => {
       queryClient.invalidateQueries({ queryKey });
     };
+    // Several table components use this hook at the same time. Realtime now
+    // reuses channels with an identical topic, so a shared topic could return
+    // an already-subscribed channel and throw while adding the next callback.
     const channel = supabase
-      .channel(`tables-${outletId}`)
+      .channel(`tables-${outletId}-${realtimeChannelIdRef.current}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'table_sessions', filter: `outlet_id=eq.${outletId}` },
