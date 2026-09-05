@@ -13,16 +13,19 @@ Trois causes identifiées dans le code actuel :
 Principe cible : l'app travaille sur les données locales de l'appareil, affiche tout instantanément, et le réseau tourne en arrière-plan uniquement pour envoyer/recevoir les mises à jour.
 
 ### Affichage instantané
+
 - Tables, menus, inventaire, factures et rapport du jour s'affichent d'abord depuis les données locales, sans attendre le serveur.
 - Le rafraîchissement serveur se fait en silence derrière, et met à jour l'écran quand il arrive.
 - Fin des écrans « Chargement… » quand des données locales existent.
 
 ### Écriture toujours possible
+
 - Ouvrir une table, ajouter des plats, encaisser et générer la facture fonctionnent immédiatement en local, avec ou sans réseau.
 - Chaque action part dans une file d'attente envoyée au serveur en arrière-plan, avec réessais automatiques.
 - Un petit indicateur montre « X actions en attente de synchronisation » et disparaît une fois tout envoyé.
 
 ### Démarrage allégé
+
 - Au lancement, on ne charge que l'essentiel du point de vente courant (tables ouvertes, menu actif, inventaire).
 - Factures, transactions et historique se chargent seulement à l'ouverture de leur page.
 - Verrou anti-relance pour éviter les rechargements en rafale observés dans les journaux.
@@ -41,4 +44,8 @@ Principe cible : l'app travaille sur les données locales de l'appareil, affiche
 
 - Tables : ouvrir une table, ajouter des plats, encaisser — en ligne puis en coupant le réseau — et vérifier que tout apparaît instantanément et se synchronise au retour.
 - Contrôle qu'aucune table « Occupée – 0 FCFA » n'apparaît après synchronisation.
-- Mesure du temps d'affichage de la grille au démarrage (objectif : immédiat depuis le cache).
+- Mesure du temps d'affichage de la grille au démarrage (objectif : immédiat depuis le cache).   
+  
+Correctifs supplementaires :   
+-  les  codes d'accès restent stables de sorte à ce que ça ne demande plus à chaque fois de créer un nouveau code alors que déjà fait avant   
+- l'inscription marche à nouveau car en ce moment impossible aux nouveaux users de s'inscrire

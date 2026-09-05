@@ -1,16 +1,14 @@
 /**
- * useOptimizedTableSessions — VERSION SERVEUR D'ABORD (réécriture complète)
+ * useOptimizedTableSessions — VERSION LOCAL D'ABORD
  *
  * Principes:
- *  - La base de données est l'unique source de vérité. Aucun cache local "fantôme",
- *    aucun marqueur "payé" en localStorage, aucune file de mutations parallèle.
- *  - Le total d'une session est TOUJOURS recalculé à partir de ses commandes,
- *    ce qui supprime définitivement les tables "Occupée - 0 FCFA".
- *  - Temps réel: un seul canal Supabase (sessions + commandes) invalide la requête.
- *  - Hors ligne: lecture seule (dernier état connu via React Query), écriture bloquée
- *    avec un message clair.
+ *  - Chaque clic agit immédiatement sur l'état local (aucune attente réseau).
+ *  - Le réseau ne sert qu'à synchroniser: les actions partent dans une file
+ *    (`tablesOutbox`) rejouée en arrière-plan, avec ou sans connexion.
+ *  - Le serveur reste la référence pour la lecture, mais l'affichage démarre
+ *    depuis le cache local (IndexedDB) pour être instantané.
  */
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +18,15 @@ import { useOptimizedOutlet } from '@/hooks/useOptimizedOutlet';
 import { useNetworkStatus } from './useNetworkStatus';
 import { resolveOfflineUserId, getSelectedOutletIdFromStorage } from '@/lib/offlineIdentity';
 import { getSessionTableNumber, normalizeTableNumber } from '@/utils/tableNumbers';
-import { removePendingMutationsByFilter } from '@/lib/offlineStorage';
+import { getData, storeData, removePendingMutationsByFilter } from '@/lib/offlineStorage';
+import {
+  enqueue,
+  flushOutbox,
+  getOutbox,
+  newUuid,
+  outboxCount,
+  subscribeOutbox,
+} from '@/lib/tablesOutbox';
 
 export interface TableSession {
   id: string;
@@ -48,9 +54,6 @@ export interface OrderLineInput {
   selected_options?: unknown[];
 }
 
-const OFFLINE_MESSAGE =
-  "Vous êtes hors ligne. Reconnectez-vous pour enregistrer cette action.";
-
 /**
  * Purge unique des résidus de l'ancienne architecture local-first:
  * marqueurs "payé" et mutations en attente sur les tables/commandes qui
@@ -67,12 +70,65 @@ function purgeLegacyTableArtifacts() {
   ).catch(() => undefined);
 }
 
+/** Applique les actions encore en attente sur une liste venue du serveur. */
+function applyOutbox(list: TableSession[]): TableSession[] {
+  const byId = new Map(list.map((s) => [s.id, { ...s }]));
+
+  for (const { action } of getOutbox()) {
+    switch (action.kind) {
+      case 'create': {
+        if (!byId.has(action.sessionId)) {
+          const now = new Date().toISOString();
+          byId.set(action.sessionId, {
+            id: action.sessionId,
+            user_id: action.userId,
+            outlet_id: action.outletId,
+            debtor_id: null,
+            table_number: action.tableNumber,
+            status: 'active',
+            started_at: now,
+            closed_at: null,
+            number_of_guests: action.numberOfGuests,
+            total_amount: action.totalAmount,
+            notes: null,
+            created_at: now,
+            updated_at: now,
+          });
+        }
+        break;
+      }
+      case 'add': {
+        const existing = byId.get(action.sessionId);
+        if (existing) {
+          existing.total_amount = Number(existing.total_amount || 0) + Number(action.totalAmount || 0);
+        }
+        break;
+      }
+      case 'close': {
+        const existing = byId.get(action.sessionId);
+        if (existing) {
+          existing.status = 'closed';
+          existing.closed_at = existing.closed_at || new Date().toISOString();
+        }
+        break;
+      }
+      case 'pay': {
+        byId.delete(action.sessionId);
+        break;
+      }
+    }
+  }
+
+  return Array.from(byId.values());
+}
+
 export const useOptimizedTableSessions = () => {
   const { selectedOutletId } = useOutletContext();
   const { user, isTeamMember, teamMemberSession } = useAuth();
   const { loading: outletLoading } = useOptimizedOutlet();
   const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
+  const [pendingSyncCount, setPendingSyncCount] = useState(() => outboxCount());
 
   const userId =
     resolveOfflineUserId({
@@ -87,7 +143,10 @@ export const useOptimizedTableSessions = () => {
     [userId, outletId]
   );
 
-  /** Lecture: sessions non payées + totaux recalculés depuis les commandes. */
+  /**
+   * Lecture: une seule requête serveur (les totaux sont maintenus côté serveur
+   * par les fonctions atomiques), puis application des actions en attente.
+   */
   const fetchSessions = useCallback(async (): Promise<TableSession[]> => {
     if (!userId || !outletId) return [];
 
@@ -106,26 +165,10 @@ export const useOptimizedTableSessions = () => {
       ...s,
       total_amount: Number(s.total_amount || 0),
     }));
-    if (list.length === 0) return [];
 
-    // Totaux réels = somme des commandes de la session.
-    const { data: orderRows, error: ordersError } = await supabase
-      .from('orders')
-      .select('session_id, total_amount')
-      .in('session_id', list.map((s) => s.id))
-      .limit(10000);
+    void storeData('table_sessions', list, userId, outletId).catch(() => undefined);
 
-    if (ordersError) throw ordersError;
-
-    const totals = new Map<string, number>();
-    for (const row of (orderRows as { session_id: string | null; total_amount: number | null }[]) || []) {
-      if (!row.session_id) continue;
-      totals.set(row.session_id, (totals.get(row.session_id) || 0) + Number(row.total_amount || 0));
-    }
-
-    return list.map((s) =>
-      totals.has(s.id) ? { ...s, total_amount: totals.get(s.id) as number } : s
-    );
+    return applyOutbox(list);
   }, [userId, outletId]);
 
   const {
@@ -137,7 +180,7 @@ export const useOptimizedTableSessions = () => {
     queryFn: fetchSessions,
     enabled: !!userId && !!outletId,
     staleTime: 5_000,
-    gcTime: 30 * 60_000,
+    gcTime: 60 * 60_000,
     refetchOnWindowFocus: true,
     retry: 1,
   });
@@ -145,6 +188,46 @@ export const useOptimizedTableSessions = () => {
   useEffect(() => {
     purgeLegacyTableArtifacts();
   }, []);
+
+  /** Hydratation immédiate depuis le cache local pour éviter l'écran d'attente. */
+  useEffect(() => {
+    if (!userId || !outletId) return;
+    if (queryClient.getQueryData(queryKey)) return;
+    let cancelled = false;
+    void getData<TableSession[]>('table_sessions', userId, outletId)
+      .then((cached) => {
+        if (cancelled) return;
+        const cachedList = Array.isArray(cached?.data) ? (cached?.data as TableSession[]) : [];
+        if (cachedList.length === 0) return;
+        if (queryClient.getQueryData(queryKey)) return;
+        queryClient.setQueryData(queryKey, applyOutbox(cachedList));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, outletId, queryClient, queryKey]);
+
+  /** Suivi de la file de synchronisation + rejeu automatique. */
+  useEffect(() => {
+    const unsubscribe = subscribeOutbox((entries) => setPendingSyncCount(entries.length));
+    const attemptFlush = async () => {
+      const { sent } = await flushOutbox();
+      if (sent > 0) {
+        await queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      }
+    };
+    void attemptFlush();
+    const interval = window.setInterval(() => void attemptFlush(), 15_000);
+    window.addEventListener('online', attemptFlush);
+    return () => {
+      unsubscribe();
+      window.clearInterval(interval);
+      window.removeEventListener('online', attemptFlush);
+    };
+  }, [queryClient, queryKey]);
 
   /** Temps réel: un seul canal pour les sessions et les commandes du PDV. */
   useEffect(() => {
@@ -171,37 +254,29 @@ export const useOptimizedTableSessions = () => {
     };
   }, [userId, outletId, queryClient, queryKey]);
 
-  const invalidateAll = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey });
-    queryClient.invalidateQueries({ queryKey: ['orders'] });
-    queryClient.invalidateQueries({ queryKey: ['invoices'] });
-    queryClient.invalidateQueries({ queryKey: ['transactions'] });
-    await refetch();
-  }, [queryClient, queryKey, refetch]);
+  /** Met à jour immédiatement l'affichage local. */
+  const patchLocal = useCallback(
+    (updater: (list: TableSession[]) => TableSession[]) => {
+      queryClient.setQueryData<TableSession[]>(queryKey, (old) => updater(old || []));
+    },
+    [queryClient, queryKey]
+  );
 
-  const assertReady = useCallback(() => {
-    if (isOffline) throw new Error(OFFLINE_MESSAGE);
+  const scheduleSync = useCallback(async () => {
+    const { sent } = await flushOutbox();
+    if (sent > 0) {
+      await queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    }
+  }, [queryClient, queryKey]);
+
+  const assertContext = useCallback(() => {
     if (!userId) throw new Error('Non authentifié.');
     if (!outletId) throw new Error('Aucun point de vente sélectionné.');
-  }, [isOffline, userId, outletId]);
-
-  /** Recalcule et persiste le total d'une session à partir de ses commandes. */
-  const syncSessionTotal = useCallback(async (sessionId: string): Promise<number> => {
-    const { data } = await supabase
-      .from('orders')
-      .select('total_amount')
-      .eq('session_id', sessionId)
-      .limit(10000);
-    const total = ((data as { total_amount: number | null }[]) || []).reduce(
-      (sum, o) => sum + Number(o.total_amount || 0),
-      0
-    );
-    await supabase
-      .from('table_sessions')
-      .update({ total_amount: total, updated_at: new Date().toISOString() })
-      .eq('id', sessionId);
-    return total;
-  }, []);
+  }, [userId, outletId]);
 
   // ---------------------------------------------------------------- mutations
 
@@ -217,30 +292,39 @@ export const useOptimizedTableSessions = () => {
       notes?: string;
       debtorId?: string;
     }) => {
-      assertReady();
-      const { data, error } = await supabase
-        .from('table_sessions')
-        .insert([
-          {
-            user_id: userId,
-            outlet_id: outletId,
-            table_number: tableNumber,
-            number_of_guests: numberOfGuests ?? null,
-            notes: notes ?? null,
-            debtor_id: debtorId ?? null,
-            status: 'active',
-            total_amount: 0,
-          },
-        ])
-        .select()
-        .single();
-      if (error) throw error;
-      return data as unknown as TableSession;
+      assertContext();
+      const now = new Date().toISOString();
+      const session: TableSession = {
+        id: newUuid(),
+        user_id: userId,
+        outlet_id: outletId,
+        debtor_id: debtorId ?? null,
+        table_number: tableNumber,
+        status: 'active',
+        started_at: now,
+        closed_at: null,
+        number_of_guests: numberOfGuests ?? 1,
+        total_amount: 0,
+        notes: notes ?? null,
+        created_at: now,
+        updated_at: now,
+      };
+      patchLocal((list) => [session, ...list]);
+      enqueue({
+        kind: 'create',
+        sessionId: session.id,
+        userId,
+        outletId,
+        tableNumber,
+        numberOfGuests: numberOfGuests ?? 1,
+        items: [],
+        totalAmount: 0,
+      });
+      void scheduleSync();
+      return session;
     },
-    onSuccess: async (session) => {
-      await invalidateAll();
-      toast.success('Table ouverte', { description: `Table ${session.table_number} activée` });
-    },
+    onSuccess: (session) =>
+      toast.success('Table ouverte', { description: `Table ${session.table_number} activée` }),
     onError: (error: Error) => toast.error('Erreur', { description: error.message }),
   });
 
@@ -257,30 +341,41 @@ export const useOptimizedTableSessions = () => {
       items: OrderLineInput[];
       totalAmount: number;
     }) => {
-      assertReady();
+      assertContext();
       if (!items.length) throw new Error('Le panier est vide.');
 
-      // Une seule transaction serveur: aucune table vide ne peut être créée si
-      // l'enregistrement de la commande échoue.
-      const { data: session, error } = await supabase.rpc(
-        'create_table_session_with_order',
-        {
-          _owner_id: userId,
-          _outlet_id: outletId,
-          _table_number: tableNumber,
-          _number_of_guests: numberOfGuests ?? 1,
-          _items: items,
-          _total_amount: totalAmount,
-        }
-      );
-      if (error) throw error;
-      if (!session) throw new Error("La commande n'a pas été enregistrée.");
-      return session as unknown as TableSession;
+      const now = new Date().toISOString();
+      const session: TableSession = {
+        id: newUuid(),
+        user_id: userId,
+        outlet_id: outletId,
+        debtor_id: null,
+        table_number: tableNumber,
+        status: 'active',
+        started_at: now,
+        closed_at: null,
+        number_of_guests: numberOfGuests ?? 1,
+        total_amount: totalAmount,
+        notes: null,
+        created_at: now,
+        updated_at: now,
+      };
+      patchLocal((list) => [session, ...list]);
+      enqueue({
+        kind: 'create',
+        sessionId: session.id,
+        userId,
+        outletId,
+        tableNumber,
+        numberOfGuests: numberOfGuests ?? 1,
+        items,
+        totalAmount,
+      });
+      void scheduleSync();
+      return session;
     },
-    onSuccess: async (session) => {
-      await invalidateAll();
-      toast.success('Commande enregistrée', { description: `Table ${session.table_number} ouverte.` });
-    },
+    onSuccess: (session) =>
+      toast.success('Commande enregistrée', { description: `Table ${session.table_number} ouverte.` }),
     onError: (error: Error) => toast.error('Erreur', { description: error.message }),
   });
 
@@ -297,57 +392,52 @@ export const useOptimizedTableSessions = () => {
       items: OrderLineInput[];
       totalAmount: number;
     }) => {
-      assertReady();
+      assertContext();
       if (!items.length) throw new Error('Le panier est vide.');
 
-      // L'ajout et le recalcul du total sont verrouillés dans la même
-      // transaction serveur pour éviter les montants à zéro.
-      const { data, error } = await supabase.rpc('add_order_to_table_session', {
-        _session_id: sessionId,
-        _items: items,
-        _total_amount: totalAmount,
-        _customer_name: `Table ${tableNumber}`,
-        _customer_phone: null,
-        _customer_email: null,
-        _notes: null,
-      });
-      if (error) throw error;
-      if (!data) throw new Error("La commande n'a pas été ajoutée.");
-      return data;
+      patchLocal((list) =>
+        list.map((s) =>
+          s.id === sessionId
+            ? { ...s, total_amount: Number(s.total_amount || 0) + Number(totalAmount || 0) }
+            : s
+        )
+      );
+      enqueue({ kind: 'add', sessionId, tableNumber, items, totalAmount });
+      void scheduleSync();
+      return true;
     },
-    onSuccess: async () => {
-      await invalidateAll();
-      toast.success('Commande ajoutée');
-    },
+    onSuccess: () => toast.success('Commande ajoutée'),
     onError: (error: Error) => toast.error('Erreur', { description: error.message }),
   });
 
-  /** Ferme la session: le trigger SQL génère la facture. */
+  /** Ferme la session: le serveur génère la facture lors de la synchronisation. */
   const closeSessionMutation = useMutation({
     mutationFn: async (sessionId: string) => {
-      assertReady();
-      const total = await syncSessionTotal(sessionId);
-      const { data, error } = await supabase
-        .from('table_sessions')
-        .update({ status: 'closed', closed_at: new Date().toISOString() })
-        .eq('id', sessionId)
-        .select('debtor_id')
-        .single();
-      if (error) throw error;
-      return { hasDebtor: !!data?.debtor_id, total };
+      assertContext();
+      const current = (queryClient.getQueryData<TableSession[]>(queryKey) || []).find(
+        (s) => s.id === sessionId
+      );
+      patchLocal((list) =>
+        list.map((s) =>
+          s.id === sessionId
+            ? { ...s, status: 'closed' as const, closed_at: new Date().toISOString() }
+            : s
+        )
+      );
+      enqueue({ kind: 'close', sessionId });
+      void scheduleSync();
+      return { hasDebtor: !!current?.debtor_id };
     },
-    onSuccess: async ({ hasDebtor }) => {
-      await invalidateAll();
+    onSuccess: ({ hasDebtor }) =>
       toast.success(hasDebtor ? 'Session fermée - Crédit accordé' : 'Session fermée', {
         description: hasDebtor ? 'Dette enregistrée' : 'Facture générée',
-      });
-    },
+      }),
     onError: (error: Error) => toast.error('Erreur', { description: error.message }),
   });
 
   /**
-   * Encaissement. Fonctionne aussi bien depuis une table "occupée" (fermeture
-   * implicite) que depuis une table "en attente".
+   * Encaissement. Fonctionne aussi bien depuis une table "occupée" que depuis
+   * une table "en attente", en ligne comme hors ligne.
    */
   const markSessionAsPaidMutation = useMutation({
     mutationFn: async ({
@@ -357,38 +447,17 @@ export const useOptimizedTableSessions = () => {
       sessionId: string;
       paymentMethod?: string;
     }) => {
-      assertReady();
-
-      const method = paymentMethod || 'Espèces';
-      // Facture, paiement et libération de table sont atomiques côté serveur.
-      // Le client ne fabrique jamais lui-même une facture.
-      const { data, error } = await supabase.rpc('mark_table_session_paid', {
-        _session_id: sessionId,
-        _payment_method: method,
-      });
-      if (error) throw error;
-
-      const result = Array.isArray(data) ? data[0] : data;
-      if (!result) throw new Error("Le paiement n'a pas été enregistré.");
-      return { isDebtorSession: Boolean(result.is_debtor) };
-    },
-    // Optimiste: la table disparaît immédiatement de la grille, et revient si erreur.
-    onMutate: async ({ sessionId }) => {
-      await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<TableSession[]>(queryKey);
-      queryClient.setQueryData<TableSession[]>(queryKey, (old) =>
-        (old || []).filter((s) => s.id !== sessionId)
+      assertContext();
+      const current = (queryClient.getQueryData<TableSession[]>(queryKey) || []).find(
+        (s) => s.id === sessionId
       );
-      return { previous };
+      patchLocal((list) => list.filter((s) => s.id !== sessionId));
+      enqueue({ kind: 'pay', sessionId, paymentMethod: paymentMethod || 'Espèces' });
+      void scheduleSync();
+      return { isDebtorSession: !!current?.debtor_id };
     },
-    onError: (error: Error, _vars, context) => {
-      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
-      toast.error('Erreur paiement', { description: error.message });
-    },
-    onSuccess: async ({ isDebtorSession }) => {
-      await invalidateAll();
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+    onError: (error: Error) => toast.error('Erreur paiement', { description: error.message }),
+    onSuccess: ({ isDebtorSession }) => {
       toast.success('Paiement enregistré', {
         description: isDebtorSession
           ? 'Crédit débiteur enregistré, table libérée.'
@@ -400,7 +469,10 @@ export const useOptimizedTableSessions = () => {
   /** Réouvre une table fermée: annule la facture et la transaction associées. */
   const reopenSessionMutation = useMutation({
     mutationFn: async (sessionId: string) => {
-      assertReady();
+      assertContext();
+      if (isOffline) {
+        throw new Error('La réouverture d’une table nécessite une connexion.');
+      }
       const { data: invoice } = await supabase
         .from('invoices')
         .select('invoice_number')
@@ -419,7 +491,9 @@ export const useOptimizedTableSessions = () => {
       if (error) throw error;
     },
     onSuccess: async () => {
-      await invalidateAll();
+      await queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast.success('Table réouverte', { description: 'Facture et transaction annulées.' });
     },
     onError: (error: Error) => toast.error('Erreur', { description: error.message }),
@@ -440,16 +514,11 @@ export const useOptimizedTableSessions = () => {
 
   return {
     sessions: sessions || [],
-    loading: isLoading,
+    loading: isLoading && !sessions,
     outletLoading,
     isOffline,
-    isMutating:
-      createSessionMutation.isPending ||
-      createSessionWithOrderMutation.isPending ||
-      addOrderToSessionMutation.isPending ||
-      closeSessionMutation.isPending ||
-      markSessionAsPaidMutation.isPending ||
-      reopenSessionMutation.isPending,
+    pendingSyncCount,
+    isMutating: reopenSessionMutation.isPending,
     createSession: createSessionMutation.mutateAsync,
     createSessionWithOrder: createSessionWithOrderMutation.mutateAsync,
     addOrderToSession: addOrderToSessionMutation.mutateAsync,
