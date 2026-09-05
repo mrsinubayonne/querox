@@ -1,68 +1,44 @@
-## Objectif
-Corriger 3 points liés à la gestion d'équipe / plan de salle.
+# Rendre l'outil rapide et utilisable sans dépendre du réseau
 
----
+## 1. Pourquoi ça rame aujourd'hui
 
-### 1. Code restaurant invisible (capture: "—" affiché)
-**Cause** : `RestaurantCodeCard` lit `profiles.restaurant_code` avec `user.id`. Quand le compte connecté est un **membre d'équipe**, `user.id` n'est pas l'`owner` — la requête ne retourne rien (RLS + ligne inexistante). Les codes existent bien en base pour les propriétaires.
+Trois causes identifiées dans le code actuel :
 
-**Correctif** : dans `src/components/team/RestaurantCodeCard.tsx`, résoudre l'`ownerId` via `useAuth()` :
-```ts
-const { user, isTeamMember, teamMemberSession } = useAuth();
-const ownerId = isTeamMember ? teamMemberSession?.ownerId : user?.id;
-// .eq('id', ownerId)
-```
-Ajout d'un fallback : si `restaurant_code` est null pour un owner, appeler la RPC existante de génération (ou re-trigger via update no-op) puis recharger.
+1. **Un gros téléchargement au démarrage.** À chaque ouverture de session, l'app recharge la totalité des données (menus, catégories, plats, commandes, factures, transactions, inventaire…). Les journaux montrent 88 commandes, 180 factures, 97 transactions rechargées — et ce chargement se relance plusieurs fois de suite quand l'app détecte plusieurs événements de connexion. Pendant ce temps, tout le reste attend.
+2. **La section Tables ne s'affiche qu'après réponse du serveur.** Elle fait deux allers-retours réseau (les tables, puis toutes les commandes pour recalculer les montants) avant d'afficher quoi que ce soit. Si le serveur est lent, l'écran reste en attente.
+3. **Toute écriture est bloquée sans réseau.** Ouvrir une table, ajouter un plat ou encaisser refuse de fonctionner dès que la connexion vacille — d'où « la prise de commande ne marche pas » quand le réseau est instable (et pas seulement coupé).
 
----
+## 2. Ce qu'on change : le réseau ne sert plus qu'à synchroniser
 
-### 2. Une seule salle par point de vente
-**Règle métier** : 1 `floor_plan_zone` max par `outlet_id`.
+Principe cible : l'app travaille sur les données locales de l'appareil, affiche tout instantanément, et le réseau tourne en arrière-plan uniquement pour envoyer/recevoir les mises à jour.
 
-**Frontend** (`src/components/tables/FloorPlanView.tsx`) :
-- Masquer le bouton "Salle" (ajouter) et l'onglet `Tabs` des salles dès qu'une zone existe.
-- L'unique zone porte automatiquement le nom du point de vente (récupéré via `useOutletContext`/outlets) — pas de prompt.
-- Conserver Renommer / Supprimer (pour reset).
-- Au premier accès si aucune zone : auto-création silencieuse (plus de bouton "Créer ma première salle").
+### Affichage instantané
+- Tables, menus, inventaire, factures et rapport du jour s'affichent d'abord depuis les données locales, sans attendre le serveur.
+- Le rafraîchissement serveur se fait en silence derrière, et met à jour l'écran quand il arrive.
+- Fin des écrans « Chargement… » quand des données locales existent.
 
-**Backend** : ajouter un index unique partiel pour garantir l'invariant :
-```sql
-CREATE UNIQUE INDEX floor_plan_zones_one_per_outlet
-  ON public.floor_plan_zones(outlet_id);
-```
-(Si plusieurs zones existent déjà pour un outlet, garder la plus ancienne et migrer les tables vers elle avant l'index.)
+### Écriture toujours possible
+- Ouvrir une table, ajouter des plats, encaisser et générer la facture fonctionnent immédiatement en local, avec ou sans réseau.
+- Chaque action part dans une file d'attente envoyée au serveur en arrière-plan, avec réessais automatiques.
+- Un petit indicateur montre « X actions en attente de synchronisation » et disparaît une fois tout envoyé.
 
----
+### Démarrage allégé
+- Au lancement, on ne charge que l'essentiel du point de vente courant (tables ouvertes, menu actif, inventaire).
+- Factures, transactions et historique se chargent seulement à l'ouverture de leur page.
+- Verrou anti-relance pour éviter les rechargements en rafale observés dans les journaux.
 
-### 3. Export PDF/Image du plan de salle dans Rapports
-**Emplacement** : `src/pages/RapportsJournaliers.tsx` — ajouter une carte "Plan de salle" avec bouton **"Générer aperçu PDF"** et **"Télécharger image PNG"**.
+## 3. Détails techniques
 
-**Implémentation** (100% client, compatible offline) :
-- Nouveau composant `src/components/tables/FloorPlanSnapshot.tsx` : rend le plan en lecture seule à partir des données de `useFloorPlan` (zones + tables + sessions courantes) dans un conteneur off-screen identifiable (`id="floor-plan-snapshot"`).
-- Nouveau util `src/utils/floorPlanExport.ts` :
-  - `exportFloorPlanPNG()` : `html2canvas` → blob PNG → `URL.createObjectURL` → download.
-  - `exportFloorPlanPDF()` : `html2canvas` → `jsPDF` A4 paysage → ajoute en-tête (nom restaurant, date DD-MM-YY, point de vente, légende statuts) → `pdf.save()`.
-- Imports **dynamiques** (`await import('jspdf')`, `await import('html2canvas')`) pour ne pas alourdir le bundle (cohérent avec la politique existante).
-- Inclure dans l'image : titre PDV, date, légende couleurs (Libre/Occupée/Attente/Payée), n° de chaque table + couverts.
-- Fonctionne offline : html2canvas + jsPDF tournent en local ; les données viennent du cache React/Zustand.
+- `src/hooks/useOptimizedTableSessions.ts` : lecture avec `initialData`/`placeholderData` depuis IndexedDB ; suppression de `assertReady` bloquant hors ligne ; mutations optimistes qui écrivent en local puis appellent les RPC atomiques (`create_table_session_with_order`, `add_order_to_table_session`, `mark_table_session_paid`) via la file de synchronisation.
+- Suppression de la 2e requête `orders` au chargement : le total est repris du cache local puis corrigé par le realtime / la réponse RPC.
+- `src/hooks/useOfflineData.ts` : `preloadCriticalData` scindé en `preloadEssential` (outlets, menu actif, inventaire, sessions ouvertes) et `preloadDeferred` (factures, transactions, historique) déclenché à la demande, avec limites de lignes réduites.
+- `src/contexts/AuthContext.tsx` : dédoublonnage du déclenchement de préchargement (un seul par session utilisateur, ignore les `INITIAL_SESSION` répétés).
+- `src/lib/syncEngine.ts` / `offlineQueue.ts` : file unique pour les écritures tables/commandes/paiements, réessai exponentiel, résolution par identifiant UUID déjà généré côté client.
+- `src/hooks/useNetworkStatus.ts` : le mode « instable » n'empêche plus les écritures, il bascule simplement en file d'attente.
+- Aucune modification de `.env`, `types.ts` ni `config.toml`.
 
-**Dépendance** : `html2canvas` n'est pas installé → `bun add html2canvas` ; `jspdf` est déjà présent (utilisé pour factures).
+## 4. Vérification
 
----
-
-### Détails techniques
-| Fichier | Action |
-|---|---|
-| `src/components/team/RestaurantCodeCard.tsx` | Utiliser `ownerId`, ajouter fallback regénération |
-| Migration SQL | Index unique partiel sur `floor_plan_zones(outlet_id)` après dédoublonnage |
-| `src/components/tables/FloorPlanView.tsx` | Suppression onglets/bouton zone, auto-création, nom = PDV |
-| `src/components/tables/FloorPlanSnapshot.tsx` (NEW) | Rendu lecture seule pour export |
-| `src/utils/floorPlanExport.ts` (NEW) | Génération PNG/PDF dynamique |
-| `src/pages/RapportsJournaliers.tsx` | Nouvelle carte "Plan de salle" avec 2 boutons |
-| `package.json` | + `html2canvas` |
-
----
-
-### Hors scope
-- Multilingue (déjà reporté).
-- Modification du système de permissions du plan de salle (inchangé).
+- Tables : ouvrir une table, ajouter des plats, encaisser — en ligne puis en coupant le réseau — et vérifier que tout apparaît instantanément et se synchronise au retour.
+- Contrôle qu'aucune table « Occupée – 0 FCFA » n'apparaît après synchronisation.
+- Mesure du temps d'affichage de la grille au démarrage (objectif : immédiat depuis le cache).
