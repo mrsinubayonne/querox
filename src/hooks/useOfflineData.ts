@@ -317,13 +317,31 @@ export function useOfflineData<TData>(options: UseOfflineDataOptions<TData>) {
   return { data: query.data || [], isLoading: query.isLoading, isError: query.isError, error: query.error, refetch: query.refetch, isOffline };
 }
 
+const preloadRuns = new Map<string, { at: number; promise: Promise<void> }>();
+const PRELOAD_COOLDOWN_MS = 5 * 60 * 1000;
+
 export async function preloadCriticalData(userId: string, outletId?: string): Promise<void> {
-  const logPrefix = '[Offline]';
   const normalizedUserId = sanitizeStorageId(userId);
   const normalizedOutletId = sanitizeStorageId(outletId);
   if (!normalizedUserId) return;
 
+  // Un seul préchargement par utilisateur/point de vente sur une fenêtre de 5 min
+  const runKey = `${normalizedUserId}::${normalizedOutletId || 'none'}`;
+  const existing = preloadRuns.get(runKey);
+  if (existing && Date.now() - existing.at < PRELOAD_COOLDOWN_MS) {
+    return existing.promise;
+  }
+  const promise = runPreload(normalizedUserId, normalizedOutletId);
+  preloadRuns.set(runKey, { at: Date.now(), promise });
+  promise.catch(() => preloadRuns.delete(runKey));
+  return promise;
+}
+
+async function runPreload(normalizedUserId: string, normalizedOutletId?: string): Promise<void> {
+  const logPrefix = '[Offline]';
+
   console.log(`${logPrefix} Preloading critical data for user:`, normalizedUserId, '| outlet:', normalizedOutletId);
+
 
   const getRecordOutletId = (record: unknown): string | undefined => {
     if (!record || typeof record !== 'object') return undefined;
