@@ -26,6 +26,7 @@ import {
   newUuid,
   outboxCount,
   subscribeOutbox,
+  subscribeOutboxFailures,
 } from '@/lib/tablesOutbox';
 
 export interface TableSession {
@@ -71,10 +72,14 @@ function purgeLegacyTableArtifacts() {
 }
 
 /** Applique les actions encore en attente sur une liste venue du serveur. */
-function applyOutbox(list: TableSession[]): TableSession[] {
+function applyOutbox(list: TableSession[], userId: string, outletId: string): TableSession[] {
   const byId = new Map(list.map((s) => [s.id, { ...s }]));
 
-  for (const { action } of getOutbox()) {
+  for (const { action, scope } of getOutbox()) {
+    // Les actions en attente d'un autre compte / point de vente ne doivent
+    // jamais apparaître dans la grille du PDV courant.
+    if (scope && (scope.userId !== userId || scope.outletId !== outletId)) continue;
+    if (!scope && action.kind === 'create' && (action.userId !== userId || action.outletId !== outletId)) continue;
     switch (action.kind) {
       case 'create': {
         if (!byId.has(action.sessionId)) {
@@ -173,7 +178,7 @@ export const useOptimizedTableSessions = () => {
 
     void storeData('table_sessions', list, userId, outletId).catch(() => undefined);
 
-    return applyOutbox(list);
+    return applyOutbox(list, userId, outletId);
   }, [userId, outletId]);
 
   const {
@@ -205,7 +210,7 @@ export const useOptimizedTableSessions = () => {
         const cachedList = Array.isArray(cached?.data) ? (cached?.data as TableSession[]) : [];
         if (cachedList.length === 0) return;
         if (queryClient.getQueryData(queryKey)) return;
-        queryClient.setQueryData(queryKey, applyOutbox(cachedList));
+        queryClient.setQueryData(queryKey, applyOutbox(cachedList, userId, outletId));
       })
       .catch(() => undefined);
     return () => {
@@ -232,6 +237,23 @@ export const useOptimizedTableSessions = () => {
       window.clearInterval(interval);
       window.removeEventListener('online', attemptFlush);
     };
+  }, [queryClient, queryKey]);
+
+  /** Alerte l'utilisateur si le serveur refuse définitivement une action. */
+  useEffect(() => {
+    const labels: Record<string, string> = {
+      create: "l'ouverture de table",
+      add: "l'ajout de commande",
+      close: 'la fermeture de table',
+      pay: 'le paiement',
+    };
+    return subscribeOutboxFailures((entry, message) => {
+      toast.error('Action refusée par le serveur', {
+        description: `${labels[entry.action.kind] || 'Action'} n'a pas pu être enregistrée : ${message}. Merci de recommencer.`,
+        duration: 12_000,
+      });
+      queryClient.invalidateQueries({ queryKey });
+    });
   }, [queryClient, queryKey]);
 
   /** Temps réel: un seul canal pour les sessions et les commandes du PDV. */
@@ -327,7 +349,7 @@ export const useOptimizedTableSessions = () => {
         numberOfGuests: numberOfGuests ?? 1,
         items: [],
         totalAmount: 0,
-      });
+      }, { userId, outletId });
       void scheduleSync();
       return session;
     },
@@ -378,7 +400,7 @@ export const useOptimizedTableSessions = () => {
         numberOfGuests: numberOfGuests ?? 1,
         items,
         totalAmount,
-      });
+      }, { userId, outletId });
       void scheduleSync();
       return session;
     },
@@ -410,7 +432,7 @@ export const useOptimizedTableSessions = () => {
             : s
         )
       );
-      enqueue({ kind: 'add', sessionId, tableNumber, items, totalAmount });
+      enqueue({ kind: 'add', sessionId, tableNumber, items, totalAmount }, { userId, outletId });
       void scheduleSync();
       return true;
     },
@@ -432,7 +454,7 @@ export const useOptimizedTableSessions = () => {
             : s
         )
       );
-      enqueue({ kind: 'close', sessionId });
+      enqueue({ kind: 'close', sessionId }, { userId, outletId });
       void scheduleSync();
       return { hasDebtor: !!current?.debtor_id };
     },
@@ -460,7 +482,10 @@ export const useOptimizedTableSessions = () => {
         (s) => s.id === sessionId
       );
       patchLocal((list) => list.filter((s) => s.id !== sessionId));
-      enqueue({ kind: 'pay', sessionId, paymentMethod: paymentMethod || 'Espèces' });
+      enqueue(
+        { kind: 'pay', sessionId, paymentMethod: paymentMethod || 'Espèces' },
+        { userId, outletId }
+      );
       void scheduleSync();
       return { isDebtorSession: !!current?.debtor_id };
     },
