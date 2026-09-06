@@ -27,14 +27,29 @@ export type OutboxAction =
   | { kind: 'close'; sessionId: string }
   | { kind: 'pay'; sessionId: string; paymentMethod: string };
 
+export interface OutboxScope {
+  userId: string;
+  outletId: string;
+}
+
 export interface OutboxEntry {
   id: string;
   createdAt: number;
+  scope?: OutboxScope;
   action: OutboxAction;
 }
 
 const KEY = 'querox_tables_outbox_v1';
 const LISTENERS = new Set<(entries: OutboxEntry[]) => void>();
+const FAILURE_LISTENERS = new Set<(entry: OutboxEntry, message: string) => void>();
+
+/** Notifie l'interface qu'une action a été définitivement rejetée par le serveur. */
+export function subscribeOutboxFailures(
+  fn: (entry: OutboxEntry, message: string) => void
+): () => void {
+  FAILURE_LISTENERS.add(fn);
+  return () => FAILURE_LISTENERS.delete(fn);
+}
 
 export function newUuid(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -70,8 +85,8 @@ export function subscribeOutbox(fn: (entries: OutboxEntry[]) => void): () => voi
   return () => LISTENERS.delete(fn);
 }
 
-export function enqueue(action: OutboxAction): OutboxEntry {
-  const entry: OutboxEntry = { id: newUuid(), createdAt: Date.now(), action };
+export function enqueue(action: OutboxAction, scope?: OutboxScope): OutboxEntry {
+  const entry: OutboxEntry = { id: newUuid(), createdAt: Date.now(), scope, action };
   save([...getOutbox(), entry]);
   return entry;
 }
@@ -174,6 +189,13 @@ export async function flushOutbox(): Promise<{ sent: number; remaining: number }
         // Erreur métier définitive: on abandonne cette action pour ne pas bloquer la file.
         console.warn('[TablesOutbox] Action abandonnée:', head.action.kind, message);
         save(rest);
+        FAILURE_LISTENERS.forEach((fn) => {
+          try {
+            fn(head, message);
+          } catch {
+            /* listener */
+          }
+        });
       }
     }
   } finally {
