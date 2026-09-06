@@ -76,7 +76,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
 
-  const { selectedOutletId: localOutletId } = useOutletContext();
   const effectiveOutletId = selectedOutletId || localOutletId;
 
   if (!effectiveOutletId) {
