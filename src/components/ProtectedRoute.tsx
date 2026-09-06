@@ -19,6 +19,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, loading: authLoading, isTeamMember, teamMemberSession, isOfflineMode } = useAuth();
   const { selectedOutletId, loading: outletsLoading } = useOutlets();
   const { hasPermission, loading: permissionsLoading } = useOutletProfile();
+  const { selectedOutletId: localOutletId } = useOutletContext();
   const location = useLocation();
 
   void requiresSubscription;
