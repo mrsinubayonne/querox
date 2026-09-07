@@ -17,8 +17,8 @@ const signUpSchema = z.object({
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
   confirmPassword: z.string(),
   fullName: z.string().min(2, 'Le nom complet est requis'),
-  restaurantName: z.string().min(2, 'Le nom du restaurant est requis'),
-  restaurantType: z.string().min(1, 'Le type de restaurant est requis'),
+  restaurantName: z.string().optional(),
+  restaurantType: z.string().optional(),
   phone: z.string().min(8, 'Le numéro de téléphone est requis'),
   promoCode: z.string().optional()
 }).refine(data => data.password === data.confirmPassword, {
