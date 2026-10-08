@@ -18,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileNav from './MobileNav';
 
 interface ModernSidebarProps {
   collapsed: boolean;
@@ -109,6 +111,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const unreadOrders = useNotificationStore((s) => s.unreadOrders);
   
   const [adminExpanded, setAdminExpanded] = React.useState(false);
+  const isMobile = useIsMobile();
 
   const currentPath = location.pathname;
   const selectedOutlet = outlets.find(o => o.id === selectedOutletId);
@@ -138,6 +141,44 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     ...(hasPermission('settings') ? [{ icon: Settings, label: 'Paramètres', path: '/parametres' }] : []),
     { icon: CreditCard, label: 'Abonnement', path: '/abonnement' },
   ], [hasPermission]);
+
+  const handleLogout = useCallback(() => {
+    if (isProfileAuthenticated()) {
+      profileLogout();
+      navigate('/profile-login');
+    } else {
+      signOut();
+      navigate('/auth');
+    }
+  }, [isProfileAuthenticated, profileLogout, navigate, signOut]);
+
+  if (isMobile) {
+    const primaryPaths = ['/dashboard', '/tables', '/commandes', '/factures'];
+    const labels: Record<string, string> = { '/dashboard': 'Accueil' };
+    const primary = isAdmin
+      ? ADMIN_ITEMS.slice(0, 4).map(i => ({ ...i, label: i.label.split(' ')[0] }))
+      : filteredMenuItems.filter(i => primaryPaths.includes(i.path)).map(i => ({ ...i, label: labels[i.path] || i.label }));
+    const more = isAdmin
+      ? ADMIN_ITEMS.slice(4)
+      : [
+          ...filteredMenuItems.filter(i => !primaryPaths.includes(i.path)),
+          { icon: Plus, label: 'Plus', path: '/plus' },
+          ...bottomMenuItems,
+        ];
+    return (
+      <MobileNav
+        primary={primary as any}
+        more={more as any}
+        outlets={isAdmin ? [] : outlets}
+        selectedOutletId={selectedOutletId}
+        onOutletChange={handleOutletChange}
+        profileName={profileSession?.profileName}
+        onLogout={isAdmin ? () => { signOut(); navigate('/auth'); } : handleLogout}
+        badgePath="/commandes"
+        badge={unreadOrders}
+      />
+    );
+  }
 
   return (
     <div className={`sidebar-gpu bg-card border-r border-border flex flex-col ${collapsed ? 'w-16' : 'w-64'}`}>
