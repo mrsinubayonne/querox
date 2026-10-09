@@ -298,7 +298,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {paginatedItems.map((item) => (
               <Card key={item.id} className="overflow-hidden relative">
                 <div className="absolute top-3 left-3 z-10">
