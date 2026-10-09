@@ -298,7 +298,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
             </div>
           )}
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {paginatedItems.map((item) => (
               <Card key={item.id} className="overflow-hidden relative">
                 <div className="absolute top-3 left-3 z-10">
@@ -308,7 +308,7 @@ const MenuItemManager: React.FC<{ activeMenuId?: string }> = ({ activeMenuId }) 
                     className="bg-white border-2"
                   />
                 </div>
-                <div className="aspect-video bg-gray-100 overflow-hidden">
+                <div className="aspect-[16/7] sm:aspect-video bg-muted overflow-hidden">
                   <img
                     src={item.image_url || getCategoryDefaultImage(item.category_name)}
                     alt={item.name}

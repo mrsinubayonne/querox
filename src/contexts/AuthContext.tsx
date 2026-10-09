@@ -6,6 +6,16 @@ import { getSelectedOutletIdFromStorage } from '@/lib/offlineIdentity';
 import { preloadCriticalData } from '@/hooks/useOfflineData';
 import { localStore } from '@/lib/localStore';
 
+const clearLocalKeepingOwnerCodes = () => {
+  const keep: [string, string][] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('querox_owner_code_')) keep.push([k, localStorage.getItem(k) || '']);
+  }
+  localStorage.clear();
+  keep.forEach(([k, v]) => localStorage.setItem(k, v));
+};
+
 const TEAM_MEMBER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface TeamMemberSession {
@@ -382,7 +392,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // IMPORTANT: only wipe local app state on explicit/manual sign out.
           // Supabase can emit SIGNED_OUT during token edge-cases; we keep offline continuity.
           if (explicitSignOutRef.current) {
-            localStorage.clear();
+            clearLocalKeepingOwnerCodes();
             clearAuthData();
             setIsTeamMember(false);
             setTeamMemberSession(null);
@@ -486,7 +496,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     explicitSignOutRef.current = true;
     // Clear all localStorage data before signing out
-    localStorage.clear();
+    clearLocalKeepingOwnerCodes();
     setForcedOfflineMode(false);
     await clearAuthData();
     setIsTeamMember(false);
