@@ -256,7 +256,7 @@ const Tables: React.FC = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-2 sm:gap-4 [&>div]:p-2 sm:[&>div]:p-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 [&>div]:p-3 sm:[&>div]:p-4">
             <div className="p-4 bg-card border rounded-lg">
               <p className="text-sm text-muted-foreground">Tables Libres</p>
               <p className="text-2xl font-bold text-emerald-600">
