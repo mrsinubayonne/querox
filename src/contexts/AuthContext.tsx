@@ -1,3 +1,4 @@
+import { syncOwnerCodeFromAccount } from '@/lib/profileAccess';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,6 +6,16 @@ import { storeAuthData, getAuthData, clearAuthData } from '@/lib/offlineStorage'
 import { getSelectedOutletIdFromStorage } from '@/lib/offlineIdentity';
 import { preloadCriticalData } from '@/hooks/useOfflineData';
 import { localStore } from '@/lib/localStore';
+
+const clearLocalKeepingOwnerCodes = () => {
+  const keep: [string, string][] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('querox_owner_code_')) keep.push([k, localStorage.getItem(k) || '']);
+  }
+  localStorage.clear();
+  keep.forEach(([k, v]) => localStorage.setItem(k, v));
+};
 
 const TEAM_MEMBER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -340,6 +351,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user) {
           setSession(session);
           setUser(session.user);
+          syncOwnerCodeFromAccount(session.user.id, session.user.user_metadata);
           setForcedOfflineMode(false);
         } else if (event === 'SIGNED_OUT' && explicitSignOutRef.current) {
           setSession(null);
@@ -382,7 +394,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // IMPORTANT: only wipe local app state on explicit/manual sign out.
           // Supabase can emit SIGNED_OUT during token edge-cases; we keep offline continuity.
           if (explicitSignOutRef.current) {
-            localStorage.clear();
+            clearLocalKeepingOwnerCodes();
             clearAuthData();
             setIsTeamMember(false);
             setTeamMemberSession(null);
@@ -428,6 +440,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         setSession(session);
         setUser(session?.user ?? null);
+        if (session?.user) syncOwnerCodeFromAccount(session.user.id, session.user.user_metadata);
         setLoading(false);
         
         // Store for offline if we have a session
@@ -486,7 +499,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     explicitSignOutRef.current = true;
     // Clear all localStorage data before signing out
-    localStorage.clear();
+    clearLocalKeepingOwnerCodes();
     setForcedOfflineMode(false);
     await clearAuthData();
     setIsTeamMember(false);

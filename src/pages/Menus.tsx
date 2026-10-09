@@ -348,15 +348,15 @@ const Menus: React.FC = () => {
 
   return (
     <PageWithSidebar>
-      <div className="space-y-8">
+      <div className="space-y-4 sm:space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestion des Menus</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Menus</h1>
             <p className="text-gray-600 mt-2">Gérez vos menus et vos plats</p>
           </div>
           
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto [&>button]:px-2 sm:[&>button]:px-4">
             <Button
               onClick={handleImportMenu}
               variant="outline"
@@ -388,14 +388,14 @@ const Menus: React.FC = () => {
 
         {/* Menu Selection */}
         {menus.length > 0 && (
-          <div className="bg-white p-6 rounded-lg shadow border">
+          <div className="bg-card p-4 sm:p-6 rounded-lg shadow border">
             <h2 className="text-xl font-semibold mb-4">Restaurant</h2>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
               <Select 
                 value={activeMenu?.id || ''} 
                 onValueChange={handleMenuChange}
               >
-                <SelectTrigger className="w-[300px]">
+                <SelectTrigger className="w-full sm:w-[300px]">
                   <SelectValue placeholder="Sélectionner un restaurant" />
                 </SelectTrigger>
                 <SelectContent>

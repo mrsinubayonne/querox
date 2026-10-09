@@ -73,7 +73,26 @@ export const hasOwnerCode = (userId?: string | null): boolean =>
   !!userId && !!localStorage.getItem(ownerKey(userId));
 
 export const setOwnerCode = (userId: string, code: string) => {
-  localStorage.setItem(ownerKey(userId), encode(code));
+  const value = encode(code);
+  localStorage.setItem(ownerKey(userId), value);
+  // Sauvegarde dans le compte pour survivre à la déconnexion / changement d'appareil
+  import('@/integrations/supabase/client')
+    .then(({ supabase }) => supabase.auth.updateUser({ data: { querox_owner_code: value } }))
+    .catch(() => { /* hors ligne : resynchronisé plus tard */ });
+};
+
+/** Restaure le code propriétaire depuis le compte (appelé à la connexion). */
+export const syncOwnerCodeFromAccount = (userId: string, metadata?: Record<string, any> | null) => {
+  if (!userId) return;
+  const remote = metadata?.querox_owner_code as string | undefined;
+  const local = localStorage.getItem(ownerKey(userId));
+  if (remote && remote !== local) {
+    localStorage.setItem(ownerKey(userId), remote);
+  } else if (!remote && local) {
+    import('@/integrations/supabase/client')
+      .then(({ supabase }) => supabase.auth.updateUser({ data: { querox_owner_code: local } }))
+      .catch(() => {});
+  }
 };
 
 export const verifyOwnerCode = (userId: string, code: string): boolean =>
