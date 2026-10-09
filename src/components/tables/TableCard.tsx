@@ -164,14 +164,14 @@ export const TableCard: React.FC<TableCardProps> = ({
 
   return (
     <Card
-      className={`relative overflow-hidden p-5 cursor-pointer transition-all duration-200 hover:scale-[1.015] hover:shadow-lg ${styles.card}`}
+      className={`relative overflow-hidden p-3 sm:p-5 cursor-pointer transition-transform duration-150 active:scale-[0.97] sm:hover:scale-[1.015] hover:shadow-lg ${styles.card}`}
       onClick={onClick}
     >
-      <div className="space-y-3">
-        <div className="flex items-start justify-between gap-3">
+      <div className="space-y-2 sm:space-y-3">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-1.5 sm:gap-3">
           <div className="space-y-1.5 flex-1">
             <div className="flex items-center gap-2">
-              <h3 className={`text-3xl font-bold tracking-tight ${styles.title}`}>
+              <h3 className={`text-xl sm:text-3xl font-bold tracking-tight truncate ${styles.title}`}>
                 {displayName}
               </h3>
               {onRename && session && (

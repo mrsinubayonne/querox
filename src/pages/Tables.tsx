@@ -200,7 +200,7 @@ const Tables: React.FC = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold">🪑 Gestion des Tables</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">🪑 Tables</h1>
               <p className="text-muted-foreground mt-1">
                 Gérez vos tables et sessions en temps réel
               </p>
@@ -216,7 +216,7 @@ const Tables: React.FC = () => {
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 [&>*]:shrink-0 [&>.cursor-pointer]:py-1.5 [&>.cursor-pointer]:px-3">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Badge
               variant={statusFilter === "all" ? "default" : "outline"}
@@ -256,7 +256,7 @@ const Tables: React.FC = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-2 sm:gap-4 [&>div]:p-2 sm:[&>div]:p-4">
             <div className="p-4 bg-card border rounded-lg">
               <p className="text-sm text-muted-foreground">Tables Libres</p>
               <p className="text-2xl font-bold text-emerald-600">
