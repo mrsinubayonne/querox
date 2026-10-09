@@ -1,3 +1,4 @@
+import { syncOwnerCodeFromAccount } from '@/lib/profileAccess';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -350,6 +351,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user) {
           setSession(session);
           setUser(session.user);
+          syncOwnerCodeFromAccount(session.user.id, session.user.user_metadata);
           setForcedOfflineMode(false);
         } else if (event === 'SIGNED_OUT' && explicitSignOutRef.current) {
           setSession(null);
@@ -438,6 +440,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         setSession(session);
         setUser(session?.user ?? null);
+        if (session?.user) syncOwnerCodeFromAccount(session.user.id, session.user.user_metadata);
         setLoading(false);
         
         // Store for offline if we have a session
